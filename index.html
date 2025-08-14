@@ -46,39 +46,7 @@
   <button onclick="downloadPDF()">Export PDF</button>
   <button onclick="clearAll()">Clear</button>
 
-  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-  <button
-    className="btn primary"
-    onClick={() => {
-      setOriginalBeforeCorrect(studentText);
-      const res = correct(studentText, level);
-      setStudentText(res.out);
-      setNotes(res.notes);
-    }}
-  >
-    Correct
-  </button>
-
-  <button className="btn" onClick={() => navigator.clipboard?.writeText(corrected.out)}>
-    Copy corrected
-  </button>
-
-  <button className="btn" onClick={exportCorrectorPDF}>
-    Export corrected as PDF
-  </button>
-
-  {/* New clear button */}
-  <button
-    className="btn"
-    onClick={() => {
-      setStudentText("");
-      setNotes([]);
-      setOriginalBeforeCorrect("");
-    }}
-  >
-    Clear
-  </button>
-</div>
+  
 
   <h2>Corrected Output:</h2>
   <textarea id="outputText" rows="8" readonly></textarea>
