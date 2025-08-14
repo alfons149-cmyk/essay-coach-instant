@@ -27,7 +27,6 @@
       padding: 10px;
       border-radius: 4px;
     }
-    
   </style>
 </head>
 <body>
@@ -45,8 +44,6 @@
   <button onclick="runCorrection()">Correct</button>
   <button onclick="downloadPDF()">Export PDF</button>
   <button onclick="clearAll()">Clear</button>
-
-  
 
   <h2>Corrected Output:</h2>
   <textarea id="outputText" rows="8" readonly></textarea>
@@ -194,12 +191,19 @@
     return { out: out.trim(), notes };
   };
 </script>
-  <script>
+<script>
   function clearAll() {
     document.getElementById("inputText").value = "";
     document.getElementById("outputText").value = "";
     document.getElementById("notes").innerHTML = "";
   }
 </script>
-</body>
+<script>
+  function clearAll() {
+    document.getElementById("inputText").value = "";
+    document.getElementById("outputText").value = "";
+    document.getElementById("notes").innerHTML = "";
+  }
+</script>
+  </body>
 </html>
