@@ -23,7 +23,7 @@
 <body>
   <div class="wrap">
     <h1>EssayCoach – Cambridge Toolkit</h1>
-    <p class="sub">Instant version: paste a sentence/paragraph, choose level, and click Correct. Export to PDF or Clear anytime.</p>
+    <p class="sub">Paste a sentence/paragraph, choose level, and click Correct. Export to PDF or Clear anytime.</p>
 
     <div class="card" style="margin-bottom:12px">
       <label style="display:block; margin-bottom:8px">
@@ -56,81 +56,93 @@
     </div>
   </div>
 
-  <!-- PDF library (no integrity attribute to avoid SRI mismatch issues) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+  <!-- Reliable jsPDF CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
   <script>
-    // --- Smarter, clause-aware corrector with conjunctive adverbs + Clear button support ---
+    // === Utilities ===
+    const hasFiniteVerb = (s) => {
+      const aux = /\b(am|is|are|was|were|be|been|being|do|does|did|has|have|had|can|could|will|would|shall|should|may|might|must)\b/i;
+      const finite = /\b\w+(ed|s)\b/i;     // walked, writes, continues, etc.
+      return aux.test(s) || finite.test(s);
+    };
+
+    // === Main corrector (with conjunctive adverbs + FANBOYS + subordination) ===
     const correct = (text, lvl) => {
       if (!text || !text.trim()) return { out: "", notes: [] };
       let out = text.trim();
       const notes = [];
 
-      // 1) Expand common contractions
+      // 1) Contractions → formal
       const CONTRACTIONS = {
         "can't": "cannot","won't": "will not","don't": "do not","doesn't": "does not","didn't": "did not",
         "isn't": "is not","aren't": "are not","it's": "it is","I'm": "I am","you're": "you are",
         "we're": "we are","they're": "they are","I've": "I have","we've": "we have","they've": "they have"
       };
-      Object.entries(CONTRACTIONS).forEach(([k, v]) => {
-        const re = new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\\\$&")}\\b`, "gi");
+      for (const [k,v] of Object.entries(CONTRACTIONS)) {
+        const re = new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\$&")}\\b`, "gi");
         const before = out;
-        out = out.replace(re, (m) => (m[0] === m[0].toUpperCase() ? v[0].toUpperCase() + v.slice(1) : v));
+        out = out.replace(re, (m) => (m[0] === m[0].toUpperCase() ? v[0].toUpperCase()+v.slice(1) : v));
         if (out !== before) notes.push("Expanded contractions for formality.");
+      }
+
+      // 2) Informality / fillers
+      [
+        { re:/\bkids\b/gi, rep:"children" },
+        { re:/\ba lot of\b/gi, rep:"many" },
+        { re:/\bgonna\b/gi, rep:"going to" },
+        { re:/\bwanna\b/gi, rep:"want to" },
+        { re:/\bstuff\b/gi, rep:"items" },
+        { re:/\bthings\b/gi, rep:"aspects" },
+        { re:/\breally|very\b/gi, rep:"" },
+      ].forEach(({re,rep}) => { if (re.test(out)) { out = out.replace(re,rep); notes.push("Adjusted informal phrasing."); }});
+      [
+        { re:/\bget\b/gi, rep:"obtain" },
+        { re:/\bdo\b/gi, rep:"carry out" },
+        { re:/\bmake\b/gi, rep:"create" },
+        { re:/\bsay\b/gi, rep:"state" },
+      ].forEach(({re,rep}) => { if (re.test(out)) { out = out.replace(re,rep); notes.push("Replaced vague verb."); }});
+      [/\blike,?\b/gi, /\byou know\b/gi, /\bI mean\b/gi, /\bjust\b/gi].forEach((re) => {
+        if (re.test(out)) { out = out.replace(re,""); notes.push("Removed fillers."); }
       });
 
-      // 2) Replace informal words & remove fillers
-      const SLANG = [
-        { re: /\bkids\b/gi, rep: "children" },
-        { re: /\ba lot of\b/gi, rep: "many" },
-        { re: /\bgonna\b/gi, rep: "going to" },
-        { re: /\bwanna\b/gi, rep: "want to" },
-        { re: /\bstuff\b/gi, rep: "items" },
-        { re: /\bthings\b/gi, rep: "aspects" },
-        { re: /\breally|very\b/gi, rep: "" }
-      ];
-      SLANG.forEach(({ re, rep }) => { if (re.test(out)) { out = out.replace(re, rep); notes.push("Adjusted informal phrasing."); }});
-
-      const VAGUE = [
-        { re: /\bget\b/gi, rep: "obtain" },
-        { re: /\bdo\b/gi, rep: "carry out" },
-        { re: /\bmake\b/gi, rep: "create" },
-        { re: /\bsay\b/gi, rep: "state" }
-      ];
-      VAGUE.forEach(({ re, rep }) => { if (re.test(out)) { out = out.replace(re, rep); notes.push("Replaced vague verb."); }});
-
-      const FILLERS = [/\blike,?\b/gi, /\byou know\b/gi, /\bI mean\b/gi, /\bjust\b/gi];
-      FILLERS.forEach((re) => { if (re.test(out)) { out = out.replace(re, ""); notes.push("Removed fillers."); }});
-
-      // 3) Normalise spaces & punctuation
+      // 3) Trim spacing around punctuation
       const beforeSpace = out;
-      out = out
-        .replace(/\s+([,;:.!?])/g, "$1")
-        .replace(/([,;:.!?])(\S)/g, "$1 $2")
-        .replace(/\s{2,}/g, " ");
+      out = out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
       if (out !== beforeSpace) notes.push("Normalised spacing.");
 
       // 4) Capitalise sentence starts
       const beforeCap = out;
-      out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+      out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m,p1,p2)=> p1 + p2.toUpperCase());
       if (out !== beforeCap) notes.push("Capitalised sentence start.");
 
-      // 5) Clause-aware punctuation: FANBOYS + conjunctive adverbs (semicolon + comma) + fronted subordination
+      // 5) Clause punctuation
       const FANBOYS = ["for","and","nor","but","or","yet","so"];
-      const SUBORD = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
-      const CADV   = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
+      const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
+      const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
 
-      const hasFiniteVerb = (s) => {
-        const aux = /\b(am|is|are|was|were|be|been|being|do|does|did|has|have|had|can|could|will|would|shall|should|may|might|must)\b/i;
-        const finite = /\b\w+(ed|s)\b/i;
-        return aux.test(s) || finite.test(s);
-      };
-
-      const addClausePunctuation = (text) => {
-        return text.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
+      const punctuateClauses = (text) =>
+        text.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
           let s = core.trim();
 
-          // A) Fronted subordinate clause → add comma if missing
+          // A) Conjunctive adverb between two clauses → "; however, "
+          // We look for any CADV word and rebuild around it if both sides look like clauses.
+          for (const adv of CADV) {
+            const re = new RegExp(`\\b${adv}\\b`, "i");
+            const hit = s.match(re);
+            if (hit) {
+              const idx = hit.index;
+              const word = hit[0];
+              const left = s.slice(0, idx).replace(/[ ,;]+$/,"").trim();
+              const right = s.slice(idx + word.length).replace(/^[ ,;]+/,"").trim();
+              if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
+                s = `${left}; ${word}, ${right}`;
+                break; // one CADV per sentence handled is enough
+              }
+            }
+          }
+
+          // B) Fronted subordinate clause → comma after it (if missing)
           const firstWord = (s.match(/^\w+/) || [""])[0].toLowerCase();
           if (SUBORD.includes(firstWord) && !/,/.test(s)) {
             const tokens = s.split(/\s+/);
@@ -145,47 +157,29 @@
             }
           }
 
-          // B) Independent clause FANBOYS independent clause → add comma before FANBOYS
-          FANBOYS.forEach((cj) => {
-            const idx = s.toLowerCase().indexOf(` ${cj} `);
-            if (idx > -1 && !new RegExp(`,\\s+${cj}\\b`, "i").test(s)) {
-              const left = s.slice(0, idx).trim();
-              const right = s.slice(idx + cj.length + 2).trim();
+          // C) Independent ,/Ø FANBOYS independent → ensure comma before FANBOYS
+          for (const cj of FANBOYS) {
+            const pos = s.toLowerCase().indexOf(` ${cj} `);
+            if (pos > -1 && !new RegExp(`,\\s+${cj}\\b`, "i").test(s)) {
+              const left = s.slice(0, pos).trim();
+              const right = s.slice(pos + cj.length + 2).trim();
               if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
-                s = left.replace(/\s+$/, "") + ", " + cj + " " + right.replace(/^,?\s*/, "");
+                s = left.replace(/\s+$/,"") + ", " + cj + " " + right.replace(/^,?\s*/, "");
               }
             }
-          });
-
-          // C) Independent clause + conjunctive adverb + independent clause → enforce "; however, ..."
-          CADV.forEach((adv) => {
-            const re = new RegExp(`\\b${adv}\\b`, "i");
-            const hit = s.match(re);
-            if (hit) {
-              const idx = hit.index;
-              const word = hit[0];
-              const left = s.slice(0, idx).trim();
-              const right = s.slice(idx + word.length).trim();
-              if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
-                const leftClean = left.replace(/[\s,;]+$/, "");
-                const rightClean = right.replace(/^[,\s]+/, "");
-                s = `${leftClean}; ${word}, ${rightClean}`;
-              }
-            }
-          });
+          }
 
           return s + (end || "");
         });
-      };
 
       const beforeClause = out;
-      out = addClausePunctuation(out);
+      out = punctuateClauses(out);
       if (out !== beforeClause) notes.push("Inserted clause punctuation (commas/semicolons).");
 
-      // 6) Ensure final punctuation
+      // 6) Final punctuation
       if (!/[.!?]$/.test(out)) { out += "."; notes.push("Added final full stop."); }
 
-      // 7) Level tweak (simplify for B2)
+      // 7) Level tweak
       if (lvl === "B2") {
         const beforeLvl = out;
         out = out.replace(/\bnotwithstanding\b/gi, "however");
@@ -195,14 +189,19 @@
       return { out: out.trim(), notes };
     };
 
-    // Expose functions globally so inline onclick handlers always work
+    // === Button handlers (global) ===
     window.runCorrection = function () {
-      const text = document.getElementById("inputText").value;
-      const lvl = document.getElementById("levelSelect").value;
-      const { out, notes } = correct(text, lvl);
-      document.getElementById("outputText").value = out;
-      document.getElementById("notes").innerHTML =
-        "<b>Changes:</b><br>" + (notes.length ? notes.map(n => "• " + n).join("<br>") : "(No changes)");
+      try {
+        const text = document.getElementById("inputText").value;
+        const lvl  = document.getElementById("levelSelect").value;
+        const { out, notes } = correct(text, lvl);
+        document.getElementById("outputText").value = out;
+        document.getElementById("notes").innerHTML =
+          "<b>Changes:</b><br>" + (notes.length ? notes.map(n => "• " + n).join("<br>") : "(No changes)");
+      } catch (e) {
+        alert("Error while correcting: " + e.message);
+        console.error(e);
+      }
     };
 
     window.clearAll = function () {
@@ -212,24 +211,26 @@
     };
 
     window.downloadPDF = function () {
-      const { jsPDF } = window.jspdf || {};
-      if (!jsPDF) { alert("PDF library failed to load. Check your internet connection."); return; }
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
-      const text = document.getElementById("outputText").value || "(empty)";
-      const margin = 48;
-      let y = margin;
+      try {
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) { alert("PDF library failed to load. Please check your connection."); return; }
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
+        const text = document.getElementById("outputText").value || "(empty)";
+        const margin = 48;
+        let y = margin;
 
-      doc.setFont("Helvetica", "bold");
-      doc.setFontSize(14);
-      doc.text("EssayCoach – Corrected Output", margin, y);
-      y += 20;
+        doc.setFont("Helvetica", "bold"); doc.setFontSize(14);
+        doc.text("EssayCoach – Corrected Output", margin, y); y += 20;
 
-      doc.setFont("Helvetica", "normal");
-      doc.setFontSize(12);
-      const lines = doc.splitTextToSize(text, 595 - margin*2);
-      doc.text(lines, margin, y);
+        doc.setFont("Helvetica", "normal"); doc.setFontSize(12);
+        const lines = doc.splitTextToSize(text, 595 - margin*2);
+        doc.text(lines, margin, y);
 
-      doc.save("essay-corrected.pdf");
+        doc.save("essay-corrected.pdf");
+      } catch (e) {
+        alert("Could not create PDF: " + e.message);
+        console.error(e);
+      }
     };
   </script>
 </body>
