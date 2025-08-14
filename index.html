@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EssayCoach – Cambridge Toolkit</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 8px 14px;
+      margin-right: 5px;
+      cursor: pointer;
+    }
+    .notes {
+      margin-top: 10px;
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>EssayCoach – Cambridge Toolkit</h1>
+  <p>Write or paste your essay below. The tool will help you formalise and improve sentences.</p>
+
+  <textarea id="inputText" rows="8" placeholder="Type here..."></textarea><br>
+  <label>
+    Level:
+    <select id="levelSelect">
+      <option value="B2">B2 First</option>
+      <option value="C1">C1/C2 Advanced</option>
+    </select>
+  </label>
+  <button onclick="runCorrection()">Correct</button>
+  <button onclick="downloadPDF()">Export PDF</button>
+
+  <h2>Corrected Output:</h2>
+  <textarea id="outputText" rows="8" readonly></textarea>
+
+  <div class="notes" id="notes"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const correct = (text, lvl) => {
+  if (!text || !text.trim()) return { out: "", notes: [] };
+  let out = text.trim();
+  const notes = [];
+
+  // 1) Expand common contractions
+  const CONTRACTIONS = {
+    "can't": "cannot","won't": "will not","don't": "do not","doesn't": "does not","didn't": "did not",
+    "isn't": "is not","aren't": "are not","it's": "it is","I'm": "I am","you're": "you are",
+    "we're": "we are","they're": "they are","I've": "I have","we've": "we have","they've": "they have",
+  };
+  Object.entries(CONTRACTIONS).forEach(([k, v]) => {
+    const re = new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\$&")}\\b`, "gi");
+    const before = out;
+    out = out.replace(re, (m) =>
+      m[0] === m[0].toUpperCase() ? v[0].toUpperCase() + v.slice(1) : v
+    );
+    if (out !== before) notes.push("Expanded contractions for formality.");
+  });
+
+  // 2) Replace informal words & remove fillers
+  const SLANG = [
+    { re: /\bkids\b/gi, rep: "children" },
+    { re: /\ba lot of\b/gi, rep: "many" },
+    { re: /\bgonna\b/gi, rep: "going to" },
+    { re: /\bwanna\b/gi, rep: "want to" },
+    { re: /\bstuff\b/gi, rep: "items" },
+    { re: /\bthings\b/gi, rep: "aspects" },
+    { re: /\breally|very\b/gi, rep: "" },
+  ];
+  SLANG.forEach(({ re, rep }) => { if (re.test(out)) { out = out.replace(re, rep); notes.push("Adjusted informal phrasing."); }});
+
+  const VAGUE = [
+    { re: /\bget\b/gi, rep: "obtain" },
+    { re: /\bdo\b/gi, rep: "carry out" },
+    { re: /\bmake\b/gi, rep: "create" },
+    { re: /\bsay\b/gi, rep: "state" },
+  ];
+  VAGUE.forEach(({ re, rep }) => { if (re.test(out)) { out = out.replace(re, rep); notes.push("Replaced vague verb."); }});
+
+  const FILLERS = [/\blike,?\b/gi, /\byou know\b/gi, /\bI mean\b/gi, /\bjust\b/gi];
+  FILLERS.forEach((re) => { if (re.test(out)) { out = out.replace(re, ""); notes.push("Removed fillers."); }});
+
+  // 3) Normalise spaces & punctuation
+  const beforeSpace = out;
+  out = out
+    .replace(/\s+([,;:.!?])/g, "$1")
+    .replace(/([,;:.!?])(\S)/g, "$1 $2")
+    .replace(/\s{2,}/g, " ");
+  if (out !== beforeSpace) notes.push("Normalised spacing.");
+
+  // 4) Capitalise sentence starts
+  const beforeCap = out;
+  out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+  if (out !== beforeCap) notes.push("Capitalised sentence start.");
+
+  // 5) Clause-aware comma insertion
+  const FANBOYS = ["for","and","nor","but","or","yet","so"];
+  const SUBORD = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
+  const hasFiniteVerb = (s) => {
+    // quick heuristic: auxiliaries or common verb endings
+    const aux = /\b(am|is|are|was|were|be|been|being|do|does|did|has|have|had|can|could|will|would|shall|should|may|might|must)\b/i;
+    const finite = /\b\w+(ed|s)\b/i;
+    return aux.test(s) || finite.test(s);
+  };
+
+  const addCommasHeuristically = (text) => {
+    // Work sentence by sentence
+    return text.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
+      let s = core.trim();
+
+      // A) Fronted subordinate clause → add comma if missing
+      // e.g., "Although it was raining we went..." -> "Although it was raining, we went..."
+      const firstWord = (s.match(/^\w+/) || [""])[0].toLowerCase();
+      if (SUBORD.includes(firstWord) && !/,/.test(s)) {
+        // find a likely main-clause start: a pronoun/determiner after a few words
+        const tokens = s.split(/\s+/);
+        const starters = ["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"];
+        let insertAt = -1;
+        for (let i = 3; i < Math.min(tokens.length, 20); i++) {
+          if (starters.includes(tokens[i].toLowerCase())) { insertAt = i; break; }
+        }
+        if (insertAt > -1) {
+          tokens.splice(insertAt, 0, ",");
+          s = tokens.join(" ");
+        } else {
+          // fallback: place a comma before the last 40% of the sentence
+          const pos = Math.floor(s.length * 0.6);
+          const sp = s.indexOf(" ", pos);
+          if (sp !== -1) s = s.slice(0, sp) + "," + s.slice(sp);
+        }
+      }
+
+      // B) Independent clause, FANBOYS, independent clause → add comma before FANBOYS
+      // Only if both sides contain a finite verb and there isn't already a comma
+      FANBOYS.forEach((cj) => {
+        const re = new RegExp(`\\s${cj}\\s`, "i");
+        const match = s.match(re);
+        if (match && !/,\s+${cj}\b/i.test(s)) {
+          const idx = s.toLowerCase().indexOf(` ${cj} `);
+          const left = s.slice(0, idx).trim();
+          const right = s.slice(idx + cj.length + 2).trim();
+          if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
+            s = left.replace(/\s+$/, "") + ", " + cj + " " + right;
+          }
+        }
+      });
+
+      return s + (end || "");
+    });
+  };
+
+  const beforeClause = out;
+  out = addCommasHeuristically(out);
+  if (out !== beforeClause) notes.push("Inserted commas between clauses for clarity.");
+
+  // 6) Ensure final punctuation
+  if (!/[.!?]$/.test(out)) { out += "."; notes.push("Added final full stop."); }
+
+  // 7) Level tweak (simplify for B2)
+  if (lvl === "B2") {
+    const beforeLvl = out;
+    out = out.replace(/\bnotwithstanding\b/gi, "however");
+    if (out !== beforeLvl) notes.push("Simplified advanced connector for B2.");
+  }
+
+  return { out: out.trim(), notes };
+};
+        function runCorrection() {
+      const text = document.getElementById("inputText").value;
+      const lvl = document.getElementById("levelSelect").value;
+      const { out, notes } = correct(text, lvl);
+      document.getElementById("outputText").value = out;
+      document.getElementById("notes").innerHTML = "<b>Changes:</b><br>" + notes.join("<br>");
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Corrected Essay:", 10, 10);
+      doc.text(document.getElementById("outputText").value, 10, 20);
+      doc.save("essay.pdf");
+    }
+  </script>
+</body>
+</html>
