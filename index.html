@@ -2,82 +2,409 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EssayCoach – Cambridge Toolkit (Instant)</title>
+
+  <!-- Favicon / app icon -->
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <!-- PWA: manifest + theme color -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#111111" />
+
   <style>
-    :root { --b:#111; --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --border:#e5e7eb; }
+    :root { --b:#111; --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --border:#e5e7eb; --tap: 14px; }
+    * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: var(--bg); color:#111; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 24px; }
-    h1 { margin: 0 0 6px; }
-    .sub { color: var(--muted); margin: 0 0 16px; }
-    .card { background: var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; }
-    .row { display:flex; gap:8px; flex-wrap: wrap; }
-    textarea, select, button { font: inherit; padding: 10px 12px; border:1px solid var(--border); border-radius:10px; }
-    textarea { width: 100%; resize: vertical; background:#fff; }
-    button { background:#fff; cursor:pointer; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: clamp(16px, 4vw, 24px); }
+    h1 { margin: 0 0 6px; font-size: clamp(22px, 3.6vw, 28px); }
+    .sub { color: var(--muted); margin: 0 0 16px; font-size: clamp(13px, 2.8vw, 14px); }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .tab { padding: 12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; font-size: 14px; min-height: 44px; }
+    .tab.active { background: var(--b); color:#fff; border-color: var(--b); }
+    .card { background: var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(12px, 3.2vw, 16px); }
+    .row { display:flex; gap:8px; flex-wrap:wrap; }
+    textarea, select, button {
+      font: inherit; padding: 12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff;
+      min-height: 44px;
+    }
+    textarea { width: 100%; resize: vertical; }
+    button { cursor: pointer; }
     button.primary { background: var(--b); color:#fff; border-color: var(--b); }
     .notes { margin-top: 10px; background: #f3f4f6; padding: 10px; border-radius: 10px; border:1px solid var(--border); }
     .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .cols { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+    ul, ol { margin-top: 6px; padding-left: 20px; }
+    .chip { display:inline-block; padding:8px 12px; border:1px solid var(--border); border-radius:999px; background:#fff; margin:6px 8px 0 0; cursor:pointer; font-size:14px; min-height: 38px; }
+    .chip:hover { background:#f3f4f6; }
+    .alt-section h4 { margin: 12px 0 6px; font-size: 14px; color:#333; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>EssayCoach – Cambridge Toolkit</h1>
-    <p class="sub">Paste a sentence/paragraph, choose level, and click Correct. Export to PDF or Clear anytime.</p>
+    <p class="sub">Scaffolds • Corrector (B2/C1) • Vocabulary alternatives • PDF export • Clear</p>
 
-    <div class="card" style="margin-bottom:12px">
-      <label style="display:block; margin-bottom:8px">
-        <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Level</div>
-        <select id="levelSelect">
-          <option value="B2">B2 First</option>
-          <option value="C1">C1/C2 Advanced</option>
-        </select>
-      </label>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tab-scaffolds" onclick="showTab('scaffolds')">Scaffolds</button>
+      <button class="tab" id="tab-corrector"  onclick="showTab('corrector')">Corrector</button>
+    </div>
 
-      <label style="display:block; margin-top:10px">
-        <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Input</div>
-        <textarea id="inputText" rows="6" placeholder="Type or paste your text here..."></textarea>
-      </label>
+    <!-- SCAFFOLDS TAB -->
+    <section id="view-scaffolds">
+      <div class="card" style="margin-bottom:12px">
+        <div class="cols">
+          <label>
+            <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Level</div>
+            <select id="scLevel" onchange="renderScaffold()">
+              <option value="B2">B2 First</option>
+              <option value="C1">C1 Advanced</option>
+            </select>
+          </label>
 
-      <div class="row" style="margin-top:10px">
-        <button class="primary" onclick="runCorrection()">Correct</button>
-        <button onclick="downloadPDF()">Export PDF</button>
-        <button onclick="clearAll()">Clear</button>
+          <label>
+            <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Task type</div>
+            <select id="scType" onchange="renderScaffold()">
+              <option value="essay">Essay</option>
+              <option value="report">Report</option>
+              <option value="review">Review</option>
+              <option value="letter">Formal letter/email</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button onclick="copyScaffold()">Copy scaffold</button>
+          <button onclick="copyOpener()">Copy opener</button>
+          <button onclick="exportScaffoldPDF()">Export scaffold as PDF</button>
+        </div>
       </div>
 
-      <div class="hint">Try: “It was late however we continued the discussion” → “It was late; however, we continued the discussion.”</div>
-    </div>
+      <div class="card">
+        <h3 style="margin:0">Recommended moves (4-part structure)</h3>
+        <ol id="scMoves"></ol>
 
-    <div class="card">
-      <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Corrected Output</div>
-      <textarea id="outputText" rows="6" readonly placeholder="Your corrected text will appear here..."></textarea>
+        <h3 style="margin:16px 0 6px">Useful opener (example)</h3>
+        <div id="scOpener" class="notes"></div>
 
-      <div class="notes" id="notes"><b>Changes:</b><br><span class="hint">Corrections will appear here after you click “Correct”.</span></div>
-    </div>
+        <h3 style="margin:16px 0 6px">Tips</h3>
+        <ul id="scTips"></ul>
+        <div class="hint">Choose level and task to update the scaffold. You can copy or export to PDF.</div>
+      </div>
+    </section>
+
+    <!-- CORRECTOR TAB -->
+    <section id="view-corrector" style="display:none">
+      <div class="card" style="margin-bottom:12px">
+        <label style="display:block; margin-bottom:8px">
+          <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Level</div>
+          <select id="levelSelect">
+            <option value="B2">B2 First</option>
+            <option value="C1">C1/C2 Advanced</option>
+          </select>
+        </label>
+
+        <label style="display:block; margin-top:10px">
+          <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Input</div>
+          <textarea id="inputText" rows="7" placeholder="Type or paste your text here..."></textarea>
+        </label>
+
+        <div class="row" style="margin-top:10px">
+          <button class="primary" onclick="runCorrection()">Correct</button>
+          <button onclick="downloadPDF()">Export PDF</button>
+          <button onclick="clearAll()">Clear</button>
+        </div>
+
+        <div class="hint">
+          Try: “It was late however we continued the discussion” → “It was late; however, we continued the discussion.”
+          • “First I would like to…” → “First, I would like to…”
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Corrected Output</div>
+        <textarea id="outputText" rows="7" readonly placeholder="Your corrected text will appear here..."></textarea>
+
+        <div class="notes" id="notes"><b>Changes:</b><br><span class="hint">Corrections will appear here after you click “Correct”.</span></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 6px">Vocabulary alternatives (click to apply)</h3>
+        <div id="altList" class="hint">After correction, suggested upgrades will appear here (especially for C1/C2).</div>
+      </div>
+    </section>
   </div>
 
-  <!-- Reliable jsPDF CDN -->
+  <!-- jsPDF CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
   <script>
-    // === Utilities ===
+    /* ========== Tabs ========== */
+    function showTab(which) {
+      const t1 = document.getElementById('tab-scaffolds');
+      const t2 = document.getElementById('tab-corrector');
+      const v1 = document.getElementById('view-scaffolds');
+      const v2 = document.getElementById('view-corrector');
+      if (which === 'scaffolds') {
+        t1.classList.add('active'); t2.classList.remove('active');
+        v1.style.display = '';      v2.style.display = 'none';
+      } else {
+        t2.classList.add('active'); t1.classList.remove('active');
+        v2.style.display = '';      v1.style.display = 'none';
+      }
+    }
+
+    /* ========== Scaffold data (B2/C1) ========== */
+    const SCAFFOLDS = {
+      B2: {
+        essay: { moves: [
+            "Introduction: Paraphrase the question; give a clear opinion.",
+            "Body 1: First main point + short example/evidence.",
+            "Body 2: Second main point + short example/evidence.",
+            "Conclusion: Summarise and restate your opinion."
+          ],
+          opener: "In recent years, the question of [topic] has received considerable attention. In my view, [your opinion], because [reason].",
+          tips: [
+            "Use clear topic sentences at the start of each paragraph.",
+            "Avoid contractions and slang; use formal linkers (however, in addition, therefore).",
+            "Keep sentences concise; prefer clarity over complexity."
+          ]
+        },
+        report: { moves: [
+            "Introduction: Purpose and who the report is for.",
+            "Findings 1: Current situation/results.",
+            "Findings 2: Problems/positives.",
+            "Recommendations: Specific, practical suggestions."
+          ],
+          opener: "The aim of this report is to evaluate [place/system] and to suggest improvements based on recent feedback.",
+          tips: [
+            "Use headings and bullet points if allowed.",
+            "Be objective and concise; avoid personal anecdotes.",
+            "Use formal register: 'It is recommended that…'"
+          ]
+        },
+        review: { moves: [
+            "Intro: Title/creator/genre + overall verdict.",
+            "Paragraph 1: Brief summary (no spoilers).",
+            "Paragraph 2: Evaluation (strengths/weaknesses).",
+            "Conclusion: Who would enjoy it + rating."
+          ],
+          opener: "[Title] is a [genre] that succeeds because of its [feature], offering a [tone] experience for the audience.",
+          tips: [
+            "Balance description and evaluation.",
+            "Use precise adjectives and avoid repetition.",
+            "End with a clear recommendation."
+          ]
+        },
+        letter: { moves: [
+            "Greeting (Dear Sir/Madam / Dear Ms X).",
+            "Opening: Reason for writing.",
+            "Body: Key points in logical order.",
+            "Closing: Action/request + formal sign-off."
+          ],
+          opener: "Dear Sir or Madam, I am writing to enquire about [topic], particularly regarding [specific detail].",
+          tips: [
+            "Match tone to the reader; use formal phrases.",
+            "Close with: 'I look forward to your response.'",
+            "Sign off: 'Yours faithfully' (unknown name) / 'Yours sincerely' (known name)."
+          ]
+        }
+      },
+      C1: {
+        essay: { moves: [
+            "Introduction: Contextualise the issue; define the scope.",
+            "Body 1: Develop first argument with analysis and support.",
+            "Body 2: Counter-argument or complementary argument with synthesis.",
+            "Conclusion: Weigh points; deliver a nuanced final stance."
+          ],
+          opener: "While opinions differ regarding [topic], this essay argues that [your position] because [reason(s)], provided that [qualifier if needed].",
+          tips: [
+            "Use a wide range of cohesive devices (nevertheless, consequently).",
+            "Develop ideas with cause–effect and exemplification.",
+            "Maintain precise register; avoid vague verbs."
+          ]
+        },
+        report: { moves: [
+            "Purpose & methods (who/what/when).",
+            "Findings (data + patterns).",
+            "Analysis (implications/causes).",
+            "Recommendations (prioritised, actionable)."
+          ],
+          opener: "This report assesses [programme/process] using [method], highlighting key outcomes and areas requiring action.",
+          tips: [
+            "Use data where possible (percentages, trends).",
+            "Prioritise recommendations and justify them.",
+            "Avoid first-person unless specified."
+          ]
+        },
+        review: { moves: [
+            "Hook + brief context.",
+            "Overview (no spoilers) + craft elements (style, pacing, voice).",
+            "Evaluation (themes, impact) with examples.",
+            "Verdict (audience + comparative judgement)."
+          ],
+          opener: "Combining [quality] with [quality], [Title] interrogates [theme] and ultimately delivers a compelling [genre] experience.",
+          tips: [
+            "Vary sentence structure for rhythm and emphasis.",
+            "Use precise terminology (narrator, motif, register).",
+            "Compare/contrast with similar works for depth."
+          ]
+        },
+        letter: { moves: [
+            "Appropriate salutation + clear purpose.",
+            "Developed points with well-sequenced paragraphs.",
+            "Tone/register control for the reader and purpose.",
+            "Close with a firm next step and formal sign-off."
+          ],
+          opener: "Dear [Title + Surname], I am writing in connection with [topic], and I would appreciate clarification on [specific details].",
+          tips: [
+            "Maintain formal register throughout.",
+            "Employ hedging where appropriate (I would suggest / It appears that…).",
+            "End with a clear call to action."
+          ]
+        }
+      }
+    };
+
+    function renderScaffold() {
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      const data = SCAFFOLDS[lvl][typ];
+
+      document.getElementById('scMoves').innerHTML = data.moves.map(m => `<li>${escapeHtml(m)}</li>`).join('');
+      document.getElementById('scOpener').textContent = data.opener;
+      document.getElementById('scTips').innerHTML = data.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+    }
+
+    function copyScaffold() {
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      const d = SCAFFOLDS[lvl][typ];
+      const txt = `Scaffold (${lvl} ${typ})
+1) ${d.moves[0]}
+2) ${d.moves[1]}
+3) ${d.moves[2]}
+4) ${d.moves[3]}`;
+      navigator.clipboard?.writeText(txt);
+      alert("Scaffold copied.");
+    }
+    function copyOpener() {
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      navigator.clipboard?.writeText(SCAFFOLDS[lvl][typ].opener);
+      alert("Opener copied.");
+    }
+    function exportScaffoldPDF() {
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) { alert("PDF library failed to load."); return; }
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      const d = SCAFFOLDS[lvl][typ];
+      const margin = 48; let y = margin;
+
+      doc.setFont("Helvetica","bold"); doc.setFontSize(16);
+      doc.text(`Cambridge Scaffold – ${lvl.toUpperCase()} ${typ}`, margin, y); y += 18;
+
+      doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+      doc.text("Recommended moves:", margin, y); y += 14;
+      d.moves.forEach((m, i) => {
+        const lines = doc.splitTextToSize(`${i+1}) ${m}`, 595 - margin*2);
+        doc.text(lines, margin, y); y += 14 + (lines.length-1)*12;
+      });
+
+      y += 6; doc.setFont("Helvetica","bold"); doc.text("Opener:", margin, y); y += 14;
+      doc.setFont("Helvetica","normal");
+      doc.text(doc.splitTextToSize(d.opener, 595 - margin*2), margin, y); y += 28;
+
+      doc.setFont("Helvetica","bold"); doc.text("Tips:", margin, y); y += 14;
+      doc.setFont("Helvetica","normal");
+      d.tips.forEach((t) => {
+        const lines = doc.splitTextToSize("• " + t, 595 - margin*2);
+        doc.text(lines, margin, y); y += 14 + (lines.length-1)*12;
+      });
+
+      doc.save(`scaffold-${lvl}-${typ}.pdf`);
+    }
+
+    /* ========== Utilities ========== */
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
     const hasFiniteVerb = (s) => {
       const aux = /\b(am|is|are|was|were|be|been|being|do|does|did|has|have|had|can|could|will|would|shall|should|may|might|must)\b/i;
-      const finite = /\b\w+(ed|s)\b/i;     // walked, writes, continues, etc.
+      const finite = /\b\w+(ed|s)\b/i;
       return aux.test(s) || finite.test(s);
     };
 
-    // === Main corrector (with conjunctive adverbs + FANBOYS + subordination) ===
+    /* ========== Corrector + Intro commas + Conj. adverbs + Alternatives ========== */
+    const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
+    const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
+
+    const FANBOYS = ["for","and","nor","but","or","yet","so"];
+    const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
+    const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
+
+    const ALT_MAP = {
+      base: {
+        "good": ["effective","beneficial","favourable","advantageous"],
+        "bad": ["detrimental","problematic","adverse","unsatisfactory"],
+        "big": ["significant","substantial","considerable"],
+        "small": ["limited","modest","minor"],
+        "a lot": ["a great deal","a considerable amount","substantially"],
+        "very": ["highly","particularly","notably"],
+        "really": ["truly","genuinely"],
+        "show": ["demonstrate","illustrate","reveal","indicate"],
+        "help": ["facilitate","support","enable","assist"],
+        "get": ["obtain","receive","acquire"],
+        "make": ["create","produce","generate"],
+        "do": ["carry out","conduct","perform"],
+        "say": ["state","argue","contend","maintain"],
+        "need": ["require","necessitate"],
+        "use": ["utilise","employ","apply"],
+        "problem": ["issue","challenge","difficulty","obstacle"],
+        "solution": ["remedy","approach","measure","intervention"],
+        "idea": ["concept","notion","proposal"],
+        "thing": ["aspect","element","factor","component"]
+      },
+      c1plus: {
+        "important": ["crucial","vital","essential","pivotal","salient"],
+        "because": ["since","as","given that"],
+        "so": ["therefore","thus","consequently"],
+        "but": ["however","nevertheless","nonetheless"],
+        "try": ["attempt","endeavour","seek to"],
+        "start": ["commence","initiate"],
+        "end": ["conclude","terminate"],
+        "useful": ["beneficial","advantageous"],
+        "many": ["numerous","a multitude of"],
+        "change": ["alter","modify","transform"]
+      }
+    };
+
+    function makeWordRegex(word) {
+      return new RegExp(`\\b${word.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\b`,'gi');
+    }
+    function buildAlternatives(text, level) {
+      const alts = [];
+      const dicts = [ALT_MAP.base, ...(level === 'C1' ? [ALT_MAP.c1plus] : [])];
+      dicts.forEach(dict => {
+        Object.entries(dict).forEach(([simple, options]) => {
+          const re = makeWordRegex(simple);
+          if (re.test(text)) alts.push({ simple, options });
+        });
+      });
+      return alts;
+    }
+
     const correct = (text, lvl) => {
-      if (!text || !text.trim()) return { out: "", notes: [] };
+      if (!text || !text.trim()) return { out: "", notes: [], alts: [] };
       let out = text.trim();
       const notes = [];
 
-      // 1) Contractions → formal
+      // Contractions → formal
       const CONTRACTIONS = {
-        "can't": "cannot","won't": "will not","don't": "do not","doesn't": "does not","didn't": "did not",
-        "isn't": "is not","aren't": "are not","it's": "it is","I'm": "I am","you're": "you are",
-        "we're": "we are","they're": "they are","I've": "I have","we've": "we have","they've": "they have"
+        "can't":"cannot","won't":"will not","don't":"do not","doesn't":"does not","didn't":"did not",
+        "isn't":"is not","aren't":"are not","it's":"it is","I'm":"I am","you're":"you are",
+        "we're":"we are","they're":"they are","I've":"I have","we've":"we have","they've":"they have"
       };
       for (const [k,v] of Object.entries(CONTRACTIONS)) {
         const re = new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\$&")}\\b`, "gi");
@@ -86,7 +413,7 @@
         if (out !== before) notes.push("Expanded contractions for formality.");
       }
 
-      // 2) Informality / fillers
+      // Informality & fillers
       [
         { re:/\bkids\b/gi, rep:"children" },
         { re:/\ba lot of\b/gi, rep:"many" },
@@ -106,108 +433,126 @@
         if (re.test(out)) { out = out.replace(re,""); notes.push("Removed fillers."); }
       });
 
-      // 3) Trim spacing around punctuation
+      // Spacing around punctuation
       const beforeSpace = out;
       out = out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
       if (out !== beforeSpace) notes.push("Normalised spacing.");
 
-      // 4) Capitalise sentence starts
+      // Capitalise sentence starts
       const beforeCap = out;
       out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m,p1,p2)=> p1 + p2.toUpperCase());
       if (out !== beforeCap) notes.push("Capitalised sentence start.");
 
-      // 5) Clause punctuation
+      // Clause punctuation rules
+      const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
+      const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
       const FANBOYS = ["for","and","nor","but","or","yet","so"];
       const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
       const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
 
-      const punctuateClauses = (text) =>
-        text.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
-          let s = core.trim();
+      const punctuate = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
+        let s = core.trim();
 
-          // A) Conjunctive adverb between two clauses → "; however, "
-          // We look for any CADV word and rebuild around it if both sides look like clauses.
-          for (const adv of CADV) {
-            const re = new RegExp(`\\b${adv}\\b`, "i");
-            const hit = s.match(re);
-            if (hit) {
-              const idx = hit.index;
-              const word = hit[0];
-              const left = s.slice(0, idx).replace(/[ ,;]+$/,"").trim();
-              const right = s.slice(idx + word.length).replace(/^[ ,;]+/,"").trim();
-              if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
-                s = `${left}; ${word}, ${right}`;
-                break; // one CADV per sentence handled is enough
-              }
+        // Introductory phrases → comma
+        for (const phrase of INTRO_PHRASES) {
+          if (s.toLowerCase().startsWith(phrase.toLowerCase() + " ") && !s.startsWith(phrase + ",")) {
+            s = phrase + ", " + s.slice(phrase.length + 1).trimStart();
+            notes.push("Added comma after introductory phrase.");
+            break;
+          }
+        }
+        // Introductory single words → comma
+        if (!/^.+?,/.test(s)) {
+          const firstWord = (s.match(/^\w+/) || [""])[0];
+          if (INTRO_SINGLE.includes(firstWord)) {
+            const rest = s.slice(firstWord.length).trimStart();
+            s = firstWord + ", " + rest;
+            notes.push("Added comma after introductory adverb.");
+          }
+        }
+
+        // Conj. adverb between two clauses → "; however, ..."
+        for (const adv of CADV) {
+          const re = new RegExp(`\\b${adv}\\b`, "i");
+          const hit = s.match(re);
+          if (hit) {
+            const idx = hit.index;
+            const word = hit[0];
+            const left = s.slice(0, idx).replace(/[ ,;]+$/,"").trim();
+            const right = s.slice(idx + word.length).replace(/^[ ,;]+/,"").trim();
+            if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
+              s = `${left}; ${word}, ${right}`;
+              break;
             }
           }
+        }
 
-          // B) Fronted subordinate clause → comma after it (if missing)
-          const firstWord = (s.match(/^\w+/) || [""])[0].toLowerCase();
-          if (SUBORD.includes(firstWord) && !/,/.test(s)) {
-            const tokens = s.split(/\s+/);
-            const starters = ["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"];
-            let insertAt = -1;
-            for (let i = 3; i < Math.min(tokens.length, 20); i++) {
-              if (starters.includes(tokens[i]?.toLowerCase())) { insertAt = i; break; }
-            }
-            if (insertAt > -1) {
-              tokens.splice(insertAt, 0, ",");
-              s = tokens.join(" ");
+        // Fronted subordinator → comma after
+        const first = (s.match(/^\w+/) || [""])[0].toLowerCase();
+        if (SUBORD.includes(first) && !/,/.test(s)) {
+          const tokens = s.split(/\s+/);
+          const starters = ["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"];
+          let insertAt = -1;
+          for (let i = 3; i < Math.min(tokens.length, 20); i++) {
+            if (starters.includes(tokens[i]?.toLowerCase())) { insertAt = i; break; }
+          }
+          if (insertAt > -1) {
+            tokens.splice(insertAt, 0, ",");
+            s = tokens.join(" ");
+          }
+        }
+
+        // Independent ,/Ø FANBOYS independent → comma before FANBOYS
+        for (const cj of FANBOYS) {
+          const pos = s.toLowerCase().indexOf(` ${cj} `);
+          if (pos > -1 && !new RegExp(`,\\s+${cj}\\b`, "i").test(s)) {
+            const left = s.slice(0, pos).trim();
+            const right = s.slice(pos + cj.length + 2).trim();
+            if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
+              s = left.replace(/\s+$/,"") + ", " + cj + " " + right.replace(/^,?\s*/, "");
             }
           }
+        }
 
-          // C) Independent ,/Ø FANBOYS independent → ensure comma before FANBOYS
-          for (const cj of FANBOYS) {
-            const pos = s.toLowerCase().indexOf(` ${cj} `);
-            if (pos > -1 && !new RegExp(`,\\s+${cj}\\b`, "i").test(s)) {
-              const left = s.slice(0, pos).trim();
-              const right = s.slice(pos + cj.length + 2).trim();
-              if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
-                s = left.replace(/\s+$/,"") + ", " + cj + " " + right.replace(/^,?\s*/, "");
-              }
-            }
-          }
-
-          return s + (end || "");
-        });
+        return s + (end || "");
+      });
 
       const beforeClause = out;
-      out = punctuateClauses(out);
+      out = punctuate(out);
       if (out !== beforeClause) notes.push("Inserted clause punctuation (commas/semicolons).");
 
-      // 6) Final punctuation
+      // Final punctuation
       if (!/[.!?]$/.test(out)) { out += "."; notes.push("Added final full stop."); }
 
-      // 7) Level tweak
+      // Level tweak
       if (lvl === "B2") {
         const beforeLvl = out;
         out = out.replace(/\bnotwithstanding\b/gi, "however");
         if (out !== beforeLvl) notes.push("Simplified advanced connector for B2.");
       }
 
-      return { out: out.trim(), notes };
+      const alts = buildAlternatives(out, lvl === 'C1' ? 'C1' : 'B2');
+      return { out: out.trim(), notes, alts };
     };
 
-    // === Button handlers (global) ===
+    /* ========== Corrector handlers ========== */
     window.runCorrection = function () {
       try {
         const text = document.getElementById("inputText").value;
         const lvl  = document.getElementById("levelSelect").value;
-        const { out, notes } = correct(text, lvl);
+        const { out, notes, alts } = correct(text, lvl);
         document.getElementById("outputText").value = out;
         document.getElementById("notes").innerHTML =
-          "<b>Changes:</b><br>" + (notes.length ? notes.map(n => "• " + n).join("<br>") : "(No changes)");
-      } catch (e) {
-        alert("Error while correcting: " + e.message);
-        console.error(e);
-      }
+          "<b>Changes:</b><br>" + (notes.length ? notes.map(n => "• " + n).join("<br>") : "(No major changes)");
+        renderAlternatives(out, alts, lvl);
+      } catch (e) { alert("Error while correcting: " + e.message); console.error(e); }
     };
 
     window.clearAll = function () {
       document.getElementById("inputText").value = "";
       document.getElementById("outputText").value = "";
       document.getElementById("notes").innerHTML = "<b>Changes:</b><br><span class='hint'>Cleared.</span>";
+      document.getElementById("altList").innerHTML = "After correction, suggested upgrades will appear here (especially for C1/C2).";
     };
 
     window.downloadPDF = function () {
@@ -227,18 +572,53 @@
         doc.text(lines, margin, y);
 
         doc.save("essay-corrected.pdf");
-      } catch (e) {
-        alert("Could not create PDF: " + e.message);
-        console.error(e);
-      }
+      } catch (e) { alert("Could not create PDF: " + e.message); console.error(e); }
     };
+
+    /* ========== Alternatives rendering & applying ========== */
+    function renderAlternatives(currentText, alts, level) {
+      const box = document.getElementById("altList");
+      if (!alts.length) { box.innerHTML = "<span class='hint'>No suggestions for this text. Try a longer paragraph.</span>"; return; }
+
+      const containers = [];
+      alts.forEach(({ simple, options }) => {
+        const section = document.createElement('div');
+        section.className = 'alt-section';
+        const title = document.createElement('h4');
+        title.textContent = `“${simple}” → consider:`;
+        section.appendChild(title);
+
+        options.slice(0, level === 'C1' ? 6 : 4).forEach(opt => {
+          const chip = document.createElement('button');
+          chip.className = 'chip';
+          chip.textContent = opt;
+          chip.onclick = () => {
+            const re = makeWordRegex(simple);
+            const replaced = (document.getElementById("outputText").value || currentText).replace(re, (m) => {
+              const firstCap = m[0] === m[0].toUpperCase();
+              return firstCap ? opt[0].toUpperCase() + opt.slice(1) : opt;
+            });
+            document.getElementById("outputText").value = replaced;
+          };
+          section.appendChild(chip);
+        });
+
+        containers.push(section);
+      });
+
+      box.innerHTML = "";
+      containers.forEach(c => box.appendChild(c));
+    }
+
+    /* ========== Initial render ========== */
+    renderScaffold();
+
+    /* ========== PWA: Register Service Worker (GitHub Pages path-aware) ========== */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/alfons149-cmyk/sw.js').catch(console.error);
+      });
+    }
   </script>
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/alfons149-cmyk/sw.js').catch(console.error);
-    });
-  }
-</script>
 </body>
 </html>
