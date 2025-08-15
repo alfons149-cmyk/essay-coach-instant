@@ -233,5 +233,12 @@
       }
     };
   </script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/alfons149-cmyk/sw.js').catch(console.error);
+    });
+  }
+</script>
 </body>
 </html>
