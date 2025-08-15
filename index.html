@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EssayCoach – Cambridge Toolkit (Instant)</title>
 
-  <!-- Favicon / app icon -->
-  <link rel="icon" type="image/png" href="icon-192.png" />
+  <!-- Icons (ensure these files exist at repo root) -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <!-- PWA: manifest + theme color -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111111" />
 
   <style>
-    :root { --b:#111; --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --border:#e5e7eb; --tap: 14px; }
+    :root { --b:#111; --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --border:#e5e7eb; }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: var(--bg); color:#111; }
     .wrap { max-width: 980px; margin: 0 auto; padding: clamp(16px, 4vw, 24px); }
@@ -24,8 +25,7 @@
     .card { background: var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(12px, 3.2vw, 16px); }
     .row { display:flex; gap:8px; flex-wrap:wrap; }
     textarea, select, button {
-      font: inherit; padding: 12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff;
-      min-height: 44px;
+      font: inherit; padding: 12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff; min-height: 44px;
     }
     textarea { width: 100%; resize: vertical; }
     button { cursor: pointer; }
@@ -43,7 +43,7 @@
 <body>
   <div class="wrap">
     <h1>EssayCoach – Cambridge Toolkit</h1>
-    <p class="sub">Scaffolds • Corrector (B2/C1) • Vocabulary alternatives • PDF export • Clear</p>
+    <p class="sub">Scaffolds • Corrector (B2/C1) • Vocabulary alternatives • PDF export • Clear • Installable PWA</p>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -336,14 +336,7 @@
       return aux.test(s) || finite.test(s);
     };
 
-    /* ========== Corrector + Intro commas + Conj. adverbs + Alternatives ========== */
-    const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
-    const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
-
-    const FANBOYS = ["for","and","nor","but","or","yet","so"];
-    const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
-    const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
-
+    /* ========== Alternatives dictionary ========== */
     const ALT_MAP = {
       base: {
         "good": ["effective","beneficial","favourable","advantageous"],
@@ -395,12 +388,19 @@
       return alts;
     }
 
+    /* ========== Corrector (with Intro comma + Conj. adverb + FANBOYS + Subordination) ========== */
+    const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
+    const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
+    const FANBOYS = ["for","and","nor","but","or","yet","so"];
+    const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
+    const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
+
     const correct = (text, lvl) => {
       if (!text || !text.trim()) return { out: "", notes: [], alts: [] };
       let out = text.trim();
       const notes = [];
 
-      // Contractions → formal
+      // 1) Contractions → formal
       const CONTRACTIONS = {
         "can't":"cannot","won't":"will not","don't":"do not","doesn't":"does not","didn't":"did not",
         "isn't":"is not","aren't":"are not","it's":"it is","I'm":"I am","you're":"you are",
@@ -413,7 +413,7 @@
         if (out !== before) notes.push("Expanded contractions for formality.");
       }
 
-      // Informality & fillers
+      // 2) Informality & fillers
       [
         { re:/\bkids\b/gi, rep:"children" },
         { re:/\ba lot of\b/gi, rep:"many" },
@@ -433,45 +433,43 @@
         if (re.test(out)) { out = out.replace(re,""); notes.push("Removed fillers."); }
       });
 
-      // Spacing around punctuation
+      // 3) Normalise spacing around punctuation
       const beforeSpace = out;
       out = out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
       if (out !== beforeSpace) notes.push("Normalised spacing.");
 
-      // Capitalise sentence starts
+      // 4) Capitalise sentence starts
       const beforeCap = out;
       out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m,p1,p2)=> p1 + p2.toUpperCase());
       if (out !== beforeCap) notes.push("Capitalised sentence start.");
 
-      // Clause punctuation rules
-      const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
-      const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
-      const FANBOYS = ["for","and","nor","but","or","yet","so"];
-      const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
-      const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
-
-      const punctuate = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
+      // 5) Introductory comma rule (single words & phrases at sentence start)
+      out = out.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
         let s = core.trim();
 
-        // Introductory phrases → comma
+        // Phrases: e.g., "In addition ", "For example "
         for (const phrase of INTRO_PHRASES) {
-          if (s.toLowerCase().startsWith(phrase.toLowerCase() + " ") && !s.startsWith(phrase + ",")) {
-            s = phrase + ", " + s.slice(phrase.length + 1).trimStart();
-            notes.push("Added comma after introductory phrase.");
-            break;
-          }
+          const re = new RegExp(`^(${phrase})\\s+(?!,)`, "i");
+          if (re.test(s)) { s = s.replace(re, `$1, `); if (!/intro phrase/i.test(m)) {} }
         }
-        // Introductory single words → comma
-        if (!/^.+?,/.test(s)) {
-          const firstWord = (s.match(/^\w+/) || [""])[0];
-          if (INTRO_SINGLE.includes(firstWord)) {
-            const rest = s.slice(firstWord.length).trimStart();
-            s = firstWord + ", " + rest;
-            notes.push("Added comma after introductory adverb.");
-          }
+        // Singles: e.g., "First ", "However "
+        const firstWordMatch = s.match(/^(\w+)\s+(?!,)/);
+        if (firstWordMatch) {
+          const fw = firstWordMatch[1];
+          if (INTRO_SINGLE.includes(fw)) s = s.replace(/^(\w+)\s+(?!,)/, `$1, `);
         }
+        return s + (end || "");
+      });
+      // Record once if we added any intro commas
+      if (/^(?:\s*(?:First|Firstly|Second|Secondly|Third|Finally|Next|Then|Afterwards|Overall|Currently|Recently|Ultimately|Consequently|Therefore|However|Moreover|Furthermore|Nevertheless|Meanwhile|Instead|Still)\s+[^,]|(?:In addition|In conclusion|In contrast|By contrast|For example|For instance|To begin with|In my opinion|On the one hand|On the other hand|As a result|In other words|At first|In general|In summary|On balance|All things considered)\s+[^,])/im.test(beforeCap)) {
+        notes.push("Added comma after introductory word/phrase.");
+      }
 
-        // Conj. adverb between two clauses → "; however, ..."
+      // 6) Clause punctuation: conjunctive adverbs, fronted subordination, FANBOYS
+      out = out.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
+        let s = core.trim();
+
+        // Conjunctive adverb between two clauses → "; however, ..."
         for (const adv of CADV) {
           const re = new RegExp(`\\b${adv}\\b`, "i");
           const hit = s.match(re);
@@ -480,10 +478,7 @@
             const word = hit[0];
             const left = s.slice(0, idx).replace(/[ ,;]+$/,"").trim();
             const right = s.slice(idx + word.length).replace(/^[ ,;]+/,"").trim();
-            if (hasFiniteVerb(left) && hasFiniteVerb(right)) {
-              s = `${left}; ${word}, ${right}`;
-              break;
-            }
+            if (hasFiniteVerb(left) && hasFiniteVerb(right)) { s = `${left}; ${word}, ${right}`; break; }
           }
         }
 
@@ -496,10 +491,7 @@
           for (let i = 3; i < Math.min(tokens.length, 20); i++) {
             if (starters.includes(tokens[i]?.toLowerCase())) { insertAt = i; break; }
           }
-          if (insertAt > -1) {
-            tokens.splice(insertAt, 0, ",");
-            s = tokens.join(" ");
-          }
+          if (insertAt > -1) { tokens.splice(insertAt, 0, ","); s = tokens.join(" "); }
         }
 
         // Independent ,/Ø FANBOYS independent → comma before FANBOYS
@@ -517,20 +509,17 @@
         return s + (end || "");
       });
 
-      const beforeClause = out;
-      out = punctuate(out);
-      if (out !== beforeClause) notes.push("Inserted clause punctuation (commas/semicolons).");
-
-      // Final punctuation
+      // 7) Final punctuation
       if (!/[.!?]$/.test(out)) { out += "."; notes.push("Added final full stop."); }
 
-      // Level tweak
+      // 8) Level tweak (simplify for B2)
       if (lvl === "B2") {
         const beforeLvl = out;
         out = out.replace(/\bnotwithstanding\b/gi, "however");
         if (out !== beforeLvl) notes.push("Simplified advanced connector for B2.");
       }
 
+      // 9) Vocabulary alternatives based on corrected text
       const alts = buildAlternatives(out, lvl === 'C1' ? 'C1' : 'B2');
       return { out: out.trim(), notes, alts };
     };
@@ -613,7 +602,7 @@
     /* ========== Initial render ========== */
     renderScaffold();
 
-    /* ========== PWA: Register Service Worker (GitHub Pages path-aware) ========== */
+    /* ========== PWA: Register Service Worker (path-aware for GitHub Pages) ========== */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/alfons149-cmyk/sw.js').catch(console.error);
