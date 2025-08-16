@@ -14,15 +14,7 @@
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
   ],
   "shortcuts": [
-    {
-      "name": "Correct text",
-      "short_name": "Correct",
-      "url": "/alfons149-cmyk/#corrector"
-    },
-    {
-      "name": "Scaffolds",
-      "short_name": "Scaffolds",
-      "url": "/alfons149-cmyk/#scaffolds"
-    }
+    { "name": "Corrector", "short_name": "Correct", "url": "/alfons149-cmyk/#corrector" },
+    { "name": "Scaffolds", "short_name": "Scaffolds", "url": "/alfons149-cmyk/#scaffolds" }
   ]
 }
