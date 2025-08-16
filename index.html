@@ -387,38 +387,6 @@
       "occassion":"occasion","posession":"possession","untill":"until","writting":"writing"
     };
 
-    <script>
-// Conservative formal register upgrader
-// - Avoids heavy paraphrase; only safe replacements
-// - Adds notes describing what changed
-const FORMAL_MAP = [
-  { re: /\bkids\b/gi, rep: "children", note: "Replaced informal 'kids' with 'children'." },
-  { re: /\bOK\b|\bokay\b/gi, rep: "acceptable", note: "Replaced 'OK/okay' with 'acceptable'." },
-  { re: /\b(a lot of)\b/gi, rep: "many", note: "Replaced 'a lot of' with 'many'." },
-  { re: /\ba lot\b/gi, rep: "substantially", note: "Adjusted 'a lot' to a more formal adverb." },
-  { re: /\bstuff\b/gi, rep: "items", note: "Replaced 'stuff' with 'items'." },
-  { re: /\bthings\b/gi, rep: "aspects", note: "Replaced vague 'things' with 'aspects'." },
-  { re: /\bgonna\b/gi, rep: "going to", note: "Expanded 'gonna' to 'going to'." },
-  { re: /\bwanna\b/gi, rep: "want to", note: "Expanded 'wanna' to 'want to'." },
-  { re: /\bguy\b/gi, rep: "person", note: "Replaced 'guy' with 'person'." },
-  { re: /\bsort of\b|\bkinda\b|\bkind of\b/gi, rep: "", note: "Removed hedging ('sort of/kinda')." },
-  { re: /\breally\b/gi, rep: "highly", note: "Upgraded 'really' to 'highly' in formal register." },
-  { re: /\bvery\b/gi, rep: "particularly", note: "Upgraded 'very' to 'particularly'." }
-];
-
-function formalizeRegister(text, notes) {
-  let out = text;
-  for (const rule of FORMAL_MAP) {
-    if (rule.re.test(out)) {
-      out = out.replace(rule.re, rule.rep);
-      notes.push(rule.note);
-    }
-  }
-  return out;
-}
-</script>
-
-
     /* ---------- Optional big word list ---------- */
     const SMALL_DICT = new Set([
       "a","an","the","and","or","but","however","therefore","moreover","nevertheless","because","since","although","though",
