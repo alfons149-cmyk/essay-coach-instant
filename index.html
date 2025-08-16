@@ -1,159 +1,545 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Essay Coach</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit (PWA)</title>
+
+  <!-- Icons -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon-192.png" type="image/png" />
+  <meta name="theme-color" content="#111111" />
+
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; line-height: 1.5; background:#f9fafb;}
-    h1 { text-align: center; font-size:1.5rem; }
-    textarea { width: 100%; min-height: 160px; padding:0.5rem; margin:0.5rem 0; border-radius:8px; border:1px solid #ccc;}
-    select, button { padding:0.5rem 1rem; margin:0.25rem; border-radius:6px; border:1px solid #333; }
-    button.primary { background:#2563eb; color:white; border:none; }
-    button.secondary { background:#f3f4f6; }
-    #notes { background:#fff; padding:0.5rem; border:1px solid #ddd; margin-top:0.5rem; border-radius:6px; font-size:0.9rem;}
-    #altList { margin-top:1rem; }
-    .alt-section h4 { margin:0.5rem 0; font-size:1rem; }
-    .chip { display:inline-block; margin:0.25rem; padding:0.25rem 0.5rem; border-radius:12px; background:#e5e7eb; border:none; cursor:pointer; }
-    .hint { color:#666; font-size:0.85rem;}
+    :root { --b:#111; --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --border:#e5e7eb; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:var(--bg); color:#111; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: clamp(16px,4vw,24px); }
+    h1 { margin: 0 0 6px; font-size: clamp(22px,3.6vw,28px); }
+    .sub { color: var(--muted); margin: 0 0 16px; font-size: clamp(13px,2.8vw,14px); }
+
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .tab { padding: 12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; font-size:14px; min-height:44px; }
+    .tab.active { background: var(--b); color:#fff; border-color: var(--b); }
+
+    .card { background: var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(12px,3.2vw,16px); }
+    .row { display:flex; gap:8px; flex-wrap:wrap; }
+    .cols { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+
+    textarea, select, button { font:inherit; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff; min-height:44px; }
+    textarea { width:100%; resize:vertical; }
+    button { cursor:pointer; }
+    button.primary { background: var(--b); color:#fff; border-color: var(--b); }
+    .notes { margin-top:10px; background:#f3f4f6; padding:10px; border-radius:10px; border:1px solid var(--border); }
+    .hint { color:var(--muted); font-size:12px; margin-top:6px; }
+    ul, ol { margin-top:6px; padding-left:20px; }
+
+    .chip { display:inline-block; padding:8px 12px; border:1px solid var(--border); border-radius:999px; background:#fff; margin:6px 8px 0 0; cursor:pointer; font-size:14px; min-height:38px; }
+    .chip:hover { background:#f3f4f6; }
+    .alt-section h4 { margin:12px 0 6px; font-size:14px; color:#333; }
+
+    .toggle { display:flex; align-items:center; gap:8px; margin-top:6px; font-size:14px; }
   </style>
 </head>
 <body>
-  <h1>Essay Coach</h1>
+  <div class="wrap">
+    <h1>EssayCoach – Cambridge Toolkit</h1>
+    <p class="sub">Scaffolds • Corrector (B2/C1) • Formal tone • Safer spelling + a/an • Clause punctuation • Alternatives • PDF • PWA</p>
 
-  <label for="levelSelect">Select Level:</label>
-  <select id="levelSelect">
-    <option value="B2">B2 First</option>
-    <option value="C1">C1 Advanced</option>
-  </select>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tab-scaffolds" onclick="showTab('scaffolds')">Scaffolds</button>
+      <button class="tab" id="tab-corrector" onclick="showTab('corrector')">Corrector</button>
+    </div>
 
-  <textarea id="inputText" placeholder="Write your essay text here..."></textarea>
+    <!-- SCAFFOLDS -->
+    <section id="view-scaffolds">
+      <div class="card" style="margin-bottom:12px">
+        <div class="cols">
+          <label>
+            <div style="color:#6b7280;font-size:14px;margin-bottom:6px">Level</div>
+            <select id="scLevel" onchange="renderScaffold()">
+              <option value="B2">B2 First</option>
+              <option value="C1">C1 Advanced</option>
+            </select>
+          </label>
 
-  <div>
-    <button class="primary" onclick="runCorrection()">Correct</button>
-    <button class="secondary" onclick="clearText()">Clear</button>
-    <button class="secondary" onclick="exportPDF()">Export PDF</button>
+          <label>
+            <div style="color:#6b7280;font-size:14px;margin-bottom:6px">Task type</div>
+            <select id="scType" onchange="renderScaffold()">
+              <option value="essay">Essay</option>
+              <option value="report">Report</option>
+              <option value="review">Review</option>
+              <option value="letter">Formal letter/email</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button onclick="copyScaffold()">Copy scaffold</button>
+          <button onclick="copyOpener()">Copy opener</button>
+          <button onclick="exportScaffoldPDF()">Export scaffold as PDF</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0">Recommended moves (4-part structure)</h3>
+        <ol id="scMoves"></ol>
+
+        <h3 style="margin:16px 0 6px">Useful opener (example)</h3>
+        <div id="scOpener" class="notes"></div>
+
+        <h3 style="margin:16px 0 6px">Tips</h3>
+        <ul id="scTips"></ul>
+        <div class="hint">Choose level and task to update the scaffold. You can copy or export to PDF.</div>
+      </div>
+    </section>
+
+    <!-- CORRECTOR -->
+    <section id="view-corrector" style="display:none">
+      <div class="card" style="margin-bottom:12px">
+        <label style="display:block;margin-bottom:8px">
+          <div style="color:#6b7280;font-size:14px;margin-bottom:6px">Level</div>
+          <select id="levelSelect">
+            <option value="B2">B2 First</option>
+            <option value="C1">C1/C2 Advanced</option>
+          </select>
+        </label>
+
+        <label style="display:block;margin-top:10px">
+          <div style="color:#6b7280;font-size:14px;margin-bottom:6px">Input</div>
+          <textarea id="inputText" rows="7" placeholder="Type or paste your text here..."></textarea>
+        </label>
+
+        <div class="row" style="margin-top:10px">
+          <button class="primary" onclick="runCorrection()">Correct</button>
+          <button onclick="downloadPDF()">Export PDF</button>
+          <button onclick="clearAll()">Clear</button>
+        </div>
+
+        <label class="toggle">
+          <input type="checkbox" id="formalToggle" checked />
+          <span>Enforce formal tone (avoid slang/colloquialisms)</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="aiToggle" checked />
+          <span>Use AI (ChatGPT) for deeper corrections (requires Worker URL)</span>
+        </label>
+
+        <div class="hint" style="margin-top:6px">
+          Try: “It was late however we continued the discussion” → “It was late; however, we continued the discussion.” •
+          “First I would like to…” → “First, I would like to…” •
+          “a apple” → “an apple” • “whot” → “what”
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="color:#6b7280;font-size:14px;margin-bottom:6px">Corrected Output</div>
+        <textarea id="outputText" rows="7" readonly placeholder="Your corrected text will appear here..."></textarea>
+
+        <div class="notes" id="notes"><b>Changes:</b><br><span class="hint">Corrections will appear here after you click “Correct”.</span></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 6px">Vocabulary alternatives (click to apply)</h3>
+        <div id="altList" class="hint">After correction, suggested upgrades will appear here (especially for C1/C2).</div>
+      </div>
+    </section>
   </div>
 
-  <textarea id="outputText" placeholder="Corrected text will appear here..."></textarea>
+  <!-- jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
-  <div id="notes">(Notes will appear here)</div>
-  <div id="altList"></div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    const AI_ENDPOINT = "https://YOUR-WORKER-SUBDOMAIN.workers.dev"; // set to your Cloudflare Worker URL
+    /* ========= Configure your AI endpoint (Cloudflare Worker URL) ========= */
+    const AI_ENDPOINT = "https://YOUR-WORKER-SUBDOMAIN.workers.dev"; // set this to enable AI-first
 
-    // ==== FORMAL MAP ====
-    const FORMAL_MAP = [
-      { re: /\bkids\b/gi, rep: "children", note: "Replaced informal 'kids' with 'children'." },
-      { re: /\bOK\b|\bokay\b/gi, rep: "acceptable", note: "Replaced 'OK/okay' with 'acceptable'." },
-      { re: /\ba lot of\b/gi, rep: "many", note: "Replaced 'a lot of' with 'many'." },
-      { re: /\blots of\b/gi, rep: "many", note: "Replaced 'lots of' with 'many'." },
-      { re: /\btons of\b/gi, rep: "a large number of", note: "Replaced 'tons of'." },
-      { re: /\bstuff\b/gi, rep: "items", note: "Replaced 'stuff' with 'items'." },
-      { re: /\bthings\b/gi, rep: "aspects", note: "Replaced vague 'things' with 'aspects'." },
-      { re: /\bgonna\b/gi, rep: "going to", note: "Expanded 'gonna' to 'going to'." },
-      { re: /\bwanna\b/gi, rep: "want to", note: "Expanded 'wanna' to 'want to'." },
-      { re: /\bguys?\b/gi, rep: "people", note: "Replaced 'guy/guys' with 'people'." },
-      { re: /\bpretty\b(?=\s+(?:good|bad|big|small|sure|clear|simple|hard)\b)/gi, rep: "fairly", note: "Replaced colloquial 'pretty' as an intensifier." },
-      { re: /\bsort of\b|\bkinda\b|\bkind of\b/gi, rep: "", note: "Removed hedging ('sort of/kinda')." },
-      { re: /\breally\b/gi, rep: "highly", note: "Upgraded 'really' to 'highly' in formal register." },
-      { re: /\bvery\b/gi, rep: "particularly", note: "Upgraded 'very' to 'particularly'." },
-      { re: /\bI think\b/gi, rep: "I consider", note: "Slightly formalised 'I think' to 'I consider'." },
-      { re: /\bI guess\b/gi, rep: "I suppose", note: "Formalised 'I guess' to 'I suppose'." }
-    ];
-
-    // ==== BASIC RULE CORRECTOR (fallback) ====
-    function correct(text, lvl) {
-      let out = text.trim();
-      const notes = [];
-
-      // contractions → full form
-      out = out.replace(/\b(can't)\b/gi,"cannot");
-      out = out.replace(/\bwon't\b/gi,"will not");
-      out = out.replace(/\bdon't\b/gi,"do not");
-      out = out.replace(/\bdoesn't\b/gi,"does not");
-      out = out.replace(/\bdidn't\b/gi,"did not");
-      out = out.replace(/\bit's\b/gi,"it is");
-      out = out.replace(/\bI'm\b/gi,"I am");
-
-      // formal map
-      FORMAL_MAP.forEach(({re,rep,note})=>{
-        if(re.test(out)){ out = out.replace(re,rep); notes.push(note); }
-      });
-
-      // Introductory comma rule
-      const INTRO_PHRASES = ["First","Firstly","In addition","For example","On the other hand","In conclusion","Moreover","Nevertheless","Consequently","As a result"];
-      INTRO_PHRASES.forEach(phrase=>{
-        const re = new RegExp(`^(${phrase})(\\s+)(?!,)`,"i");
-        if(re.test(out)){
-          out = out.replace(re,"$1, ");
-          notes.push("Added comma after introductory phrase.");
-        }
-      });
-
-      // Ensure final punctuation
-      if(!/[.!?]$/.test(out)){ out+="."; notes.push("Added final punctuation."); }
-
-      return { out, notes, alts: {} };
+    /* ========= Tabs ========= */
+    function showTab(which) {
+      const tabs = { scaffolds:['tab-scaffolds','view-scaffolds'], corrector:['tab-corrector','view-corrector'] };
+      for (const k of Object.keys(tabs)) {
+        const [tabId, viewId] = tabs[k];
+        document.getElementById(tabId).classList.toggle('active', k===which);
+        document.getElementById(viewId).style.display = (k===which?'':'none');
+      }
+      if (which==='corrector' && AI_ENDPOINT.startsWith("https://")) {
+        const t = document.getElementById('aiToggle'); if (t) t.checked = true;
+      }
     }
 
-    // ==== RUN CORRECTION (AI first, fallback to local) ====
-    window.runCorrection = async function() {
-      const text = document.getElementById("inputText").value;
-      const lvl  = document.getElementById("levelSelect").value;
-      const notesBox = document.getElementById("notes");
-      const output = document.getElementById("outputText");
+    /* ========= Scaffolds ========= */
+    const SCAFFOLDS = {
+      B2: {
+        essay: { moves: [
+            "Introduction: Paraphrase the question; give a clear opinion.",
+            "Body 1: First main point + short example/evidence.",
+            "Body 2: Second main point + short example/evidence.",
+            "Conclusion: Summarise and restate your opinion."
+          ],
+          opener: "In recent years, the question of [topic] has received considerable attention. In my view, [your opinion], because [reason].",
+          tips: [
+            "Use clear topic sentences at the start of each paragraph.",
+            "Avoid contractions and slang; use formal linkers (however, in addition, therefore).",
+            "Keep sentences concise; prefer clarity over complexity."
+          ]
+        },
+        report: { moves: [
+            "Introduction: Purpose and who the report is for.",
+            "Findings 1: Current situation/results.",
+            "Findings 2: Problems/positives.",
+            "Recommendations: Specific, practical suggestions."
+          ],
+          opener: "The aim of this report is to evaluate [place/system] and to suggest improvements based on recent feedback.",
+          tips: [
+            "Use headings and bullet points if allowed.",
+            "Be objective and concise; avoid personal anecdotes.",
+            "Use formal register: 'It is recommended that…'"
+          ]
+        },
+        review: { moves: [
+            "Intro: Title/creator/genre + overall verdict.",
+            "Paragraph 1: Brief summary (no spoilers).",
+            "Paragraph 2: Evaluation (strengths/weaknesses).",
+            "Conclusion: Who would enjoy it + rating."
+          ],
+          opener: "[Title] is a [genre] that succeeds because of its [feature], offering a [tone] experience for the audience.",
+          tips: [
+            "Balance description and evaluation.",
+            "Use precise adjectives and avoid repetition.",
+            "End with a clear recommendation."
+          ]
+        },
+        letter: { moves: [
+            "Greeting (Dear Sir/Madam / Dear Ms X).",
+            "Opening: Reason for writing.",
+            "Body: Key points in logical order.",
+            "Closing: Action/request + formal sign-off."
+          ],
+          opener: "Dear Sir or Madam, I am writing to enquire about [topic], particularly regarding [specific detail].",
+          tips: [
+            "Match tone to the reader; use formal phrases.",
+            "Close with: 'I look forward to your response.'",
+            "Sign off: 'Yours faithfully' / 'Yours sincerely'."
+          ]
+        }
+      },
+      C1: {
+        essay: { moves: [
+            "Introduction: Contextualise the issue; define the scope.",
+            "Body 1: Develop first argument with analysis and support.",
+            "Body 2: Counter-argument or complementary argument with synthesis.",
+            "Conclusion: Weigh points; deliver a nuanced final stance."
+          ],
+          opener: "While opinions differ regarding [topic], this essay argues that [your position] because [reason(s)], provided that [qualifier if needed].",
+          tips: [
+            "Use a wide range of cohesive devices (nevertheless, consequently).",
+            "Develop ideas with cause–effect and exemplification.",
+            "Maintain precise register; avoid vague verbs."
+          ]
+        },
+        report: { moves: [
+            "Purpose & methods (who/what/when).",
+            "Findings (data + patterns).",
+            "Analysis (implications/causes).",
+            "Recommendations (prioritised, actionable)."
+          ],
+          opener: "This report assesses [programme/process] using [method], highlighting key outcomes and areas requiring action.",
+          tips: [
+            "Use data where possible (percentages, trends).",
+            "Prioritise recommendations and justify them.",
+            "Avoid first-person unless specified."
+          ]
+        },
+        review: { moves: [
+            "Hook + brief context.",
+            "Overview (no spoilers) + craft elements (style, pacing, voice).",
+            "Evaluation (themes, impact) with examples.",
+            "Verdict (audience + comparative judgement)."
+          ],
+          opener: "Combining [quality] with [quality], [Title] interrogates [theme] and ultimately delivers a compelling [genre] experience.",
+          tips: [
+            "Vary sentence structure for rhythm and emphasis.",
+            "Use precise terminology (narrator, motif, register).",
+            "Compare/contrast with similar works for depth."
+          ]
+        },
+        letter: { moves: [
+            "Appropriate salutation + clear purpose.",
+            "Developed points with well-sequenced paragraphs.",
+            "Tone/register control for the reader and purpose.",
+            "Close with a firm next step and formal sign-off."
+          ],
+          opener: "Dear [Title + Surname], I am writing in connection with [topic], and I would appreciate clarification on [specific details].",
+          tips: [
+            "Maintain formal register throughout.",
+            "Employ hedging where appropriate (I would suggest / It appears that…).",
+            "End with a clear call to action."
+          ]
+        }
+      }
+    };
 
-      // Always try AI first
-      try {
-        if(AI_ENDPOINT && AI_ENDPOINT.startsWith("https://")) {
+    function renderScaffold() {
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      const data = SCAFFOLDS[lvl][typ];
+      document.getElementById('scMoves').innerHTML = data.moves.map(m => `<li>${escapeHtml(m)}</li>`).join('');
+      document.getElementById('scOpener').textContent = data.opener;
+      document.getElementById('scTips').innerHTML = data.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+    }
+
+    function copyScaffold() {
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      const d = SCAFFOLDS[lvl][typ];
+      const txt = `Scaffold (${lvl} ${typ})
+1) ${d.moves[0]}
+2) ${d.moves[1]}
+3) ${d.moves[2]}
+4) ${d.moves[3]}`;
+      navigator.clipboard?.writeText(txt); alert("Scaffold copied.");
+    }
+    function copyOpener() {
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      navigator.clipboard?.writeText(SCAFFOLDS[lvl][typ].opener);
+      alert("Opener copied.");
+    }
+    function exportScaffoldPDF() {
+      const { jsPDF } = window.jspdf || {}; if (!jsPDF) { alert("PDF lib not loaded."); return; }
+      const doc = new jsPDF({ unit:"pt", format:"a4" });
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      const d = SCAFFOLDS[lvl][typ];
+      const margin = 48; let y = margin;
+      doc.setFont("Helvetica","bold"); doc.setFontSize(16);
+      doc.text(`Cambridge Scaffold – ${lvl.toUpperCase()} ${typ}`, margin, y); y += 18;
+      doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+      doc.text("Recommended moves:", margin, y); y += 14;
+      d.moves.forEach((m,i)=>{ const lines = doc.splitTextToSize(`${i+1}) ${m}`, 595 - margin*2); doc.text(lines, margin, y); y += 14 + (lines.length-1)*12; });
+      y += 6; doc.setFont("Helvetica","bold"); doc.text("Opener:", margin, y); y += 14;
+      doc.setFont("Helvetica","normal"); doc.text(doc.splitTextToSize(d.opener, 595 - margin*2), margin, y); y += 28;
+      doc.setFont("Helvetica","bold"); doc.text("Tips:", margin, y); y += 14;
+      doc.setFont("Helvetica","normal"); d.tips.forEach((t)=>{ const lines = doc.splitTextToSize("• " + t, 595 - margin*2); doc.text(lines, margin, y); y += 14 + (lines.length-1)*12; });
+      doc.save(`scaffold-${lvl}-${typ}.pdf`);
+    }
+
+    /* ========= Utilities ========= */
+    const escapeHtml = (s)=> String(s).replace(/[&<>"']/g,(m)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+    const hasFiniteVerb = (s)=>{
+      const aux=/\b(am|is|are|was|were|be|been|being|do|does|did|has|have|had|can|could|will|would|shall|should|may|might|must)\b/i;
+      const finite=/\b\w+(ed|s)\b/i; return aux.test(s)||finite.test(s);
+    };
+    function normalizeText(s){ return String(s).replace(/[\u2018\u2019\u2032]/g,"'").replace(/[\u201C\u201D\u2033]/g,'"').replace(/&(#39|apos);/gi,"'").replace(/&quot;/gi,'"').replace(/&amp;/gi,"&").replace(/\u00A0/g," "); }
+
+    const SAFE_FUNCTION_WORDS = new Set(["a","an","the","of","to","in","on","at","by","for","from","with","as","that","than","then","and","or","but","nor","so","yet","i","you","he","she","we","they","it","me","him","her","us","them","my","your","his","her","its","our","their","mine","yours","ours","theirs","this","that","these","those","there","their","they're","who","whom","whose","which","what","is","are","was","were","be","been","being","do","does","did","has","have","had","will","would","can","could","may","might","must","should","young","community","communities","local","volunteer","volunteers","rubbish","students","people","work","enough","involved","belief","common"]);
+    const NO_TARGET = new Set([..."i,you,he,she,we,they,it,me,him,her,us,them,my,your,his,her,its,our,their,this,that,these,those".split(",")]);
+    const MISSPELLINGS = {"whot":"what","teh":"the","recieve":"receive","recieved":"received","seperate":"separate","definately":"definitely","adress":"address","occured":"occurred","wich":"which","becuase":"because","wierd":"weird","enviroment":"environment","goverment":"government","neccessary":"necessary","publically":"publicly","accomodate":"accommodate","acommodate":"accommodate","tommorow":"tomorrow","comming":"coming","alot":"a lot","realy":"really","truely":"truly","arguement":"argument","belive":"believe","concious":"conscious","dependant":"dependent","embarass":"embarrass","equiptment":"equipment","finaly":"finally","happend":"happened","labratory":"laboratory","occassion":"occasion","posession":"possession","untill":"until","writting":"writing"};
+    const SMALL_DICT = new Set(["a","an","the","and","or","but","however","therefore","moreover","nevertheless","because","since","although","though","what","which","who","whom","whose","when","where","why","how","this","that","these","those","i","you","he","she","we","they","it","people","children","students","teachers","government","society","essay","report","review","letter","introduction","conclusion","evidence","example","analysis","recommendation","time","year","day","reason","problem","solution","issue","idea","concept","result","effect","cause","good","bad","beneficial","detrimental","important","significant","necessary","possible","likely","clearly","many","much","most","some","few","several","more","less","fewer","another","make","do","say","state","argue","contend","maintain","show","demonstrate","illustrate","help","support","enable","use","utilise","employ","apply","need","require","improve","increase","decrease","reduce","create","produce","generate","university","unique","european","hour","honest","heir","FBI","MRI","MBA","UFO","idea","address","separate","receive","definitely","environment","government","necessary","tomorrow","writing","because","really","truly","publicly"]);
+    let BIG_DICT=null;
+    async function initWordlist(){ try{ const r=await fetch('wordlist-20k.txt',{cache:'no-store'}); if(r.ok){ const t=await r.text(); BIG_DICT=new Set(t.split(/\r?\n/).map(w=>w.trim().toLowerCase()).filter(Boolean)); } }catch(e){} }
+    function dictHas(wl){ return (BIG_DICT&&BIG_DICT.has(wl))||SMALL_DICT.has(wl)||SAFE_FUNCTION_WORDS.has(wl); }
+    function lev(a,b){ a=a.toLowerCase(); b=b.toLowerCase(); const m=a.length,n=b.length; if(Math.abs(m-n)>2) return 3; const dp=Array(n+1).fill(0); for(let j=0;j<=n;j++) dp[j]=j; for(let i=1;i<=m;i++){ let prev=dp[0]; dp[0]=i; for(let j=1;j<=n;j++){ const tmp=dp[j]; dp[j]=Math.min(dp[j]+1, dp[j-1]+1, prev+(a[i-1]===b[j-1]?0:1)); prev=tmp; } } return dp[n]; }
+    function preserveCase(sug,orig){ if(orig===orig.toUpperCase()) return sug.toUpperCase(); if(orig[0]===orig[0].toUpperCase()) return sug[0].toUpperCase()+sug.slice(1); return sug; }
+    function looksLikeWord(tok){ if(/-/.test(tok)) return false; if(/[A-Za-z]+'[A-Za-z]+/.test(tok)) return false; return /^[A-Za-z][A-Za-z']{1,}$/.test(tok); }
+
+    function fixAAn(text){
+      const silentH=/^(honest|honour|honor|hour|heir|herb)\b/i;
+      const youSound=/^(uni(vers|form|que|on)|u[bcdfgklmnprstvy]|euro|eure|euph|eulog|ukulele|user|use|one|once|ufo)\b/i;
+      const acronymVowelSound=/^[AEFHILMNORSX]/;
+      return text.replace(/\b([Aa]n?)\s+([A-Za-z][\w-]*)/g,(m,art,word)=>{
+        const wl=word.toLowerCase(); let shouldBeAn=/^[aeiou]/.test(wl)||silentH.test(wl);
+        if(/^[A-Z]{2,}$/.test(word)) shouldBeAn=acronymVowelSound.test(word[0]);
+        if(youSound.test(wl)) shouldBeAn=false;
+        const desired=shouldBeAn?(art[0]==='A'?'An':'an'):(art[0]==='A'?'A':'a');
+        if((art.toLowerCase()==='an')!==shouldBeAn) return desired+' '+word;
+        return m;
+      });
+    }
+
+    function safeSpellFix(text, notes){
+      return text.replace(/\b([A-Za-z][A-Za-z']{1,})\b/g,(m,word)=>{
+        const wl=word.toLowerCase(); if(!looksLikeWord(word)) return m; if(wl.length<=3) return m; if(dictHas(wl)) return m;
+        if(/^[A-Z][a-z]{2,}$/.test(word)) return m;
+        if(MISSPELLINGS[wl]){ const rep=preserveCase(MISSPELLINGS[wl],word); if(rep!==word) notes.push(`Spelling: ${word} → ${rep}`); return rep; }
+        const pool=BIG_DICT?BIG_DICT:SMALL_DICT; const first=wl[0]; let best=null,bestDist=3;
+        for(const cand of pool){ if(NO_TARGET.has(cand)) continue; if(cand[0]!==first) continue; if(Math.abs(cand.length-wl.length)>1) continue; const d=lev(wl,cand); if(d<bestDist){ bestDist=d; best=cand; if(bestDist===1) break; } }
+        if(best && bestDist<=2){ const rep=preserveCase(best,word); if(rep!==word) notes.push(`Spelling: ${word} → ${rep}`); return rep; }
+        return m;
+      });
+    }
+
+    const FORMAL_MAP = [
+      { re:/\bkids\b/gi, rep:"children", note:"Replaced informal 'kids' with 'children'." },
+      { re:/\bOK\b|\bokay\b/gi, rep:"acceptable", note:"Replaced 'OK/okay' with 'acceptable'." },
+      { re:/\b(a lot of)\b/gi, rep:"many", note:"Replaced 'a lot of' with 'many'." },
+      { re:/\ba lot\b/gi, rep:"substantially", note:"Adjusted 'a lot' to a more formal adverb." },
+      { re:/\blots of\b/gi, rep:"many", note:"Replaced 'lots of' with 'many'." },
+      { re:/\btons of\b/gi, rep:"a large number of", note:"Replaced 'tons of'." },
+      { re:/\bstuff\b/gi, rep:"items", note:"Replaced 'stuff' with 'items'." },
+      { re:/\bthings\b/gi, rep:"aspects", note:"Replaced vague 'things' with 'aspects'." },
+      { re:/\bgonna\b/gi, rep:"going to", note:"Expanded 'gonna' to 'going to'." },
+      { re:/\bwanna\b/gi, rep:"want to", note:"Expanded 'wanna' to 'want to'." },
+      { re:/\bguys?\b/gi, rep:"people", note:"Replaced 'guy/guys' with 'people'." },
+      { re:/\bpretty\b(?=\s+(?:good|bad|big|small|sure|clear|simple|hard)\b)/gi, rep:"fairly", note:"Replaced colloquial 'pretty' as an intensifier." },
+      { re:/\bsort of\b|\bkinda\b|\bkind of\b/gi, rep:"", note:"Removed hedging ('sort of/kinda')." },
+      { re:/\breally\b/gi, rep:"highly", note:"Upgraded 'really' to 'highly' in formal register." },
+      { re:/\bvery\b/gi, rep:"particularly", note:"Upgraded 'very' to 'particularly'." },
+      { re:/\bI think\b/gi, rep:"I consider", note:"Formalised 'I think' to 'I consider'." },
+      { re:/\bI guess\b/gi, rep:"I suppose", note:"Formalised 'I guess' to 'I suppose'." }
+    ];
+    function formalizeRegister(text, notes){ let out=text; for(const r of FORMAL_MAP){ if(r.re.test(out)){ out=out.replace(r.re,r.rep); notes.push(r.note); } } return out; }
+
+    const ALT_MAP = {
+      base: { "good":["effective","beneficial","favourable","advantageous"], "bad":["detrimental","problematic","adverse","unsatisfactory"], "big":["significant","substantial","considerable"], "small":["limited","modest","minor"], "a lot":["a great deal","a considerable amount","substantially"], "very":["highly","particularly","notably"], "really":["truly","genuinely"], "show":["demonstrate","illustrate","reveal","indicate"], "help":["facilitate","support","enable","assist"], "get":["obtain","receive","acquire"], "make":["create","produce","generate"], "do":["carry out","conduct","perform"], "say":["state","argue","contend","maintain"], "need":["require","necessitate"], "use":["utilise","employ","apply"], "problem":["issue","challenge","difficulty","obstacle"], "solution":["remedy","approach","measure","intervention"], "idea":["concept","notion","proposal"], "thing":["aspect","element","factor","component"] },
+      c1plus: { "important":["crucial","vital","essential","pivotal","salient"], "because":["since","as","given that"], "so":["therefore","thus","consequently"], "but":["however","nevertheless","nonetheless"], "try":["attempt","endeavour","seek to"], "start":["commence","initiate"], "end":["conclude","terminate"], "useful":["beneficial","advantageous"], "many":["numerous","a multitude of"], "change":["alter","modify","transform"] }
+    };
+    function makeWordRegex(word){ return new RegExp(`\\b${word.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\b`,'gi'); }
+    function buildAlternatives(text, level){
+      const alts=[]; const dicts=[ALT_MAP.base, ...(level==='C1'?[ALT_MAP.c1plus]:[])];
+      dicts.forEach(d=>{ Object.entries(d).forEach(([simple,options])=>{ const re=makeWordRegex(simple); if(re.test(text)) alts.push({simple,options}); }); });
+      return alts;
+    }
+
+    /* ========= Corrector ========= */
+    const INTRO_SINGLE=["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
+    const INTRO_PHRASES=["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
+    const FANBOYS=["for","and","nor","but","or","yet","so"];
+    const SUBORD=["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
+    const CADV=["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
+
+    function correctLocal(text,lvl){
+      if(!text||!text.trim()) return { out:"", notes:[], alts:[] };
+      let out=normalizeText(text.trim()); const notes=[];
+
+      const CONTRACTIONS={"can't":"cannot","won't":"will not","don't":"do not","doesn't":"does not","didn't":"did not","isn't":"is not","aren't":"are not","it's":"it is","I'm":"I am","you're":"you are","we're":"we are","they're":"they are","I've":"I have","we've":"we have","they've":"they have"};
+      for(const [k,v] of Object.entries(CONTRACTIONS)){ const re=new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g,"\\$&")}\\b`,"gi"); const before=out; out=out.replace(re,(m)=>(m[0]===m[0].toUpperCase()?v[0].toUpperCase()+v.slice(1):v)); if(out!==before) notes.push("Expanded contractions for formality."); }
+
+      [{re:/\bkids\b/gi,rep:"children"}].forEach(({re,rep})=>{ if(re.test(out)){ out=out.replace(re,rep); notes.push("Adjusted informal phrasing."); }});
+      [/\byou know\b/gi,/\bI mean\b/gi].forEach((re)=>{ if(re.test(out)){ out=out.replace(re,""); notes.push("Removed filler."); }});
+
+      const beforeSpace=out; out=out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," "); if(out!==beforeSpace) notes.push("Normalised spacing.");
+      const beforeCap=out; out=out.replace(/(^|[.!?]\s+)([a-z])/g,(m,p1,p2)=>p1+p2.toUpperCase()); if(out!==beforeCap) notes.push("Capitalised sentence start.");
+
+      const beforeAA=out; out=fixAAn(out); if(out!==beforeAA) notes.push("Fixed 'a/an' before vowel/consonant sounds.");
+
+      const beforeSp=out; out=safeSpellFix(out,notes);
+
+      if(document.getElementById('formalToggle')?.checked!==false){ const beforeForm=out; out=formalizeRegister(out,notes); if(out!==beforeForm){} }
+
+      const punctuateIntro=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{ let s=core.trim(); for(const phrase of INTRO_PHRASES){ const re=new RegExp(`^(${phrase})\\s+(?!,)`,"i"); if(re.test(s)){ s=s.replace(re,`$1, `); } } const fw=(s.match(/^(\w+)\s+(?!,)/)||[null,null])[1]; if(fw&&INTRO_SINGLE.includes(fw)) s=s.replace(/^(\w+)\s+(?!,)/,`$1, `); return s+(end||""); });
+      const beforeIntro=out; out=punctuateIntro(out); if(out!==beforeIntro) notes.push("Added comma after introductory word/phrase.");
+
+      const punctuateClauses=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{ let s=core.trim();
+        for(const adv of CADV){ const re=new RegExp(`\\b${adv}\\b`,"i"); const hit=s.match(re); if(hit){ const idx=hit.index; const word=hit[0]; const left=s.slice(0,idx).replace(/[ ,;]+$/,"").trim(); const right=s.slice(idx+word.length).replace(/^[ ,;]+/,"").trim(); if(hasFiniteVerb(left)&&hasFiniteVerb(right)){ s=`${left}; ${word}, ${right}`; break; } } }
+        const first=(s.match(/^\w+/)||[""])[0].toLowerCase();
+        if(SUBORD.includes(first)&&!/,/.test(s)){ const tokens=s.split(/\s+/); const starters=["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"]; let insertAt=-1; for(let i=3;i<Math.min(tokens.length,20);i++){ if(starters.includes(tokens[i]?.toLowerCase())){ insertAt=i; break; } } if(insertAt>-1){ tokens.splice(insertAt,0,","); s=tokens.join(" "); } }
+        for(const cj of FANBOYS){ const pos=s.toLowerCase().indexOf(` ${cj} `); if(pos>-1 && !new RegExp(`,\\s+${cj}\\b`,"i").test(s)){ const left=s.slice(0,pos).trim(); const right=s.slice(pos+cj.length+2).trim(); if(hasFiniteVerb(left)&&hasFiniteVerb(right)){ s=left.replace(/\s+$/,"")+", "+cj+" "+right.replace(/^,?\s*/,""); } } }
+        return s+(end||"");
+      });
+      const beforeClause=out; out=punctuateClauses(out); if(out!==beforeClause) notes.push("Inserted clause punctuation (commas/semicolons).");
+
+      if(!/[.!?]$/.test(out)){ out+="."; notes.push("Added final full stop."); }
+
+      if(lvl==="B2"){ const beforeLvl=out; out=out.replace(/\bnotwithstanding\b/gi,"however"); if(out!==beforeLvl) notes.push("Simplified advanced connector for B2."); }
+
+      const alts=buildAlternatives(out, lvl==='C1'?'C1':'B2');
+      return { out:out.trim(), notes, alts };
+    }
+
+    /* ========= Run Correction: AI first, fallback local ========= */
+    window.runCorrection = async function(){
+      const text=document.getElementById("inputText").value;
+      const lvl=document.getElementById("levelSelect").value;
+      const output=document.getElementById("outputText");
+      const notesBox=document.getElementById("notes");
+      const useAI=document.getElementById("aiToggle").checked && AI_ENDPOINT.startsWith("https://");
+
+      if(useAI){
+        try{
           const res = await fetch(AI_ENDPOINT, {
-            method:"POST", headers:{"Content-Type":"application/json"},
+            method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ text, level:lvl })
           });
           const raw = await res.text();
-          let obj; try{ obj=JSON.parse(raw);}catch{ obj=null;}
-          if(obj && typeof obj.corrected==="string") {
-            output.value = obj.corrected;
+          let obj; try{ obj = JSON.parse(raw);}catch{ obj = null; }
+          if(obj && typeof obj.corrected === 'string'){
+            output.value = obj.corrected || "";
             notesBox.innerHTML = "<b>Changes (AI):</b><br>"+(obj.notes?.map(n=>"• "+n).join("<br>") || "(No details)");
+            const altMap = obj.alternatives && Object.keys(obj.alternatives).length ? obj.alternatives : null;
+            if(altMap){
+              const box=document.getElementById("altList");
+              box.innerHTML = Object.entries(altMap).map(([k,arr]) =>
+                `<div class="alt-section"><h4>“${k}” → consider:</h4>${
+                  (arr||[]).slice(0,6).map(w=>`<button class="chip" onclick="document.getElementById('outputText').value = document.getElementById('outputText').value.replace(new RegExp('\\\\b${k}\\\\b','gi'),'${w}')">${w}</button>`).join('')
+                }</div>`).join('');
+            } else {
+              renderAlternatives(obj.corrected || "", buildAlternatives(obj.corrected || "", lvl==='C1'?'C1':'B2'), lvl);
+            }
             return;
           } else {
-            notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>AI invalid, using local rules.</span>";
+            notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>AI response invalid; using local rules.</span>";
           }
+        }catch(e){
+          notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>AI error: "+(e?.message||String(e))+"; using local rules.</span>";
+          console.error(e);
         }
-      } catch(e) {
-        notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>AI error, using local rules.</span>";
       }
 
-      // fallback
-      const { out, notes } = correct(text,lvl);
+      const { out, notes, alts } = correctLocal(text, lvl);
       output.value = out;
       notesBox.innerHTML = "<b>Changes (local):</b><br>"+(notes.length?notes.map(n=>"• "+n).join("<br>"):"(No major changes)");
+      renderAlternatives(out, alts, lvl);
     };
 
-    // ==== CLEAR ====
-    function clearText(){
+    /* ========= Helpers ========= */
+    function renderAlternatives(currentText, alts, level){
+      const box=document.getElementById("altList");
+      if(!alts.length){ box.innerHTML="<span class='hint'>No suggestions for this text. Try a longer paragraph.</span>"; return; }
+      box.innerHTML="";
+      alts.forEach(({simple,options})=>{
+        const section=document.createElement('div'); section.className='alt-section';
+        const title=document.createElement('h4'); title.textContent=`“${simple}” → consider:`; section.appendChild(title);
+        options.slice(0, level==='C1'?6:4).forEach(opt=>{
+          const chip=document.createElement('button'); chip.className='chip'; chip.textContent=opt;
+          chip.onclick=()=>{ const re=makeWordRegex(simple); const replaced=(document.getElementById("outputText").value || currentText).replace(re,(m)=>{ const cap=m[0]===m[0].toUpperCase(); return cap ? opt[0].toUpperCase()+opt.slice(1) : opt; }); document.getElementById("outputText").value=replaced; };
+          section.appendChild(chip);
+        });
+        box.appendChild(section);
+      });
+    }
+
+    function clearAll(){
       document.getElementById("inputText").value="";
       document.getElementById("outputText").value="";
-      document.getElementById("notes").innerHTML="(Notes will appear here)";
-      document.getElementById("altList").innerHTML="";
+      document.getElementById("notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
+      document.getElementById("altList").innerHTML="After correction, suggested upgrades will appear here (especially for C1/C2).";
     }
 
-    // ==== EXPORT PDF ====
-    async function exportPDF(){
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.text(document.getElementById("outputText").value,10,10);
-      doc.save("essay.pdf");
+    function downloadPDF(){
+      try{
+        const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; }
+        const doc=new jsPDF({unit:"pt", format:"a4"}); const text=document.getElementById("outputText").value || "(empty)";
+        const margin=48; let y=margin;
+        doc.setFont("Helvetica","bold"); doc.setFontSize(14); doc.text("EssayCoach – Corrected Output", margin, y); y+=20;
+        doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+        const lines=doc.splitTextToSize(text, 595 - margin*2); doc.text(lines, margin, y);
+        doc.save("essay-corrected.pdf");
+      }catch(e){ alert("Could not create PDF: "+e.message); console.error(e); }
     }
 
-    // Register SW
+    /* ========= Init ========= */
+    renderScaffold(); initWordlist();
+    window.addEventListener('load', ()=>{ if(AI_ENDPOINT.startsWith("https://")){ const t=document.getElementById('aiToggle'); if(t) t.checked=true; } });
+
+    /* ========= PWA: register Service Worker (GitHub Pages path) ========= */
     if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/alfons149-cmyk/sw.js');
+      window.addEventListener('load', ()=>{ navigator.serviceWorker.register('/alfons149-cmyk/sw.js').catch(console.error); });
     }
   </script>
 </body>
