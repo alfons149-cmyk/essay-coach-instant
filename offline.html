@@ -19,6 +19,7 @@
     button { font:inherit; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; }
     .primary { background: var(--b); color:#fff; border-color: var(--b); }
     .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    a.button { text-decoration: none; }
   </style>
 </head>
 <body>
@@ -30,7 +31,7 @@
       <div class="row">
         <button class="primary" onclick="save()">Save locally</button>
         <button onclick="copy()">Copy</button>
-        <a href="/alfons149-cmyk/" style="text-decoration:none"><button>Back to app</button></a>
+        <a class="button" href="/alfons149-cmyk/"><button>Back to app</button></a>
       </div>
       <div class="hint">Your draft saves to this device only (Local Storage).</div>
     </div>
@@ -44,3 +45,4 @@
   </script>
 </body>
 </html>
+
