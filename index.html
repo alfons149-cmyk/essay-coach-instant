@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EssayCoach – Cambridge Toolkit (Instant)</title>
 
-  <!-- Icons (ensure these files exist at repo root) -->
+  <!-- Icons (repo root) -->
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
 
-  <!-- PWA: manifest + theme color -->
+  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111111" />
 
@@ -45,7 +45,7 @@
 <body>
   <div class="wrap">
     <h1>EssayCoach – Cambridge Toolkit</h1>
-    <p class="sub">Scaffolds • Corrector (B2/C1) • Spelling + a/an • Vocabulary alternatives • PDF export • PWA install</p>
+    <p class="sub">Scaffolds • Corrector (B2/C1) • Safer spelling + a/an • Clause punctuation • Alternatives • PDF • PWA</p>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -144,13 +144,12 @@
     </section>
   </div>
 
-  <!-- jsPDF CDN -->
+  <!-- jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
   <script>
-    /* ========= Config for optional AI mode ========= */
-    // If you set up the Cloudflare Worker, put its URL here:
-    const AI_ENDPOINT = "https://YOUR-WORKER-SUBDOMAIN.workers.dev"; // <-- replace after you deploy the Worker
+    /* ========= Optional AI endpoint (Cloudflare Worker) ========= */
+    const AI_ENDPOINT = "https://YOUR-WORKER-SUBDOMAIN.workers.dev"; // replace when ready
 
     /* ========== Tabs ========== */
     function showTab(which) {
@@ -346,7 +345,30 @@
       return aux.test(s) || finite.test(s);
     };
 
-    /* --- Spelling & a/an utilities --- */
+    /* ---------- Normalise text first ---------- */
+    function normalizeText(s) {
+      return String(s)
+        .replace(/[\u2018\u2019\u2032]/g, "'")
+        .replace(/[\u201C\u201D\u2033]/g, '"')
+        .replace(/&(#39|apos);/gi, "'")
+        .replace(/&quot;/gi, '"')
+        .replace(/&amp;/gi, "&")
+        .replace(/\u00A0/g, " ");
+    }
+
+    /* ---------- Safer dictionary & stoplists ---------- */
+    const SAFE_FUNCTION_WORDS = new Set([
+      "a","an","the","of","to","in","on","at","by","for","from","with","as","that","than","then",
+      "and","or","but","nor","so","yet",
+      "i","you","he","she","we","they","it","me","him","her","us","them",
+      "my","your","his","her","its","our","their","mine","yours","ours","theirs",
+      "this","that","these","those","there","their","they're","who","whom","whose","which","what",
+      "is","are","was","were","be","been","being","do","does","did","has","have","had","will","would","can","could","may","might","must","should",
+      "young","community","communities","local","volunteer","volunteers","rubbish","students","people","work","enough","involved","belief","common"
+    ]);
+    const NO_TARGET = new Set([ ..."i,you,he,she,we,they,it,me,him,her,us,them,my,your,his,her,its,our,their,this,that,these,those".split(",") ]);
+
+    /* ---------- Known misspellings ---------- */
     const MISSPELLINGS = {
       "whot":"what","teh":"the","recieve":"receive","recieved":"received","seperate":"separate",
       "definately":"definitely","adress":"address","occured":"occurred",
@@ -359,6 +381,7 @@
       "occassion":"occasion","posession":"possession","untill":"until","writting":"writing"
     };
 
+    /* ---------- Optional big word list ---------- */
     const SMALL_DICT = new Set([
       "a","an","the","and","or","but","however","therefore","moreover","nevertheless","because","since","although","though",
       "what","which","who","whom","whose","when","where","why","how","this","that","these","those",
@@ -388,7 +411,9 @@
         console.log('Could not load wordlist:', e);
       }
     }
-    function dictHas(wl) { return (BIG_DICT && BIG_DICT.has(wl)) || SMALL_DICT.has(wl); }
+    function dictHas(wl) {
+      return (BIG_DICT && BIG_DICT.has(wl)) || SMALL_DICT.has(wl) || SAFE_FUNCTION_WORDS.has(wl);
+    }
 
     function lev(a, b) {
       a = a.toLowerCase(); b = b.toLowerCase();
@@ -417,6 +442,13 @@
       return suggestion;
     }
 
+    function looksLikeWord(token) {
+      if (/-/.test(token)) return false;                             // avoid hyphenated words
+      if (/[A-Za-z]+'[A-Za-z]+/.test(token)) return false;           // avoid inner apostrophes (don't, students')
+      return /^[A-Za-z][A-Za-z']{1,}$/.test(token);
+    }
+
+    /* ---------- a/an fixer ---------- */
     function fixAAn(text) {
       const silentH = /^(honest|honour|honor|hour|heir|herb)\b/i;
       const youSound = /^(uni(vers|form|que|on)|u[bcdfgklmnprstvy]|euro|eure|euph|eulog|ukulele|user|use|one|once|ufo)\b/i;
@@ -432,21 +464,32 @@
       });
     }
 
-    function spellFix(text, notes) {
-      return text.replace(/\b([A-Za-z']{2,})\b/g, (m, word) => {
-        const original = word, wl = word.toLowerCase();
+    /* ---------- Safer spell-fix (conservative) ---------- */
+    function safeSpellFix(text, notes) {
+      return text.replace(/\b([A-Za-z][A-Za-z']{1,})\b/g, (m, word) => {
+        const original = word;
+        const wl = word.toLowerCase();
+
+        if (!looksLikeWord(word)) return m;
+        if (wl.length <= 3) return m;
         if (dictHas(wl)) return m;
         if (/^[A-Z][a-z]{2,}$/.test(word)) return m; // likely proper noun
+
         if (MISSPELLINGS[wl]) {
           const rep = preserveCase(MISSPELLINGS[wl], word);
           if (rep !== original) notes.push(`Spelling: ${original} → ${rep}`);
           return rep;
         }
+
         const pool = BIG_DICT ? BIG_DICT : SMALL_DICT;
+        const first = wl[0];
         let best = null, bestDist = 3;
         for (const cand of pool) {
+          if (NO_TARGET.has(cand)) continue;
+          if (cand[0] !== first) continue;                       // same first letter
+          if (Math.abs(cand.length - wl.length) > 1) continue;   // similar length
           const d = lev(wl, cand);
-          if (d < bestDist) { bestDist = d; best = cand; if (bestDist === 0) break; }
+          if (d < bestDist) { bestDist = d; best = cand; if (bestDist === 1) break; }
         }
         if (best && bestDist <= 2) {
           const rep = preserveCase(best, word);
@@ -457,7 +500,7 @@
       });
     }
 
-    /* ========== Alternatives dictionary ========== */
+    /* ========== Alternatives dictionary (unchanged) ========== */
     const ALT_MAP = {
       base: {
         "good": ["effective","beneficial","favourable","advantageous"],
@@ -508,7 +551,7 @@
       return alts;
     }
 
-    /* ========== Corrector (intro comma + conj adv + FANBOYS + subordination + a/an + spelling) ========== */
+    /* ========== Corrector (safe mode) ========== */
     const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
     const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
     const FANBOYS = ["for","and","nor","but","or","yet","so"];
@@ -517,7 +560,7 @@
 
     const correct = (text, lvl) => {
       if (!text || !text.trim()) return { out: "", notes: [], alts: [] };
-      let out = text.trim();
+      let out = normalizeText(text.trim());
       const notes = [];
 
       // 1) Contractions → formal
@@ -533,24 +576,13 @@
         if (out !== before) notes.push("Expanded contractions for formality.");
       }
 
-      // 2) Informality & fillers
+      // 2) Informal words (keep conservative) & fillers
       [
         { re:/\bkids\b/gi, rep:"children" },
-        { re:/\ba lot of\b/gi, rep:"many" },
-        { re:/\bgonna\b/gi, rep:"going to" },
-        { re:/\bwanna\b/gi, rep:"want to" },
-        { re:/\bstuff\b/gi, rep:"items" },
-        { re:/\bthings\b/gi, rep:"aspects" },
-        { re:/\breally|very\b/gi, rep:"" },
+        // risky style swaps removed; keep wording stable
       ].forEach(({re,rep}) => { if (re.test(out)) { out = out.replace(re,rep); notes.push("Adjusted informal phrasing."); }});
-      [
-        { re:/\bget\b/gi, rep:"obtain" },
-        { re:/\bdo\b/gi, rep:"carry out" },
-        { re:/\bmake\b/gi, rep:"create" },
-        { re:/\bsay\b/gi, rep:"state" },
-      ].forEach(({re,rep}) => { if (re.test(out)) { out = out.replace(re,rep); notes.push("Replaced vague verb."); }});
-      [/\blike,?\b/gi, /\byou know\b/gi, /\bI mean\b/gi, /\bjust\b/gi].forEach((re) => {
-        if (re.test(out)) { out = out.replace(re,""); notes.push("Removed fillers."); }
+      [/\byou know\b/gi, /\bI mean\b/gi].forEach((re) => {
+        if (re.test(out)) { out = out.replace(re,""); notes.push("Removed filler."); }
       });
 
       // 3) Normalise spacing
@@ -568,19 +600,17 @@
       out = fixAAn(out);
       if (out !== beforeAA) notes.push("Fixed 'a/an' before vowel/consonant sounds.");
 
-      // 6) Spelling
+      // 6) Spelling (conservative)
       const beforeSp = out;
-      out = spellFix(out, notes);
+      out = safeSpellFix(out, notes);
 
-      // 7) Introductory commas & clause punctuation
+      // 7) Introductory commas
       const punctuateIntro = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
         let s = core.trim();
-        // Phrases
         for (const phrase of INTRO_PHRASES) {
           const re = new RegExp(`^(${phrase})\\s+(?!,)`, "i");
           if (re.test(s)) { s = s.replace(re, `$1, `); }
         }
-        // Single words
         const fw = (s.match(/^(\w+)\s+(?!,)/) || [null,null])[1];
         if (fw && INTRO_SINGLE.includes(fw)) s = s.replace(/^(\w+)\s+(?!,)/, `$1, `);
         return s + (end || "");
@@ -589,6 +619,7 @@
       out = punctuateIntro(out);
       if (out !== beforeIntro) notes.push("Added comma after introductory word/phrase.");
 
+      // 8) Clause punctuation (conj. adverbs, fronted sub, FANBOYS)
       const punctuateClauses = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
         let s = core.trim();
 
@@ -605,7 +636,7 @@
           }
         }
 
-        // Fronted subordinator → comma after sub clause
+        // Fronted subordinator → comma after
         const first = (s.match(/^\w+/) || [""])[0].toLowerCase();
         if (SUBORD.includes(first) && !/,/.test(s)) {
           const tokens = s.split(/\s+/);
@@ -635,22 +666,22 @@
       out = punctuateClauses(out);
       if (out !== beforeClause) notes.push("Inserted clause punctuation (commas/semicolons).");
 
-      // 8) Final punctuation
+      // 9) Final full stop
       if (!/[.!?]$/.test(out)) { out += "."; notes.push("Added final full stop."); }
 
-      // 9) Level tweak
+      // 10) Level tweak
       if (lvl === "B2") {
         const beforeLvl = out;
         out = out.replace(/\bnotwithstanding\b/gi, "however");
         if (out !== beforeLvl) notes.push("Simplified advanced connector for B2.");
       }
 
-      // 10) Alternatives for upgraded vocabulary
+      // 11) Alternatives (vocab)
       const alts = buildAlternatives(out, lvl === 'C1' ? 'C1' : 'B2');
       return { out: out.trim(), notes, alts };
     };
 
-    /* ========== Corrector handlers (with optional AI mode) ========== */
+    /* ========== Corrector handlers with optional AI mode ========== */
     window.runCorrection = async function () {
       const text = document.getElementById("inputText").value;
       const lvl  = document.getElementById("levelSelect").value;
@@ -689,7 +720,7 @@
         }
       }
 
-      // Built-in rule-based correction
+      // Built-in safe corrector
       const { out, notes, alts } = correct(text, lvl);
       document.getElementById("outputText").value = out;
       document.getElementById("notes").innerHTML =
@@ -763,6 +794,14 @@
     /* ========== Initial render & optional dictionary load ========== */
     renderScaffold();
     initWordlist();
+
+    // Auto-enable AI toggle if endpoint provided
+    window.addEventListener('load', () => {
+      if (AI_ENDPOINT.startsWith("https://")) {
+        const t = document.getElementById('aiToggle');
+        if (t) t.checked = true;
+      }
+    });
 
     /* ========== PWA: Register Service Worker (GitHub Pages path-aware) ========== */
     if ('serviceWorker' in navigator) {
