@@ -45,7 +45,7 @@
 <body>
   <div class="wrap">
     <h1>EssayCoach – Cambridge Toolkit</h1>
-    <p class="sub">Scaffolds • Corrector (B2/C1) • Safer spelling + a/an • Clause punctuation • Alternatives • PDF • PWA</p>
+    <p class="sub">Scaffolds • Corrector (B2/C1) • Safer spelling + a/an • Formal tone • Clause punctuation • Alternatives • PDF • PWA</p>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -119,15 +119,14 @@
         </div>
 
         <label class="toggle">
-          <input type="checkbox" id="aiToggle" />
-          <span>Use AI (ChatGPT) for deeper corrections (requires Worker URL)</span>
+          <input type="checkbox" id="formalToggle" checked />
+          <span>Enforce formal tone (avoid slang/colloquialisms)</span>
         </label>
 
         <label class="toggle">
-         <input type="checkbox" id="formalToggle" checked />
-         <span>Enforce formal tone (avoid slang/colloquialisms)</span>
-         </label>
-
+          <input type="checkbox" id="aiToggle" />
+          <span>Use AI (ChatGPT) for deeper corrections (requires Worker URL)</span>
+        </label>
 
         <div class="hint" style="margin-top:6px">
           Try: “It was late however we continued the discussion” → “It was late; however, we continued the discussion.”
@@ -506,6 +505,32 @@
       });
     }
 
+    /* ---------- Formal tone upgrader (conservative) ---------- */
+    const FORMAL_MAP = [
+      { re: /\bkids\b/gi, rep: "children", note: "Replaced informal 'kids' with 'children'." },
+      { re: /\bOK\b|\bokay\b/gi, rep: "acceptable", note: "Replaced 'OK/okay' with 'acceptable'." },
+      { re: /\b(a lot of)\b/gi, rep: "many", note: "Replaced 'a lot of' with 'many'." },
+      { re: /\ba lot\b/gi, rep: "substantially", note: "Adjusted 'a lot' to a more formal adverb." },
+      { re: /\bstuff\b/gi, rep: "items", note: "Replaced 'stuff' with 'items'." },
+      { re: /\bthings\b/gi, rep: "aspects", note: "Replaced vague 'things' with 'aspects'." },
+      { re: /\bgonna\b/gi, rep: "going to", note: "Expanded 'gonna' to 'going to'." },
+      { re: /\bwanna\b/gi, rep: "want to", note: "Expanded 'wanna' to 'want to'." },
+      { re: /\bguy\b/gi, rep: "person", note: "Replaced 'guy' with 'person'." },
+      { re: /\bsort of\b|\bkinda\b|\bkind of\b/gi, rep: "", note: "Removed hedging ('sort of/kinda')." },
+      { re: /\breally\b/gi, rep: "highly", note: "Upgraded 'really' to 'highly' in formal register." },
+      { re: /\bvery\b/gi, rep: "particularly", note: "Upgraded 'very' to 'particularly'." }
+    ];
+    function formalizeRegister(text, notes) {
+      let out = text;
+      for (const rule of FORMAL_MAP) {
+        if (rule.re.test(out)) {
+          out = out.replace(rule.re, rule.rep);
+          notes.push(rule.note);
+        }
+      }
+      return out;
+    }
+
     /* ========== Alternatives dictionary (unchanged) ========== */
     const ALT_MAP = {
       base: {
@@ -557,7 +582,7 @@
       return alts;
     }
 
-    /* ========== Corrector (safe mode) ========== */
+    /* ========== Corrector (safe + formal) ========== */
     const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
     const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
     const FANBOYS = ["for","and","nor","but","or","yet","so"];
@@ -582,16 +607,15 @@
         if (out !== before) notes.push("Expanded contractions for formality.");
       }
 
-      // 2) Informal words (keep conservative) & fillers
+      // 2) Minimal informality cleanup (very conservative)
       [
-        { re:/\bkids\b/gi, rep:"children" },
-        // risky style swaps removed; keep wording stable
+        { re:/\bkids\b/gi, rep:"children" }
       ].forEach(({re,rep}) => { if (re.test(out)) { out = out.replace(re,rep); notes.push("Adjusted informal phrasing."); }});
       [/\byou know\b/gi, /\bI mean\b/gi].forEach((re) => {
         if (re.test(out)) { out = out.replace(re,""); notes.push("Removed filler."); }
       });
 
-      // 3) Normalise spacing
+      // 3) Spacing normalisation
       const beforeSpace = out;
       out = out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
       if (out !== beforeSpace) notes.push("Normalised spacing.");
@@ -610,6 +634,14 @@
       const beforeSp = out;
       out = safeSpellFix(out, notes);
 
+      // 6.5) Formal register (toggle)
+      const formalOn = document.getElementById('formalToggle')?.checked !== false;
+      if (formalOn) {
+        const beforeForm = out;
+        out = formalizeRegister(out, notes);
+        if (out !== beforeForm) {/* notes already pushed */}
+      }
+
       // 7) Introductory commas
       const punctuateIntro = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
         let s = core.trim();
@@ -625,7 +657,7 @@
       out = punctuateIntro(out);
       if (out !== beforeIntro) notes.push("Added comma after introductory word/phrase.");
 
-      // 8) Clause punctuation (conj. adverbs, fronted sub, FANBOYS)
+      // 8) Clause punctuation: conj. adverbs; fronted sub; FANBOYS
       const punctuateClauses = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
         let s = core.trim();
 
