@@ -8,6 +8,7 @@
   <!-- Icons (ensure these files exist at repo root) -->
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
+
   <!-- PWA: manifest + theme color -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111111" />
@@ -38,12 +39,13 @@
     .chip { display:inline-block; padding:8px 12px; border:1px solid var(--border); border-radius:999px; background:#fff; margin:6px 8px 0 0; cursor:pointer; font-size:14px; min-height: 38px; }
     .chip:hover { background:#f3f4f6; }
     .alt-section h4 { margin: 12px 0 6px; font-size: 14px; color:#333; }
+    .toggle { display:flex; align-items:center; gap:8px; margin-top:6px; font-size:14px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>EssayCoach – Cambridge Toolkit</h1>
-    <p class="sub">Scaffolds • Corrector (B2/C1) • Vocabulary alternatives • PDF export • Clear • Installable PWA</p>
+    <p class="sub">Scaffolds • Corrector (B2/C1) • Spelling + a/an • Vocabulary alternatives • PDF export • PWA install</p>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -116,9 +118,15 @@
           <button onclick="clearAll()">Clear</button>
         </div>
 
-        <div class="hint">
+        <label class="toggle">
+          <input type="checkbox" id="aiToggle" />
+          <span>Use AI (ChatGPT) for deeper corrections (requires Worker URL)</span>
+        </label>
+
+        <div class="hint" style="margin-top:6px">
           Try: “It was late however we continued the discussion” → “It was late; however, we continued the discussion.”
           • “First I would like to…” → “First, I would like to…”
+          • “a apple” → “an apple” • “whot” → “what”
         </div>
       </div>
 
@@ -140,6 +148,10 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
   <script>
+    /* ========= Config for optional AI mode ========= */
+    // If you set up the Cloudflare Worker, put its URL here:
+    const AI_ENDPOINT = "https://YOUR-WORKER-SUBDOMAIN.workers.dev"; // <-- replace after you deploy the Worker
+
     /* ========== Tabs ========== */
     function showTab(which) {
       const t1 = document.getElementById('tab-scaffolds');
@@ -271,7 +283,6 @@
       const lvl = document.getElementById('scLevel').value;
       const typ = document.getElementById('scType').value;
       const data = SCAFFOLDS[lvl][typ];
-
       document.getElementById('scMoves').innerHTML = data.moves.map(m => `<li>${escapeHtml(m)}</li>`).join('');
       document.getElementById('scOpener').textContent = data.opener;
       document.getElementById('scTips').innerHTML = data.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
@@ -324,7 +335,6 @@
         const lines = doc.splitTextToSize("• " + t, 595 - margin*2);
         doc.text(lines, margin, y); y += 14 + (lines.length-1)*12;
       });
-
       doc.save(`scaffold-${lvl}-${typ}.pdf`);
     }
 
@@ -335,6 +345,117 @@
       const finite = /\b\w+(ed|s)\b/i;
       return aux.test(s) || finite.test(s);
     };
+
+    /* --- Spelling & a/an utilities --- */
+    const MISSPELLINGS = {
+      "whot":"what","teh":"the","recieve":"receive","recieved":"received","seperate":"separate",
+      "definately":"definitely","adress":"address","occured":"occurred",
+      "wich":"which","becuase":"because","wierd":"weird","enviroment":"environment",
+      "goverment":"government","neccessary":"necessary","publically":"publicly",
+      "accomodate":"accommodate","acommodate":"accommodate","tommorow":"tomorrow",
+      "comming":"coming","alot":"a lot","realy":"really","truely":"truly","arguement":"argument",
+      "belive":"believe","concious":"conscious","dependant":"dependent","embarass":"embarrass",
+      "equiptment":"equipment","finaly":"finally","happend":"happened","labratory":"laboratory",
+      "occassion":"occasion","posession":"possession","untill":"until","writting":"writing"
+    };
+
+    const SMALL_DICT = new Set([
+      "a","an","the","and","or","but","however","therefore","moreover","nevertheless","because","since","although","though",
+      "what","which","who","whom","whose","when","where","why","how","this","that","these","those",
+      "i","you","he","she","we","they","it","people","children","students","teachers","government","society",
+      "essay","report","review","letter","introduction","conclusion","evidence","example","analysis","recommendation",
+      "time","year","day","reason","problem","solution","issue","idea","concept","result","effect","cause",
+      "good","bad","beneficial","detrimental","important","significant","necessary","possible","likely","clearly",
+      "many","much","most","some","few","several","more","less","fewer","another",
+      "make","do","say","state","argue","contend","maintain","show","demonstrate","illustrate","help","support","enable",
+      "use","utilise","employ","apply","need","require","improve","increase","decrease","reduce","create","produce","generate",
+      "university","unique","european","hour","honest","heir","FBI","MRI","MBA","UFO","idea","address","separate","receive",
+      "definitely","environment","government","necessary","tomorrow","writing","because","really","truly","publicly"
+    ]);
+    let BIG_DICT = null;
+
+    async function initWordlist() {
+      try {
+        const res = await fetch('wordlist-20k.txt', { cache: 'no-store' });
+        if (res.ok) {
+          const text = await res.text();
+          BIG_DICT = new Set(text.split(/\r?\n/).map(w => w.trim().toLowerCase()).filter(Boolean));
+          console.log('Loaded big word list:', BIG_DICT.size);
+        } else {
+          console.log('No wordlist-20k.txt found; using SMALL_DICT only.');
+        }
+      } catch (e) {
+        console.log('Could not load wordlist:', e);
+      }
+    }
+    function dictHas(wl) { return (BIG_DICT && BIG_DICT.has(wl)) || SMALL_DICT.has(wl); }
+
+    function lev(a, b) {
+      a = a.toLowerCase(); b = b.toLowerCase();
+      const m = a.length, n = b.length;
+      if (Math.abs(m - n) > 2) return 3;
+      const dp = Array(n + 1).fill(0);
+      for (let j = 0; j <= n; j++) dp[j] = j;
+      for (let i = 1; i <= m; i++) {
+        let prev = dp[0]; dp[0] = i;
+        for (let j = 1; j <= n; j++) {
+          const tmp = dp[j];
+          dp[j] = Math.min(
+            dp[j] + 1,
+            dp[j - 1] + 1,
+            prev + (a[i - 1] === b[j - 1] ? 0 : 1)
+          );
+          prev = tmp;
+        }
+      }
+      return dp[n];
+    }
+
+    function preserveCase(suggestion, original) {
+      if (original === original.toUpperCase()) return suggestion.toUpperCase();
+      if (original[0] === original[0].toUpperCase()) return suggestion[0].toUpperCase() + suggestion.slice(1);
+      return suggestion;
+    }
+
+    function fixAAn(text) {
+      const silentH = /^(honest|honour|honor|hour|heir|herb)\b/i;
+      const youSound = /^(uni(vers|form|que|on)|u[bcdfgklmnprstvy]|euro|eure|euph|eulog|ukulele|user|use|one|once|ufo)\b/i;
+      const acronymVowelSound = /^[AEFHILMNORSX]/;
+      return text.replace(/\b([Aa]n?)\s+([A-Za-z][\w-]*)/g, (m, art, word) => {
+        const wl = word.toLowerCase();
+        let shouldBeAn = /^[aeiou]/.test(wl) || silentH.test(wl);
+        if (/^[A-Z]{2,}$/.test(word)) shouldBeAn = acronymVowelSound.test(word[0]);
+        if (youSound.test(wl)) shouldBeAn = false;
+        const desired = shouldBeAn ? (art[0] === 'A' ? 'An' : 'an') : (art[0] === 'A' ? 'A' : 'a');
+        if ((art.toLowerCase() === 'an') !== shouldBeAn) return desired + ' ' + word;
+        return m;
+      });
+    }
+
+    function spellFix(text, notes) {
+      return text.replace(/\b([A-Za-z']{2,})\b/g, (m, word) => {
+        const original = word, wl = word.toLowerCase();
+        if (dictHas(wl)) return m;
+        if (/^[A-Z][a-z]{2,}$/.test(word)) return m; // likely proper noun
+        if (MISSPELLINGS[wl]) {
+          const rep = preserveCase(MISSPELLINGS[wl], word);
+          if (rep !== original) notes.push(`Spelling: ${original} → ${rep}`);
+          return rep;
+        }
+        const pool = BIG_DICT ? BIG_DICT : SMALL_DICT;
+        let best = null, bestDist = 3;
+        for (const cand of pool) {
+          const d = lev(wl, cand);
+          if (d < bestDist) { bestDist = d; best = cand; if (bestDist === 0) break; }
+        }
+        if (best && bestDist <= 2) {
+          const rep = preserveCase(best, word);
+          if (rep !== original) notes.push(`Spelling: ${original} → ${rep}`);
+          return rep;
+        }
+        return m;
+      });
+    }
 
     /* ========== Alternatives dictionary ========== */
     const ALT_MAP = {
@@ -372,7 +493,6 @@
         "change": ["alter","modify","transform"]
       }
     };
-
     function makeWordRegex(word) {
       return new RegExp(`\\b${word.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\b`,'gi');
     }
@@ -388,7 +508,7 @@
       return alts;
     }
 
-    /* ========== Corrector (with Intro comma + Conj. adverb + FANBOYS + Subordination) ========== */
+    /* ========== Corrector (intro comma + conj adv + FANBOYS + subordination + a/an + spelling) ========== */
     const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
     const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","At first","In general","In summary","On balance","All things considered"];
     const FANBOYS = ["for","and","nor","but","or","yet","so"];
@@ -433,7 +553,7 @@
         if (re.test(out)) { out = out.replace(re,""); notes.push("Removed fillers."); }
       });
 
-      // 3) Normalise spacing around punctuation
+      // 3) Normalise spacing
       const beforeSpace = out;
       out = out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
       if (out !== beforeSpace) notes.push("Normalised spacing.");
@@ -443,33 +563,36 @@
       out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m,p1,p2)=> p1 + p2.toUpperCase());
       if (out !== beforeCap) notes.push("Capitalised sentence start.");
 
-      // 5) Introductory comma rule (single words & phrases at sentence start)
-      out = out.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
-        let s = core.trim();
+      // 5) a/an fixer
+      const beforeAA = out;
+      out = fixAAn(out);
+      if (out !== beforeAA) notes.push("Fixed 'a/an' before vowel/consonant sounds.");
 
-        // Phrases: e.g., "In addition ", "For example "
+      // 6) Spelling
+      const beforeSp = out;
+      out = spellFix(out, notes);
+
+      // 7) Introductory commas & clause punctuation
+      const punctuateIntro = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
+        let s = core.trim();
+        // Phrases
         for (const phrase of INTRO_PHRASES) {
           const re = new RegExp(`^(${phrase})\\s+(?!,)`, "i");
-          if (re.test(s)) { s = s.replace(re, `$1, `); if (!/intro phrase/i.test(m)) {} }
+          if (re.test(s)) { s = s.replace(re, `$1, `); }
         }
-        // Singles: e.g., "First ", "However "
-        const firstWordMatch = s.match(/^(\w+)\s+(?!,)/);
-        if (firstWordMatch) {
-          const fw = firstWordMatch[1];
-          if (INTRO_SINGLE.includes(fw)) s = s.replace(/^(\w+)\s+(?!,)/, `$1, `);
-        }
+        // Single words
+        const fw = (s.match(/^(\w+)\s+(?!,)/) || [null,null])[1];
+        if (fw && INTRO_SINGLE.includes(fw)) s = s.replace(/^(\w+)\s+(?!,)/, `$1, `);
         return s + (end || "");
       });
-      // Record once if we added any intro commas
-      if (/^(?:\s*(?:First|Firstly|Second|Secondly|Third|Finally|Next|Then|Afterwards|Overall|Currently|Recently|Ultimately|Consequently|Therefore|However|Moreover|Furthermore|Nevertheless|Meanwhile|Instead|Still)\s+[^,]|(?:In addition|In conclusion|In contrast|By contrast|For example|For instance|To begin with|In my opinion|On the one hand|On the other hand|As a result|In other words|At first|In general|In summary|On balance|All things considered)\s+[^,])/im.test(beforeCap)) {
-        notes.push("Added comma after introductory word/phrase.");
-      }
+      const beforeIntro = out;
+      out = punctuateIntro(out);
+      if (out !== beforeIntro) notes.push("Added comma after introductory word/phrase.");
 
-      // 6) Clause punctuation: conjunctive adverbs, fronted subordination, FANBOYS
-      out = out.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
+      const punctuateClauses = (t) => t.replace(/([^.!?]+)([.!?]|$)/g, (m, core, end) => {
         let s = core.trim();
 
-        // Conjunctive adverb between two clauses → "; however, ..."
+        // Conjunctive adverb between two finite clauses → "; however, ..."
         for (const adv of CADV) {
           const re = new RegExp(`\\b${adv}\\b`, "i");
           const hit = s.match(re);
@@ -482,7 +605,7 @@
           }
         }
 
-        // Fronted subordinator → comma after
+        // Fronted subordinator → comma after sub clause
         const first = (s.match(/^\w+/) || [""])[0].toLowerCase();
         if (SUBORD.includes(first) && !/,/.test(s)) {
           const tokens = s.split(/\s+/);
@@ -508,33 +631,70 @@
 
         return s + (end || "");
       });
+      const beforeClause = out;
+      out = punctuateClauses(out);
+      if (out !== beforeClause) notes.push("Inserted clause punctuation (commas/semicolons).");
 
-      // 7) Final punctuation
+      // 8) Final punctuation
       if (!/[.!?]$/.test(out)) { out += "."; notes.push("Added final full stop."); }
 
-      // 8) Level tweak (simplify for B2)
+      // 9) Level tweak
       if (lvl === "B2") {
         const beforeLvl = out;
         out = out.replace(/\bnotwithstanding\b/gi, "however");
         if (out !== beforeLvl) notes.push("Simplified advanced connector for B2.");
       }
 
-      // 9) Vocabulary alternatives based on corrected text
+      // 10) Alternatives for upgraded vocabulary
       const alts = buildAlternatives(out, lvl === 'C1' ? 'C1' : 'B2');
       return { out: out.trim(), notes, alts };
     };
 
-    /* ========== Corrector handlers ========== */
-    window.runCorrection = function () {
-      try {
-        const text = document.getElementById("inputText").value;
-        const lvl  = document.getElementById("levelSelect").value;
-        const { out, notes, alts } = correct(text, lvl);
-        document.getElementById("outputText").value = out;
-        document.getElementById("notes").innerHTML =
-          "<b>Changes:</b><br>" + (notes.length ? notes.map(n => "• " + n).join("<br>") : "(No major changes)");
-        renderAlternatives(out, alts, lvl);
-      } catch (e) { alert("Error while correcting: " + e.message); console.error(e); }
+    /* ========== Corrector handlers (with optional AI mode) ========== */
+    window.runCorrection = async function () {
+      const text = document.getElementById("inputText").value;
+      const lvl  = document.getElementById("levelSelect").value;
+      const useAI = document.getElementById("aiToggle").checked && AI_ENDPOINT.startsWith("https://");
+
+      if (useAI) {
+        try {
+          const res = await fetch(AI_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, level: lvl })
+          });
+          const raw = await res.text();
+          const obj = JSON.parse(raw);
+
+          document.getElementById("outputText").value = obj.corrected || "";
+          document.getElementById("notes").innerHTML =
+            "<b>Changes:</b><br>" + (obj.notes?.map(n => "• " + n).join("<br>") || "(AI mode)");
+
+          if (obj.corrected) {
+            const altMap = obj.alternatives && Object.keys(obj.alternatives).length ? obj.alternatives : null;
+            if (altMap) {
+              const box = document.getElementById("altList");
+              box.innerHTML = Object.entries(altMap).map(([k, arr]) =>
+                `<div class="alt-section"><h4>“${k}” → consider:</h4>${
+                  (arr||[]).slice(0,6).map(w => `<button class="chip" onclick="document.getElementById('outputText').value = document.getElementById('outputText').value.replace(new RegExp('\\\\b${k}\\\\b','gi'),'${w}')">${w}</button>`).join('')
+                }</div>`).join('');
+            } else {
+              renderAlternatives(obj.corrected, buildAlternatives(obj.corrected, lvl === 'C1' ? 'C1' : 'B2'), lvl);
+            }
+            return;
+          }
+        } catch (e) {
+          alert("AI correction failed; using built-in rules instead.");
+          console.error(e);
+        }
+      }
+
+      // Built-in rule-based correction
+      const { out, notes, alts } = correct(text, lvl);
+      document.getElementById("outputText").value = out;
+      document.getElementById("notes").innerHTML =
+        "<b>Changes:</b><br>" + (notes.length ? notes.map(n => "• " + n).join("<br>") : "(No major changes)");
+      renderAlternatives(out, alts, lvl);
     };
 
     window.clearAll = function () {
@@ -561,10 +721,12 @@
         doc.text(lines, margin, y);
 
         doc.save("essay-corrected.pdf");
-      } catch (e) { alert("Could not create PDF: " + e.message); console.error(e); }
+      } catch (e) {
+        alert("Could not create PDF: " + e.message);
+        console.error(e);
+      }
     };
 
-    /* ========== Alternatives rendering & applying ========== */
     function renderAlternatives(currentText, alts, level) {
       const box = document.getElementById("altList");
       if (!alts.length) { box.innerHTML = "<span class='hint'>No suggestions for this text. Try a longer paragraph.</span>"; return; }
@@ -591,7 +753,6 @@
           };
           section.appendChild(chip);
         });
-
         containers.push(section);
       });
 
@@ -599,10 +760,11 @@
       containers.forEach(c => box.appendChild(c));
     }
 
-    /* ========== Initial render ========== */
+    /* ========== Initial render & optional dictionary load ========== */
     renderScaffold();
+    initWordlist();
 
-    /* ========== PWA: Register Service Worker (path-aware for GitHub Pages) ========== */
+    /* ========== PWA: Register Service Worker (GitHub Pages path-aware) ========== */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/alfons149-cmyk/sw.js').catch(console.error);
