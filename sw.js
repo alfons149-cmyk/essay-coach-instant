@@ -1,22 +1,21 @@
 /* ========= EssayCoach SW (GitHub Pages path-aware) =========
    Register from index.html as:
-   navigator.serviceWorker.register('/alfons149-cmyk/sw.js')
+   navigator.serviceWorker.register('/alfons149-cmyk/sw.js');
 */
 
 const REPO_BASE = '/alfons149-cmyk';
 
 /* -----------------------------------------------------------
    VERSION BUMP TIP:
-   - Any time you change index.html or JS logic, bump this:
-     CACHE_VERSION = 'v4'  ->  'v5', 'v6', etc.
-   - After you push, hard-refresh once (Ctrl/⌘+Shift+R).
-   - If icons/manifest change, bump too.
+   - Any time you change index.html, JS logic, icons, or this file,
+     bump CACHE_VERSION below: 'v5' -> 'v6', etc.
+   - After you push, do a hard refresh on your site (Ctrl/⌘+Shift+R).
 ----------------------------------------------------------- */
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 
-const STATIC_CACHE = `essaycoach-static-${CACHE_VERSION}`;
+const STATIC_CACHE  = `essaycoach-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `essaycoach-runtime-${CACHE_VERSION}`;
-const OFFLINE_URL = `${REPO_BASE}/offline.html`;
+const OFFLINE_URL   = `${REPO_BASE}/offline.html`;
 
 // Core assets to precache for offline
 const PRECACHE_URLS = [
@@ -66,7 +65,6 @@ self.addEventListener('fetch', (event) => {
           const fresh = await fetch(req);
           return fresh;
         } catch (err) {
-          // Return cached index if available; otherwise offline page
           const cachedIndex = await caches.match(`${REPO_BASE}/index.html`);
           return cachedIndex || caches.match(OFFLINE_URL);
         }
