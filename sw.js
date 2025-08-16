@@ -1,12 +1,22 @@
 /* ========= EssayCoach SW (GitHub Pages path-aware) =========
-   Place this file at repo root and register it from:
+   Register from index.html as:
    navigator.serviceWorker.register('/alfons149-cmyk/sw.js')
 */
 
 const REPO_BASE = '/alfons149-cmyk';
-const CACHE_VERSION = 'v3';
+
+/* -----------------------------------------------------------
+   VERSION BUMP TIP:
+   - Any time you change index.html or JS logic, bump this:
+     CACHE_VERSION = 'v4'  ->  'v5', 'v6', etc.
+   - After you push, hard-refresh once (Ctrl/⌘+Shift+R).
+   - If icons/manifest change, bump too.
+----------------------------------------------------------- */
+const CACHE_VERSION = 'v4';
+
 const STATIC_CACHE = `essaycoach-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `essaycoach-runtime-${CACHE_VERSION}`;
+const OFFLINE_URL = `${REPO_BASE}/offline.html`;
 
 // Core assets to precache for offline
 const PRECACHE_URLS = [
@@ -14,7 +24,8 @@ const PRECACHE_URLS = [
   `${REPO_BASE}/index.html`,
   `${REPO_BASE}/manifest.webmanifest`,
   `${REPO_BASE}/icon-192.png`,
-  `${REPO_BASE}/icon-512.png`
+  `${REPO_BASE}/icon-512.png`,
+  OFFLINE_URL
 ];
 
 // --- Install: cache core assets
@@ -47,14 +58,19 @@ self.addEventListener('fetch', (event) => {
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
-  // 1) SPA-style navigation requests → serve cached index.html (offline support)
+  // 1) SPA-style navigation → network first, fallback to cached index, then offline page
   if (req.mode === 'navigate') {
     event.respondWith(
-      caches.match(`${REPO_BASE}/index.html`).then((resp) => {
-        const fetchPromise = fetch(req).catch(() => resp);
-        // If we have a cached HTML, return it immediately; otherwise fall back to network
-        return resp || fetchPromise;
-      })
+      (async () => {
+        try {
+          const fresh = await fetch(req);
+          return fresh;
+        } catch (err) {
+          // Return cached index if available; otherwise offline page
+          const cachedIndex = await caches.match(`${REPO_BASE}/index.html`);
+          return cachedIndex || caches.match(OFFLINE_URL);
+        }
+      })()
     );
     return;
   }
@@ -67,21 +83,18 @@ self.addEventListener('fetch', (event) => {
         return fetch(req)
           .then((res) => {
             const resClone = res.clone();
-            // Only cache successful, basic/cors responses
             if (res.status === 200 && (res.type === 'basic' || res.type === 'cors')) {
               caches.open(RUNTIME_CACHE).then((cache) => cache.put(req, resClone));
             }
             return res;
           })
           .catch(() => {
-            // As a tiny fallback: if requesting the manifest or icons and offline, try index
-            if (req.destination === 'document') return caches.match(`${REPO_BASE}/index.html`);
+            if (req.destination === 'document') return caches.match(OFFLINE_URL);
           });
       })
     );
     return;
   }
 
-  // 3) Default: just passthrough
-  // (You could add caching for CDN assets if you want)
+  // 3) Default passthrough
 });
