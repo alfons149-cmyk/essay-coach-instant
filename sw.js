@@ -8,10 +8,10 @@ const REPO_BASE = '/alfons149-cmyk';
 /* -----------------------------------------------------------
    VERSION BUMP TIP:
    - Any time you change index.html, JS logic, icons, or this file,
-     bump CACHE_VERSION below: 'v5' -> 'v6', etc.
+     bump CACHE_VERSION below: 'v6' -> 'v7', etc.
    - After you push, do a hard refresh on your site (Ctrl/⌘+Shift+R).
 ----------------------------------------------------------- */
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 
 const STATIC_CACHE  = `essaycoach-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `essaycoach-runtime-${CACHE_VERSION}`;
@@ -57,7 +57,7 @@ self.addEventListener('fetch', (event) => {
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
-  // 1) SPA-style navigation → network first, fallback to cached index, then offline page
+  // 1) SPA-style navigation → network first; fallback to cached index, then offline page
   if (req.mode === 'navigate') {
     event.respondWith(
       (async () => {
@@ -73,7 +73,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) Static assets in our repo base → cache-first
+  // 2) Static assets under our base path → cache-first
   if (url.pathname.startsWith(REPO_BASE)) {
     event.respondWith(
       caches.match(req).then((cached) => {
