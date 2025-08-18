@@ -573,6 +573,34 @@
       if (location.hash === '#corrector') showTab('corrector'); else showTab('scaffolds');
     });
 
+    async function pasteFromClipboard() {
+  const ta = document.getElementById("inputText");
+  try {
+    // Requires HTTPS + user gesture
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      // Insert at caret if possible; otherwise replace
+      const start = ta.selectionStart ?? ta.value.length;
+      const end   = ta.selectionEnd   ?? ta.value.length;
+      ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = start + text.length;
+    } else {
+      alert("Your clipboard is empty.");
+    }
+  } catch (e) {
+    // Fallback guidance
+    alert("Browser blocked clipboard. Try Ctrl/Cmd+V on desktop, or long-press → Paste on mobile. You can also grant clipboard permission in the address bar/site settings.");
+    console.error(e);
+  }
+}
+
+// (Optional) ensure paste events aren’t being blocked by something else
+document.getElementById("inputText")?.addEventListener("paste", () => {
+  // No preventDefault here — allow native paste
+}, { passive: true });
+
+
     /* ========= PWA: register Service Worker (GitHub Pages path) ========= */
     if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
