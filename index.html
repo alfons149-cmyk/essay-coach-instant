@@ -34,6 +34,11 @@
     textarea { width:100%; resize:vertical; }
     button { cursor:pointer; }
     button.primary { background: var(--b); color:#fff; border-color: var(--b); }
+    textarea {  -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default; /* enables long-press menu on iOS */
+}
+
 
     .notes { margin-top:10px; background:#f3f4f6; padding:10px; border-radius:10px; border:1px solid var(--border); }
     .hint { color:var(--muted); font-size:12px; margin-top:6px; }
