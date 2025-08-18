@@ -3,21 +3,13 @@
    navigator.serviceWorker.register('/alfons149-cmyk/sw.js');
 */
 
-const REPO_BASE = '/alfons149-cmyk';
-
-/* -----------------------------------------------------------
-   VERSION BUMP TIP:
-   - Any time you change index.html, JS logic, icons, or this file,
-     bump CACHE_VERSION below: 'v6' -> 'v7', etc.
-   - After you push, do a hard refresh on your site (Ctrl/⌘+Shift+R).
------------------------------------------------------------ */
-const CACHE_VERSION = 'v11';
+const REPO_BASE = '/essay-coach-instant'; // ✅ update
+const CACHE_VERSION = 'v10';              // 🔼 bump this
 
 const STATIC_CACHE  = `essaycoach-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `essaycoach-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL   = `${REPO_BASE}/offline.html`;
 
-// Core assets to precache for offline
 const PRECACHE_URLS = [
   `${REPO_BASE}/`,
   `${REPO_BASE}/index.html`,
