@@ -569,10 +569,11 @@
     });
 
     /* ========= PWA: register Service Worker (GitHub Pages path) ========= */
-    if('serviceWorker' in navigator){
-      window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js', { scope: './' }).catch(console.error);
- });
-    }
+    if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { scope: './' }).catch(console.error);
+  });
+}
   </script>
 </body>
 </html>
