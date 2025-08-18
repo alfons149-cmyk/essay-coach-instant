@@ -11,7 +11,7 @@ const REPO_BASE = '/alfons149-cmyk';
      bump CACHE_VERSION below: 'v6' -> 'v7', etc.
    - After you push, do a hard refresh on your site (Ctrl/⌘+Shift+R).
 ----------------------------------------------------------- */
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 
 const STATIC_CACHE  = `essaycoach-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `essaycoach-runtime-${CACHE_VERSION}`;
