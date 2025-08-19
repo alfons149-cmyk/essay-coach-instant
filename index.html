@@ -609,5 +609,21 @@ document.getElementById("inputText")?.addEventListener("paste", () => {
   });
 }
   </script>
+
+  <div id="debug" style="margin:16px auto; max-width:980px; padding:12px; border:1px dashed #999; border-radius:12px; background:#fff;">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+    <strong>Debug</strong>
+    <div>
+      <button onclick="debugStatus()">Status</button>
+      <button onclick="debugTest()">Test AI</button>
+      <button onclick="document.getElementById('debugLog').textContent='';">Clear log</button>
+    </div>
+  </div>
+  <div style="font-size:13px; color:#555; margin-top:6px">
+    AI endpoint in use: <code id="dbg-endpoint"></code> — AI toggle disabled? <code id="dbg-disabled"></code>
+  </div>
+  <pre id="debugLog" style="margin-top:8px; max-height:220px; overflow:auto; background:#f7f7f8; padding:8px; border-radius:8px;"></pre>
+</div>
+
 </body>
 </html>
