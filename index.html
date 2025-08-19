@@ -437,61 +437,64 @@
     }
 
     /* ========== AI-first correction handler with robust fallback ========== */
-    window.runCorrection = async function () {
-      const text = document.getElementById("inputText").value;
-      const lvl  = document.getElementById("levelSelect").value;
-      const formal = document.getElementById("formalToggle").checked;
-      const useAI = document.getElementById("aiToggle").checked && AI_ENDPOINT && AI_ENDPOINT.startsWith("https://");
+    <script>
+window.runCorrection = async function () {
+  const text   = document.getElementById("inputText").value;
+  const lvl    = document.getElementById("levelSelect").value;
+  const formal = document.getElementById("formalToggle").checked;
 
-      const setNotes = (html)=>{ document.getElementById("notes").innerHTML = html; };
-      const setOut   = (val)=>{ document.getElementById("outputText").value = val; };
+  const setNotes = (html)=>{ document.getElementById("notes").innerHTML = html; };
+  const setOut   = (val)=>{ document.getElementById("outputText").value = val; };
 
-      if (useAI) {
-        try {
-          const res = await fetch(AI_ENDPOINT, {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json' },
-            body: JSON.stringify({ text, level:lvl, formal })
-          });
-          const raw = await res.text();
-          try {
-            const obj = JSON.parse(raw);
-            if (obj.corrected) {
-              setOut(obj.corrected);
-              setNotes("<b>Changes (AI):</b><br>"+(obj.notes?.map(n=>"• "+n).join("<br>")||"(none)"));
-              renderAlternatives(obj.corrected, buildAlternatives(obj.corrected, lvl==='C1'?'C1':'B2'), lvl==='C1'?'C1':'B2');
-              return;
-            }
-          } catch(e){ console.warn("AI JSON parse issue:", e, raw); }
-        } catch(e){ console.warn("AI call failed:", e); }
+  // TEMP: force AI to verify end-to-end (we’ll revert after it works)
+  const useAI = true;
+
+  if (useAI) {
+    try {
+      const res = await fetch(AI_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ text, level: lvl, formal })
+      });
+
+      // Show HTTP status so we immediately know what's wrong if any
+      if (!res.ok) {
+        const detail = await res.text().catch(()=>"(no body)");
+        setNotes(`<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`);
+        return; // don’t fall back; we want to see the error
       }
 
-      // Fallback to local rules
-      const { out, notes, alts } = correctLocal(text, lvl);
-      setOut(out);
-      setNotes("<b>Changes:</b><br>"+(notes.length?notes.map(n=>"• "+n).join("<br>"):"(No major changes)"));
-      renderAlternatives(out, alts, lvl==='C1'?'C1':'B2');
-    };
-
-    window.clearAll = function(){
-      inputText.value=""; outputText.value="";
-      document.getElementById("notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
-      document.getElementById("altList").innerHTML="After correction, suggested upgrades will appear here (especially for C1/C2).";
-    };
-
-    async function pasteFromClipboard(){
-      const ta=document.getElementById("inputText");
-      try{
-        const text=await navigator.clipboard.readText();
-        if(text){
-          const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
-          ta.value = ta.value.slice(0,start)+text+ta.value.slice(end);
-          ta.focus(); ta.selectionStart=ta.selectionEnd=start+text.length;
-        } else alert("Your clipboard is empty.");
-      }catch(e){
-        alert("Browser blocked clipboard. Try Ctrl/Cmd+V on desktop, or long-press → Paste on mobile.");
-        console.error(e);
+      const raw = await res.text();
+      let obj;
+      try { obj = JSON.parse(raw); }
+      catch (e) {
+        setNotes(`<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${raw}</pre>`);
+        return;
       }
+
+      if (obj.corrected) {
+        setOut(obj.corrected);
+        setNotes("<b>Changes (AI):</b><br>" + (obj.notes?.map(n => "• " + n).join("<br>") || "(none)"));
+        // You can render AI alternatives here if you like
+        return;
+      } else {
+        setNotes(`<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre>`);
+        return;
+      }
+    } catch (e) {
+      setNotes("<b>AI call error (network/CORS?):</b><br><pre style='white-space:pre-wrap'>" + String(e) + "</pre>");
+      return;
+    }
+  }
+
+  // Fallback (won’t run while forced AI is ON)
+  const { out, notes, alts } = correctLocal(text, lvl);
+  setOut(out);
+  setNotes("<b>Changes:</b><br>" + (notes.length ? notes.map(n => "• " + n).join("<br>") : "(No major changes)"));
+  renderAlternatives(out, alts, lvl === 'C1' ? 'C1' : 'B2');
+};
+</script>
+
     }
 
     window.downloadPDF = function(){
