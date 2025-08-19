@@ -674,5 +674,61 @@ document.getElementById("inputText")?.addEventListener("paste", () => {
   <pre id="debugLog" style="margin-top:8px; max-height:220px; overflow:auto; background:#f7f7f8; padding:8px; border-radius:8px;"></pre>
 </div>
 
+<script>
+function dbg(msg){
+  const el=document.getElementById('debugLog');
+  if(!el) return;
+  el.textContent += (typeof msg==='string'?msg:JSON.stringify(msg,null,2)) + "\n";
+}
+
+function debugStatus(){
+  try{
+    const aiBox = document.getElementById('aiToggle');
+    const ep = (typeof AI_ENDPOINT!=='undefined') ? AI_ENDPOINT : '(not set)';
+    const disabled = aiBox ? String(!!aiBox.disabled) : '(missing)';
+    document.getElementById('dbg-endpoint').textContent = ep;
+    document.getElementById('dbg-disabled').textContent = disabled;
+    dbg('--- STATUS ---');
+    dbg({ AI_ENDPOINT: ep, aiToggleChecked: aiBox?.checked, aiToggleDisabled: aiBox?.disabled });
+  }catch(e){ dbg(e); }
+}
+
+async function debugTest(){
+  try{
+    const ta = document.getElementById('inputText');
+    const lvl = document.getElementById('levelSelect')?.value || 'B2';
+    const formal = document.getElementById('formalToggle')?.checked ?? true;
+    const sample = (ta?.value?.trim()) || "First i wanna say its ok but we kinda need a lot";
+
+    dbg('--- TEST AI POST ---');
+    dbg({ url: AI_ENDPOINT, level: lvl, formal });
+
+    const res = await fetch(AI_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ text: sample, level: lvl, formal })
+    });
+    const text = await res.text();
+    dbg({ status: res.status, ok: res.ok });
+    dbg(text);
+
+    // If JSON, also show in the app Output/Notes:
+    try {
+      const obj = JSON.parse(text);
+      if (obj.corrected) {
+        const out = document.getElementById('outputText');
+        const notes = document.getElementById('notes');
+        if (out) out.value = obj.corrected;
+        if (notes) notes.innerHTML = "<b>Changes (AI):</b><br>" + (obj.notes?.map(n => "• " + n).join("<br>") || "(none)");
+      }
+    } catch {}
+  } catch(e) { dbg(e); }
+}
+
+// Auto-fill status on load
+window.addEventListener('load', debugStatus);
+</script>
+<!-- ======= /Inline Debug Panel ======= -->
+
 </body>
 </html>
