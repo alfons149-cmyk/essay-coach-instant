@@ -440,59 +440,96 @@
     }
 
     /* ========= Correction handler: AI first, fallback to local ========= */
-    window.runCorrection = async function(){
-      const text   = document.getElementById("inputText").value;
-      const lvl    = document.getElementById("levelSelect").value;
-      const formal = document.getElementById("formalToggle").checked;
-      const useAI  = true; // TEMP: force AI to verify Worker path
+    <script>
+window.runCorrection = async function () {
+  const input = document.getElementById("inputText").value.trim();
+  const level = document.getElementById("levelSelect").value;
+  const formal = document.getElementById("formalToggle").checked;
+  const useAI = document.getElementById("aiToggle").checked;
+  const outBox = document.getElementById("outputText");
+  const notesBox = document.getElementById("notes");
+  const altBox = document.getElementById("altList");
 
+  if (!input) {
+    outBox.value = "";
+    notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>No input provided.</span>";
+    altBox.innerHTML = "";
+    return;
+  }
 
-      const setNotes=(html)=>{ document.getElementById("notes").innerHTML=html; };
-      const setOut  =(val)=>{ document.getElementById("outputText").value=val; };
+  // If AI is enabled and endpoint set
+  if (useAI && AI_ENDPOINT && AI_ENDPOINT.startsWith("https://")) {
+    try {
+      const resp = await fetch(AI_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: input, level, formal })
+      });
 
-      setNotes("<b>Changes:</b><br><span class='hint'>Processing…</span>");
-      setOut("");
-      document.getElementById("altList").innerHTML = "<span class='hint'>Processing…</span>";
-
-      if(useAI){
-        try{
-          const res=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text, level:lvl, formal})});
-          if (!res.ok) {
-   const detail = await res.text().catch(()=>"(no body)");
-  setNotes(`<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`);
-  return; // stop here; don’t fall back silently
-}
-
-          if(!res.ok){
-            const detail = await res.text().catch(()=>"(no body)");
-            setNotes(`<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`);
-          } else {
-            const raw=await res.text(); let obj;
-            try{ obj=JSON.parse(raw);}catch(e){ setNotes(`<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${raw}</pre>`); return; }
-            if(obj && typeof obj.corrected==='string'){
-              setOut(obj.corrected);
-              setNotes("<b>Changes (AI):</b><br>"+(obj.notes?.map(n=>"• "+n).join("<br>")||"(none)"));
-              const alts = obj.alternatives && typeof obj.alternatives==='object'
-                ? Object.keys(obj.alternatives).map(k=>({ simple:k, options:obj.alternatives[k]||[] }))
-                : buildAlternatives(obj.corrected, lvl==='C1'?'C1':'B2');
-              renderAlternatives(obj.corrected, alts, lvl==='C1'?'C1':'B2');
-              return;
-            } else {
-              setNotes(`<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre>`);
-            }
-          }
-        }catch(e){
-          setNotes("<b>AI call error (network/CORS?):</b><br><pre style='white-space:pre-wrap'>"+String(e)+"</pre>");
-        }
-        // If AI path failed → continue to fallback
+      // 🚨 New guard: show error instead of silent fallback
+      if (!resp.ok) {
+        const detail = await resp.text();
+        notesBox.innerHTML = `<b>AI error:</b><br><code>${detail}</code>`;
+        return; // don’t fallback unless you want both AI + rules
       }
 
-      // Local fallback
-      const {out,notes,alts}=correctLocal(text,lvl);
-      setOut(out);
-      setNotes("<b>Changes:</b><br>"+(notes.length?notes.map(n=>"• "+n).join("<br>"):"(No major changes)"));
-      renderAlternatives(out, alts, lvl==='C1'?'C1':'B2');
-    };
+      const data = await resp.json();
+      console.log("AI raw response:", data);
+
+      if (data.corrected) {
+        outBox.value = data.corrected;
+        notesBox.innerHTML = "<b>Changes:</b><br>" + (data.notes?.join("<br>") || "(no notes)");
+
+        // Render alternatives if any
+        if (data.alternatives && Object.keys(data.alternatives).length > 0) {
+          let html = "";
+          for (const [word, options] of Object.entries(data.alternatives)) {
+            html += `<div class="alt-section"><h4>${word}</h4>`;
+            options.forEach(opt => {
+              html += `<span class="chip" onclick="replaceWord('${word}','${opt}')">${opt}</span>`;
+            });
+            html += `</div>`;
+          }
+          altBox.innerHTML = html;
+        } else {
+          altBox.innerHTML = "<span class='hint'>No alternatives suggested.</span>";
+        }
+
+        return; // ✅ AI succeeded, stop here
+      } else {
+        notesBox.innerHTML = "<b>AI returned no corrections.</b>";
+        return;
+      }
+    } catch (e) {
+      notesBox.innerHTML = `<b>AI fetch failed:</b> ${e.message}`;
+      console.error("AI fetch error", e);
+      return;
+    }
+  }
+
+  // === Fallback: local correction rules ===
+  let corrected = input;
+  let notes = [];
+
+  // Example rules
+  corrected = corrected.replace(/\b([Aa]) apple\b/g, "$1n apple");
+  corrected = corrected.replace(/\bwhot\b/gi, "what");
+  corrected = corrected.replace(/\b(F|F)irst\s/i, "$1irst, ");
+  // add more simple regex rules...
+
+  if (corrected !== input) notes.push("Basic local corrections applied.");
+
+  outBox.value = corrected;
+  notesBox.innerHTML = "<b>Changes:</b><br>" + (notes.join("<br>") || "No changes.");
+  altBox.innerHTML = "<span class='hint'>Alternatives available with AI only.</span>";
+};
+
+// Helper for clicking alt suggestions
+window.replaceWord = function (from, to) {
+  const outBox = document.getElementById("outputText");
+  outBox.value = outBox.value.replace(new RegExp("\\b" + from + "\\b", "g"), to);
+};
+</script>
 
     /* ========= Clear / Paste / PDF ========= */
     window.clearAll=function(){
