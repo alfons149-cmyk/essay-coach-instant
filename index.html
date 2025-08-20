@@ -457,6 +457,12 @@
       if(useAI){
         try{
           const res=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text, level:lvl, formal})});
+          if (!res.ok) {
+   const detail = await res.text().catch(()=>"(no body)");
+  setNotes(`<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`);
+  return; // stop here; don’t fall back silently
+}
+
           if(!res.ok){
             const detail = await res.text().catch(()=>"(no body)");
             setNotes(`<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`);
