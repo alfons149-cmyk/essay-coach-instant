@@ -143,7 +143,6 @@
       <div class="card" style="margin-bottom:12px">
         <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Corrected Output</div>
         <textarea id="outputText" rows="7" readonly placeholder="Your corrected text will appear here..."></textarea>
-
         <div class="notes" id="notes"><b>Changes:</b><br><span class="hint">Corrections will appear here after you click “Correct”.</span></div>
       </div>
 
@@ -440,96 +439,81 @@
     }
 
     /* ========= Correction handler: AI first, fallback to local ========= */
-    <script>
-window.runCorrection = async function () {
-  const input = document.getElementById("inputText").value.trim();
-  const level = document.getElementById("levelSelect").value;
-  const formal = document.getElementById("formalToggle").checked;
-  const useAI = document.getElementById("aiToggle").checked;
-  const outBox = document.getElementById("outputText");
-  const notesBox = document.getElementById("notes");
-  const altBox = document.getElementById("altList");
+    window.runCorrection = async function () {
+      const input = document.getElementById("inputText").value.trim();
+      const lvl   = document.getElementById("levelSelect").value;
+      const formal= document.getElementById("formalToggle").checked;
+      const useAI = document.getElementById("aiToggle").checked && AI_ENDPOINT && AI_ENDPOINT.startsWith("https://");
 
-  if (!input) {
-    outBox.value = "";
-    notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>No input provided.</span>";
-    altBox.innerHTML = "";
-    return;
-  }
+      const outBox  = document.getElementById("outputText");
+      const notesBox= document.getElementById("notes");
+      const altBox  = document.getElementById("altList");
 
-  // If AI is enabled and endpoint set
-  if (useAI && AI_ENDPOINT && AI_ENDPOINT.startsWith("https://")) {
-    try {
-      const resp = await fetch(AI_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input, level, formal })
-      });
-
-      // 🚨 New guard: show error instead of silent fallback
-      if (!resp.ok) {
-        const detail = await resp.text();
-        notesBox.innerHTML = `<b>AI error:</b><br><code>${detail}</code>`;
-        return; // don’t fallback unless you want both AI + rules
-      }
-
-      const data = await resp.json();
-      console.log("AI raw response:", data);
-
-      if (data.corrected) {
-        outBox.value = data.corrected;
-        notesBox.innerHTML = "<b>Changes:</b><br>" + (data.notes?.join("<br>") || "(no notes)");
-
-        // Render alternatives if any
-        if (data.alternatives && Object.keys(data.alternatives).length > 0) {
-          let html = "";
-          for (const [word, options] of Object.entries(data.alternatives)) {
-            html += `<div class="alt-section"><h4>${word}</h4>`;
-            options.forEach(opt => {
-              html += `<span class="chip" onclick="replaceWord('${word}','${opt}')">${opt}</span>`;
-            });
-            html += `</div>`;
-          }
-          altBox.innerHTML = html;
-        } else {
-          altBox.innerHTML = "<span class='hint'>No alternatives suggested.</span>";
-        }
-
-        return; // ✅ AI succeeded, stop here
-      } else {
-        notesBox.innerHTML = "<b>AI returned no corrections.</b>";
+      if (!input) {
+        outBox.value = "";
+        notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>No input provided.</span>";
+        altBox.innerHTML = "";
         return;
       }
-    } catch (e) {
-      notesBox.innerHTML = `<b>AI fetch failed:</b> ${e.message}`;
-      console.error("AI fetch error", e);
-      return;
-    }
-  }
 
-  // === Fallback: local correction rules ===
-  let corrected = input;
-  let notes = [];
+      notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>Processing…</span>";
+      altBox.innerHTML   = "<span class='hint'>Processing…</span>";
+      outBox.value = "";
 
-  // Example rules
-  corrected = corrected.replace(/\b([Aa]) apple\b/g, "$1n apple");
-  corrected = corrected.replace(/\bwhot\b/gi, "what");
-  corrected = corrected.replace(/\b(F|F)irst\s/i, "$1irst, ");
-  // add more simple regex rules...
+      // ===== AI path =====
+      if (useAI) {
+        try {
+          const res = await fetch(AI_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: input, level: lvl, formal })
+          });
 
-  if (corrected !== input) notes.push("Basic local corrections applied.");
+          // Guard: show error instead of silent fallback
+          if (!res.ok) {
+            const detail = await res.text().catch(()=>"(no body)");
+            notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`;
+            return; // stop here; do not fallback silently
+          }
 
-  outBox.value = corrected;
-  notesBox.innerHTML = "<b>Changes:</b><br>" + (notes.join("<br>") || "No changes.");
-  altBox.innerHTML = "<span class='hint'>Alternatives available with AI only.</span>";
-};
+          const raw = await res.text();
+          let data;
+          try { data = JSON.parse(raw); }
+          catch(e) {
+            notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${raw}</pre>`;
+            return;
+          }
 
-// Helper for clicking alt suggestions
-window.replaceWord = function (from, to) {
-  const outBox = document.getElementById("outputText");
-  outBox.value = outBox.value.replace(new RegExp("\\b" + from + "\\b", "g"), to);
-};
-</script>
+          if (data && typeof data.corrected === 'string') {
+            outBox.value = data.corrected;
+            notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (Array.isArray(data.notes) ? data.notes.map(n=>"• "+n).join("<br>") : "(none)");
+
+            // Alternatives: prefer AI; else local build
+            let alts = [];
+            if (data.alternatives && typeof data.alternatives === 'object' && Object.keys(data.alternatives).length) {
+              alts = Object.entries(data.alternatives).map(([k, arr]) => ({ simple: k, options: Array.isArray(arr) ? arr : [] }));
+            } else {
+              alts = buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
+            }
+            renderAlternatives(data.corrected, alts, (lvl === 'C1' ? 'C1' : 'B2'));
+            return; // AI succeeded
+          } else {
+            notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre>`;
+            return;
+          }
+        } catch (e) {
+          notesBox.innerHTML = `<b>AI fetch failed:</b> ${e.message}`;
+          console.error("AI fetch error:", e);
+          return;
+        }
+      }
+
+      // ===== Local fallback =====
+      const { out, notes, alts } = correctLocal(input, lvl);
+      outBox.value = out;
+      notesBox.innerHTML = "<b>Changes:</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+      renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
+    };
 
     /* ========= Clear / Paste / PDF ========= */
     window.clearAll=function(){
