@@ -444,7 +444,8 @@
       const text   = document.getElementById("inputText").value;
       const lvl    = document.getElementById("levelSelect").value;
       const formal = document.getElementById("formalToggle").checked;
-      const useAI  = document.getElementById("aiToggle").checked && AI_ENDPOINT && AI_ENDPOINT.startsWith("https://");
+      const useAI  = true; // TEMP: force AI to verify Worker path
+
 
       const setNotes=(html)=>{ document.getElementById("notes").innerHTML=html; };
       const setOut  =(val)=>{ document.getElementById("outputText").value=val; };
