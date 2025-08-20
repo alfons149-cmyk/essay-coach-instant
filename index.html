@@ -159,7 +159,7 @@
   <!-- Main logic -->
   <script>
     /* ========= Cloudflare Worker AI endpoint ========= */
-    const AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev"; // your Worker
+    const AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev"; // your Worker URL
 
     /* ========= Tabs ========= */
     function showTab(which){
@@ -469,24 +469,26 @@
             body: JSON.stringify({ text: input, level: lvl, formal })
           });
 
-          // Guard: show error instead of silent fallback
+          // If AI fails, show error and auto-fallback
           if (!res.ok) {
-  const detail = await res.text().catch(()=>"(no body)");
-  notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre><br><i>Using local rules instead.</i>`;
-  // Fall back to local rules so users still get help
-  const { out, notes, alts } = correctLocal(input, lvl);
-  outBox.value = out;
-  notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
-  renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
-  return;
-}
-
+            const detail = await res.text().catch(()=>"(no body)");
+            notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre><br><i>Using local rules instead.</i>`;
+            const { out, notes, alts } = correctLocal(input, lvl);
+            outBox.value = out;
+            notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+            renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
+            return;
+          }
 
           const raw = await res.text();
           let data;
           try { data = JSON.parse(raw); }
           catch(e) {
-            notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${raw}</pre>`;
+            notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${raw}</pre><br><i>Using local rules instead.</i>`;
+            const { out, notes, alts } = correctLocal(input, lvl);
+            outBox.value = out;
+            notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+            renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
             return;
           }
 
@@ -494,7 +496,7 @@
             outBox.value = data.corrected;
             notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (Array.isArray(data.notes) ? data.notes.map(n=>"• "+n).join("<br>") : "(none)");
 
-            // Alternatives: prefer AI; else local build
+            // Alternatives: prefer AI; else local
             let alts = [];
             if (data.alternatives && typeof data.alternatives === 'object' && Object.keys(data.alternatives).length) {
               alts = Object.entries(data.alternatives).map(([k, arr]) => ({ simple: k, options: Array.isArray(arr) ? arr : [] }));
@@ -504,20 +506,24 @@
             renderAlternatives(data.corrected, alts, (lvl === 'C1' ? 'C1' : 'B2'));
             return; // AI succeeded
           } else {
-            notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre>`;
+            notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre><br><i>Using local rules instead.</i>`;
+            const { out, notes, alts } = correctLocal(input, lvl);
+            outBox.value = out;
+            notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+            renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
             return;
           }
         } catch (e) {
-  notesBox.innerHTML = `<b>AI fetch failed:</b> ${e.message}<br><i>Using local rules instead.</i>`;
-  const { out, notes, alts } = correctLocal(input, lvl);
-  outBox.value = out;
-  notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
-  renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
-  return;
-}
+          notesBox.innerHTML = `<b>AI fetch failed:</b> ${e.message}<br><i>Using local rules instead.</i>`;
+          const { out, notes, alts } = correctLocal(input, lvl);
+          outBox.value = out;
+          notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+          renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
+          return;
+        }
+      }
 
-
-      // ===== Local fallback =====
+      // ===== Local fallback (if AI unchecked) =====
       const { out, notes, alts } = correctLocal(input, lvl);
       outBox.value = out;
       notesBox.innerHTML = "<b>Changes:</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
