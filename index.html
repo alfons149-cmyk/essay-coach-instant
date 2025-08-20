@@ -471,10 +471,16 @@
 
           // Guard: show error instead of silent fallback
           if (!res.ok) {
-            const detail = await res.text().catch(()=>"(no body)");
-            notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`;
-            return; // stop here; do not fallback silently
-          }
+  const detail = await res.text().catch(()=>"(no body)");
+  notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre><br><i>Using local rules instead.</i>`;
+  // Fall back to local rules so users still get help
+  const { out, notes, alts } = correctLocal(input, lvl);
+  outBox.value = out;
+  notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+  renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
+  return;
+}
+
 
           const raw = await res.text();
           let data;
