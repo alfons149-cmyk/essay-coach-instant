@@ -31,7 +31,7 @@
     @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
 
     textarea, select, button { font:inherit; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff; min-height:44px; }
-    textarea { width:100%; resize:vertical; }
+    textarea { width:100%; resize:vertical; -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
     button { cursor:pointer; }
     button.primary { background: var(--b); color:#fff; border-color: var(--b); }
 
@@ -103,7 +103,7 @@
     <!-- CORRECTOR TAB -->
     <section id="view-corrector" style="display:none">
       <div class="card" style="margin-bottom:12px">
-        <label>
+        <label style="display:block; margin-bottom:8px">
           <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Level</div>
           <select id="levelSelect">
             <option value="B2">B2 First</option>
@@ -132,11 +132,18 @@
           <input type="checkbox" id="aiToggle" />
           <span>Use AI (ChatGPT) for deeper corrections (requires Worker URL)</span>
         </label>
+
+        <div class="hint" style="margin-top:6px">
+          Try: “It was late however we continued the discussion” → “It was late; however, we continued the discussion.”
+          • “First I would like to…” → “First, I would like to…”
+          • “a apple” → “an apple” • “whot” → “what”
+        </div>
       </div>
 
       <div class="card" style="margin-bottom:12px">
         <div style="color:#6b7280; font-size:14px; margin-bottom:6px">Corrected Output</div>
         <textarea id="outputText" rows="7" readonly placeholder="Your corrected text will appear here..."></textarea>
+
         <div class="notes" id="notes"><b>Changes:</b><br><span class="hint">Corrections will appear here after you click “Correct”.</span></div>
       </div>
 
@@ -152,54 +159,390 @@
 
   <!-- Main logic -->
   <script>
-    const AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev"; // Cloudflare Worker
+    /* ========= Cloudflare Worker AI endpoint ========= */
+    const AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev"; // your Worker
 
+    /* ========= Tabs ========= */
     function showTab(which){
       document.getElementById('tab-scaffolds').classList.toggle('active', which==='scaffolds');
       document.getElementById('tab-corrector').classList.toggle('active', which==='corrector');
-      document.getElementById('view-scaffolds').style.display = (which==='scaffolds') ? '' : 'none';
-      document.getElementById('view-corrector').style.display = (which==='corrector') ? '' : 'none';
+      document.getElementById('view-scaffolds').style.display  = (which==='scaffolds') ? '' : 'none';
+      document.getElementById('view-corrector').style.display  = (which==='corrector') ? '' : 'none';
     }
 
-    /* === Dummy scaffold functions (replace with your real ones) === */
-    function renderScaffold(){ document.getElementById('scMoves').innerHTML="<li>Intro</li><li>Point 1</li><li>Point 2</li><li>Conclusion</li>"; document.getElementById('scOpener').textContent="One important aspect to consider is…"; document.getElementById('scTips').innerHTML="<li>Plan before you write</li><li>Use linking words</li>"; }
-    function copyScaffold(){ navigator.clipboard.writeText("Scaffold text").then(()=>alert("Copied!")); }
-    function copyOpener(){ navigator.clipboard.writeText("One important aspect to consider is…"); }
-    function exportScaffoldPDF(){ alert("Export scaffold to PDF coming soon"); }
-    function renderAlternatives(text, alts, level){ document.getElementById('altList').innerHTML = alts.length ? alts.map(a=>`<div class="chip">${a.simple}: ${a.options.join(", ")}</div>`).join("") : "<span class='hint'>(no alternatives)</span>"; }
-    function buildAlternatives(text, level){ return []; }
-    function correctLocal(text, lvl){ return { out: text, notes:["(local rules only)"], alts:[] }; }
+    /* ========= Scaffolds (B2 / C1) ========= */
+    const SCAFFOLDS = {
+      B2: {
+        essay: { moves: [
+          "Introduction: Paraphrase the question; give a clear opinion.",
+          "Body 1: First main point + short example/evidence.",
+          "Body 2: Second main point + short example/evidence.",
+          "Conclusion: Summarise and restate your opinion."
+        ],
+        opener: "In recent years, the question of [topic] has received considerable attention. In my view, [your opinion], because [reason].",
+        tips: [
+          "Use clear topic sentences at the start of each paragraph.",
+          "Avoid contractions and slang; use formal linkers (however, in addition, therefore).",
+          "Keep sentences concise; prefer clarity over complexity."
+        ]},
+        report: { moves:[
+          "Introduction: Purpose and who the report is for.",
+          "Findings 1: Current situation/results.",
+          "Findings 2: Problems/positives.",
+          "Recommendations: Specific, practical suggestions."
+        ],
+        opener:"The aim of this report is to evaluate [place/system] and to suggest improvements based on recent feedback.",
+        tips:["Use headings and bullet points if allowed.","Be objective and concise; avoid personal anecdotes.","Use formal register: 'It is recommended that…'"]},
+        review: { moves:[
+          "Intro: Title/creator/genre + overall verdict.",
+          "Paragraph 1: Brief summary (no spoilers).",
+          "Paragraph 2: Evaluation (strengths/weaknesses).",
+          "Conclusion: Who would enjoy it + rating."
+        ],
+        opener:"[Title] is a [genre] that succeeds because of its [feature], offering a [tone] experience for the audience.",
+        tips:["Balance description and evaluation.","Use precise adjectives and avoid repetition.","End with a clear recommendation."]},
+        letter: { moves:[
+          "Greeting (Dear Sir/Madam / Dear Ms X).",
+          "Opening: Reason for writing.",
+          "Body: Key points in logical order.",
+          "Closing: Action/request + formal sign-off."
+        ],
+        opener:"Dear Sir or Madam, I am writing to enquire about [topic], particularly regarding [specific detail].",
+        tips:["Match tone to the reader; use formal phrases.","Close with: 'I look forward to your response.'","Sign off: 'Yours faithfully' / 'Yours sincerely'."]}
+      },
+      C1: {
+        essay: { moves:[
+          "Introduction: Contextualise the issue; define the scope.",
+          "Body 1: Develop first argument with analysis and support.",
+          "Body 2: Counter-argument or complementary argument with synthesis.",
+          "Conclusion: Weigh points; deliver a nuanced final stance."
+        ],
+        opener:"While opinions differ regarding [topic], this essay argues that [your position] because [reason(s)], provided that [qualifier if needed].",
+        tips:["Use a wide range of cohesive devices (nevertheless, consequently).","Develop ideas with cause–effect and exemplification.","Maintain precise register; avoid vague verbs."]},
+        report: { moves:[
+          "Purpose & methods (who/what/when).",
+          "Findings (data + patterns).",
+          "Analysis (implications/causes).",
+          "Recommendations (prioritised, actionable)."
+        ],
+        opener:"This report assesses [programme/process] using [method], highlighting key outcomes and areas requiring action.",
+        tips:["Use data where possible (percentages, trends).","Prioritise recommendations and justify them.","Avoid first-person unless specified."]},
+        review: { moves:[
+          "Hook + brief context.",
+          "Overview (no spoilers) + craft elements (style, pacing, voice).",
+          "Evaluation (themes, impact) with examples.",
+          "Verdict (audience + comparative judgement)."
+        ],
+        opener:"Combining [quality] with [quality], [Title] interrogates [theme] and ultimately delivers a compelling [genre] experience.",
+        tips:["Vary sentence structure for rhythm and emphasis.","Use precise terminology (narrator, motif, register).","Compare/contrast with similar works for depth."]},
+        letter: { moves:[
+          "Appropriate salutation + clear purpose.",
+          "Developed points with well-sequenced paragraphs.",
+          "Tone/register control for the reader and purpose.",
+          "Close with a firm next step and formal sign-off."
+        ],
+        opener:"Dear [Title + Surname], I am writing in connection with [topic], and I would appreciate clarification on [specific details].",
+        tips:["Maintain formal register throughout.","Employ hedging where appropriate (I would suggest / It appears that…).","End with a clear call to action."]}
+      }
+    };
 
-    /* === Correction with AI or fallback === */
+    function renderScaffold(){
+      const lvl = document.getElementById('scLevel').value;
+      const typ = document.getElementById('scType').value;
+      const d = SCAFFOLDS[lvl][typ];
+      document.getElementById('scMoves').innerHTML = d.moves.map(m => `<li>${escapeHtml(m)}</li>`).join('');
+      document.getElementById('scOpener').textContent = d.opener;
+      document.getElementById('scTips').innerHTML = d.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+    }
+    function copyScaffold(){
+      const lvl=scLevel.value, typ=scType.value, d=SCAFFOLDS[lvl][typ];
+      const txt=`Scaffold (${lvl} ${typ})
+1) ${d.moves[0]}
+2) ${d.moves[1]}
+3) ${d.moves[2]}
+4) ${d.moves[3]}`;
+      navigator.clipboard?.writeText(txt); alert("Scaffold copied.");
+    }
+    function copyOpener(){ const lvl=scLevel.value, typ=scType.value; navigator.clipboard?.writeText(SCAFFOLDS[lvl][typ].opener); alert("Opener copied."); }
+
+    function exportScaffoldPDF(){
+      const { jsPDF } = window.jspdf || {}; if (!jsPDF){ alert("PDF library failed to load."); return; }
+      const doc = new jsPDF({ unit:"pt", format:"a4" }), margin=48; let y=margin;
+      const lvl=scLevel.value, typ=scType.value, d=SCAFFOLDS[lvl][typ];
+      doc.setFont("Helvetica","bold"); doc.setFontSize(16); doc.text(`Cambridge Scaffold – ${lvl} ${typ}`, margin, y); y+=18;
+      doc.setFont("Helvetica","normal"); doc.setFontSize(12); doc.text("Recommended moves:", margin, y); y+=14;
+      d.moves.forEach((m,i)=>{ const lines=doc.splitTextToSize(`${i+1}) ${m}`, 595-margin*2); doc.text(lines, margin, y); y += 14 + (lines.length-1)*12; });
+      y+=6; doc.setFont("Helvetica","bold"); doc.text("Opener:", margin, y); y+=14; doc.setFont("Helvetica","normal");
+      doc.text(doc.splitTextToSize(d.opener, 595-margin*2), margin, y); y+=28;
+      doc.setFont("Helvetica","bold"); doc.text("Tips:", margin, y); y+=14; doc.setFont("Helvetica","normal");
+      d.tips.forEach((t)=>{ const lines=doc.splitTextToSize("• "+t, 595-margin*2); doc.text(lines, margin, y); y += 14 + (lines.length-1)*12; });
+      doc.save(`scaffold-${lvl}-${typ}.pdf`);
+    }
+
+    /* ========= Utilities ========= */
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (m)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+    const hasFiniteVerb = (s) => /\b(am|is|are|was|were|be|been|being|do|does|did|has|have|had|can|could|will|would|shall|should|may|might|must)\b/i.test(s) || /\b\w+(ed|s)\b/i.test(s);
+    const normalizeText = (s) => String(s).replace(/[\u2018\u2019\u2032]/g,"'").replace(/[\u201C\u201D\u2033]/g,'"').replace(/\u00A0/g," ");
+
+    function fixAAn(text){
+      const silentH=/^(honest|honour|honor|hour|heir|herb)\b/i;
+      const youSound=/^(uni(vers|form|que|on)|u[bcdfgklmnprstvy]|euro|eure|euph|eulog|ukulele|user|use|one|once|ufo)\b/i;
+      const acronym=/^[AEFHILMNORSX]/;
+      return text.replace(/\b([Aa]n?)\s+([A-Za-z][\w-]*)/g,(m,art,word)=>{
+        const wl=word.toLowerCase(); let shouldBeAn=/^[aeiou]/.test(wl)||silentH.test(wl);
+        if (/^[A-Z]{2,}$/.test(word)) shouldBeAn = acronym.test(word[0]);
+        if (youSound.test(wl)) shouldBeAn=false;
+        const desired = shouldBeAn ? (art[0]==='A'?'An':'an') : (art[0]==='A'?'A':'a');
+        if ((art.toLowerCase()==='an')!==shouldBeAn) return desired+" "+word; return m;
+      });
+    }
+
+    function formalize(text, notes){
+      let out=text;
+      const rules=[
+        { re:/\bkids\b/gi, rep:"children", note:"Replaced informal 'kids'." },
+        { re:/\bwanna\b/gi, rep:"want to", note:"Expanded 'wanna'." },
+        { re:/\bgonna\b/gi, rep:"going to", note:"Expanded 'gonna'." },
+        { re:/\bokay\b|\bOK\b/gi, rep:"acceptable", note:"Formalised 'OK/okay'." },
+        { re:/\ba lot of\b/gi, rep:"many", note:"Replaced 'a lot of' with 'many'." }
+      ];
+      for (const r of rules){ if (r.re.test(out)){ out=out.replace(r.re,r.rep); notes.push(r.note); } }
+      return out;
+    }
+
+    /* ========= Alternatives ========= */
+    const ALT_MAP = {
+      base: {
+        "good":["effective","beneficial","favourable","advantageous"],
+        "bad":["detrimental","problematic","adverse","unsatisfactory"],
+        "very":["particularly","highly","notably"],
+        "really":["truly","genuinely"],
+        "help":["assist","support","enable","facilitate"],
+        "use":["utilise","employ","apply"],
+        "say":["state","argue","contend","maintain"],
+        "thing":["aspect","element","factor","component"]
+      },
+      c1: {
+        "important":["crucial","vital","essential","pivotal"],
+        "because":["since","as","given that"],
+        "so":["therefore","thus","consequently"],
+        "many":["numerous","a multitude of"]
+      }
+    };
+    const wordRe = (w)=>new RegExp(`\\b${w.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}\\b`,'gi');
+    function buildAlternatives(text, level){
+      const dicts=[ALT_MAP.base, ...(level==='C1'?[ALT_MAP.c1]:[])];
+      const out=[];
+      dicts.forEach(d=>Object.entries(d).forEach(([k,arr])=>{
+        if (wordRe(k).test(text)) out.push({ simple:k, options:arr });
+      }));
+      return out;
+    }
+    function renderAlternatives(currentText, alts, level){
+      const box=document.getElementById("altList");
+      if(!alts.length){ box.innerHTML="<span class='hint'>No suggestions for this text.</span>"; return; }
+      box.innerHTML="";
+      alts.forEach(({simple,options})=>{
+        const sec=document.createElement('div'); sec.className='alt-section';
+        const h=document.createElement('h4'); h.textContent=`“${simple}” → consider:`; sec.appendChild(h);
+        options.slice(0, level==='C1'?6:4).forEach(opt=>{
+          const chip=document.createElement('button'); chip.className='chip'; chip.textContent=opt;
+          chip.onclick=()=>{
+            const re=wordRe(simple);
+            const replaced=(document.getElementById("outputText").value||currentText).replace(re,(m)=>{
+              const cap=m[0]===m[0].toUpperCase(); return cap?opt[0].toUpperCase()+opt.slice(1):opt;
+            });
+            document.getElementById("outputText").value=replaced;
+          };
+          sec.appendChild(chip);
+        });
+        box.appendChild(sec);
+      });
+    }
+
+    /* ========= Local rules corrector (robust fallback) ========= */
+    const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
+    const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","In summary","On balance","At first","In general"];
+    const FANBOYS = ["for","and","nor","but","or","yet","so"];
+    const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
+    const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
+
+    function correctLocal(text, lvl){
+      if(!text || !text.trim()) return { out:"", notes:[], alts:[] };
+      let out = normalizeText(text.trim());
+      const notes=[];
+
+      // contractions → formal
+      const CONTR = { "can't":"cannot","won't":"will not","don't":"do not","doesn't":"does not","didn't":"did not","it's":"it is","I'm":"I am","you're":"you are","we're":"we are","they're":"they are","I've":"I have","we've":"we have","they've":"they have" };
+      for (const [k,v] of Object.entries(CONTR)){
+        const re=new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g,"\\$&")}\\b`,"gi");
+        const before=out; out=out.replace(re,(m)=>m[0]===m[0].toUpperCase()?v[0].toUpperCase()+v.slice(1):v);
+        if (out!==before) notes.push("Expanded contractions for formality.");
+      }
+
+      // spacing normalisation
+      const bs=out; out=out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
+      if(out!==bs) notes.push("Normalised spacing.");
+
+      // TV capitalisation
+      const btv=out; out=out.replace(/\btv\b/g,"TV"); if(out!==btv) notes.push("Capitalised 'TV'.");
+
+      // a/an
+      const baa=out; out=fixAAn(out); if(out!==baa) notes.push("Fixed 'a/an'.");
+
+      // formal tone (light)
+      const bf=out; out=formalize(out, notes); if(out!==bf){/* noted */ }
+
+      // Introductory commas (“First,”; set phrases)
+      const punctIntro = (t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
+        let s=core.trim();
+        for(const ph of INTRO_PHRASES){ const re=new RegExp(`^(${ph})\\s+(?!,)`,"i"); if(re.test(s)) s=s.replace(re,`$1, `); }
+        const fw=(s.match(/^(\w+)\s+(?!,)/)||[null,null])[1];
+        if(fw && INTRO_SINGLE.includes(fw)) s=s.replace(/^(\w+)\s+(?!,)/,`$1, `);
+        return s+(end||"");
+      });
+      const bi=out; out=punctIntro(out); if(out!==bi) notes.push("Added comma after introductory phrase.");
+
+      // Clause punctuation: ; however, | fronted subordinator, | FANBOYS comma
+      const punctClauses=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
+        let s=core.trim();
+        // Conjunctive adverb: ; however,
+        for(const adv of CADV){
+          const re=new RegExp(`\\b${adv}\\b`,"i"); const hit=s.match(re);
+          if(hit){ const idx=hit.index, w=hit[0]; const L=s.slice(0,idx).replace(/[ ,;]+$/,"").trim(), R=s.slice(idx+w.length).replace(/^[ ,;]+/,"").trim();
+            if (hasFiniteVerb(L) && hasFiniteVerb(R)){ s=`${L}; ${w}, ${R}`; break; }
+          }
+        }
+        // Fronted subordinator → comma after the first main clause subject
+        const first=(s.match(/^\w+/)||[""])[0].toLowerCase();
+        if(SUBORD.includes(first) && !/,/.test(s)){ const tokens=s.split(/\s+/);
+          const starters=["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"];
+          let ins=-1; for(let i=3;i<Math.min(tokens.length,20);i++){ if(starters.includes(tokens[i]?.toLowerCase())){ ins=i; break; } }
+          if(ins>-1){ tokens.splice(ins,0,","); s=tokens.join(" "); }
+        }
+        // FANBOYS comma between independent clauses
+        for(const cj of FANBOYS){
+          const pos=s.toLowerCase().indexOf(` ${cj} `); if(pos>-1 && !new RegExp(`,\\s+${cj}\\b`,"i").test(s)){
+            const L=s.slice(0,pos).trim(), R=s.slice(pos+cj.length+2).trim();
+            if(hasFiniteVerb(L) && hasFiniteVerb(R)){ s = L.replace(/\s+$/,"") + ", " + cj + " " + R.replace(/^,?\s*/,""); }
+          }
+        }
+        return s+(end||"");
+      });
+      const bc=out; out=punctClauses(out); if(out!==bc) notes.push("Inserted clause punctuation.");
+
+      // Final full stop
+      if(!/[.!?]$/.test(out)){ out+="."; notes.push("Added final full stop."); }
+
+      // Alternatives list (based on corrected text)
+      const alts=buildAlternatives(out, lvl==='C1'?'C1':'B2');
+      return { out:out.trim(), notes, alts };
+    }
+
+    /* ========= Correction handler: AI first, fallback to local ========= */
     window.runCorrection = async function(){
-      const text=document.getElementById("inputText").value;
-      const lvl=document.getElementById("levelSelect").value;
-      const formal=document.getElementById("formalToggle").checked;
-      const useAI=document.getElementById("aiToggle").checked && AI_ENDPOINT.startsWith("https://");
+      const text   = document.getElementById("inputText").value;
+      const lvl    = document.getElementById("levelSelect").value;
+      const formal = document.getElementById("formalToggle").checked;
+      const useAI  = document.getElementById("aiToggle").checked && AI_ENDPOINT && AI_ENDPOINT.startsWith("https://");
 
       const setNotes=(html)=>{ document.getElementById("notes").innerHTML=html; };
-      const setOut=(val)=>{ document.getElementById("outputText").value=val; };
+      const setOut  =(val)=>{ document.getElementById("outputText").value=val; };
 
       setNotes("<b>Changes:</b><br><span class='hint'>Processing…</span>");
       setOut("");
+      document.getElementById("altList").innerHTML = "<span class='hint'>Processing…</span>";
 
       if(useAI){
         try{
-          const res=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,level:lvl,formal})});
-          const raw=await res.text(); let obj;
-          try{ obj=JSON.parse(raw);}catch{ setNotes("AI returned invalid JSON:<br><pre>"+raw+"</pre>"); return;}
-          if(obj.corrected){ setOut(obj.corrected); setNotes("<b>Changes (AI):</b><br>"+(obj.notes?.join("<br>")||"(none)")); renderAlternatives(obj.corrected,[],lvl); return;}
-        }catch(e){ setNotes("AI error: "+e); return;}
+          const res=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text, level:lvl, formal})});
+          if(!res.ok){
+            const detail = await res.text().catch(()=>"(no body)");
+            setNotes(`<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre>`);
+          } else {
+            const raw=await res.text(); let obj;
+            try{ obj=JSON.parse(raw);}catch(e){ setNotes(`<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${raw}</pre>`); return; }
+            if(obj && typeof obj.corrected==='string'){
+              setOut(obj.corrected);
+              setNotes("<b>Changes (AI):</b><br>"+(obj.notes?.map(n=>"• "+n).join("<br>")||"(none)"));
+              const alts = obj.alternatives && typeof obj.alternatives==='object'
+                ? Object.keys(obj.alternatives).map(k=>({ simple:k, options:obj.alternatives[k]||[] }))
+                : buildAlternatives(obj.corrected, lvl==='C1'?'C1':'B2');
+              renderAlternatives(obj.corrected, alts, lvl==='C1'?'C1':'B2');
+              return;
+            } else {
+              setNotes(`<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre>`);
+            }
+          }
+        }catch(e){
+          setNotes("<b>AI call error (network/CORS?):</b><br><pre style='white-space:pre-wrap'>"+String(e)+"</pre>");
+        }
+        // If AI path failed → continue to fallback
       }
-      const {out,notes,alts}=correctLocal(text,lvl); setOut(out); setNotes("<b>Changes:</b><br>"+notes.join("<br>")); renderAlternatives(out,alts,lvl);
+
+      // Local fallback
+      const {out,notes,alts}=correctLocal(text,lvl);
+      setOut(out);
+      setNotes("<b>Changes:</b><br>"+(notes.length?notes.map(n=>"• "+n).join("<br>"):"(No major changes)"));
+      renderAlternatives(out, alts, lvl==='C1'?'C1':'B2');
     };
 
-    window.clearAll=function(){ inputText.value=""; outputText.value=""; document.getElementById("notes").innerHTML="<b>Changes:</b><br>(cleared)"; document.getElementById("altList").innerHTML=""; };
-    window.pasteFromClipboard=async function(){ try{ const text=await navigator.clipboard.readText(); if(text) inputText.value+=text; }catch(e){ alert("Paste failed: "+e); } };
-    window.downloadPDF=function(){ const {jsPDF}=window.jspdf; const doc=new jsPDF(); doc.text(document.getElementById("outputText").value,10,10); doc.save("essay-corrected.pdf"); };
+    /* ========= Clear / Paste / PDF ========= */
+    window.clearAll=function(){
+      inputText.value=""; outputText.value="";
+      document.getElementById("notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
+      document.getElementById("altList").innerHTML="After correction, suggested upgrades will appear here (especially for C1/C2).";
+    };
+    window.pasteFromClipboard=async function(){
+      const ta=document.getElementById("inputText");
+      try{
+        const text=await navigator.clipboard.readText();
+        if(text){
+          const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
+          ta.value = ta.value.slice(0,start)+text+ta.value.slice(end);
+          ta.focus(); ta.selectionStart=ta.selectionEnd=start+text.length;
+        } else alert("Your clipboard is empty.");
+      }catch(e){
+        alert("Browser blocked clipboard. Try Ctrl/Cmd+V on desktop, or long-press → Paste on mobile.");
+        console.error(e);
+      }
+    };
+    window.downloadPDF=function(){
+      try{
+        const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; }
+        const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin;
+        doc.setFont("Helvetica","bold"); doc.setFontSize(14); doc.text("EssayCoach – Corrected Output", margin, y); y+=20;
+        doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+        const lines=doc.splitTextToSize(document.getElementById("outputText").value || "(empty)", 595-margin*2);
+        doc.text(lines, margin, y);
+        doc.save("essay-corrected.pdf");
+      }catch(e){ alert("Could not create PDF: "+e.message); console.error(e); }
+    };
 
+    /* ========= Init ========= */
     renderScaffold();
-    window.addEventListener('load',()=>{const aiBox=document.getElementById('aiToggle'); if(AI_ENDPOINT.startsWith("https://")) aiBox.checked=true; if(location.hash==='#corrector') showTab('corrector');});
+    window.addEventListener('load',()=>{
+      const aiBox=document.getElementById('aiToggle');
+      if (aiBox) {
+        const hasEndpoint = AI_ENDPOINT && AI_ENDPOINT.startsWith("https://");
+        if (hasEndpoint) {
+          aiBox.checked = true;
+          aiBox.title = "Uses your Cloudflare Worker (AI) first, then falls back to local rules.";
+        } else {
+          aiBox.checked = false;
+          aiBox.disabled = true;
+          aiBox.title = "Set AI_ENDPOINT in index.html to enable AI corrections.";
+        }
+      }
+      if(location.hash==='#corrector') showTab('corrector'); else showTab('scaffolds');
+    });
+
+    /* ========= PWA: register Service Worker (relative path for GitHub Pages) ========= */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(console.error);
+      });
+    }
   </script>
 </body>
 </html>
