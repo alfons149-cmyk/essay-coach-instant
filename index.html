@@ -168,6 +168,23 @@
       document.getElementById('view-scaffolds').style.display  = (which==='scaffolds') ? '' : 'none';
       document.getElementById('view-corrector').style.display  = (which==='corrector') ? '' : 'none';
     }
+    <script>
+  // Failsafe: wire up clicks even if inline onclicks were stripped or a prior error happened
+  (function(){
+    const a=document.getElementById('tab-scaffolds');
+    const b=document.getElementById('tab-corrector');
+    const safeShow = (w)=>{ try { showTab(w); } catch(e) { 
+      // brute-force show/hide if showTab is broken
+      const vs=document.getElementById('view-scaffolds');
+      const vc=document.getElementById('view-corrector');
+      if (w==='scaffolds'){ vs.style.display=''; vc.style.display='none'; }
+      else { vc.style.display=''; vs.style.display='none'; }
+    }};
+    a?.addEventListener('click', ()=>safeShow('scaffolds'));
+    b?.addEventListener('click', ()=>safeShow('corrector'));
+  })();
+</script>
+
 
     /* ========= Scaffolds (B2 / C1) ========= */
     const SCAFFOLDS = {
