@@ -609,5 +609,17 @@
     <script>window.addEventListener('error',e=>{document.body.insertAdjacentHTML('beforeend',`<pre style="white-space:pre-wrap;background:#fee;border:1px solid #f99;padding:8px;border-radius:8px;margin:12px 0">JS error: ${e.message}</pre>`);});</script>
 
   </script>
+            <!-- Simple on-page error overlay -->
+<script>
+  window.addEventListener('error', (e) => {
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<pre style="white-space:pre-wrap;background:#fee;border:1px solid #f99;padding:10px;border-radius:8px;margin:12px 0;color:#800">
+<b>JS error:</b> ${e.message}
+</pre>`
+    );
+  });
+</script>
+
 </body>
 </html>
