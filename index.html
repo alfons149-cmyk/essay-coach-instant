@@ -589,6 +589,8 @@
         navigator.serviceWorker.register('sw.js', { scope: './' }).catch(console.error);
       });
     }
+    <script>window.addEventListener('error',e=>{document.body.insertAdjacentHTML('beforeend',`<pre style="white-space:pre-wrap;background:#fee;border:1px solid #f99;padding:8px;border-radius:8px;margin:12px 0">JS error: ${e.message}</pre>`);});</script>
+
   </script>
 </body>
 </html>
