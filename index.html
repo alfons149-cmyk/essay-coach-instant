@@ -593,6 +593,31 @@
       if(location.hash==='#corrector') showTab('corrector'); else showTab('scaffolds');
     });
 
+    <!-- Guide & Example modal -->
+<div id="guideBackdrop" class="modal-backdrop" onclick="closeGuide()"></div>
+<div id="guideModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3 id="guideTitle">Guide &amp; Example</h3>
+      <div class="modal-actions">
+        <button onclick="copyExample()">Copy example</button>
+        <button onclick="exportExamplePDF()">Export example PDF</button>
+        <button onclick="closeGuide()">Close</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <h4>How to structure it (4 parts)</h4>
+      <div id="guideExplain" class="example-box"></div>
+
+      <h4>Model example</h4>
+      <div id="guideExample" class="example-box"></div>
+
+      <div class="hint" id="guideHint"></div>
+    </div>
+  </div>
+</div>
+
+
     /* ========= PWA: register Service Worker (relative path for GitHub Pages) ========= */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
