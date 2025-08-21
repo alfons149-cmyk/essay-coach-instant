@@ -402,7 +402,7 @@
       });
       const bi=out; out=punctIntro(out); if(out!==bi) notes.push("Added comma after introductory phrase.");
 
-      // Clause punctuation: ; however, | fronted subordinator, | FANBOYS comma
+      // Clause punctuation: ; however, | fronted subordinator | FANBOYS comma
       const punctClauses=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
         let s=core.trim();
         // Conjunctive adverb: ; however,
@@ -412,7 +412,7 @@
             if (hasFiniteVerb(L) && hasFiniteVerb(R)){ s=`${L}; ${w}, ${R}`; break; }
           }
         }
-        // Fronted subordinator → comma after the first main clause subject
+        // Fronted subordinator → comma
         const first=(s.match(/^\w+/)||[""])[0].toLowerCase();
         if(SUBORD.includes(first) && !/,/.test(s)){ const tokens=s.split(/\s+/);
           const starters=["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"];
@@ -462,17 +462,17 @@
 
       // ===== AI path =====
       if (useAI) {
+        console.log("Posting to AI endpoint:", AI_ENDPOINT, { level: lvl, formal, sample: input.slice(0, 60) + (input.length>60?"…":"") });
         try {
           const res = await fetch(AI_ENDPOINT, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: input, level: lvl, formal })
           });
-          console.log("Posting to AI endpoint:", AI_ENDPOINT, { text: input, level, formal });
 
-          // If AI fails, show error and auto-fallback
           if (!res.ok) {
             const detail = await res.text().catch(()=>"(no body)");
+            console.warn("AI call failed", res.status, detail);
             notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${detail}</pre><br><i>Using local rules instead.</i>`;
             const { out, notes, alts } = correctLocal(input, lvl);
             outBox.value = out;
@@ -482,9 +482,11 @@
           }
 
           const raw = await res.text();
+          console.log("AI raw response:", raw);
           let data;
           try { data = JSON.parse(raw); }
           catch(e) {
+            console.warn("AI returned non-JSON", e);
             notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${raw}</pre><br><i>Using local rules instead.</i>`;
             const { out, notes, alts } = correctLocal(input, lvl);
             outBox.value = out;
@@ -497,7 +499,6 @@
             outBox.value = data.corrected;
             notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (Array.isArray(data.notes) ? data.notes.map(n=>"• "+n).join("<br>") : "(none)");
 
-            // Alternatives: prefer AI; else local
             let alts = [];
             if (data.alternatives && typeof data.alternatives === 'object' && Object.keys(data.alternatives).length) {
               alts = Object.entries(data.alternatives).map(([k, arr]) => ({ simple: k, options: Array.isArray(arr) ? arr : [] }));
@@ -510,15 +511,16 @@
             notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre><br><i>Using local rules instead.</i>`;
             const { out, notes, alts } = correctLocal(input, lvl);
             outBox.value = out;
-            notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+            notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)";
             renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
             return;
           }
         } catch (e) {
+          console.error("AI fetch error:", e);
           notesBox.innerHTML = `<b>AI fetch failed:</b> ${e.message}<br><i>Using local rules instead.</i>`;
           const { out, notes, alts } = correctLocal(input, lvl);
           outBox.value = out;
-          notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
+          notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)";
           renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
           return;
         }
