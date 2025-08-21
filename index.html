@@ -468,6 +468,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: input, level: lvl, formal })
           });
+          console.log("Posting to AI endpoint:", AI_ENDPOINT, { text: input, level, formal });
 
           // If AI fails, show error and auto-fallback
           if (!res.ok) {
