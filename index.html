@@ -549,25 +549,22 @@
           }
 
           if (data && typeof data.corrected === 'string') {
-            outBox.value = data.corrected;
-            notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (Array.isArray(data.notes) ? data.notes.map(n=>"• "+n).join("<br>") : "(none)");
+  // 1) Put corrected text & notes
+  outBox.value = data.corrected;
+  notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (
+    Array.isArray(data.notes) ? data.notes.map(n => "• " + n).join("<br>") : "(none)"
+  );
 
-            let alts = [];
-            if (data.alternatives && typeof data.alternatives === 'object' && Object.keys(data.alternatives).length) {
-              alts = Object.entries(data.alternatives).map(([k, arr]) => ({ simple: k, options: Array.isArray(arr) ? arr : [] }));
-            } else {
-              alts = buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
-            }
-            renderAlternatives(data.corrected, alts, (lvl === 'C1' ? 'C1' : 'B2'));
-            return; // AI succeeded
-          } else {
-            notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${raw}</pre><br><i>Using local rules instead.</i>`;
-            const { out, notes, alts } = correctLocal(input, lvl);
-            outBox.value = out;
-            notesBox.innerHTML += "<br><b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+n).join("<br>") : "(No major changes)");
-            renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
-            return;
-          }
+  // 2) Prepare alternatives
+  const fromAI   = (data.alternatives && typeof data.alternatives === 'object') ? data.alternatives : {};
+  const fromLocal= buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
+  const merged   = mergeAlternatives(fromAI, fromLocal);
+
+  // 3) Render
+  renderAlternatives(data.corrected, merged, (lvl === 'C1' ? 'C1' : 'B2'));
+  return; // AI succeeded
+}
+
         } catch (e) {
           console.error("AI fetch error:", e);
           notesBox.innerHTML = `<b>AI fetch failed:</b> ${e.message}<br><i>Using local rules instead.</i>`;
