@@ -255,6 +255,212 @@
       }
     };
 
+    <script>
+/* ===== Explanations + Examples (B2/C1 × essay/report/review/letter) ===== */
+const EXPLAINS = {
+  B2: {
+    essay: {
+      explain:
+`Introduction – Paraphrase the task and state a clear opinion.
+Body 1 – First reason with a brief example.
+Body 2 – Second reason with a brief example (or a counterpoint and reply).
+Conclusion – Summarise and restate your opinion.`,
+      example:
+`In recent years, volunteering in local communities has attracted growing attention. In my view, students should participate because it benefits both society and the learners themselves.
+
+First, volunteering helps students develop practical skills. For instance, assisting at a charity shop improves communication and teamwork. These skills are useful in future studies and employment.
+
+Second, community work increases social awareness. By meeting people from different backgrounds, students become more understanding and responsible citizens.
+
+In conclusion, student volunteering supports community needs and builds valuable life skills. Therefore, schools should actively encourage it.`
+    },
+    report: {
+      explain:
+`Introduction – State the purpose and context.
+Findings 1 – What works well (evidence/examples).
+Findings 2 – What needs improvement (evidence/examples).
+Recommendations – Specific, practical steps.`,
+      example:
+`Title: Report on the School Library
+
+Introduction
+This report evaluates the school library based on student feedback collected in May.
+
+Findings: Strengths
+The library provides a quiet study area and a helpful borrowing system. Most students appreciate the extended opening hours during exams.
+
+Findings: Areas to Improve
+Many books are out of date, and the computer area is often crowded. Some students reported slow Wi-Fi.
+
+Recommendations
+1) Update core non-fiction sections each term.
+2) Add four more computers and reserve timeslots.
+3) Upgrade the Wi-Fi to support higher demand.`
+    },
+    review: {
+      explain:
+`Introduction – Title/creator/genre + overall verdict.
+Paragraph 1 – Brief summary (no spoilers).
+Paragraph 2 – Evaluation: strengths/weaknesses with examples.
+Conclusion – Who would enjoy it + clear recommendation.`,
+      example:
+`Film Review: “The River’s Edge”
+
+“The River’s Edge” is a coming-of-age drama that follows two friends during a summer in a small town. Although the plot is simple, the film creates a strong emotional atmosphere.
+
+The acting is convincing, and the soundtrack supports the tone without being distracting. However, the pacing is slow in the middle.
+
+Overall, this is a thoughtful and well-acted film. I recommend it to viewers who enjoy character-driven stories rather than action.`
+    },
+    letter: {
+      explain:
+`Greeting – Dear Sir/Madam (unknown) / Dear Ms X (known).
+Opening – Clear reason for writing.
+Body – Key points in logical order; polite, formal tone.
+Closing – Requested action + formal sign-off.`,
+      example:
+`Dear Sir or Madam,
+
+I am writing to enquire about the volunteering programme advertised on your website. In particular, I would like to know the weekly time commitment and whether training is provided.
+
+I am a final-year student available on weekday afternoons. I have previous experience working with customers and organising small events.
+
+I would appreciate any further details you can offer and look forward to your response.
+
+Yours faithfully,
+Alex Green`
+    }
+  },
+  C1: {
+    essay: {
+      explain:
+`Introduction – Contextualise the issue; define scope; thesis.
+Body 1 – Develop first argument with analysis and evidence.
+Body 2 – Synthesis or counter-argument with evaluation.
+Conclusion – Weigh arguments; provide a nuanced final stance.`,
+      example:
+`While some argue that community service distracts students from academic goals, this essay contends that structured volunteering enhances transferable skills and civic responsibility.
+
+To begin with, authentic community tasks provide situated practice in planning, problem-solving and collaboration. For example, coordinating a local clean-up requires clear delegation and time management, which are valued by universities and employers.
+
+Moreover, volunteering fosters civic engagement. By interacting with local stakeholders, students learn to balance competing interests and communicate diplomatically—capacities that a purely academic curriculum rarely develops.
+
+On balance, when properly guided, student volunteering complements academic learning and should be integrated into school policy rather than treated as an optional extra.`
+    },
+    report: {
+      explain:
+`Purpose & Method – Who/what/when; how data were gathered.
+Findings – Patterns/trends with concise evidence.
+Analysis – Causes/implications; prioritise issues.
+Recommendations – Actionable steps with rationale.`,
+      example:
+`Report on After-School Clubs (April Survey)
+
+Purpose & Method
+This report analyses participation in after-school clubs based on a survey of 142 students.
+
+Findings
+Attendance is highest in sports (48%) and music (32%), while debate (9%) and coding (7%) remain under-subscribed.
+
+Analysis
+Low participation correlates with timetable clashes and limited promotion. Students also cited a lack of beginner-friendly options.
+
+Recommendations
+1) Stagger club times to reduce clashes.
+2) Pilot two introductory coding workshops.
+3) Promote less popular clubs via assemblies and short demo sessions.`
+    },
+    review: {
+      explain:
+`Hook & Context – Position the work; avoid spoilers.
+Overview – Craft elements (style, structure, voice).
+Evaluation – Themes/impact with precise examples.
+Verdict – Target audience + comparative judgement.`,
+      example:
+`Book Review: “Signals in the Noise”
+
+Blending clear prose with rigorous argument, “Signals in the Noise” examines how small data patterns influence large systems. The author’s lucid explanations make complex ideas accessible without oversimplification.
+
+Although the middle chapters repeat certain examples, the final section offers an insightful framework for responsible data use in education and healthcare.
+
+Overall, this is a timely and persuasive study that will appeal to readers of non-fiction who value nuance over hype.`
+    },
+    letter: {
+      explain:
+`Salutation & Purpose – Audience-appropriate.
+Development – Sequenced paragraphs; hedging where suitable.
+Tone – Consistent register; precise and courteous.
+Close – Clear next step; professional sign-off.`,
+      example:
+`Dear Ms Patel,
+
+I am writing in connection with the mentoring scheme announced last week. Could you confirm whether applications from final-year students are prioritised, and if training will be scheduled during term time?
+
+Although I have led small project teams, I would welcome further guidance on safeguarding procedures before working with younger pupils.
+
+Thank you for your time. I look forward to your reply.
+
+Yours sincerely,
+Alex Green`
+    }
+  }
+};
+
+/* ===== Modal logic ===== */
+function openGuide() {
+  const lvl = document.getElementById('scLevel').value;
+  const typ = document.getElementById('scType').value;
+  const data = EXPLAINS[lvl][typ];
+
+  document.getElementById('guideTitle').textContent = `Guide & Example — ${lvl} ${typ}`;
+  document.getElementById('guideExplain').textContent = data.explain;
+  document.getElementById('guideExample').textContent = data.example;
+  document.getElementById('guideHint').textContent =
+    "Tip: Use the scaffold to plan each paragraph, then adapt this model to your own task.";
+
+  document.getElementById('guideBackdrop').style.display = 'block';
+  document.getElementById('guideModal').style.display = 'flex';
+}
+
+function closeGuide() {
+  document.getElementById('guideBackdrop').style.display = 'none';
+  document.getElementById('guideModal').style.display = 'none';
+}
+
+function copyExample() {
+  const text = document.getElementById('guideExample').textContent || '';
+  navigator.clipboard?.writeText(text);
+  alert('Example copied.');
+}
+
+function exportExamplePDF() {
+  const { jsPDF } = window.jspdf || {};
+  if (!jsPDF) { alert("PDF library failed to load."); return; }
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const margin = 48; let y = margin;
+
+  const title = document.getElementById('guideTitle').textContent || 'Guide & Example';
+  const explain = document.getElementById('guideExplain').textContent || '';
+  const example = document.getElementById('guideExample').textContent || '';
+
+  doc.setFont("Helvetica","bold"); doc.setFontSize(16);
+  doc.text(title, margin, y); y += 22;
+
+  doc.setFont("Helvetica","bold"); doc.setFontSize(12);
+  doc.text("How to structure it:", margin, y); y += 14;
+  doc.setFont("Helvetica","normal");
+  doc.text(doc.splitTextToSize(explain, 595 - margin*2), margin, y);
+  y += 22 + (doc.splitTextToSize(explain, 595 - margin*2).length - 1) * 12;
+
+  doc.setFont("Helvetica","bold"); doc.text("Model example:", margin, y); y += 14;
+  doc.setFont("Helvetica","normal");
+  doc.text(doc.splitTextToSize(example, 595 - margin*2), margin, y);
+
+  doc.save(title.toLowerCase().replace(/\s+/g,'-') + ".pdf");
+}
+</script>
+
+
     function renderScaffold(){
       const lvl = document.getElementById('scLevel').value;
       const typ = document.getElementById('scType').value;
