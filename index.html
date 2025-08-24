@@ -1052,7 +1052,15 @@ function mergeAlternatives(aiAltObj, localArr) {
 
             const fromAI    = (data.alternatives && typeof data.alternatives === 'object') ? data.alternatives : {};
             const fromLocal = buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
-            const merged    = mergeAlternatives(fromAI, fromLocal);
+            let merged;
+try {
+  merged = (typeof mergeAlternatives === "function")
+    ? mergeAlternatives(fromAI, fromLocal)
+    : fromLocal;
+} catch {
+  merged = fromLocal;
+}
+
             renderAlternatives(data.corrected, merged, (lvl === 'C1' ? 'C1' : 'B2'));
 
             renderPreviewAndPositions(data.corrected, lvl);
