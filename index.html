@@ -15,6 +15,24 @@
   <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111111" />
+  <!-- === AI endpoint + style (GLOBAL) === -->
+<script>
+  // Make them global so any script can read them.
+  // Use YOUR .workers.dev URL here:
+  window.AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev";
+
+  // Your coaching voice (sent to the Worker as `style`)
+  window.ALFONS_STYLE = "Write in Alfons’ adapted voice: use warm, human-centered writing. Be clear and emotionally aware. For lessons, teach like a coach. For nonfiction, guide with calm insight. For emails, speak like a trusted friend. Vary sentence length, include real-life examples, and always end with connection, encouragement, or a call to reflect.";
+
+  // Safety: if any legacy code referenced plain AI_ENDPOINT / ALFONS_STYLE,
+  // mirror them to the global scope as well.
+  try {
+    // Only define if not already declared to avoid const redeclare errors
+    if (typeof AI_ENDPOINT === "undefined") window.AI_ENDPOINT_ALIAS = window.AI_ENDPOINT;
+    if (typeof ALFONS_STYLE === "undefined") window.ALFONS_STYLE_ALIAS = window.ALFONS_STYLE;
+  } catch (e) {}
+</script>
+
 
   <style>
     :root { --b:#111; --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --border:#e5e7eb; --overlay: rgba(17,17,17,.6); --hl: #fff1a8; }
