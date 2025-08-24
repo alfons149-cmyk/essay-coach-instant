@@ -889,6 +889,13 @@ Value & Close
       return { out:out.trim(), notes, alts };
     }
 
+    <script>
+  // Make these globals so runCorrection can access them
+  window.AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev";
+  window.ALFONS_STYLE = `Write in Alfons’ adapted voice: use warm, human-centered writing. Be clear and emotionally aware. For lessons, teach like a coach. For nonfiction, guide with calm insight. For emails, speak like a trusted friend. Vary sentence length, include real-life examples, and always end with connection, encouragement, or a call to reflect.`;
+</script>
+
+
     /* ========= Correction handler: AI first, fallback to local ========= */
     window.runCorrection = async function () {
       const input = document.getElementById("inputText").value.trim();
