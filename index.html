@@ -915,6 +915,42 @@ Value & Close
       return { out:out.trim(), notes, alts };
     }
 
+    <script>
+// Merge AI alternatives (object) with local alternatives (array)
+function mergeAlternatives(aiAltObj, localArr) {
+  const outMap = new Map();
+
+  // AI object: { simpleWord: ["opt1","opt2",...], ... }
+  if (aiAltObj && typeof aiAltObj === "object") {
+    for (const [key, arr] of Object.entries(aiAltObj)) {
+      const k = String(key).toLowerCase();
+      const opts = Array.isArray(arr) ? arr.map(String) : [];
+      if (!outMap.has(k)) outMap.set(k, new Set());
+      const set = outMap.get(k);
+      opts.forEach(o => set.add(o));
+    }
+  }
+
+  // Local array: [{ simple:"word", options:[...] }, ...]
+  if (Array.isArray(localArr)) {
+    localArr.forEach(({ simple, options }) => {
+      const k = String(simple).toLowerCase();
+      if (!outMap.has(k)) outMap.set(k, new Set());
+      const set = outMap.get(k);
+      (options || []).forEach(o => set.add(o));
+    });
+  }
+
+  // Back to array shape used by renderAlternatives
+  const merged = [];
+  for (const [simple, set] of outMap.entries()) {
+    merged.push({ simple, options: [...set] });
+  }
+  return merged;
+}
+</script>
+
+
     // Merge AI alternatives (object) with local alternatives (array)
 function mergeAlternatives(aiAltObj, localArr) {
   const outMap = new Map();
