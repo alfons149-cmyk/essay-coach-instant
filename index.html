@@ -966,6 +966,33 @@ Value & Close
               "<b>Changes (AI):</b><br>" +
               (baseNotes.length ? baseNotes.map(n=>"• "+n).join("<br>") : "(none)");
 
+            if (data && typeof data.corrected === 'string') {
+  outBox.value = data.corrected;
+
+  const baseNotes = Array.isArray(data.notes) ? data.notes : [];
+  notesBox.innerHTML =
+    "<b>Changes (AI):</b><br>" +
+    (baseNotes.length ? baseNotes.map(n=>"• "+n).join("<br>") : "(none)");
+
+  // ⬇️ NEW: show intensifier-specific notes based on input vs corrected
+  try {
+    const extra = detectIntensifierNotes(input, data.corrected);
+    if (extra.length) {
+      notesBox.innerHTML += "<br>" + extra.map(n => "• " + escapeHtml(n)).join("<br>");
+    }
+  } catch {}
+
+  const fromAI    = (data.alternatives && typeof data.alternatives === 'object') ? data.alternatives : {};
+  const fromLocal = buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
+  let merged;
+  try { merged = mergeAlternatives(fromAI, fromLocal); } catch { merged = fromLocal; }
+
+  renderAlternatives(data.corrected, merged, (lvl === 'C1' ? 'C1' : 'B2'));
+  renderPreviewAndPositions(data.corrected, lvl);
+  return; // keep this so nothing overwrites AI output
+}
+
+
             const fromAI    = (data.alternatives && typeof data.alternatives === 'object') ? data.alternatives : {};
             const fromLocal = buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
             let merged;
