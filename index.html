@@ -866,28 +866,48 @@ Value & Close
     }
 
     /* ========= AI correction handler ========= */
-    function renderAlternatives(currentText, alts, level){
-      const box=document.getElementById("altList");
-      if(!alts.length){ box.innerHTML="<span class='hint'>No suggestions for this text.</span>"; return; }
-      box.innerHTML="";
-      alts.forEach(({simple,options})=>{
-        const sec=document.createElement('div'); sec.className='alt-section';
-        const h=document.createElement('h4'); h.textContent=`“${simple}” → consider:`; sec.appendChild(h);
-        options.forEach(opt=>{
-          const chip=document.createElement('button'); chip.className='chip'; chip.textContent=opt;
-          chip.onclick=()=>{
-            const re=wordRe(simple);
-            const replaced=(document.getElementById("outputText").value||currentText).replace(re,(m)=>{
-              const cap=m[0]===m[0].toUpperCase(); return cap?opt[0].toUpperCase()+opt.slice(1):opt;
-            });
-            document.getElementById("outputText").value=replaced;
-            renderPreviewAndPositions(replaced, level);
-          };
-          sec.appendChild(chip);
-        });
-        box.appendChild(sec);
-      });
-    }
+    function renderAlternatives(currentText, alts, level) {
+  const box = document.getElementById("altList");
+  if (!alts.length) {
+    box.innerHTML = "<span class='hint'>No suggestions for this text.</span>";
+    return;
+  }
+  box.innerHTML = "";
+
+  alts.forEach(({ simple, options }) => {
+    const sec = document.createElement("div");
+    sec.className = "alt-section";
+
+    // Label: mark intensifiers specially
+    const intensifiers = ["very","really","truly","actually","extremely"];
+    const label = intensifiers.includes(simple.toLowerCase())
+      ? `“${simple}” (intensifier removed) → stronger choices:`
+      : `“${simple}” → consider:`;
+
+    const h = document.createElement("h4");
+    h.textContent = label;
+    sec.appendChild(h);
+
+    options.slice(0, level === "C1" ? 6 : 4).forEach(opt => {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.textContent = opt;
+      chip.onclick = () => {
+        const re = wordRe(simple);
+        const replaced = (document.getElementById("outputText").value || currentText)
+          .replace(re, m => {
+            const cap = m[0] === m[0].toUpperCase();
+            return cap ? opt[0].toUpperCase() + opt.slice(1) : opt;
+          });
+        document.getElementById("outputText").value = replaced;
+      };
+      sec.appendChild(chip);
+    });
+
+    box.appendChild(sec);
+  });
+}
+
 
     window.runCorrection = async function () {
       const input = document.getElementById("inputText").value.trim();
