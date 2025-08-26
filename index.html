@@ -981,7 +981,10 @@ function correctLocal(text, lvl){
   const input = document.getElementById("inputText").value.trim();
   const lvl   = document.getElementById("levelSelect").value;
   const formal= document.getElementById("formalToggle").checked;
-  const useAI = false; // force local for debugging
+  const useAI = document.getElementById("aiToggle").checked &&
+              typeof window.AI_ENDPOINT === "string" &&
+              window.AI_ENDPOINT.startsWith("https://");
+
 
 
   const outBox  = document.getElementById("outputText");
