@@ -1039,15 +1039,22 @@ Value & Close
 };
 
     /* ========= Clear / Paste / PDF ========= */
-    window.clearAll=function(){
-      document.getElementById("inputText").value="";
-      document.getElementById("outputText").value="";
-      document.getElementById("outputPreview").innerHTML="";
-      document.getElementById("positions").innerHTML="";
-      document.getElementById("notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
-      document.getElementById("altList").innerHTML="After correction, suggested upgrades will appear here (especially for C1/C2).";
-      hiddenIds.clear(); currentMarks = []; window._lastSignature = "";
-    };
+    window.clearAll = function(){
+  document.getElementById("inputText").value = "";
+  document.getElementById("outputText").value = "";
+  document.getElementById("outputPreview").innerHTML = "";
+  document.getElementById("positions").innerHTML = "";
+  document.getElementById("notes").innerHTML =
+    "<b>Changes:</b><br><span class='hint'>Cleared.</span>";
+  document.getElementById("altList").innerHTML =
+    "After correction, suggested upgrades will appear here (especially for C1/C2).";
+  document.getElementById("sentenceAnalysis").innerHTML = "";   // ✅ clear panel too
+
+  hiddenIds.clear();
+  currentMarks = [];
+  window._lastSignature = "";
+};
+
     window.pasteFromClipboard=async function(){
       const ta=document.getElementById("inputText");
       try{
