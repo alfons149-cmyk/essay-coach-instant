@@ -791,72 +791,125 @@ Value & Close
     function showAllHighlights(){ hiddenIds.clear(); document.querySelectorAll('mark.hl.off').forEach(el=>el.classList.remove('off')); document.querySelectorAll('.poslist a.off').forEach(el=>el.classList.remove('off')); }
     function hideAllHighlights(){ currentMarks.forEach(m=>hiddenIds.add(m.id)); document.querySelectorAll('mark.hl').forEach(el=>el.classList.add('off')); document.querySelectorAll('.poslist a').forEach(el=>el.classList.add('off')); }
 
-    /* ========= Local rules corrector ========= */
-    const INTRO_SINGLE = ["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
-    const INTRO_PHRASES = ["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","In summary","On balance","At first","In general"];
-    const FANBOYS = ["for","and","nor","but","or","yet","so"];
-    const SUBORD  = ["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
-    const CADV    = ["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
+    /* ========= Local rules corrector (quick, visible fixes) ========= */
 
-    function correctLocal(text, lvl){
-      if(!text || !text.trim()) return { out:"", notes:[], alts:[] };
-      let out = normalizeText(text.trim());
-      const notes=[];
+// Small spelling helper (conservative)
+function preserveCase(rep, orig){
+  if (!orig) return rep;
+  if (orig === orig.toUpperCase()) return rep.toUpperCase();
+  if (orig[0] === orig[0].toUpperCase() && orig.slice(1) === orig.slice(1).toLowerCase())
+    return rep[0].toUpperCase()+rep.slice(1);
+  return rep;
+}
+const SPELL_MAP = {
+  whot:"what", teh:"the", recieve:"receive", recieved:"received", seperate:"separate",
+  definately:"definitely", definetly:"definitely", occured:"occurred", occuring:"occurring",
+  accomodation:"accommodation", acommodatioon:"accommodation", wich:"which", becouse:"because",
+  tommorow:"tomorrow", enviroment:"environment", goverment:"government", adress:"address",
+  neccessary:"necessary", publically:"publicly", priviledge:"privilege"
+};
+function fixSpelling(text, notes){
+  const re = new RegExp("\\b(" + Object.keys(SPELL_MAP).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|") + ")\\b","gi");
+  let changed=false;
+  const out = text.replace(re, m => { changed=true; return preserveCase(SPELL_MAP[m.toLowerCase()], m); });
+  if (changed) notes.push("Fixed common spelling mistakes.");
+  return out;
+}
 
-      const CONTR = { "can't":"cannot","won't":"will not","don't":"do not","doesn't":"does not","didn't":"did not","it's":"it is","I'm":"I am","you're":"you are","we're":"we are","they're":"they are","I've":"I have","we've":"we have","they've":"they have" };
-      for (const [k,v] of Object.entries(CONTR)){
-        const re=new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g,"\\$&")}\\b`,"gi");
-        const before=out; out=out.replace(re,(m)=>m[0]===m[0].toUpperCase()?v[0].toUpperCase()+v.slice(1):v);
-        if (out!==before) notes.push("Expanded contractions for formality.");
-      }
+function correctLocal(text, lvl){
+  if(!text || !text.trim()) return { out:"", notes:[], alts:[] };
+  let out = normalizeText(text.trim());
+  const notes=[];
 
-      const bs=out; out=out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
-      if(out!==bs) notes.push("Normalised spacing.");
+  // 1) Expand a few contractions for formality
+  const CONTR = { "can't":"cannot","won't":"will not","don't":"do not","it's":"it is","I'm":"I am","you're":"you are","we're":"we are","they're":"they are","I've":"I have","we've":"we have","they've":"they have" };
+  for (const [k,v] of Object.entries(CONTR)){
+    const re=new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\\]{}]/g,"\\$&")}\\b`,"gi");
+    const before=out;
+    out=out.replace(re,(m)=>m[0]===m[0].toUpperCase()?v[0].toUpperCase()+v.slice(1):v);
+    if (out!==before) notes.push("Expanded contractions for formality.");
+  }
 
-      const btv=out; out=out.replace(/\btv\b/gi,"TV"); if(out!==btv) notes.push("Capitalised 'TV'.");
+  // 2) Basic space normalisation
+  const bs=out;
+  out=out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
+  if(out!==bs) notes.push("Normalised spacing.");
 
-      const baa=out; out=fixAAn(out); if(out!==baa) notes.push("Fixed 'a/an'.");
+  // 3) Visible fixes: spelling, caps, articles, informal terms
+  out = fixSpelling(out, notes);
+  const btv=out; out=out.replace(/\btv\b/gi,"TV"); if(out!==btv) notes.push("Capitalised 'TV'.");
+  const baa=out; out=fixAAn(out); if(out!==baa) notes.push("Fixed 'a/an'.");
+  out = formalize(out, notes); // uses your existing rule list
 
-      const bf=out; out=formalize(out, notes);
+  // 4) Introductory comma: single words and phrases
+  const punctIntro = (t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
+    let s=core.trim();
 
-      const punctIntro = (t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
-        let s=core.trim();
-        for(const ph of INTRO_PHRASES){ const re=new RegExp(`^(${ph})\\s+(?!,)`,"i"); if(re.test(s)) s=s.replace(re,`$1, `); }
-        const fw=(s.match(/^(\w+)\s+(?!,)/)||[null,null])[1];
-        if(fw && INTRO_SINGLE.includes(fw)) s=s.replace(/^(\w+)\s+(?!,)/,`$1, `);
-        return s+(end||"");
-      });
-      const bi=out; out=punctIntro(out); if(out!==bi) notes.push("Added comma after introductory phrase.");
-
-      const punctClauses=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
-        let s=core.trim();
-        for(const adv of CADV){
-          const re=new RegExp(`\\b${adv}\\b`,"i"); const hit=s.match(re);
-          if(hit){ const idx=hit.index, w=hit[0]; const L=s.slice(0,idx).replace(/[ ,;]+$/,"").trim(), R=s.slice(idx+w.length).replace(/^[ ,;]+/,"").trim();
-            if (hasFiniteVerb(L) && hasFiniteVerb(R)){ s=`${L}; ${w}, ${R}`; break; }
-          }
-        }
-        const first=(s.match(/^\w+/)||[""])[0].toLowerCase();
-        if(SUBORD.includes(first) && !/,/.test(s)){ const tokens=s.split(/\s+/);
-          const starters=["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"];
-          let ins=-1; for(let i=3;i<Math.min(tokens.length,20);i++){ if(starters.includes(tokens[i]?.toLowerCase())){ ins=i; break; } }
-          if(ins>-1){ tokens.splice(ins,0,","); s=tokens.join(" "); }
-        }
-        for(const cj of FANBOYS){
-          const pos=s.toLowerCase().indexOf(` ${cj} `); if(pos>-1 && !new RegExp(`,\\s+${cj}\\b`,"i").test(s)){
-            const L=s.slice(0,pos).trim(), R=s.slice(pos+cj.length+2).trim();
-            if(hasFiniteVerb(L) && hasFiniteVerb(R)){ s = L.replace(/\s+$/,"") + ", " + cj + " " + R.replace(/^,?\s*/,""); }
-          }
-        }
-        return s+(end||"");
-      });
-      const bc=out; out=punctClauses(out); if(out!==bc) notes.push("Inserted clause punctuation.");
-
-      if(!/[.!?]$/.test(out)){ out+="."; notes.push("Added final full stop."); }
-
-      const alts=buildAlternatives(out, lvl==='C1'?'C1':'B2');
-      return { out:out.trim(), notes, alts };
+    // phrases
+    for(const ph of INTRO_PHRASES){
+      const re = new RegExp(`^(${ph})\\s+(?!,)`,"i");
+      if(re.test(s)){ s=s.replace(re,`$1, `); }
     }
+    // single word
+    const fw = (s.match(/^(\w+)\s+(?!,)/)||[null,null])[1];
+    if(fw && INTRO_SINGLE.includes(fw)) s=s.replace(/^(\w+)\s+(?!,)/,`$1, `);
+
+    return s+(end||"");
+  });
+  const bi=out; out=punctIntro(out); if(out!==bi) notes.push("Added comma after introductory element.");
+
+  // 5) Clause punctuation (FANBOYS/comma; conj. adverbs with semicolon; initial subordinator comma)
+  const punctClauses=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
+    let s=core.trim();
+
+    // conj. adverbs → prefer “; however, …”
+    for(const adv of CADV){
+      const re=new RegExp(`\\b${adv}\\b`,"i");
+      const hit=s.match(re);
+      if(hit){
+        const idx=hit.index, w=hit[0];
+        const L=s.slice(0,idx).replace(/[ ,;]+$/,"").trim();
+        const R=s.slice(idx+w.length).replace(/^[ ,;]+/,"").trim();
+        if (hasFiniteVerb(L) && hasFiniteVerb(R)){ s=`${L}; ${w}, ${R}`; break; }
+      }
+    }
+
+    // initial subordinator → add comma before main clause if long enough
+    const first=(s.match(/^\w+/)||[""])[0].toLowerCase();
+    if(SUBORD.includes(first) && !/,/.test(s)){
+      const tokens=s.split(/\s+/);
+      if(tokens.length>6){ // be conservative
+        // insert comma roughly after the dependent clause head
+        for(let i=3;i<Math.min(tokens.length,20);i++){
+          if (/^[A-Z]/.test(tokens[i]) || /^(i|you|he|she|we|they|it|the|a|an|this|that|these|those|many|most|some)$/i.test(tokens[i])){
+            tokens.splice(i,0,","); s=tokens.join(" "); break;
+          }
+        }
+      }
+    }
+
+    // FANBOYS joining two ICs → ensure comma before coordinator
+    for(const cj of FANBOYS){
+      const pos=s.toLowerCase().indexOf(` ${cj} `);
+      if(pos>-1 && !new RegExp(`,\\s+${cj}\\b`,"i").test(s)){
+        const L=s.slice(0,pos).trim(), R=s.slice(pos+cj.length+2).trim();
+        if(hasFiniteVerb(L) && hasFiniteVerb(R)){
+          s = L.replace(/\s+$/,"") + ", " + cj + " " + R.replace(/^,?\s*/,"");
+        }
+      }
+    }
+
+    return s+(end||"");
+  });
+  const bc=out; out=punctClauses(out); if(out!==bc) notes.push("Inserted clause punctuation.");
+
+  // 6) Ensure final period
+  if(!/[.!?]"?$/.test(out)){ out+="."; notes.push("Added final full stop."); }
+
+  // 7) Alternatives for the UI
+  const alts=buildAlternatives(out, lvl==='C1'?'C1':'B2');
+  return { out:out.trim(), notes, alts };
+}
 
     /* ========= AI correction handler ========= */
     function renderAlternatives(currentText, alts, level) {
