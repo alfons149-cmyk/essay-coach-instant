@@ -182,3 +182,7 @@
   // Public API
   window.EC_Sentences = { analyzeToHTML, classifySentence, splitIntoSentences };
 })();
+
+git add ec-sentences.js
+git commit -m "Add sentence-type analysis module"
+git push
