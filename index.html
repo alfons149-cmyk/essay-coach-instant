@@ -925,108 +925,118 @@ Value & Close
     }
 
     window.runCorrection = async function () {
-      const input = document.getElementById("inputText").value.trim();
-      const lvl   = document.getElementById("levelSelect").value;
-      const formal= document.getElementById("formalToggle").checked;
-      const useAI = document.getElementById("aiToggle").checked &&
-                    typeof window.AI_ENDPOINT === "string" &&
-                    window.AI_ENDPOINT.startsWith("https://");
+  const input = document.getElementById("inputText").value.trim();
+  const lvl   = document.getElementById("levelSelect").value;
+  const formal= document.getElementById("formalToggle").checked;
+  const useAI = document.getElementById("aiToggle").checked &&
+                typeof window.AI_ENDPOINT === "string" &&
+                window.AI_ENDPOINT.startsWith("https://");
 
-      const outBox  = document.getElementById("outputText");
-      const notesBox= document.getElementById("notes");
-      const altBox  = document.getElementById("altList");
+  const outBox  = document.getElementById("outputText");
+  const notesBox= document.getElementById("notes");
+  const altBox  = document.getElementById("altList");
 
-      if (!input) {
-        outBox.value = "";
-        notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>No input provided.</span>";
-        altBox.innerHTML = "";
-        document.getElementById('outputPreview').innerHTML="";
-        document.getElementById('positions').innerHTML="";
-        return;
+  if (!input) {
+    outBox.value = "";
+    notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>No input provided.</span>";
+    altBox.innerHTML = "";
+    document.getElementById('outputPreview').innerHTML="";
+    document.getElementById('positions').innerHTML="";
+    document.getElementById('sentenceAnalysis').innerHTML="";
+    return;
+  }
+
+  notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>Processing…</span>";
+  altBox.innerHTML   = "<span class='hint'>Processing…</span>";
+  outBox.value = "";
+  document.getElementById('outputPreview').innerHTML="";
+  document.getElementById('positions').innerHTML="";
+  document.getElementById('sentenceAnalysis').innerHTML="";
+
+  // ==== AI path ====
+  if (useAI) {
+    try {
+      const res = await fetch(window.AI_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: input, level: lvl, formal, style: window.ALFONS_STYLE })
+      });
+
+      const raw = await res.text();
+
+      if (!res.ok) {
+        notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
+        throw new Error("AI HTTP " + res.status);
       }
 
-      notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>Processing…</span>";
-      altBox.innerHTML   = "<span class='hint'>Processing…</span>";
-      outBox.value = "";
-      document.getElementById('outputPreview').innerHTML="";
-      document.getElementById('positions').innerHTML="";
+      let data;
+      try { data = JSON.parse(raw); }
+      catch {
+        notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
+        throw new Error("AI non-JSON");
+      }
 
-      // ==== AI path ====
-      if (useAI) {
-        try {
-          const res = await fetch(window.AI_ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: input, level: lvl, formal, style: window.ALFONS_STYLE })
+      if (data && typeof data.corrected === 'string') {
+        outBox.value = data.corrected;
+
+        // Base notes
+        const baseNotes = Array.isArray(data.notes) ? data.notes : [];
+        notesBox.innerHTML =
+          "<b>Changes (AI):</b><br>" +
+          (baseNotes.length ? baseNotes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(none)");
+
+        // Explicit replacements
+        if (Array.isArray(data.replacements) && data.replacements.length) {
+          notesBox.innerHTML += "<br><b>Upgrades:</b><br>";
+          data.replacements.forEach(r => {
+            notesBox.innerHTML += "• Replaced “" + escapeHtml(r.from) + "” → “" + escapeHtml(r.to) + "”<br>";
           });
-
-          const raw = await res.text();
-
-          if (!res.ok) {
-            notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
-            throw new Error("AI HTTP " + res.status);
+        } else {
+          // Fallback heuristic for intensifiers
+          const extra = detectIntensifierNotes(input, data.corrected);
+          if (extra.length) {
+            notesBox.innerHTML += "<br>" + extra.map(n => "• " + escapeHtml(n)).join("<br>");
           }
-
-          let data;
-          try { data = JSON.parse(raw); }
-          catch {
-            notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
-            throw new Error("AI non-JSON");
-          }
-
-          if (data && typeof data.corrected === 'string') {
-            outBox.value = data.corrected;
-
-            // Base notes
-            const baseNotes = Array.isArray(data.notes) ? data.notes : [];
-            notesBox.innerHTML =
-              "<b>Changes (AI):</b><br>" +
-              (baseNotes.length ? baseNotes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(none)");
-
-            // NEW: explicit replacements (from Worker)
-            if (Array.isArray(data.replacements) && data.replacements.length) {
-              notesBox.innerHTML += "<br><b>Upgrades:</b><br>";
-              data.replacements.forEach(r => {
-                notesBox.innerHTML += "• Replaced “" + escapeHtml(r.from) + "” → “" + escapeHtml(r.to) + "”<br>";
-              });
-            } else {
-              // Fallback heuristic
-              const extra = detectIntensifierNotes(input, data.corrected);
-              if (extra.length) {
-                notesBox.innerHTML += "<br>" + extra.map(n => "• " + escapeHtml(n)).join("<br>");
-              }
-            }
-
-            // Alternatives
-            const fromAI    = (data.alternatives && typeof data.alternatives === 'object') ? data.alternatives : {};
-            const fromLocal = buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
-            let merged;
-            try { merged = mergeAlternatives(fromAI, fromLocal); } catch { merged = fromLocal; }
-
-            renderAlternatives(data.corrected, merged, (lvl === 'C1' ? 'C1' : 'B2'));
-            renderPreviewAndPositions(data.corrected, lvl);
-            return; // stop here so nothing overwrites AI output
-          } else {
-            notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
-            throw new Error('AI missing "corrected"');
-          }
-        } catch (e) {
-          // fall through to local
         }
-      }
 
-      // ==== Local fallback ====
-      try {
-        const { out, notes, alts } = correctLocal(input, lvl);
-        outBox.value = out;
-        notesBox.innerHTML = "<b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
-        renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
-        renderPreviewAndPositions(out, lvl);
-      } catch (e) {
-        notesBox.innerHTML = `<b>Local corrector failed:</b> ${escapeHtml(e.message)}`;
-        outBox.value = input;
+        // Alternatives
+        const fromAI    = (data.alternatives && typeof data.alternatives === 'object') ? data.alternatives : {};
+        const fromLocal = buildAlternatives(data.corrected, (lvl === 'C1' ? 'C1' : 'B2'));
+        let merged;
+        try { merged = mergeAlternatives(fromAI, fromLocal); } catch { merged = fromLocal; }
+
+        renderAlternatives(data.corrected, merged, (lvl === 'C1' ? 'C1' : 'B2'));
+        renderPreviewAndPositions(data.corrected, lvl);
+
+        // ✅ NEW: sentence-type analysis
+        updateSentenceAnalysis(data.corrected);
+
+        return; // stop here so nothing overwrites AI output
+      } else {
+        notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
+        throw new Error('AI missing "corrected"');
       }
-    };
+    } catch (e) {
+      // fall through to local
+    }
+  }
+
+  // ==== Local fallback ====
+  try {
+    const { out, notes, alts } = correctLocal(input, lvl);
+    outBox.value = out;
+    notesBox.innerHTML = "<b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
+    renderAlternatives(out, alts, (lvl === 'C1' ? 'C1' : 'B2'));
+    renderPreviewAndPositions(out, lvl);
+
+    // ✅ NEW: sentence-type analysis
+    updateSentenceAnalysis(out);
+
+  } catch (e) {
+    notesBox.innerHTML = `<b>Local corrector failed:</b> ${escapeHtml(e.message)}`;
+    outBox.value = input;
+  }
+};
 
     /* ========= Clear / Paste / PDF ========= */
     window.clearAll=function(){
