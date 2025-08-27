@@ -1234,6 +1234,19 @@ Value & Close
     // (PWA intentionally disabled during dev)
   </script>
 
+  <script>
+  (function(){
+    const m = (location.search.match(/[?&]theme=(ocean|coral|emerald|plum)\b/i) ||
+               location.hash.match(/theme=(ocean|coral|emerald|plum)/i));
+    const picked = m && m[1] ? m[1].toLowerCase() : null;
+    if (picked) {
+      document.documentElement.setAttribute('data-theme', picked);
+      try { localStorage.setItem('ec-theme', picked); } catch {}
+    }
+  })();
+</script>
+
+
   <!-- Error overlay -->
   <script>
     window.addEventListener('error', (e) => {
