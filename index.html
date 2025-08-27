@@ -26,12 +26,34 @@
 
 
   <style>
-    :root { --b:#111; --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --border:#e5e7eb; --overlay: rgba(17,17,17,.6); --hl: #fff1a8; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:var(--bg); color:#111; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: clamp(16px, 4vw, 24px); }
-    h1 { margin: 0 0 6px; font-size: clamp(22px, 3.6vw, 28px); }
-    .sub { color: var(--muted); margin: 0 0 16px; font-size: clamp(13px, 2.8vw, 14px); }
+   :root{
+  --b:#0b1220;            /* base text */
+  --bg:#f6f8fb;           /* page background */
+  --card:#ffffff;         /* cards */
+  --muted:#6b7280;        /* muted text */
+  --border:#e5e7eb;       /* borders */
+  --overlay: rgba(15,23,42,.55);
+  --hl:#fff1a8;           /* highlight */
+  --accent:#2563eb;       /* PRIMARY accent (swap to your brand) */
+  --accent-2:#7c3aed;     /* SECONDARY accent (light touches only) */
+  --radius:16px;
+  --shadow:0 6px 20px rgba(2,6,23,.06);
+}
+*{ box-sizing:border-box }
+body{
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:var(--b); background:var(--bg); margin:0;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+h1,h2,h3{ letter-spacing:.2px }
+h1{ font-size: clamp(24px, 3.8vw, 32px); font-weight:700 }
+.sub{ color:var(--muted); margin:.2rem 0 1rem; font-size:14px }
+.wrap{ max-width: 1040px; margin: 0 auto; padding: clamp(16px,4vw,28px) }
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding: clamp(14px, 3vw, 18px); box-shadow:var(--shadow);
+}
+
 
     .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
     .tab { padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; font-size:14px; min-height:44px; }
