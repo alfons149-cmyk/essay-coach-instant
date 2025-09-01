@@ -259,13 +259,6 @@ mark.hl.focus { animation: flash 1.1s ease-out; }
   <div class="wrap">
     <h1>EssayCoach – Cambridge Toolkit</h1>
     <p class="sub">Scaffolds, Guide &amp; Example, and Corrector for B2 • C1 • C2</p>
-
-    <div class="toolbar">
-      <div class="theme-picker" role="group" aria-label="Colour theme">
-        <button class="swatch" data-theme="ocean" style="--sw:#2563eb;--sw2:#22d3ee" title="Ocean (blue/teal)"></button>
-        <button class="swatch" data-theme="coral" style="--sw:#f97316;--sw2:#fb7185" title="Coral (orange/rose)"></button>
-        <button class="swatch" data-theme="emerald" style="--sw:#059669;--sw2:#34d399" title="Emerald (green)"></button>
-        <button class="swatch" data-theme="plum" style="--sw:#7c3aed;--sw2:#db2777" title="Plum (purple/magenta)"></button>
       </div>
     </div>
 
@@ -1439,21 +1432,7 @@ Approve a 4-week pilot with two checkpoints and a post-pilot adoption decision.`
       else                                   showTab('scaffolds');
     });
 
-    /* ========= Theme picker ========= */
-(function(){
-  try{
-    const saved = localStorage.getItem('ec-theme');
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
-  }catch{}
-  document.addEventListener('click', (e)=>{
-    const sw = e.target.closest('.swatch');
-    if (!sw) return;
-    const theme = sw.dataset.theme;
-    document.documentElement.setAttribute('data-theme', theme);
-    try{ localStorage.setItem('ec-theme', theme); }catch{}
-  });
-})();
-
+   
 // (PWA intentionally disabled during dev)
   </script>
 
