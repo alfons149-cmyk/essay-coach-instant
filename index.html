@@ -1174,9 +1174,11 @@ function downloadPDF(){
   }catch(e){ alert("Could not create PDF: "+e.message); }
 }
 
-<!-- ========= Punctuation Guide (full text) ========= -->
+<!-- ========= Punctuation Guide (safe overwrite) ========= -->
 <script>
-const PUNCT_GUIDE = `Why should you learn about punctuation?
+(function () {
+  // Full text (exactly as-is). Make sure the FIRST and LAST characters are backticks (`).
+  window.PUNCT_GUIDE = String.raw`Why should you learn about punctuation?
 I know what you might be thinking: “Most native speakers don’t use it properly, so why should I bother?” And you’re right—many people scatter commas randomly or forget full stops altogether. But here’s the difference: you’re not writing just to get by—you’re writing for Cambridge.
 In an exam, punctuation isn’t decoration. It’s a signpost that shows the examiner you know what you’re doing. Each comma, full stop, or semicolon quietly tells them: this writer is in control. And that control adds value to your composition.
 So yes, it’s worth learning. More than that—it’s worth mastering. Because when you use punctuation correctly and effectively, your writing reads smoothly, your ideas land clearly, and your level shines through.
@@ -1399,59 +1401,51 @@ FINAL NUDGE
 You don’t need to “sound clever.” You need to build clearly: clause by clause, block by block. Keep your word order steady, place adverbs with intention, and join ideas with the right connector and punctuation. That’s how writing becomes calm, confident, and yours.
 Try this reflection: This week, write three versions of the same idea—simple → compound → complex—and notice how each version changes the feel of your message. I’m right here cheering you on. `;
 
-/* Re-use your original function names so callers don’t change */
+  // Back-compat in case other code still reads PUNCT_RULES
+  window.PUNCT_RULES = [window.PUNCT_GUIDE];
 
-/* Renders into the existing #punctList container.
-   Shows exact text with preserved line breaks. */
-function renderPunctRules(){
-  const list = document.getElementById('punctList');
-  if (!list) return;
-  list.innerHTML = "";
-  list.style.whiteSpace = "pre-wrap";     // keep your line breaks
-  list.style.fontFamily = "inherit";      // keep your site font
-  list.style.listStyle = "none";          // in case it’s a <ul>
-  list.textContent = PUNCT_GUIDE;         // safe exact text
-}
+  // Overwrite (do not redeclare) the three functions
+  window.renderPunctRules = function(){
+    const list = document.getElementById('punctList');
+    if (!list) return;
+    list.innerHTML = "";
+    list.style.whiteSpace = "pre-wrap";
+    list.style.fontFamily = "inherit";
+    list.style.listStyle = "none";
+    list.textContent = window.PUNCT_GUIDE;
+  };
 
-/* Copies the entire guide exactly */
-function copyPunctRules(){
-  navigator.clipboard?.writeText(PUNCT_GUIDE);
-  alert("Punctuation guide copied.");
-}
+  window.copyPunctRules = function(){
+    navigator.clipboard?.writeText(window.PUNCT_GUIDE);
+    alert("Punctuation guide copied.");
+  };
 
-/* Exports the entire guide as a PDF (multi-page if needed) */
-function exportPunctPDF(){
-  const { jsPDF } = window.jspdf || {};
-  if (!jsPDF){ alert("PDF library failed to load."); return; }
+  window.exportPunctPDF = function(){
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF){ alert("PDF library failed to load."); return; }
 
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const margin = 48;
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  let y = margin;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 48;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = margin;
 
-  doc.setFont("Helvetica","bold");
-  doc.setFontSize(16);
-  doc.text("Punctuation & Sentence Building", margin, y);
-  y += 24;
+    doc.setFont("Helvetica","bold"); doc.setFontSize(16);
+    doc.text("Punctuation & Sentence Building", margin, y); y += 24;
 
-  doc.setFont("Helvetica","normal");
-  doc.setFontSize(12);
+    doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+    const lines = doc.splitTextToSize(window.PUNCT_GUIDE, pageW - margin*2);
+    const lh = 14;
 
-  const lines = doc.splitTextToSize(PUNCT_GUIDE, pageW - margin*2);
-  const lineHeight = 14;
+    lines.forEach(line => {
+      if (y > pageH - margin) { doc.addPage(); y = margin; }
+      doc.text(line, margin, y);
+      y += lh;
+    });
 
-  lines.forEach(line => {
-    if (y > pageH - margin) {
-      doc.addPage();
-      y = margin;
-    }
-    doc.text(line, margin, y);
-    y += lineHeight;
-  });
-
-  doc.save("punctuation-guide.pdf");
-}
+    doc.save("punctuation-guide.pdf");
+  };
+})();
 </script>
 
 /* ========= Scaffolds renderer ========= */
