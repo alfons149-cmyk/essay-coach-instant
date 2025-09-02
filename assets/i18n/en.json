@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en" data-theme="coral">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="app.title">EssayCoach – Instant</title>
+
+  <!-- Styles & fonts (reuse your existing ones) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="assets/styles.css" />
+
+  <!-- Tiny i18n loader (same as /es, auto-detects path/lang) -->
+  <script>
+  (function () {
+    async function loadI18n(lang, basePath) {
+      try {
+        const res = await fetch(`${basePath}/assets/i18n/${lang}.json`, { cache: 'no-store' });
+        const dict = await res.json();
+
+        // Replace text content
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (dict[key]) el.textContent = dict[key];
+        });
+
+        // Attribute helpers
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+          const key = el.getAttribute('data-i18n-title');
+          if (dict[key]) el.setAttribute('title', dict[key]);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+          const key = el.getAttribute('data-i18n-placeholder');
+          if (dict[key]) el.setAttribute('placeholder', dict[key]);
+        });
+
+        // Simple templating for counts: EC_t('io.input_words', { n: 0 })
+        window.EC_t = (key, vars = {}) => {
+          let s = dict[key] || key;
+          for (const k in vars) s = s.replaceAll(`{${k}}`, String(vars[k]));
+          return s;
+        };
+
+        document.documentElement.lang = lang;
+      } catch (e) {
+        console.error('i18n load error', e);
+      }
+    }
+
+    // Infer lang by path: /es/ → es, root → en
+    const isSpanish = location.pathname.includes('/essay-coach-instant/es/');
+    const lang = isSpanish ? 'es' : 'en';
+    const basePath = isSpanish ? '/essay-coach-instant' : '';
+    loadI18n(lang, basePath);
+  })();
+  </script>
+</head>
+
+<body>
+  <!-- Language switch -->
+  <nav class="lang-switch" style="margin:12px 0">
+    <a href="/essay-coach-instant/" data-i18n="nav.english_ui">English</a> |
+    <a href="/essay-coach-instant/es/" data-i18n="nav.spanish_ui">Español</a>
+  </nav>
+
+  <!-- Hero / overview -->
+  <header>
+    <h1 data-i18n="app.title">EssayCoach – Instant</h1>
+    <p class="hint" data-i18n="home.hero_line">
+      Scaffolds • Corrector (B2–C2) • Coach notes • Highlights & click-to-jump • Punctuation Rules • Guide & Example • PDF
+    </p>
+  </header>
+
+  <!-- Top tabs -->
+  <nav class="tabs" style="margin:8px 0 16px">
+    <a href="#scaffolds" data-i18n="tabs.scaffolds">Scaffolds</a> •
+    <a href="#corrector" data-i18n="tabs.corrector">Corrector</a> •
+    <a href="#punct" data-i18n="tabs.punct_rules">Punctuation Rules? Part 2 (Letter/Email • Proposal • Report • Review)</a>
+  </nav>
+
+  <!-- SCAFFOLDS -->
+  <section id="scaffolds">
+    <h2 data-i18n="tabs.scaffolds">Scaffolds</h2>
+
+    <!-- Level / Task controls -->
+    <div class="controls">
+      <label for="levelSel" data-i18n="label.level">Level</label>
+      <div id="levelSel">
+        <label><input type="radio" name="level" value="b2"> <span data-i18n="level.b2">B2 First</span></label>
+        <label><input type="radio" name="level" value="c1"> <span data-i18n="level.c1">C1 Advanced</span></label>
+        <label><input type="radio" name="level" value="c2"> <span data-i18n="level.c2">C2 Proficiency</span></label>
+      </div>
+
+      <label for="taskType" data-i18n="label.task_type">Task type</label>
+      <select id="taskType">
+        <option value="essay" data-i18n="task.essay">Essay</option>
+        <option value="report" data-i18n="task.report">Report</option>
+        <option value="review" data-i18n="task.review">Review</option>
+        <option value="letter_email" data-i18n="task.letter_email">Letter / Email</option>
+        <option value="proposal" data-i18n="task.proposal">Proposal</option>
+      </select>
+
+      <div class="task-setup">
+        <div class="title" data-i18n="label.task_setup">Task setup</div>
+        <!-- Your app renders its own setup UI here -->
+      </div>
+    </div>
+
+    <!-- Scaffold actions -->
+    <div class="actions">
+      <button id="btnCopyScaffold" data-i18n="btn.copy_scaffold">Copy scaffold</button>
+      <button id="btnCopyOpener" data-i18n="btn.copy_opener">Copy opener</button>
+      <button id="btnExportScaffoldPDF" data-i18n="btn.export_scaffold_pdf">Export scaffold as PDF</button>
+      <button id="btnGuideExample" data-i18n="btn.guide_example">Guide & Example</button>
+      <span class="hint" style="display:block;margin-top:8px" data-i18n="guide.about">
+        “Guide & Example” shows a full model answer for the selected Level + Task type. Toggle coach notes inside the modal.
+      </span>
+    </div>
+
+    <!-- Structure / Moves / Opener / Tips -->
+    <h3 data-i18n="section.structure">Structure</h3>
+
+    <h4 data-i18n="section.moves_title">Recommended moves (4-part structure)</h4>
+    <div id="movesList"><!-- app fills --></div>
+
+    <hr />
+
+    <h4 data-i18n="section.useful_opener">Useful opener (example)</h4>
+    <div id="usefulOpener"><!-- example stays English --></div>
+
+    <hr />
+
+    <h4 data-i18n="section.tips">Tips</h4>
+    <p class="hint" data-i18n="hint.choose_level">
+      Choose level and task to update the scaffold. You can copy or export to PDF.
+    </p>
+
+    <p class="reminder" data-i18n="reminder.essay_counts">
+      Essay reminders: B2 140–190 • C1 220–260 • C2 240–280. Paraphrase prompts, organise clearly, and maintain an academic/neutral–formal voice.
+    </p>
+  </section>
+
+  <hr />
+
+  <!-- CORRECTOR (Part 1) -->
+  <section id="corrector">
+    <h2 data-i18n="tabs.corrector">Corrector</h2>
+
+    <!-- Status row -->
+    <div class="status-row">
+      <span id="inputWords" data-i18n="io.input_words">Input: {n} words</span> •
+      <span id="outputWords" data-i18n="io.output_words">Output: {n} words</span> •
+      <span id="targetHint" data-i18n="io.target_example_c1">Target 220–260 (C1 essay)</span>
+    </div>
+
+    <!-- Toggles -->
+    <div class="toggles">
+      <label><input type="checkbox" id="enforceFormal"> <span data-i18n="controls.enforce_formal">Enforce formal tone (avoid slang/colloquialisms)</span></label><br />
+      <label><input type="checkbox" id="useAI"> <span data-i18n="controls.use_ai">Use AI (ChatGPT) with exam-aligned style (requires Worker URL)</span></label><br />
+      <label><input type="checkbox" id="showCoach"> <span data-i18n="controls.show_coach_notes">Show coach notes & highlights for clause punctuation (B2↔C1)</span></label>
+    </div>
+
+    <!-- IO panes -->
+    <div class="io">
+      <div class="io-col">
+        <div class="io-title" data-i18n="io.input_label">Input</div>
+        <textarea id="userInput" rows="10" data-i18n-placeholder="io.input_label" placeholder="Input"></textarea>
+      </div>
+      <div class="io-col">
+        <div class="io-title" data-i18n="io.output_label">Output</div>
+        <textarea id="correctedOutput" rows="10" readonly></textarea>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions" aria-label="actions">
+      <button id="btnCorrect" data-i18n="btn.correct">Correct</button>
+      <button id="btnExportPDF" data-i18n="btn.export_pdf">Export PDF</button>
+      <button id="btnClear" data-i18n="btn.clear">Clear</button>
+      <button id="btnPaste" data-i18n="btn.paste">Paste</button>
+      <button id="btnStartTimer" data-i18n="btn.start_timer">Start 45-min timer</button>
+      <span id="timerBadge" style="margin-left:8px" data-i18n="io.timer_dash">Timer: --:--</span>
+    </div>
+
+    <!-- Preview + Notes -->
+    <div class="preview">
+      <h3 data-i18n="preview.title">Preview with highlights (click a chip to jump; click a highlight to toggle)</h3>
+      <p data-i18n="preview.instructions">Paste your text and press Correct. We’ll highlight clause joins (FANBOYS / conjunctive adverbs) and show Coach notes on how to reach C1.</p>
+      <div id="previewHTML"><!-- app fills --></div>
+
+      <h4 data-i18n="preview.changes_title">Changes:</h4>
+      <div id="changesList"><em data-i18n="preview.changes_wait">Corrections will appear here after you click “Correct”.</em></div>
+    </div>
+
+    <!-- C2 quick rubric -->
+    <section class="c2-rubric">
+      <h3 data-i18n="c2.quick_rubric_title">C2 (CPE) quick rubric – prototype</h3>
+      <div id="c2Rubric"><em data-i18n="c2.quick_rubric_wait">Run a correction to see feedback.</em></div>
+    </section>
+
+    <!-- Vocab alternatives -->
+    <section class="vocab-alts">
+      <h3 data-i18n="vocab.alternatives_title">Vocabulary alternatives (click to apply)</h3>
+      <div id="vocabAlts"><em data-i18n="vocab.alternatives_wait">After correction, suggested upgrades will appear here (especially for C1/C2).</em></div>
+    </section>
+
+    <!-- Essay reminders -->
+    <p class="reminder" data-i18n="reminder.essay_counts">
+      Essay reminders: B2 140–190 • C1 220–260 • C2 240–280. Paraphrase prompts, organise clearly, and maintain an academic/neutral–formal voice.
+    </p>
+  </section>
+
+  <hr />
+
+  <!-- PUNCTUATION RULES (Part 2 area mention mirrored in tabs) -->
+  <section id="punct">
+    <div class="actions" style="margin:8px 0">
+      <button id="btnCopyRules" data-i18n="punct.copy_rules">Copy rules</button>
+      <button id="btnExportRulesPDF" data-i18n="punct.export_rules_pdf">Export rules as PDF</button>
+    </div>
+
+    <h3 data-i18n="punct.core_rules_title">Core Punctuation Rules (Exam-Safe)</h3>
+    <div id="punctRules"><em data-i18n="punct.placeholder">These are placeholders. Swap them for your own rules later.</em></div>
+  </section>
+
+  <hr />
+
+  <!-- PART 2 corrector -->
+  <section id="part2">
+    <h2 data-i18n="part2.corrector_title">Part 2 task corrector</h2>
+
+    <div class="controls">
+      <label data-i18n="part2.level">Level</label>
+      <div>
+        <label><input type="radio" name="p2level" value="b2"> <span data-i18n="level.b2">B2 First</span></label>
+        <label><input type="radio" name="p2level" value="c1"> <span data-i18n="level.c1">C1 Advanced</span></label>
+        <label><input type="radio" name="p2level" value="c2"> <span data-i18n="level.c2">C2 Proficiency</span></label>
+      </div>
+
+      <label data-i18n="part2.task_type">Task type</label>
+      <div>
+        <label><input type="radio" name="p2type" value="letter_email"> <span data-i18n="task.letter_email">Letter / Email</span></label>
+        <label><input type="radio" name="p2type" value="proposal"> <span data-i18n="task.proposal">Proposal</span></label>
+        <label><input type="radio" name="p2type" value="report"> <span data-i18n="task.report">Report</span></label>
+        <label><input type="radio" name="p2type" value="review"> <span data-i18n="task.review">Review</span></label>
+      </div>
+
+      <div class="task-setup">
+        <span class="muted" data-i18n="part2.tasks_line">Letter/Email, Proposal, Report, Review</span>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span id="p2InputWords" data-i18n="io.input_words">Input: {n} words</span> •
+      <span id="p2OutputWords" data-i18n="io.output_words">Output: {n} words</span> •
+      <span id="p2Target" data-i18n="part2.target">Target —</span> •
+      <span id="p2TimerNote" data-i18n="part2.mirror_timer">Timer mirrors main</span>
+    </div>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="p2Formal"> <span data-i18n="part2.enforce_formal">Enforce formal tone (toggle off for a more neutral review)</span></label><br />
+      <label><input type="checkbox" id="p2UseAI"> <span data-i18n="part2.use_ai">Use AI (ChatGPT) with genre-aligned style (requires Worker URL)</span></label><br />
+      <label><input type="checkbox" id="p2ShowCoach"> <span data-i18n="part2.show_coach_notes">Show coach notes & highlights for clause punctuation</span></label>
+    </div>
+
+    <p class="reminder" data-i18n="part2.wordcount_note">
+      Word count targets: B2 140–190 • C1 220–260 • C2 240–280. Registers vary by genre: Letter/Email, Proposal, Report → formal; Review → neutral/semi-formal.
+    </p>
+
+    <div class="io">
+      <div class="io-col">
+        <div class="io-title" data-i18n="io.input_label">Input</div>
+        <textarea id="p2Input" rows="10" data-i18n-placeholder="io.input_label" placeholder="Input"></textarea>
+      </div>
+      <div class="io-col">
+        <div class="io-title" data-i18n="io.output_label">Output</div>
+        <textarea id="p2Output" rows="10" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="p2Correct" data-i18n="btn.correct">Correct</button>
+      <button id="p2ExportPDF" data-i18n="btn.export_pdf">Export PDF</button>
+      <button id="p2Clear" data-i18n="btn.clear">Clear</button>
+      <button id="p2Paste" data-i18n="btn.paste">Paste</button>
+      <button id="p2StartTimer" data-i18n="btn.start_timer">Start 45-min timer</button>
+    </div>
+
+    <div class="preview">
+      <h3 data-i18n="part2.preview_title">Preview with highlights</h3>
+      <p data-i18n="part2.preview_hint">Paste your text and press Correct to see clause-join highlights and coach notes.</p>
+      <div id="p2PreviewHTML"><!-- app fills --></div>
+
+      <h4 data-i18n="preview.changes_title">Changes:</h4>
+      <div id="p2ChangesList"><em data-i18n="part2.changes_wait">Corrections will appear here after you click “Correct”.</em></div>
+    </div>
+
+    <section class="p2-rubric">
+      <h3 data-i18n="part2.quick_rubric_title">Part 2 quick rubric – genre checks</h3>
+      <div id="p2Rubric"><em data-i18n="part2.quick_rubric_wait">Run a correction to see feedback specific to letter/proposal/report/review.</em></div>
+    </section>
+
+    <section class="p2-vocab-alts">
+      <h3 data-i18n="part2.vocab_alts_title">Vocabulary alternatives (click to apply)</h3>
+      <div id="p2VocabAlts"><em data-i18n="part2.vocab_alts_wait">After correction, suggested upgrades will appear here.</em></div>
+    </section>
+  </section>
+
+  <!-- Guide & Example modal -->
+  <dialog id="guideModal">
+    <h3 id="guideModalTitle" data-i18n="modal.guide_title">Guide & Example</h3>
+    <div id="guideModalBody"><!-- example content stays English --></div>
+    <div class="actions">
+      <button id="btnCopyExample" data-i18n="modal.copy_example">Copy example</button>
+      <button id="btnExportExamplePDF" data-i18n="modal.export_example_pdf">Export example as PDF</button>
+      <button id="btnCloseGuide" data-i18n="modal.close">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Coach notes modal -->
+  <dialog id="coachNotesModal">
+    <h3 data-i18n="modal.coach_notes_title">Coach notes (B2/C1 phrasing)</h3>
+    <div id="coachNotes"><!-- generated notes here --></div>
+    <div class="actions">
+      <button id="btnCloseCoach" data-i18n="modal.close">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Your main bundle -->
+  <script src="assets/app.bundle.js" defer></script>
+</body>
+</html>
