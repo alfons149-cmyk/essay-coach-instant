@@ -1,15 +1,32 @@
 {
   "nav.english_ui": "English",
   "nav.spanish_ui": "Español",
+  "nav.scaffolds": "Andamiajes",
+  "nav.corrector": "Corrector",
+  "nav.punctuation": "Reglas de puntuación",
+  "nav.guide_example": "Guía y ejemplo",
+  "nav.pdf": "PDF",
 
   "app.title": "EssayCoach – Instant",
+  "home.hero_line": "Andamiajes • Corrector (B2–C2) • Notas del entrenador • Resaltados y saltos • Reglas de puntuación • Guía y ejemplo • PDF",
+
   "tabs.scaffolds": "Andamiajes",
   "tabs.corrector": "Corrector",
-  "tabs.punct_rules": "¿Reglas de puntuación?",
+  "tabs.punct_rules": "¿Reglas de puntuación? Parte 2 (Carta/Email • Propuesta • Informe • Reseña)",
 
   "label.level": "Nivel",
   "label.task_type": "Tipo de tarea",
   "label.task_setup": "Preparación de la tarea",
+
+  "level.b2": "B2 First",
+  "level.c1": "C1 Advanced",
+  "level.c2": "C2 Proficiency",
+
+  "task.essay": "Ensayo",
+  "task.report": "Informe",
+  "task.review": "Reseña",
+  "task.letter_email": "Carta / Email",
+  "task.proposal": "Propuesta",
 
   "btn.copy_scaffold": "Copiar andamiaje",
   "btn.copy_opener": "Copiar apertura",
@@ -19,7 +36,83 @@
   "btn.export_pdf": "Exportar PDF",
   "btn.clear": "Limpiar",
   "btn.paste": "Pegar",
-  "btn.start_timer": "Iniciar temporizador",
+  "btn.start_timer": "Iniciar temporizador de 45 min",
+  "btn.start_timer_short": "Iniciar temporizador",
+  "btn.stop_timer": "Detener temporizador",
+  "btn.reset_timer": "Reiniciar temporizador",
+  "btn.copy_rules": "Copiar reglas",
+  "btn.copy_example": "Copiar ejemplo",
 
-  "home.hero_line": "Andamiajes • Corrector (B2–C2) • Notas del entrenador • Resaltados y saltos • Reglas de puntuación • Guía y ejemplo • PDF"
+  "guide.about": "“Guía y ejemplo” muestra una respuesta modelo completa para el Nivel + Tipo de tarea seleccionados. Activa o desactiva las notas del entrenador dentro del modal.",
+
+  "section.structure": "Estructura",
+  "section.moves_title": "Movimientos recomendados (estructura en 4 partes)",
+  "section.useful_opener": "Apertura útil (ejemplo)",
+  "section.tips": "Consejos",
+
+  "hint.choose_level": "Elige el nivel y el tipo de tarea para actualizar el andamiaje. Puedes copiar o exportar a PDF.",
+  "hint.hover_highlight": "Pasa el ratón por un resaltado para ver por qué se ha marcado.",
+
+  "reminder.essay_counts": "Recordatorios para el ensayo: B2 140–190 • C1 220–260 • C2 240–280. Parafrasea los enunciados, organiza con claridad y mantén un registro académico / neutral–formal.",
+
+  "io.input_label": "Entrada",
+  "io.output_label": "Salida",
+  "io.input_words": "Entrada: {n} palabras",
+  "io.output_words": "Salida: {n} palabras",
+  "io.target": "Objetivo",
+  "io.target_example_c1": "Objetivo 220–260 (ensayo C1)",
+  "io.timer_start": "Iniciar temporizador de 45 min",
+  "io.timer": "Temporizador",
+  "io.timer_dash": "Temporizador: --:--",
+
+  "controls.enforce_formal": "Forzar registro formal (evita jerga/coloquialismos)",
+  "controls.use_ai": "Usar IA (ChatGPT) con estilo alineado al examen (requiere Worker URL)",
+  "controls.show_coach_notes": "Mostrar notas del entrenador y resaltados para la puntuación entre cláusulas (B2↔C1)",
+  "controls.show_sentence_types": "Mostrar tipos de oración (simple/compuesta/compleja/compuesta-compleja)",
+
+  "preview.title": "Vista previa con resaltados (haz clic en una etiqueta para saltar; haz clic en un resaltado para alternar)",
+  "preview.instructions": "Pega tu texto y pulsa Corregir. Mostraremos las uniones de cláusulas (FANBOYS / adverbios conjuntivos) y notas del entrenador para alcanzar C1.",
+  "preview.changes_title": "Cambios:",
+  "preview.changes_wait": "Las correcciones aparecerán aquí después de pulsar “Corregir”.",
+
+  "actions.title": "Acciones",
+
+  "c2.quick_rubric_title": "C2 (CPE) rúbrica rápida – prototipo",
+  "c2.quick_rubric_wait": "Ejecuta una corrección para ver la retroalimentación.",
+  "c2.criteria.content": "Contenido",
+  "c2.criteria.comm": "Logro comunicativo",
+  "c2.criteria.org": "Organización",
+  "c2.criteria.lang": "Lengua",
+
+  "vocab.alternatives_title": "Alternativas de vocabulario (haz clic para aplicar)",
+  "vocab.alternatives_wait": "Tras la corrección, aparecerán mejoras sugeridas (especialmente para C1/C2).",
+
+  "punct.copy_rules": "Copiar reglas",
+  "punct.export_rules_pdf": "Exportar reglas en PDF",
+  "punct.core_rules_title": "Reglas básicas de puntuación (seguras para examen)",
+  "punct.placeholder": "Estos son marcadores de posición. Cámbialos por tus propias reglas más adelante.",
+
+  "part2.corrector_title": "Corrector de la Parte 2",
+  "part2.level": "Nivel",
+  "part2.task_type": "Tipo de tarea",
+  "part2.tasks_line": "Carta/Email, Propuesta, Informe, Reseña",
+  "part2.target": "Objetivo —",
+  "part2.mirror_timer": "El temporizador refleja el principal",
+  "part2.enforce_formal": "Forzar registro formal (desactívalo para una reseña más neutral)",
+  "part2.use_ai": "Usar IA (ChatGPT) con género alineado (requiere Worker URL)",
+  "part2.show_coach_notes": "Mostrar notas del entrenador y resaltados para la puntuación entre cláusulas",
+  "part2.wordcount_note": "Objetivos de palabras: B2 140–190 • C1 220–260 • C2 240–280. Los registros varían por género: Carta/Email, Propuesta, Informe → formal; Reseña → neutral/semi-formal.",
+  "part2.preview_title": "Vista previa con resaltados",
+  "part2.preview_hint": "Pega tu texto y pulsa Corregir para ver las uniones de cláusulas y las notas del entrenador.",
+  "part2.changes_wait": "Las correcciones aparecerán aquí después de pulsar “Corregir”.",
+  "part2.quick_rubric_title": "Rúbrica rápida de la Parte 2 – comprobaciones por género",
+  "part2.quick_rubric_wait": "Ejecuta una corrección para ver retroalimentación específica para carta/propuesta/informe/reseña.",
+  "part2.vocab_alts_title": "Alternativas de vocabulario (haz clic para aplicar)",
+  "part2.vocab_alts_wait": "Tras la corrección, aparecerán mejoras sugeridas.",
+
+  "modal.coach_notes_title": "Notas del entrenador (redacción B2/C1)",
+  "modal.guide_title": "Guía y ejemplo",
+  "modal.copy_example": "Copiar ejemplo",
+  "modal.export_example_pdf": "Exportar ejemplo en PDF",
+  "modal.close": "Cerrar"
 }
