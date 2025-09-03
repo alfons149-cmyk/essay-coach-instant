@@ -22,6 +22,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Same UI font stack as English */
+  :root {
+    --ec-ui: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --ec-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif; /* only if you use it */
+  }
+
+  /* Force ES page to use the same UI font */
+  html[lang="es"], html[lang="es"] body,
+  html[lang="es"] button, html[lang="es"] input,
+  html[lang="es"] textarea, html[lang="es"] select {
+    font-family: var(--ec-ui) !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ensure dynamically injected text inherits the same font */
+  #previewHTML, #p2PreviewHTML { font-family: inherit !important; }
+  #previewHTML *, #p2PreviewHTML * { font-family: inherit !important; }
+</style>
 
   <style>
 :root{
