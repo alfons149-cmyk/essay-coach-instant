@@ -1,0 +1,12 @@
+{
+  "btn.copy_scaffold": "Copy scaffold",
+  "btn.copy_opener": "Copy opener",
+  "btn.export_scaffold_pdf": "Export scaffold as PDF",
+  "btn.guide_example": "Guide & Example",
+  "btn.correct": "Correct",
+  "btn.export_pdf": "Export PDF",
+  "btn.clear": "Clear",
+  "btn.paste": "Paste",
+  "btn.start_timer": "Start 45-min timer",
+  "io.timer_dash": "Timer: --:--"
+}
