@@ -1915,7 +1915,47 @@ window.addEventListener('error', (e) => {
   }
 })();
 </script>
-<script src="/essay-coach-instant/assets/app.bundle.js" defer></script>
+  <!-- App script -->
+  <script src="/essay-coach-instant/assets/app.bundle.js" defer></script>
 
+  <!-- Gentle i18n -->
+  <script>
+  (function () {
+    async function loadDict() {
+      const res = await fetch('/essay-coach-instant/assets/i18n/es.json', { cache:'no-store' });
+      if (!res.ok) throw new Error('i18n es ' + res.status);
+      document.documentElement.lang = 'es';
+      return res.json();
+    }
+    function applyOne(el, dict) {
+      const key = el.getAttribute('data-i18n');
+      if (!key || !dict[key]) return;
+      if (el.tagName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type)) { el.value = dict[key]; return; }
+      el.textContent = dict[key];
+    }
+    function applyAll(dict, root=document) {
+      root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
+      root.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const k = el.getAttribute('data-i18n-title'); if (dict[k]) el.setAttribute('title', dict[k]);
+      });
+      root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const k = el.getAttribute('data-i18n-placeholder'); if (dict[k]) el.setAttribute('placeholder', dict[k]);
+      });
+    }
+    function observe(dict) {
+      const mo = new MutationObserver(m => m.forEach(x => x.addedNodes.forEach(n => {
+        if (n.nodeType === 1) applyAll(dict, n);
+      })));
+      mo.observe(document.body, { childList:true, subtree:true });
+    }
+    (document.readyState==='loading' ? document.addEventListener('DOMContentLoaded', run) : run());
+    async function run(){
+      try { const dict = await loadDict(); applyAll(dict); observe(dict);
+        setTimeout(()=>applyAll(dict), 200); setTimeout(()=>applyAll(dict), 600);
+      } catch(e){ console.error('[i18n]', e); }
+    }
+  })();
+  </script>
 </body>
 </html>
+
