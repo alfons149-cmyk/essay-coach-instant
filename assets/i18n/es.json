@@ -1,0 +1,25 @@
+{
+  "nav.english_ui": "English",
+  "nav.spanish_ui": "Español",
+
+  "app.title": "EssayCoach – Instant",
+  "tabs.scaffolds": "Andamiajes",
+  "tabs.corrector": "Corrector",
+  "tabs.punct_rules": "¿Reglas de puntuación?",
+
+  "label.level": "Nivel",
+  "label.task_type": "Tipo de tarea",
+  "label.task_setup": "Preparación de la tarea",
+
+  "btn.copy_scaffold": "Copiar andamiaje",
+  "btn.copy_opener": "Copiar apertura",
+  "btn.export_scaffold_pdf": "Exportar andamiaje en PDF",
+  "btn.guide_example": "Guía y ejemplo",
+  "btn.correct": "Corregir",
+  "btn.export_pdf": "Exportar PDF",
+  "btn.clear": "Limpiar",
+  "btn.paste": "Pegar",
+  "btn.start_timer": "Iniciar temporizador",
+
+  "home.hero_line": "Andamiajes • Corrector (B2–C2) • Notas del entrenador • Resaltados y saltos • Reglas de puntuación • Guía y ejemplo • PDF"
+}
