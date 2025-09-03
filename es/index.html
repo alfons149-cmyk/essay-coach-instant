@@ -2320,5 +2320,43 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+  <script>
+/* Force the same font stack as EN, after all CSS/JS have run */
+(function () {
+  // 1) Append a last-in DOM <style> with very strong selectors + !important
+  const style = document.createElement('style');
+  style.id = 'ec-font-fix';
+  style.textContent = `
+    html, body, button, input, textarea, select,
+    #previewHTML, #previewHTML *, #p2PreviewHTML, #p2PreviewHTML * {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 2) Also set an inline style on <body> with !important (beats inline defaults)
+  document.body && document.body.style.setProperty(
+    'font-family',
+    'Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+    'important'
+  );
+
+  // 3) Re-assert once more after the app finishes any late DOM work
+  window.addEventListener('load', () => {
+    document.head.appendChild(style.cloneNode(true));
+    setTimeout(() => document.head.appendChild(style.cloneNode(true)), 250);
+  });
+
+  // 4) Log what the browser thinks now
+  setTimeout(() => {
+    console.log('[font-fix] body:', getComputedStyle(document.body).fontFamily);
+    console.log('[font-fix] #previewHTML:', getComputedStyle(document.querySelector('#previewHTML')||document.body).fontFamily);
+    console.log('[font-fix] button:', getComputedStyle(document.querySelector('button')).fontFamily);
+  }, 300);
+})();
+</script>
+
 </body>
 </html>
