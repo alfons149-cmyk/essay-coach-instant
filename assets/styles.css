@@ -63,3 +63,6 @@ button.primary:disabled{ opacity:.7; filter:saturate(.8); cursor:not-allowed }
 /* Notes, hints */
 .notes{ margin-top:10px; background:#f3f4f6; padding:10px; border-radius:10px; border:1px solid var(--border) }
 .hint{ color:var(--muted); font-size:12px; margin-top:6px }
+/* Ensure dynamic preview text inherits the same font */
+#previewHTML, #previewHTML *,
+#p2PreviewHTML, #p2PreviewHTML * { font-family: inherit; }
