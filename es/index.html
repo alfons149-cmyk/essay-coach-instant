@@ -5,95 +5,1917 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EssayCoach – Cambridge Toolkit (PWA)</title>
 
-  <!-- Icons -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png" />
-  <link rel="apple-touch-icon" href="/essay-coach-instant/icon-192.png" />
+  <!-- cache-bust -->
+  <meta name="x-build" content="v2025-09-01-ec-fresh2" />
+
+  <!-- Icons (optional) -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="theme-color" content="#111111" />
+
+  <!-- === GLOBALS: AI endpoint === -->
+  <script>
+    window.AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev"; // set to your Worker URL (or leave off to use local rules only)
+  </script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
 
-  <!-- Shared CSS -->
   <link rel="stylesheet" href="/essay-coach-instant/assets/styles.css">
+
+ 
 </head>
 <body>
-  <!-- Language switch -->
   <nav class="row" style="gap:6px; padding:10px 14px">
-    <a href="/essay-coach-instant/">English</a> |
-    <a href="/essay-coach-instant/es/">Español</a>
-  </nav>
+  <a href="/essay-coach-instant/">English</a> |
+  <a href="/essay-coach-instant/es/">Español</a>
+</nav>
 
-  <!-- Minimal app scaffold (keep/add your real markup here) -->
   <div class="wrap">
-    <h1 data-i18n="app.title">EssayCoach – Instant</h1>
-    <p class="sub" data-i18n="home.hero_line">Andamiajes • Corrector (B2–C2) • Notas del entrenador • Resaltados y saltos • Reglas de puntuación • Guía y ejemplo • PDF</p>
+    <h1>EssayCoach – Cambridge Toolkit</h1>
+    <p class="sub">Scaffolds • Corrector (B2–C2) • Coach notes • Highlights &amp; click-to-jump • Punctuation Rules • Guide &amp; Example • PDF</p>
 
-    <div class="row">
-      <button id="btnCorrect" class="primary"><span data-i18n="btn.correct">Corregir</span></button>
-      <button id="btnExportPDF"><span data-i18n="btn.export_pdf">Exportar PDF</span></button>
-      <button id="btnClear"><span data-i18n="btn.clear">Limpiar</span></button>
-      <button id="btnPaste"><span data-i18n="btn.paste">Pegar</span></button>
-      <button id="btnStartTimer"><span data-i18n="btn.start_timer">Iniciar temporizador de 45 min</span></button>
-      <span id="timerBadge" class="pill"><span data-i18n="io.timer_dash">Temporizador: --:--</span></span>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tab-scaffolds" onclick="showTab('scaffolds')">Scaffolds</button>
+      <button class="tab" id="tab-corrector" onclick="showTab('corrector')">Corrector</button>
+      <button class="tab" id="tab-punct" onclick="showTab('punct')">Punctuation Rules</button>
+      <button class="tab" id="tab-part2" onclick="showPart2()">Part 2 (Letter/Email • Proposal • Report • Review)</button>
     </div>
 
-    <div class="cols" style="margin-top:14px">
+    <!-- SCAFFOLDS TAB -->
+    <section id="view-scaffolds">
+      <div class="card" style="margin-bottom:12px">
+        <div class="cols">
+          <label>
+            <div class="small">Level</div>
+            <select id="scLevel" onchange="renderScaffold()">
+              <option value="B2">B2 First</option>
+              <option value="C1">C1 Advanced</option>
+              <option value="C2">C2 Proficiency</option>
+            </select>
+          </label>
+          <label>
+            <div class="small">Task type</div>
+            <select id="scType" onchange="renderScaffold()">
+              <option value="essay">Essay</option>
+              <option value="report">Report</option>
+              <option value="review">Review</option>
+              <option value="letter">Formal letter/email</option>
+              <option value="proposal">Proposal</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button onclick="copyScaffold()">Copy scaffold</button>
+          <button onclick="copyOpener()">Copy opener</button>
+          <button onclick="exportScaffoldPDF()">Export scaffold as PDF</button>
+          <button class="primary" onclick="openGuideModal()">Guide &amp; Example</button>
+        </div>
+        <div class="hint" style="margin-top:6px">“Guide &amp; Example” shows a full model answer for the selected Level + Task type. Toggle coach notes inside the modal.</div>
+      </div>
+
       <div class="card">
-        <div class="small" data-i18n="io.input_label">Entrada</div>
-        <textarea id="userInput" rows="10" data-i18n-placeholder="io.input_label"></textarea>
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Structure</div>
+        <h3 style="margin:0">Recommended moves (4-part structure)</h3>
+        <hr style="border:none;border-top:1px solid var(--border);margin:8px 0 14px">
+        <ol id="scMoves"></ol>
+        <h3 style="margin:16px 0 6px">Useful opener (example)</h3>
+        <div id="scOpener" class="notes"></div>
+        <h3 style="margin:16px 0 6px">Tips</h3>
+        <ul id="scTips"></ul>
+        <div class="hint">Choose level and task to update the scaffold. You can copy or export to PDF.</div>
+      </div>
+    </section>
+
+    <!-- CORRECTOR TAB -->
+    <section id="view-corrector" style="display:none">
+      <div class="card" style="margin-bottom:12px">
+        <details id="taskSetup" open>
+          <summary style="cursor:pointer;font-weight:600">Task setup</summary>
+
+          <div class="cols" style="margin-top:10px">
+            <label>
+              <div class="small">Level</div>
+              <select id="levelSelect">
+                <option value="B2">B2 First</option>
+                <option value="C1">C1 Advanced (Essay – Part 1)</option>
+                <option value="C2">C2 Proficiency (Essay – Part 1)</option>
+              </select>
+            </label>
+            <div class="kpi" id="wcPills">
+              <div class="pill" id="inWC">Input: 0 words</div>
+              <div class="pill" id="outWC">Output: 0 words</div>
+              <div class="pill small" id="essayTip">Target 220–260 (C1 essay)</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="primary" onclick="runCorrection()">Correct</button>
+            <button onclick="downloadPDF()">Export PDF</button>
+            <button onclick="clearAll()">Clear</button>
+            <button onclick="pasteFromClipboard()">Paste</button>
+            <button onclick="startTimer()">Start 45-min timer</button>
+            <span id="timer" class="pill small">Timer: --:--</span>
+          </div>
+
+          <label class="toggle">
+            <input type="checkbox" id="formalToggle" checked />
+            <span>Enforce formal tone (avoid slang/colloquialisms)</span>
+          </label>
+
+          <label class="toggle">
+            <input type="checkbox" id="aiToggle" />
+            <span>Use AI (ChatGPT) with exam-aligned style (requires Worker URL)</span>
+          </label>
+
+          <label class="toggle">
+            <input type="checkbox" id="coachNotesToggle" checked />
+            <span>Show coach notes & highlights for clause punctuation (B2↔C1)</span>
+          </label>
+
+          <div class="hint" style="margin-top:6px">
+            Essay reminders: <b>B2</b> 140–190 • <b>C1</b> 220–260 • <b>C2</b> 240–280. Paraphrase prompts, organise clearly, and maintain an academic/neutral–formal voice.
+          </div>
+        </details>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <label style="display:block; margin-bottom:8px">
+          <div class="small">Input</div>
+          <textarea id="inputText" rows="7" placeholder="Type or paste your text here..."></textarea>
+        </label>
+
+        <div class="small">Actions</div>
+        <div class="row" style="margin-top:6px">
+          <button class="primary" onclick="runCorrection()">Correct</button>
+          <button onclick="downloadPDF()">Export PDF</button>
+          <button onclick="clearAll()">Clear</button>
+          <button onclick="pasteFromClipboard()">Paste</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="small">Corrected Output (plain text)</div>
+        <textarea id="outputText" rows="6" readonly placeholder="Your corrected text will appear here..."></textarea>
+        <div class="small" style="margin:12px 0 6px">Preview with highlights (click a chip to jump; click a highlight to toggle)</div>
+        <div id="outputPreview" class="preview">
+          <div style="color:#6b7280;font-size:14px">
+            Paste your text and press <b>Correct</b>.<br>
+            We’ll highlight clause joins (FANBOYS / conjunctive adverbs) and show <em>Coach notes</em> on how to reach C1.
+          </div>
+        </div>
+        <div id="positions" class="poslist hint"></div>
+        <div class="notes" id="notes" style="margin-top:10px"><b>Changes:</b><br><span class='hint'>Corrections will appear here after you click “Correct”.</span></div>
+      </div>
+
+      <!-- C2 quick rubric (essay) -->
+      <div class="card" id="c2RubricCard" style="display:none">
+        <h3 style="margin:0 0 6px">C2 (CPE) quick rubric – prototype</h3>
+        <div id="c2Rubric" class="hint">Run a correction to see feedback.</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 6px">Vocabulary alternatives (click to apply)</h3>
+        <div id="altList" class="hint">After correction, suggested upgrades will appear here (especially for C1/C2).</div>
+      </div>
+    </section>
+
+    <!-- PUNCTUATION RULES TAB -->
+    <section id="view-punct" style="display:none">
+      <div class="card" style="margin-bottom:12px">
+        <div class="row">
+          <button onclick="copyPunctRules()">Copy rules</button>
+          <button class="primary" onclick="exportPunctPDF()">Export rules as PDF</button>
+        </div>
       </div>
       <div class="card">
-        <div class="small" data-i18n="io.output_label">Salida</div>
-        <div id="previewHTML" class="preview"></div>
+        <h3 style="margin:0 0 6px">Core Punctuation Rules (Exam-Safe)</h3>
+        <ol id="punctList"></ol>
+        <div class="hint">These are placeholders. Swap them for your own rules later.</div>
+      </div>
+    </section>
+
+    <!-- PART 2 TAB -->
+    <section id="view-part2" style="display:none">
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Part 2 task corrector</h3>
+        <div class="cols">
+          <label>
+            <div class="small">Level</div>
+            <select id="levelSelectP2">
+              <option value="B2">B2 First</option>
+              <option value="C1">C1 Advanced</option>
+              <option value="C2">C2 Proficiency</option>
+            </select>
+          </label>
+          <label>
+            <div class="small">Task type</div>
+            <select id="p2Type">
+              <option value="letter">Letter / Email</option>
+              <option value="proposal">Proposal</option>
+              <option value="report">Report</option>
+              <option value="review">Review</option>
+            </select>
+          </label>
+          <div class="kpi" id="p2WCPills">
+            <div class="pill" id="p2InWC">Input: 0 words</div>
+            <div class="pill" id="p2OutWC">Output: 0 words</div>
+            <div class="pill small" id="p2TargetWC">Target —</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" onclick="runCorrectionPart2()">Correct</button>
+          <button onclick="downloadPDFPart2()">Export PDF</button>
+          <button onclick="clearAllPart2()">Clear</button>
+          <button onclick="pasteIntoP2()">Paste</button>
+          <button onclick="startTimer()">Start 45-min timer</button>
+          <span id="p2Timer" class="pill small">Timer mirrors main</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="p2FormalToggle" checked />
+          <span>Enforce formal tone (toggle off for a more neutral review)</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="p2AiToggle" />
+          <span>Use AI (ChatGPT) with genre-aligned style (requires Worker URL)</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="p2CoachToggle" checked />
+          <span>Show coach notes & highlights for clause punctuation</span>
+        </label>
+        <div class="hint" style="margin-top:6px">Word count targets: <b>B2</b> 140–190 • <b>C1</b> 220–260 • <b>C2</b> 240–280. Registers vary by genre: Letter/Email, Proposal, Report → formal; Review → neutral/semi-formal.</div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="small">Input</div>
+        <textarea id="p2Input" rows="6" placeholder="Paste or type your Part 2 draft…"></textarea>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="small">Corrected Output (plain text)</div>
+        <textarea id="p2Output" rows="6" readonly placeholder="Your corrected text will appear here..."></textarea>
+        <div class="small" style="margin:12px 0 6px">Preview with highlights</div>
+        <div id="p2Preview" class="preview">
+          <div style="color:#6b7280;font-size:14px">Paste your text and press <b>Correct</b> to see clause-join highlights and coach notes.</div>
+        </div>
+        <div id="p2Positions" class="poslist hint"></div>
+        <div class="notes" id="p2Notes" style="margin-top:10px"><b>Changes:</b><br><span class='hint'>Corrections will appear here after you click “Correct”.</span></div>
+      </div>
+      <div class="card" id="p2RubricCard" style="display:none">
+        <h3 style="margin:0 0 6px">Part 2 quick rubric – genre checks</h3>
+        <div id="p2Rubric" class="hint">Run a correction to see feedback specific to letter/proposal/report/review.</div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 6px">Vocabulary alternatives (click to apply)</h3>
+        <div id="p2AltList" class="hint">After correction, suggested upgrades will appear here.</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Guide & Example Modal -->
+  <div id="guideOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="guideTitle">Guide &amp; Example</div>
+        <div class="modal-controls">
+          <label title="Show inline coach notes that contrast B2 vs C1 phrasing">
+            <input type="checkbox" id="coachToggle" onchange="renderGuideExample()" />
+            Coach notes (B2/C1 phrasing)
+          </label>
+        </div>
+        <button class="xbtn" aria-label="Close" onclick="closeGuideModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="guideMeta" class="hint" style="margin-bottom:8px;"></div>
+        <div id="guideExample" class="example-box" style="min-height:160px;"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="primary" onclick="copyGuide()">Copy example</button>
+        <button onclick="exportGuidePDF()">Export example as PDF</button>
+        <button onclick="closeGuideModal()">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Your shared app JS (if any) -->
-  <script src="/essay-coach-instant/assets/app.bundle.js" defer></script>
+  <!-- jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
-  <!-- Gentle i18n -->
   <script>
-  (function () {
-    async function loadDict() {
-      const res = await fetch('/essay-coach-instant/assets/i18n/es.json', { cache:'no-store' });
-      if (!res.ok) throw new Error('i18n es ' + res.status);
-      document.documentElement.lang = 'es';
-      return res.json();
+/* ========= Tabs ========= */
+function showTab(which){
+  document.getElementById('tab-scaffolds').classList.toggle('active', which==='scaffolds');
+  document.getElementById('tab-corrector').classList.toggle('active', which==='corrector');
+  document.getElementById('tab-punct').classList.toggle('active', which==='punct');
+  document.getElementById('tab-part2').classList.remove('active');
+  document.getElementById('view-scaffolds').style.display  = (which==='scaffolds') ? '' : 'none';
+  document.getElementById('view-corrector').style.display  = (which==='corrector') ? '' : 'none';
+  document.getElementById('view-punct').style.display      = (which==='punct') ? '' : 'none';
+  document.getElementById('view-part2').style.display      = 'none';
+  try { history.replaceState(null, "", "#" + which); } catch {}
+}
+function showPart2(){
+  document.getElementById('view-scaffolds').style.display='none';
+  document.getElementById('view-corrector').style.display='none';
+  document.getElementById('view-punct').style.display='none';
+  document.getElementById('view-part2').style.display='';
+  document.getElementById('tab-scaffolds').classList.remove('active');
+  document.getElementById('tab-corrector').classList.remove('active');
+  document.getElementById('tab-punct').classList.remove('active');
+  document.getElementById('tab-part2').classList.add('active');
+  try { history.replaceState(null, "", "#part2"); } catch {}
+}
+
+/* ========= Scaffolds ========= */
+const SCAFFOLDS = {
+  B2: {
+    essay: { moves: [
+      "Introduction: Paraphrase the question; give a clear opinion.",
+      "Body 1: First main point + short example/evidence.",
+      "Body 2: Second main point + short example/evidence.",
+      "Conclusion: Summarise and restate your opinion."
+    ],
+    opener: "In recent years, the question of [topic] has received considerable attention. In my view, [your opinion], because [reason].",
+    tips: [
+      "Use clear topic sentences at the start of each paragraph.",
+      "Avoid contractions and slang; use formal linkers (however, in addition, therefore).",
+      "Keep sentences concise; prefer clarity over complexity."
+    ]},
+    report: { moves:[
+      "Introduction: Purpose and who the report is for.",
+      "Findings 1: Current situation/results.",
+      "Findings 2: Problems/positives.",
+      "Recommendations: Specific, practical suggestions."
+    ],
+    opener:"The aim of this report is to evaluate [place/system] and to suggest improvements based on recent feedback.",
+    tips:["Use headings and bullet points if allowed.","Be objective and concise; avoid personal anecdotes.","Use formal register: 'It is recommended that…'"]},
+    review: { moves:[
+      "Intro: Title/creator/genre + overall verdict.",
+      "Paragraph 1: Brief summary (no spoilers).",
+      "Paragraph 2: Evaluation (strengths/weaknesses).",
+      "Conclusion: Who would enjoy it + rating."
+    ],
+    opener:"[Title] is a [genre] that succeeds because of its [feature], offering a [tone] experience for the audience.",
+    tips:["Balance description and evaluation.","Use precise adjectives and avoid repetition.","End with a clear recommendation."]},
+    letter: { moves:[
+      "Greeting (Dear Sir/Madam / Dear Ms X).",
+      "Opening: Reason for writing.",
+      "Body: Key points in logical order.",
+      "Closing: Action/request + formal sign-off."
+    ],
+    opener:"Dear Sir or Madam, I am writing to enquire about [topic], particularly regarding [specific detail].",
+    tips:["Match tone to the reader; use formal phrases.","Close with: 'I look forward to your response.'","Sign off: 'Yours faithfully' / 'Yours sincerely'."]},
+    proposal: { moves:[
+      "Background & need: brief context; what problem to solve.",
+      "Objective: what the proposal aims to achieve.",
+      "Plan: actions/steps, timeline, resources.",
+      "Benefits & conclusion: impact and clear call to proceed."
+    ],
+    opener:"This proposal outlines a practical plan to improve [area], addressing [need] with clear steps and measurable benefits.",
+    tips:["Keep aims specific and measurable.","Use headings/bullets for clarity.","Justify each step with a short reason."]}
+  },
+  C1: {
+    essay: { moves:[
+      "Introduction: Contextualise the issue; define the scope.",
+      "Body 1: Develop first argument with analysis and support.",
+      "Body 2: Counter-argument or complementary argument with synthesis.",
+      "Conclusion: Weigh points; deliver a nuanced final stance."
+    ],
+    opener:"While opinions differ regarding [topic], this essay argues that [your position] because [reason(s)], provided that [qualifier if needed].",
+    tips:["Use a wide range of cohesive devices (nevertheless, consequently).","Develop ideas with cause–effect and exemplification.","Maintain precise register; avoid vague verbs."]},
+    report: { moves:[
+      "Purpose & methods (who/what/when).",
+      "Findings (data + patterns).",
+      "Analysis (implications/causes).",
+      "Recommendations (prioritised, actionable)."
+    ],
+    opener:"This report assesses [programme/process] using [method], highlighting key outcomes and areas requiring action.",
+    tips:["Use data where possible (percentages, trends).","Prioritise recommendations and justify them.","Avoid first-person unless specified."]},
+    review: { moves:[
+      "Hook + brief context.",
+      "Overview (no spoilers) + craft elements (style, pacing, voice).",
+      "Evaluation (themes, impact) with examples.",
+      "Verdict (audience + comparative judgement)."
+    ],
+    opener:"Combining [quality] with [quality], [Title] interrogates [theme] and ultimately delivers a compelling [genre] experience.",
+    tips:["Vary sentence structure for rhythm and emphasis.","Use precise terminology (narrator, motif, register).","Compare/contrast with similar works for depth."]},
+    letter: { moves:[
+      "Appropriate salutation + clear purpose.",
+      "Developed points with well-sequenced paragraphs.",
+      "Tone/register control for the reader and purpose.",
+      "Close with a firm next step and formal sign-off."
+    ],
+    opener:"Dear [Title + Surname], I am writing in connection with [topic], and I would appreciate clarification on [specific details].",
+    tips:["Maintain formal register throughout.","Employ hedging where appropriate (I would suggest / It appears that…).","End with a clear call to action."]},
+    proposal: { moves:[
+      "Rationale: situate the problem; define scope and constraints.",
+      "Objectives & metrics: success criteria and how to measure them.",
+      "Implementation plan: phases, owners, resources, risk mitigation.",
+      "Value & close: cost–benefit, strategic alignment, next steps."
+    ],
+    opener:"This proposal recommends targeted steps to enhance [area], aligning with [goal/strategy] and delivering measurable outcomes.",
+    tips:["Make objectives and measures explicit.","Sequence actions and pre-empt risks.","Argue value with precise, professional register."]}
+  },
+  C2: {
+    essay: {
+      moves:[
+        "Introduction: Frame the debate raised by both texts and state a clear, reasoned position.",
+        "Body A: Summarise Text 1’s key claim(s) in your own words → evaluate assumptions/strength of evidence.",
+        "Body B: Summarise Text 2 → evaluate → synthesise with Text 1 (agreements/tensions).",
+        "Conclusion: On balance, deliver a justified position answering the task (keep 240–280 words)."
+      ],
+      opener:"The two texts consider [topic] from different angles. While the first suggests [core idea], the second argues [core idea]. On balance, this essay contends that [position], given [two reasons].",
+      tips:[
+        "Use your own words; avoid lifting phrases.",
+        "Blend: do not alternate ‘Text 1… Text 2…’ without synthesis.",
+        "Use evaluative language and hedging (plausible, appears, limited by…).",
+        "Stay within 240–280 words."
+      ]
+    },
+    report:  { moves:["C2 Part 1 focuses on the Essay (two-text synthesis)."], opener:"Choose ‘Essay’.", tips:["N/A for Part 1."] },
+    review:  { moves:["C2 Part 1 focuses on the Essay."], opener:"Choose ‘Essay’.", tips:["N/A for Part 1."] },
+    letter:  { moves:["C2 Part 1 focuses on the Essay."], opener:"Choose ‘Essay’.", tips:["N/A for Part 1."] },
+    proposal:{ moves:["C2 Part 1 focuses on the Essay."], opener:"Choose ‘Essay’.", tips:["N/A for Part 1."] }
+  }
+};
+
+/* Coach hint engine for B2/C1 notes in modal */
+const HINTS = {
+  contrast: { B2: "However", C1: "Nevertheless" },
+  add:      { B2: "In addition", C1: "Moreover" },
+  result:   { B2: "As a result", C1: "Consequently" },
+  purpose:  { B2: "The aim of this", C1: "The purpose of this" },
+  propose:  { B2: "I suggest", C1: "I would recommend" },
+  formal_req:{ B2:"I would like to ask", C1:"I would appreciate clarification" },
+  conclude: { B2:"To sum up", C1:"On balance" }
+};
+function injectHints(template, level, showNotes){
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    const map = HINTS[key]; if(!map) return _;
+    const chosen = map[level] || ""; if(!showNotes) return chosen;
+    const otherLevel = level === "B2" ? "C1" : "B2"; const other = map[otherLevel] || "";
+    return `${chosen} <span class="inline-note">[Coach note: ${otherLevel} phrasing: “${other}”]</span>`;
+  });
+}
+
+/* Guide examples */
+const EXAMPLES = {
+  B2: {
+    essay: `Title: Do teenagers spend too much time on their phones?
+
+Introduction
+In recent years, many people have worried about how much time teenagers spend on their phones. {{conclude}}, teenagers do not necessarily use their phones too much; they often use them without enough balance.
+
+Body Paragraph 1
+{{add}}, phones help teenagers stay in touch with friends and family. For example, class groups on messaging apps can make homework and planning easier.
+
+Body Paragraph 2
+{{contrast}}, unstructured use can lead to distraction. One practical solution is to set short “focus blocks” without the phone, then check messages during breaks.
+
+Conclusion
+{{conclude}}, phones are useful tools when used with intention. Teenagers need routines, not bans.`,
+    report: `To: School Principal
+From: Student Council
+Subject: Improving the School Library
+
+{{purpose}} report is to evaluate the current library facilities and to recommend improvements.
+
+Findings
+• Seating is limited during exam weeks.
+• The computer area is often full.
+• Many students request more recent non-fiction.
+
+Recommendations
+1) Add four group tables near the windows.
+2) Increase the number of computers by six.
+3) Purchase updated non-fiction on science and technology.`,
+    review: `Review of “The River Between Us”
+
+Overview
+This short novel follows two friends who grow apart and then slowly reconnect. The story is simple but touching.
+
+Evaluation
+The best part is the dialogue, which feels natural and honest. {{contrast}}, the ending is a little predictable.
+
+Recommendation
+Overall, it is a warm and hopeful read. I would recommend it to teenagers who enjoy realistic stories about friendship. 4/5.`,
+    letter: `Dear Sir or Madam,
+
+{{formal_req}} about the photography course advertised on your website. In particular, I would like to know the start date, the timetable, and whether the course is suitable for beginners.
+
+I would also appreciate information about the camera requirements. Do students need a DSLR, or is a phone with a good camera enough?
+
+Thank you for your time. I look forward to your response.
+
+Yours faithfully,
+A. Student`,
+    proposal: `Title: Expanding After-School Study Support
+
+Background & Need
+Attendance drops in week 8, and many students report difficulty managing deadlines.
+
+Objective
+Provide two supervised study sessions per week to improve completion rates and reduce stress.
+
+Plan
+• Recruit two teachers for 90-minute sessions.
+• Set clear goals at the start; quick check-out at the end.
+• Track attendance and finished tasks weekly.
+
+Benefits & Close
+{{result}}, students will work with better focus and finish more assignments. Please approve a four-week pilot to review impact.`
+  },
+  C1: {
+    essay: `Title: Should universities replace final exams with continuous assessment?
+
+Introduction
+While opinions differ, this essay argues for a blended approach: continuous assessment for depth and feedback, provided that final exams remain for core knowledge.
+
+Body Paragraph 1
+Continuous assessment encourages consistent effort and allows students to apply theory to authentic tasks. For instance, research portfolios develop analysis and synthesis.
+
+Body Paragraph 2
+{{contrast}}, final exams test recall under time pressure and can reveal gaps. A smaller, targeted final exam ensures baseline competence across the syllabus.
+
+Conclusion
+{{conclude}}, a blended model protects standards while promoting learning through practice—rigorous and humane at the same time.`,
+    report: `Title: Student Well-Being Pilot – Term 1 Evaluation
+
+Methods
+We analysed weekly surveys (n=312) and conducted four focus groups.
+
+Findings
+• Attendance rose by 6%.
+• Reported stress levels fell modestly in weeks 5–7.
+• Students valued “quiet study hours” and peer mentoring.
+
+Analysis
+The fall in stress appears linked to predictable routines rather than one specific activity.
+
+Recommendations (prioritised)
+1) Keep “quiet study hours” (high impact, low cost).
+2) Train two additional peer mentors (medium cost).
+3) Review the workload in week 8 assessments.`,
+    review: `Review: “Signals and Silence” (documentary)
+
+The film interlaces climate data with the human stories behind it. Its pacing is measured; its voiceover avoids melodrama and earns trust.
+
+What lingers is the contrast between vast, quiet satellite images and the small, practical choices of ordinary families. It is rigorous yet deeply human. Recommended for viewers who enjoy evidence-based storytelling.`,
+    letter: `Dear Dr Patel,
+
+I am writing regarding the community workshop scheduled for 12 October. Could you confirm the final timetable and whether the Q&A will be recorded for those who cannot attend?
+
+If any preparation materials are available in advance, I would be grateful to share them with participants.
+
+Many thanks for your support.
+
+Yours sincerely,
+A. Student`,
+    proposal: `Title: Targeted Improvements to the Learning Commons
+
+Rationale
+Usage peaks expose bottlenecks in seating and device access; noise spillover affects quiet study.
+
+Objectives & Metrics
+• Increase quiet-zone seats by 20%.
+• Reduce wait time for devices to under 5 minutes.
+
+Implementation Plan
+Phase 1: Reconfigure layout; add four group tables near windows.
+Phase 2: Deploy six additional loan laptops; introduce booking slots.
+Risk: short-term disruption; Mitigation: staged moves off-peak.
+
+Value & Close
+{{result}}, throughput improves and stress falls during assessment periods. Please approve procurement and layout changes for the October window.`
+  },
+  C2: {
+    essay: `Title: Are behavioural “nudges” an acceptable way to change public habits?
+
+Introduction
+The two texts approach “nudges” from different directions. One maintains that subtle prompts can steer citizens toward beneficial choices at low cost; the other questions their legitimacy, suggesting that such interventions may sidestep informed consent. On balance, this essay argues that limited, transparent nudges are acceptable when they demonstrably serve public interests and respect autonomy.
+
+Text 1 → evaluation
+Text 1 contends that small adjustments — for example, placing healthier food at eye level — can shift behaviour without coercion. The claim is persuasive where outcomes are measurable and alternatives remain available. However, its optimism rests on an assumption: that choice architecture is neutral unless redesigned. In practice, environments already frame choices; redesigning them can therefore correct existing biases rather than create them.
+
+Text 2 → evaluation → synthesis
+Text 2 warns that nudges may be manipulative, especially when motives are opaque. The concern is valid: opacity undermines trust. Yet if authorities disclose aims and allow opt-outs, the intervention resembles a recommendation rather than a constraint. Taken together, the texts indicate that the ethical line depends on transparency and proportionality.
+
+Conclusion
+Nudges should be permitted where goals are publicly justified (e.g., reducing waste or improving health), effects are evidenced, and opting out is straightforward. Under those conditions, they supplement — rather than substitute for — informed choice.`
+  }
+};
+
+function openGuideModal(){ renderGuideExample(); const ov=document.getElementById('guideOverlay'); ov.style.display='flex'; ov.setAttribute('aria-hidden','false'); }
+function closeGuideModal(){ const ov=document.getElementById('guideOverlay'); ov.style.display='none'; ov.setAttribute('aria-hidden','true'); }
+function renderGuideExample(){
+  const lvl = document.getElementById('scLevel').value;
+  const typ = document.getElementById('scType').value;
+  const showNotes = document.getElementById('coachToggle').checked;
+  const meta = `${lvl} • ${typ[0].toUpperCase()+typ.slice(1)}`;
+  document.getElementById('guideMeta').textContent = meta;
+  const raw = (EXAMPLES[lvl] && EXAMPLES[lvl][typ]) ? EXAMPLES[lvl][typ] : "No example available.";
+  const rendered = (lvl==='C2') ? raw : injectHints(raw, lvl, showNotes);
+  document.getElementById('guideExample').innerHTML = escapeHtml(rendered).replace(/\n/g, "<br>").replace(/&lt;span class=&quot;inline-note&quot;&gt;([^]+?)&lt;\/span&gt;/g,'<span class="inline-note">$1</span>');
+  document.getElementById('guideTitle').textContent = `Guide & Example – ${typ[0].toUpperCase()+typ.slice(1)}`;
+}
+function copyGuide(){ const tmp=document.createElement('div'); tmp.innerHTML=document.getElementById('guideExample').innerHTML.replace(/<br>/g,"\n"); const text=tmp.textContent||tmp.innerText||""; navigator.clipboard?.writeText(text); alert("Example copied."); }
+function exportGuidePDF(){ const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; } const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin; const title=document.getElementById('guideTitle').textContent || "Guide & Example"; const tmp=document.createElement('div'); tmp.innerHTML=document.getElementById('guideExample').innerHTML.replace(/<br>/g,"\n"); const body=(tmp.textContent||"").trim(); doc.setFont("Helvetica","bold"); doc.setFontSize(16); doc.text(title, margin, y); y+=20; doc.setFont("Helvetica","normal"); doc.setFontSize(12); const lines=doc.splitTextToSize(body, 595-margin*2); doc.text(lines, margin, y); doc.save("guide-example.pdf"); }
+
+/* ========= Utilities ========= */
+const escapeHtml = (s) => String(s).replace(/[&<>\"']/g, (m)=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" }[m]));
+const hasFiniteVerb = (s) => /\b(am|is|are|was|were|be|been|being|do|does|did|has|have|had|can|could|will|would|shall|should|may|might|must)\b/i.test(s) || /\b\w+(ed|s)\b/i.test(s);
+const normalizeText = (s) => String(s).replace(/[\u2018\u2019\u2032]/g,"'").replace(/[\u201C\u201D\u2033]/g,'"').replace(/\u00A0/g," ");
+
+/* a/an */
+function fixAAn(text){
+  const silentH=/^(honest|honour|honor|hour|heir|herb)\b/i;
+  const youSound=/^(uni(vers|form|que|on)|u[bcdfgklmnprstvy]|euro|eure|euph|eulog|ukulele|user|use|one|once|ufo)\b/i;
+  const acronym=/^[AEFHILMNORSX]/;
+  return text.replace(/\b([Aa]n?)\s+([A-Za-z][\w-]*)/g,(m,art,word)=>{
+    const wl=word.toLowerCase(); let shouldBeAn=/^[aeiou]/.test(wl)||silentH.test(wl);
+    if (/^[A-Z]{2,}$/.test(word)) shouldBeAn = acronym.test(word[0]);
+    if (youSound.test(wl)) shouldBeAn=false;
+    const desired = shouldBeAn ? (art[0]==='A'?'An':'an') : (art[0]==='A'?'A':'a');
+    if ((art.toLowerCase()==='an')!==shouldBeAn) return desired+" "+word; return m;
+  });
+}
+
+/* formalize */
+function formalize(text, notes){
+  let out=text;
+  const rules=[
+    { re:/\bkids\b/gi, rep:"children", note:"Replaced informal 'kids'." },
+    { re:/\bwanna\b/gi, rep:"want to", note:"Expanded 'wanna'." },
+    { re:/\bgonna\b/gi, rep:"going to", note:"Expanded 'gonna'." },
+    { re:/\bokay\b|\bOK\b/gi, rep:"acceptable", note:"Formalised 'OK/okay'." },
+    { re:/\ba lot of\b/gi, rep:"many", note:"Replaced 'a lot of' with 'many'." }
+  ];
+  for (const r of rules){ if (r.re.test(out)){ out=out.replace(r.re,r.rep); notes.push(r.note); } }
+  return out;
+}
+
+/* ========= Alternatives & helpers ========= */
+const ALT_MAP = {
+  base: {
+    "good":["effective","beneficial","favourable","advantageous"],
+    "bad":["detrimental","problematic","adverse","unsatisfactory"],
+    "very":["particularly","highly","notably"],
+    "really":["truly","genuinely"],
+    "truly":["genuinely","indeed"],
+    "actually":["in fact","indeed"],
+    "extremely":["exceptionally","remarkably"],
+    "help":["assist","support","enable","facilitate"],
+    "use":["utilise","employ","apply"],
+    "say":["state","argue","contend","maintain"],
+    "thing":["aspect","element","factor","component"]
+  },
+  c1: {
+    "important":["crucial","vital","essential","pivotal"],
+    "because":["since","as","given that"],
+    "so":["therefore","thus","consequently"],
+    "many":["numerous","a multitude of"]
+  },
+  c2: {
+    "seems":["appears","would seem","it is plausible that"],
+    "important":["salient","pivotal","of consequence"],
+    "problem":["shortcoming","limitation","drawback"],
+    "shows":["demonstrates","indicates","attests to"],
+    "people":["stakeholders","respondents","participants"],
+    "think":["contend","maintain","posit","concede"],
+    "result":["upshot","ramification","implication"]
+  }
+};
+const wordRe = (w)=> new RegExp("\\b" + w.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&") + "\\b","gi");
+
+function buildAlternatives(text, level){
+  const dicts=[ALT_MAP.base, ...(level==='C1'?[ALT_MAP.c1]:[]), ...(level==='C2'?[ALT_MAP.c2]:[])];
+  const out=[]; dicts.forEach(d=>Object.entries(d).forEach(([k,arr])=>{ if (wordRe(k).test(text)) out.push({ simple:k, options:arr }); }));
+  return out;
+}
+function mergeAlternatives(aiAltObj, localArr) {
+  const outMap = new Map();
+  if (aiAltObj && typeof aiAltObj === 'object') {
+    for (const [key, arr] of Object.entries(aiAltObj)) {
+      const k = String(key).toLowerCase();
+      const opts = Array.isArray(arr) ? arr.map(String) : [];
+      if (!outMap.has(k)) outMap.set(k, new Set());
+      const set = outMap.get(k); opts.forEach(o => set.add(o));
     }
-    function applyOne(el, dict) {
-      const key = el.getAttribute('data-i18n');
-      if (!key || !dict[key]) return;
-      if (el.tagName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type)) { el.value = dict[key]; return; }
-      el.textContent = dict[key];
+  }
+  if (Array.isArray(localArr)) {
+    localArr.forEach(({ simple, options }) => {
+      const k = String(simple).toLowerCase();
+      if (!outMap.has(k)) outMap.set(k, new Set());
+      const set = outMap.get(k); (options || []).forEach(o => set.add(o));
+    });
+  }
+  const merged = []; for (const [simple, set] of outMap.entries()) merged.push({ simple, options: [...set] });
+  return merged;
+}
+
+/* ========= Highlights & coach notes ========= */
+const ADV_GROUPS = {
+  contrast: ["however","nevertheless","nonetheless","instead","still"],
+  result:   ["therefore","consequently","thus","accordingly","otherwise"],
+  addition: ["moreover","furthermore","meanwhile"]
+};
+const FANBOYS_SET = new Set(["but","so","and","yet","or"]);
+let hiddenIds = new Set();
+let currentMarks = [];
+
+function findConjAdvMatches(text){
+  const hits=[]; const lower=text.toLowerCase();
+  for(const [group, list] of Object.entries(ADV_GROUPS)){
+    list.forEach(adv=>{ const re=new RegExp(`;\\s*${adv}\\s*,`,'g'); let m; while((m=re.exec(lower))!==null){ hits.push({type:'cadv', group, start:m.index, end:m.index+m[0].length, label:`; ${adv},`}); } });
+  }
+  return hits;
+}
+function findFanboysMatches(text){
+  const hits=[]; const lower=text.toLowerCase();
+  FANBOYS_SET.forEach(cj=>{ const re=new RegExp(`,\\s*${cj}\\s+`,'g'); let m; while((m=re.exec(lower))!==null){ hits.push({type:'fanboys', conj:cj, start:m.index, end:m.index+m[0].length, label:m[0]}); } });
+  return hits;
+}
+function coachClauseNotes(corrected, level) {
+  const show = document.getElementById('coachNotesToggle')?.checked !== false;
+  if (!show || !corrected) return { notes: [], marks: [] };
+  const cadv=findConjAdvMatches(corrected); const fanb=findFanboysMatches(corrected);
+  const notes=[];
+  cadv.forEach(({group,label,start,end})=>{
+    if (group==='contrast') notes.push(`Used “${label.trim()}” to join two clauses (C1 style) at chars ${start}–${end}. B2 alternative: “, but …”.`);
+    else if (group==='result') notes.push(`Used “${label.trim()}” (C1 style) at chars ${start}–${end}. B2 alternative: “, so …”.`);
+    else if (group==='addition') notes.push(`Used “${label.trim()}” for addition (C1 style) at chars ${start}–${end}. B2 alternative: “, and …”.`);
+  });
+  fanb.forEach(({conj,label,start,end})=>{
+    if (conj==='but') notes.push(`Used “${label.trim()}” (B2 solid) at chars ${start}–${end}. C1 upgrade: “; however, … / ; nevertheless, …”.`);
+    else if (conj==='so') notes.push(`Used “${label.trim()}” (B2 solid) at chars ${start}–${end}. C1 upgrade: “; therefore, … / ; consequently, …”.`);
+    else if (conj==='and') notes.push(`Used “${label.trim()}” at chars ${start}–${end}. C1 addition upgrade: “; moreover, … / ; furthermore, …”.`);
+    else if (conj==='yet') notes.push(`Used “${label.trim()}” at chars ${start}–${end}. C1 contrast: “; however, … / ; nonetheless, …”.`);
+    else if (conj==='or') notes.push(`Used “${label.trim()}” at chars ${start}–${end}. Consider precision depending on meaning (contrast/result).`);
+  });
+  let marks=[...cadv, ...fanb].sort((a,b)=>a.start-b.start);
+  const filtered=[]; let lastEnd=-1, counter=1; marks.forEach(m=>{ if(m.start>=lastEnd){ m.id = `hl-${counter++}`; filtered.push(m); lastEnd=m.end; } });
+  return { notes, marks: filtered };
+}
+function buildHighlightedHTML(text, marks){
+  if(!marks.length) return escapeHtml(text).replace(/\n/g,'<br>');
+  let html='', idx=0; for(const m of marks){ html += escapeHtml(text.slice(idx, m.start)).replace(/\n/g,'<br>'); const off = hiddenIds.has(m.id) ? ' off' : ''; html += `<mark class="hl${off}" id="${m.id}" title="${escapeHtml(m.label.trim())}">${escapeHtml(text.slice(m.start, m.end))}</mark>`; idx = m.end; }
+  html += escapeHtml(text.slice(idx)).replace(/\n/g,'<br>'); return html;
+}
+function renderPreviewAndPositions(corrected, level){
+  const { notes: coach, marks } = coachClauseNotes(corrected, level || document.getElementById('levelSelect').value);
+  const signature = corrected.length + ':' + (marks.map(m=>m.start+'-'+m.end).join('|'));
+  if (window._lastSignature !== signature) { hiddenIds.clear(); window._lastSignature = signature; }
+  currentMarks = marks;
+  document.getElementById('outputPreview').innerHTML = buildHighlightedHTML(corrected, marks);
+  const posBox = document.getElementById('positions');
+  if (!marks.length) posBox.innerHTML = "";
+  else {
+    const chips = marks.map(m=>{ const off = hiddenIds.has(m.id) ? 'off' : ''; return `<a href="#" data-target="${m.id}" class="${off}">${m.start}–${m.end}</a>`; }).join(' ');
+    posBox.innerHTML = `<b>Marked spans:</b> ${chips} <span class="controls"><button onclick="showAllHighlights()">Show all</button><button onclick="hideAllHighlights()">Hide all</button></span>`;
+  }
+  const notesBox = document.getElementById('notes');
+  if (notesBox.innerHTML.includes("<b>Changes")){
+    const existingCoach = /<br><br><b>Coach notes:[\s\S]*$/i;
+    notesBox.innerHTML = notesBox.innerHTML.replace(existingCoach, "");
+    if (coach.length) notesBox.innerHTML += "<br><br><b>Coach notes:</b><br>" + coach.map(n=>"• "+n).join("<br>");
+  }
+}
+document.addEventListener('click', (e)=>{
+  if (e.target && e.target.matches('mark.hl')) {
+    const id = e.target.id; if (!id) return;
+    e.preventDefault();
+    if (e.target.classList.contains('off')) { e.target.classList.remove('off'); hiddenIds.delete(id); }
+    else { e.target.classList.add('off'); hiddenIds.add(id); }
+    const chip = document.querySelector(`.poslist a[data-target="${id}"]`);
+    if (chip) chip.classList.toggle('off');
+  }
+  if (e.target && e.target.matches('.poslist a[data-target]')) {
+    e.preventDefault();
+    const id = e.target.getAttribute('data-target');
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.remove('off'); hiddenIds.delete(id);
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('focus'); setTimeout(()=> el.classList.remove('focus'), 1100);
+      e.target.classList.remove('off');
     }
-    function applyAll(dict, root=document) {
-      root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
-      root.querySelectorAll('[data-i18n-title]').forEach(el => {
-        const k = el.getAttribute('data-i18n-title'); if (dict[k]) el.setAttribute('title', dict[k]);
-      });
-      root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const k = el.getAttribute('data-i18n-placeholder'); if (dict[k]) el.setAttribute('placeholder', dict[k]);
-      });
+  }
+});
+function showAllHighlights(){ hiddenIds.clear(); document.querySelectorAll('mark.hl.off').forEach(el=>el.classList.remove('off')); document.querySelectorAll('.poslist a.off').forEach(el=>el.classList.remove('off')); }
+function hideAllHighlights(){ currentMarks.forEach(m=>hiddenIds.add(m.id)); document.querySelectorAll('mark.hl').forEach(el=>el.classList.add('off')); document.querySelectorAll('.poslist a').forEach(el=>el.classList.add('off')); }
+
+/* ========= Local rules corrector ========= */
+const INTRO_SINGLE=["First","Firstly","Second","Secondly","Third","Finally","Next","Then","Afterwards","Overall","Currently","Recently","Ultimately","Consequently","Therefore","However","Moreover","Furthermore","Nevertheless","Meanwhile","Instead","Still"];
+const INTRO_PHRASES=["In addition","In conclusion","In contrast","By contrast","For example","For instance","To begin with","In my opinion","On the one hand","On the other hand","As a result","In other words","In summary","On balance","At first","In general"];
+const FANBOYS=["for","and","nor","but","or","yet","so"];
+const SUBORD=["although","though","because","since","when","while","if","unless","after","before","once","whereas","as"];
+const CADV=["however","therefore","moreover","nevertheless","consequently","furthermore","nonetheless","accordingly","thus","otherwise","meanwhile","instead","still"];
+
+function correctLocal(text, lvl){
+  if(!text || !text.trim()) return { out:"", notes:[], alts:[] };
+  let out = normalizeText(text.trim()); const notes=[];
+  const CONTR = { "can't":"cannot","won't":"will not","don't":"do not","doesn't":"does not","didn't":"did not","it's":"it is","I'm":"I am","you're":"you are","we're":"we are","they're":"they are","I've":"I have","we've":"we have","they've":"they have" };
+  for (const [k,v] of Object.entries(CONTR)){
+    const re=new RegExp(`\\b${k.replace(/[-\/\^$*+?.()|[\]{}]/g,"\\$&")}\\b`,"gi");
+    const before=out; out=out.replace(re,(m)=>m[0]===m[0].toUpperCase()?v[0].toUpperCase()+v.slice(1):v);
+    if(out!==before) notes.push("Expanded contractions for formality.");
+  }
+  const bs=out; out=out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
+  if(out!==bs) notes.push("Normalised spacing.");
+  const btv=out; out=out.replace(/\btv\b/gi,"TV"); if(out!==btv) notes.push("Capitalised 'TV'.");
+  const baa=out; out=fixAAn(out); if(out!==baa) notes.push("Fixed 'a/an'.");
+  out=formalize(out, notes);
+
+  const punctIntro=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
+    let s=core.trim();
+    for(const ph of INTRO_PHRASES){ const re=new RegExp(`^(${ph})\\s+(?!,)`,"i"); if(re.test(s)) s=s.replace(re,`$1, `); }
+    const fw=(s.match(/^(\w+)\s+(?!,)/)||[null,null])[1]; if(fw && INTRO_SINGLE.includes(fw)) s=s.replace(/^(\w+)\s+(?!,)/,`$1, `);
+    return s+(end||"");
+  });
+  const bi=out; out=punctIntro(out); if(out!==bi) notes.push("Added comma after introductory phrase.");
+
+  const punctClauses=(t)=>t.replace(/([^.!?]+)([.!?]|$)/g,(m,core,end)=>{
+    let s=core.trim();
+    for(const adv of CADV){
+      const re=new RegExp(`\\b${adv}\\b`,"i"); const hit=s.match(re);
+      if(hit){ const idx=hit.index, w=hit[0]; const L=s.slice(0,idx).replace(/[ ,;]+$/," ").trim(), R=s.slice(idx+w.length).replace(/^[ ,;]+/," ").trim();
+        if (hasFiniteVerb(L) && hasFiniteVerb(R)){ s=`${L}; ${w}, ${R}`; break; }
+      }
     }
-    function observe(dict) {
-      const mo = new MutationObserver(m => m.forEach(x => x.addedNodes.forEach(n => {
-        if (n.nodeType === 1) applyAll(dict, n);
-      })));
-      mo.observe(document.body, { childList:true, subtree:true });
+    const first=(s.match(/^\w+/)||[""])[0].toLowerCase();
+    if(SUBORD.includes(first) && !/,/.test(s)){
+      const tokens=s.split(/\s+/);
+      const starters=["i","you","he","she","we","they","it","the","a","an","this","that","these","those","many","most","some"];
+      let ins=-1; for(let i=3;i<Math.min(tokens.length,20);i++){ if(starters.includes(tokens[i]?.toLowerCase())){ ins=i; break; } }
+      if(ins>-1){ tokens.splice(ins,0,","); s=tokens.join(" "); }
     }
-    (document.readyState==='loading' ? document.addEventListener('DOMContentLoaded', run) : run());
-    async function run(){
-      try { const dict = await loadDict(); applyAll(dict); observe(dict);
-        setTimeout(()=>applyAll(dict), 200); setTimeout(()=>applyAll(dict), 600);
-      } catch(e){ console.error('[i18n]', e); }
+    for(const cj of FANBOYS){
+      const pos=s.toLowerCase().indexOf(` ${cj} `);
+      if(pos>-1 && !new RegExp(`,\\s+${cj}\\b`,"i").test(s)){
+        const L=s.slice(0,pos).trim(), R=s.slice(pos+cj.length+2).trim();
+        if(hasFiniteVerb(L) && hasFiniteVerb(R)){ s = L.replace(/\s+$/,"") + ", " + cj + " " + R.replace(/^,?\s*/,""); }
+      }
     }
+    return s+(end||"");
+  });
+  const bc=out; out=punctClauses(out); if(out!==bc) notes.push("Inserted clause punctuation.");
+
+  if(!/[.!?]$/.test(out)){ out+="."; notes.push("Added final full stop."); }
+  const alts=buildAlternatives(out, lvl);
+  return { out:out.trim(), notes, alts };
+}
+
+/* ========= C2 quick rubric ========= */
+function renderC2Rubric(text, lvl){
+  const card=document.getElementById('c2RubricCard'); const box=document.getElementById('c2Rubric'); if(!card||!box) return;
+  if(lvl!== 'C2'){ card.style.display='none'; box.innerHTML=''; return; }
+  card.style.display='';
+  const wc=(String(text).trim().match(/\b[\w’'-]+\b/g)||[]).length; const okWc=wc>=240 && wc<=280;
+  const evalHits=(text.match(/\b(however|although|whereas|nonetheless|nevertheless|assumption|evidence|premise|contend|maintain|plausible|implicat(?:e|ion)|suggests?)\b/gi)||[]).length;
+  const concessive=(text.match(/\b(although|though|whereas|while)\b/gi)||[]).length;
+  const advs=(text.match(/\b(however|therefore|consequently|moreover|nevertheless|thus)\b/gi)||[]).length;
+  const firstP=(text.match(/\b(I|we|my|our)\b/g)||[]).length;
+  const repeats=(function(){
+    const words=String(text).toLowerCase().match(/\b[^\d\W][\w’'-]*\b/g)||[];
+    const stop=new Set('the a an and or but so to of in on for with as by at from that which this these those it they we i you he she one ones be is are was were been being have has had do does did'.split(' '));
+    const counts={}; words.forEach(w=>{ if(w.length<4||stop.has(w)) return; counts[w]=(counts[w]||0)+1; });
+    return Object.entries(counts).filter(([,c])=>c>=3).slice(0,5);
   })();
+  let html='';
+  html += okWc? `✅ Word count within 240–280 (${wc}).` : `⚠️ Word count ${wc} (target 240–280).`;
+  html += '<br>' + (evalHits>=2 ? '✅ Evidence of evaluation/stance language.' : '⚠️ Add more evaluative language (e.g., “however”, “it is plausible that”, “this assumes…”).');
+  html += '<br>' + ((concessive+advs)>=3 ? '✅ Cohesion variety (concessives/adverbials).' : '⚠️ Increase cohesion variety (try concessives, cause–effect, and summative devices).');
+  html += '<br>' + (firstP<=2 ? '✅ Neutral/academic stance maintained.' : '⚠️ Consider a more impersonal stance (limit first-person).');
+  if(repeats.length){ html += '<br>⚠️ Repetition: ' + repeats.map(([w,c])=>w+'×'+c).join(', ') + '. Try precise alternatives.'; }
+  box.innerHTML = html;
+}
+
+/* ========= AI path helpers ========= */
+function essayStyleForLevel(lvl){
+  if (lvl === 'B2') {
+    return 'B2 First essay: neutral/academic register; clear paragraphing; paraphrase prompts; cohesive devices naturally; avoid slang; aim 140–190 words.';
+  }
+  if (lvl === 'C1') {
+    return 'C1 Advanced Essay (Part 1): neutral–formal academic register; develop two of three bullet points and state which is more important with reasons; paraphrase input; cohesive devices beyond basics; aim 220–260 words.';
+  }
+  return 'C2 Proficiency Part 1 essay: neutral–formal academic register; synthesise and evaluate arguments from two input texts in your own words; prioritise precision and natural less-common lexis; avoid colloquial tone; aim 240–280 words.';
+}
+function p2StyleFor(lvl, type){
+  const baseWC = (lvl==='B2')?'140–190': (lvl==='C2')?'240–280':'220–260';
+  const lvlTag = (lvl==='B2')?'B2 First': (lvl==='C2')?'C2 Proficiency':'C1 Advanced';
+  if(type==='letter') return `${lvlTag} Letter/Email: formal register; clear salutation and closing; state purpose early; organise developed points; polite requests/hedging; suitable sign-off; aim ${baseWC} words.`;
+  if(type==='proposal') return `${lvlTag} Proposal: formal register; rationale → objectives → plan → benefits; headings/bullets acceptable; actionable recommendations with justification; aim ${baseWC} words.`;
+  if(type==='report') return `${lvlTag} Report: objective/impersonal register; purpose & methods → findings → analysis → prioritised recommendations; headings encouraged; aim ${baseWC} words.`;
+  // review
+  return `${lvlTag} Review: neutral/semi-formal; hook → brief overview (no spoilers) → evaluation of craft/themes with examples → verdict & audience; aim ${baseWC} words.`;
+}
+function _normalizeForCompare(s){ return String(s||"").replace(/[\u2018\u2019\u2032]/g,"'").replace(/[\u201C\u201D\u2033]/g,'"').replace(/\u00A0/g," ").replace(/\s+/g," ").trim().toLowerCase(); }
+function _aiMadeNoChanges(input, output){ return _normalizeForCompare(input) === _normalizeForCompare(output); }
+
+/* ========= Corrector main ========= */
+function updateWordPills(){
+  const lvl=document.getElementById('levelSelect').value;
+  const input=(document.getElementById('inputText').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
+  const output=(document.getElementById('outputText').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
+  document.getElementById('inWC').textContent = `Input: ${input} words`;
+  const outP=document.getElementById('outWC'); outP.textContent = `Output: ${output} words`; outP.className='pill';
+  const tip=document.getElementById('essayTip'); if (tip){ tip.textContent = (lvl==='B2'?'Target 140–190 (B2 essay)': lvl==='C2'?'Target 240–280 (C2 essay)':'Target 220–260 (C1 essay)'); }
+  if (lvl==='B2'){ if(output>=140 && output<=190) outP.classList.add('ok'); else if (output>0) outP.classList.add('warn'); }
+  if (lvl==='C1'){ if(output>=220 && output<=260) outP.classList.add('ok'); else if (output>0) outP.classList.add('warn'); }
+  if (lvl==='C2'){ if(output>=240 && output<=280) outP.classList.add('ok'); else if (output>0) outP.classList.add('warn'); }
+}
+['inputText','outputText'].forEach(id=>{ document.addEventListener('input',(e)=>{ if(e.target && e.target.id===id) updateWordPills(); }); });
+
+function renderAlternatives(currentText, alts, level) {
+  const box = document.getElementById("altList");
+  if (!alts.length) { box.innerHTML = "<span class='hint'>No suggestions for this text.</span>"; return; }
+  box.innerHTML = "";
+  alts.forEach(({ simple, options }) => {
+    const sec = document.createElement("div"); sec.className = "alt-section";
+    const intensifiers = ["very","really","truly","actually","extremely"];
+    const label = intensifiers.includes(simple.toLowerCase()) ? `“${simple}” (intensifier removed) → stronger choices:` : `“${simple}” → consider:`;
+    const h = document.createElement("h4"); h.textContent = label; sec.appendChild(h);
+    options.slice(0, level === "C1" ? 6 : level === "C2" ? 8 : 4).forEach(opt => {
+      const chip = document.createElement("button"); chip.className = "chip"; chip.textContent = opt;
+      chip.onclick = () => {
+        const re = wordRe(simple);
+        const replaced = (document.getElementById("outputText").value || currentText).replace(re, m => {
+          const cap = m[0] === m[0].toUpperCase();
+          return cap ? opt[0].toUpperCase() + opt.slice(1) : opt;
+        });
+        document.getElementById("outputText").value = replaced;
+        renderPreviewAndPositions(replaced, level);
+        updateWordPills();
+      };
+      sec.appendChild(chip);
+    });
+    box.appendChild(sec);
+  });
+}
+function detectIntensifierNotes(original, corrected) {
+  const notes = []; const INT_RE = /\b(very|really|truly|actually|extremely)\s+([A-Za-z'-]+)\b/gi; const orig=[]; let m;
+  while ((m=INT_RE.exec(original)) !== null) { orig.push({ intensifier:m[1], base:m[2] }); }
+  if (!orig.length) return notes; const lc=corrected.toLowerCase();
+  orig.forEach(({ intensifier, base }) => {
+    const phrase = `${intensifier} ${base}`.toLowerCase();
+    if (!lc.includes(phrase)) {
+      const baseStillThere = new RegExp(`\\b${base.replace(/[.*+?^${}()|[\\]\\\\]/g,"\\$&")}\\b`,"i").test(corrected);
+      if (baseStillThere) notes.push(`Removed intensifier “${intensifier}” and kept “${base}” for formality.`);
+      else notes.push(`Removed intensifier “${intensifier}” and upgraded vocabulary.`);
+    }
+  });
+  return notes;
+}
+
+async function runCorrection(){
+  const input = document.getElementById("inputText").value.trim();
+  const lvl   = document.getElementById("levelSelect").value;
+  const formal= document.getElementById("formalToggle").checked;
+  const useAI = document.getElementById("aiToggle").checked && typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
+  const outBox=document.getElementById("outputText"); const notesBox=document.getElementById("notes"); const altBox=document.getElementById("altList");
+  if (!input){ outBox.value=""; notesBox.innerHTML="<b>Changes:</b><br><span class='hint'>No input provided.</span>"; altBox.innerHTML=""; document.getElementById('outputPreview').innerHTML=""; document.getElementById('positions').innerHTML=""; updateWordPills(); return; }
+  notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>Processing…</span>"; altBox.innerHTML = "<span class='hint'>Processing…</span>"; outBox.value = ""; document.getElementById('outputPreview').innerHTML=""; document.getElementById('positions').innerHTML="";
+
+  if (useAI){
+    try{
+      const res = await fetch(window.AI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input, level: lvl, formal, style: essayStyleForLevel(lvl) }) });
+      const raw = await res.text();
+      if (!res.ok) { notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI HTTP "+res.status); }
+      let data; try { data = JSON.parse(raw); } catch { notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI non-JSON"); }
+      if (data && typeof data.corrected === 'string'){
+        const aiOut=data.corrected;
+
+        // Fallback if AI didn't change anything
+        if (_aiMadeNoChanges(input, aiOut)){
+          const { out, notes, alts } = correctLocal(input, lvl);
+          outBox.value = out;
+          notesBox.innerHTML = "<b>Changes (local fallback – AI made no edits):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
+          const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(out, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
+          renderAlternatives(out, merged, lvl); renderPreviewAndPositions(out, lvl); renderC2Rubric(out, lvl); updateWordPills(); return;
+        }
+
+        // Keep AI result
+        outBox.value = aiOut;
+        const baseNotes = Array.isArray(data.notes) ? data.notes : [];
+        notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (baseNotes.length ? baseNotes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(none)");
+        if (Array.isArray(data.replacements) && data.replacements.length){
+          notesBox.innerHTML += "<br><b>Upgrades:</b><br>";
+          data.replacements.forEach(r=>{ notesBox.innerHTML += "• Replaced “"+escapeHtml(r.from)+"” → “"+escapeHtml(r.to)+"”<br>"; });
+        } else {
+          const extra=detectIntensifierNotes(input, aiOut); if (extra.length) notesBox.innerHTML += "<br>" + extra.map(n => "• " + escapeHtml(n)).join("<br>");
+        }
+        const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(aiOut, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
+        renderAlternatives(aiOut, merged, lvl); renderPreviewAndPositions(aiOut, lvl); renderC2Rubric(aiOut, lvl); updateWordPills(); return;
+      } else {
+        notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
+        throw new Error('AI missing corrected');
+      }
+    } catch(e){ /* fall through to local */ }
+  }
+
+  try{
+    const { out, notes, alts } = correctLocal(input, lvl);
+    outBox.value = out;
+    notesBox.innerHTML = "<b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
+    renderAlternatives(out, alts, lvl);
+    renderPreviewAndPositions(out, lvl);
+    renderC2Rubric(out, lvl);
+    updateWordPills();
+  } catch(e){
+    notesBox.innerHTML = `<b>Local corrector failed:</b> ${escapeHtml(e.message)}`;
+    outBox.value = input;
+    updateWordPills();
+  }
+}
+
+/* ========= Clear / Paste / PDF ========= */
+function clearAll(){
+  document.getElementById("inputText").value="";
+  document.getElementById("outputText").value="";
+  document.getElementById("outputPreview").innerHTML="";
+  document.getElementById("positions").innerHTML="";
+  document.getElementById("notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
+  document.getElementById("altList").innerHTML="After correction, suggested upgrades will appear here (especially for C1/C2).";
+  hiddenIds.clear(); currentMarks=[]; window._lastSignature="";
+  const c2c=document.getElementById('c2RubricCard'); const c2b=document.getElementById('c2Rubric');
+  if(c2c){ c2c.style.display='none'; } if(c2b){ c2b.innerHTML=''; }
+  updateWordPills();
+}
+async function pasteFromClipboard(){
+  const ta=document.getElementById("inputText");
+  try{
+    const text=await navigator.clipboard.readText();
+    if(text){
+      const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
+      ta.value = ta.value.slice(0,start)+text+ta.value.slice(end);
+      ta.focus(); ta.selectionStart=ta.selectionEnd=start+text.length; updateWordPills();
+    } else alert("Your clipboard is empty.");
+  }catch(e){
+    alert("Browser blocked clipboard. Try Ctrl/Cmd+V on desktop, or long-press → Paste on mobile.");
+  }
+}
+function downloadPDF(){
+  try{
+    const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; }
+    const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin;
+    doc.setFont("Helvetica","bold"); doc.setFontSize(14); doc.text("EssayCoach – Corrected Output", margin, y); y+=20;
+    doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+    const lines=doc.splitTextToSize(document.getElementById("outputText").value || "(empty)", 595-margin*2);
+    doc.text(lines, margin, y);
+    doc.save("essay-corrected.pdf");
+  }catch(e){ alert("Could not create PDF: "+e.message); }
+}
+
+/* ========= Punctuation Guide (safe overwrite) ========= */
+(function () {
+  // Full text (exactly as-is). Make sure the FIRST and LAST characters are backticks (`).
+  window.PUNCT_GUIDE = String.raw`Why should you learn about punctuation?
+  
+I know what you might be thinking: “Most native speakers don’t use it properly, so why should I bother?” And you’re right—many people scatter commas randomly or forget full stops altogether. But here’s the difference: you’re not writing just to get by—you’re writing for Cambridge.
+
+In an exam, punctuation isn’t decoration. It’s a signpost that shows the examiner you know what you’re doing. Each comma, full stop, or semicolon quietly tells them: this writer is in control. And that control adds value to your composition.
+
+So yes, it’s worth learning. More than that—it’s worth mastering. Because when you use punctuation correctly and effectively, your writing reads smoothly, your ideas land clearly, and your level shines through.
+
+My advice? Don’t shrug it off. Take punctuation seriously, practise it, and let it lift your writing. The benefits will follow—you’ll see them in your marks, and more importantly, in your confidence every time you write.
+
+1. Full stop ( . )
+
+The full stop is the simplest sign of all. It ends a sentence.
+
+•	I worked late last night.
+•	We missed the train.
+
+Coach’s tip: Don’t let your sentences run on endlessly. Show the examiner you can finish one thought before starting the next.
+________________________________________
+
+2. Comma ( , )
+
+Commas are tricky—many native speakers misuse them. But once you learn the basics, they’re your friend.
+
+You use commas:
+
+1.	In lists:
+We bought apples, bananas, and pears.
+
+2.	After an opener:
+Yesterday, I went to the gym.
+
+3.	Around extra information:
+My sister, who lives in London, is visiting us.
+
+4.	Before a FANBOYS word when joining two independent clauses:
+I wanted to go out, but it was raining.
+
+Coach’s warning: Don’t sprinkle commas everywhere. Each one should have a reason.
+________________________________________
+
+3. Semicolon ( ; )
+
+The semicolon is like a pause stronger than a comma but weaker than a full stop. It connects two independent clauses when the ideas are closely linked.
+
+•	I studied hard; I wanted to pass my exam.
+•	The café was full; we decided to sit outside.
+
+It’s a subtle way to show maturity in your writing. Use it sparingly, but when you do, examiners notice.
+________________________________________
+
+4. Colon ( : )
+
+A colon introduces something: a list, an explanation, or a quotation.
+
+•	She bought three things: bread, milk, and butter.
+•	There’s one thing I can’t accept: dishonesty.
+
+It tells your reader: “Pay attention, what follows explains or completes the first part.”
+________________________________________
+
+5. Apostrophe ( ’ )
+
+Small but mighty. It has two main jobs:
+
+1.	Showing possession:
+o	Emma’s book (the book belongs to Emma).
+o	My parents’ house (the house belongs to both parents).
+
+2.	Showing missing letters (contractions):
+o	don’t = do not
+o	it’s = it is / it has
+
+Warning: its (without apostrophe) is possessive: The dog wagged its tail.
+________________________________________
+
+6. Question mark ( ? )
+
+Ends a direct question:
+•	Are you ready?
+•	What time is it?
+________________________________________
+
+7. Exclamation mark ( ! )
+
+Adds emotion, surprise, or strong feeling:
+•	Watch out!
+•	That’s amazing!
+
+Use sparingly in formal writing. Too many exclamation marks make you sound like you’re shouting.
+________________________________________
+
+8. Quotation marks ( “ ” )
+
+Show direct speech or quoted words.
+•	“I’ll be late,” she said.
+•	“The article stated, “Climate change is the greatest challenge of our time.””
+________________________________________
+
+9. Dash ( – ) and Parentheses ( )
+
+Both add extra information.
+•	Dash: He finally arrived – two hours late.
+•	Parentheses: We visited Paris (my favourite city) in July.
+
+These show variety in your sentence style and add fluency.
+________________________________________
+
+Why does this matter for Cambridge?
+
+Because punctuation is not decoration—it’s evidence. Each correct mark proves you can control complex writing. In exams, it lifts your work from “good enough” to “impressive.”
+________________________________________
+
+Final Reflection
+
+Punctuation is your quiet superpower. It doesn’t shout, but it shapes everything. Learn it. Practise it. Use it with intention. Then, when you sit down in Cambridge or anywhere else, your sentences won’t just make sense—they’ll sing.
+
+👉 Tonight’s exercise: Take a paragraph you’ve written before. Add commas where they belong. Try one semicolon. Replace a weak full stop with a colon. See how the rhythm changes.
+
+I promise—you’ll feel the difference.
+
+Building Clear, Confident Sentences (Step-by-Step, in Plain English)
+
+1) CLAUSES, PHRASES, AND SENTENCES (YOUR BUILDING BLOCKS)
+
+What’s a clause?
+
+A clause is a group of words with at least a subject and a verb. Clauses come in two flavours:
+•	Independent clause (IC): a complete idea; it can stand alone as a sentence.
+•	Dependent clause (DC): not a complete idea; it needs an IC to make sense.
+
+Examples (DC + IC):		You can swap clauses
+•	If I work hard, I can pass my exam.
+•	I can pass my exam if I work hard
+•	Whenever I go out, I take my umbrella.
+•	I take my umbrella whenever I go out.
+•	Unless I have to work, I will come for a drink.
+•	Because it had just stopped raining, we could meet for a coffee. 
+
+Remember to put a comma when you start a sentence with a subordinating conjunction.
+
+What’s a phrase?
+
+A phrase is a group of words that makes sense but doesn’t have both a subject and a verb.
+Example: the big blue house at the end of the road (no full S+V) 
+
+What’s a sentence?
+A sentence expresses a complete thought. It can be:
+•	one independent clause (simple), or
+•	a mix of independent and dependent clauses (compound / complex / compound-complex). We’ll explore these fully below. 
+________________________________________
+
+2) WORD ORDER THAT “JUST WORKS” (THINK IN BLOCKS)
+In English, readers expect a steady order. If you follow these patterns, your sentences will land clearly. This is unlike any other language.
+I went quickly home after the meeting. (This is wrong!!)
+
+Pattern A: Verb of motion (someone/thing moves from A to B)
+
+Subject → Verb → Location → Manner → Time → Purpose
+Example: I went to the city centre by bus this morning to buy a new shirt.
+(“go, fly, arrive, walk, dash…” are motion verbs.) 
+
+Pattern B: Verb of no motion
+
+Subject → Verb → Direct object → Manner → Location → Time → Purpose
+Example: I ate my breakfast quickly at home this morning because I was in a hurry. 
+
+Keep the order steady. You can move the time to the front for variety, but don’t shuffle everything.
+Example: Yesterday, I had to dash because I was late for the bus. 
+
+Tip: Think in blocks, not single words—Subject, Verb, Object, Manner, Location, Time, Purpose. With practice, this becomes automatic. 
+
+Quick practice (spot the blocks):
+
+•	The man snatched my phone from the table just as I was speaking to my sister.
+•	We arrived at the airport at ten o’clock after a delay of fifteen minutes.
+•	I wiped the sweat from my forehead when I discovered the problem.
+•	We finished our homework quickly when Mum told us she wanted to take us for a meal. 
+________________________________________
+
+3) ADVERBS—HOW, WHERE, WHEN, HOW OFTEN (USE THEM WISELY)
+
+Adverbs add flavour—gently, accurately, yesterday, usually. Use them, but don’t drown your writing in them; too many can make the prose flabby. We’ll keep it tidy and purposeful. 
+
+Useful families of adverbs
+
+•	Manner: quickly, quietly, correctly, cheerfully, loudly, politely…
+•	Place: here, ahead, under, above, behind, outside, near, in/at, towards…
+•	Time: before, early, after, yesterday, later, when, at, next, sometime…
+•	Negative: barely, hardly, never, seldom, scarcely, no sooner, only if/when, in no way…
+•	Frequency: always, normally, rarely, frequently, generally, occasionally, sometimes, usually… 
+
+Where do they go?
+
+•	After a modal (positive): I can always help you.
+•	Before a modal (negative): I probably won’t come to the party.
+•	Before the main verb: I always go by bus.
+•	After “to be”: I am always happy.
+
+Common modal verbs: can, could, may, might, will, would, must, should.
+
+Note: have to, need to, ought to behave differently; they’re not true modals.
+
+Try these (notice position & meaning):
+•	When I phone Mike, he is never at home.
+•	My sister always has to hurry because she usually gets up too late.
+•	We had to work very hard, so we were too tired to go to the party.
+•	I probably won’t see you at the party; I’ll probably be on holiday.
+•	Bus services have been seriously affected by the bad weather.
+•	The lady accurately recounted what she had seen. 
+________________________________________
+
+4) FROM GOOD SENTENCES TO STRONG PARAGRAPHS (CONNECT WITH PURPOSE)
+
+Now that you can form clear sentences, we’ll connect them. The right connector—used with the right punctuation—pushes your writing up a level. We’ll practise three big families: coordinating conjunctions, conjunctive adverbs, and subordinating conjunctions. 
+________________________________________
+
+5) THE FOUR SENTENCE TYPES (AND HOW TO WRITE EACH)
+
+A. Simple sentence (just one subject group)
+A simple sentence is an independent clause—a clear thought with a subject and (at least) one verb.
+
+•	I did my homework yesterday.
+•	I did my homework and went out.
+•	My friend and I did our homework and went out.
+
+(Even with “my friend and I,” it’s still one subject group, so the sentence is simple.) 
+________________________________________
+
+B. Compound sentence (IC + IC)
+
+You join two independent clauses with one of these:
+
+1.	a coordinating conjunction (FANBOYS),
+2.	a semicolon ;, or
+3.	a conjunctive adverb (with semicolon before and comma after). 
+
+1) Coordinating conjunctions (FANBOYS)
+
+They connect words, phrases, or independent clauses.
+
+Comma rule: use a comma between two ICs of equal strength.
+
+Tiny exception: if the first clause has five words or fewer, you can omit the comma.
+
+FANBOYS = For, And, Nor, But, Or, Yet, So. 
+•	For = because: I went home, for I was tired.
+•	And: Mum was born in Britain, and Dad in Germany.
+•	Nor = and not (needs inversion in the second clause):
+I don’t like apples, nor do I like pears.
+I can’t come to the party, nor can I come to the dinner.
+•	But: It rained a lot, but we had to leave.
+•	Or: We can watch TV at home, or go to the cinema.
+•	Yet = but: I went to the party, yet I didn’t like it.
+•	So (result): I ate a lot, so I went for a walk.
+
+Compare:
+
+Simple: I did my homework and went out.
+
+Compound: I did my homework, and I went out. (Two ICs.) 
+
+2) Semicolon
+
+Use ; to link two ICs without a conjunction; it can emphasise the second part:
+•	I went home; I was tired.
+•	I did my homework quickly; I went to the bar. 
+
+3) Conjunctive adverbs (with punctuation)
+
+Common ones you’ll see: however, therefore, consequently, moreover, furthermore, nevertheless, instead, meanwhile, hence, thus, accordingly (and more). Grouped examples are shown in your notes. 
+
+Pattern: IC ; conjunctive adverb , IC
+•	I wanted to go for a swim; however, I was too busy at work.
+
+These adverbs can move around within the second clause; only when they sit between two ICs with the ; and , do we call them conjunctive adverbs in a compound sentence:
+•	I wanted to go for a swim, I was, however, too busy at work to go.
+•	I wanted to go for a swim, I was too busy at work to go, however.
+
+(Here, as your notes point out, “however” isn’t functioning as a conjunctive adverb in the strict sense.)
+________________________________________
+
+C. Complex sentence (IC + DC)
+
+A complex sentence combines one independent clause with one (or more) dependent clause(s) using a subordinating conjunction (because, when, although, if, after, before, unless, while, even though, whether, once, provided that, etc.). 
+
+Two correct orders:
+•	IC + because/when/… + DC → I studied hard because I wanted to pass.
+•	Because/When/… + DC, IC → Because I wanted to pass, I studied hard.
+
+Comma rule: if the DC comes first, add a comma before the IC. 
+
+Longer example (spot DC + IC + DC):
+When I go to see my grandmother, I make sure I bring her something she likes to eat because that makes her feel happy. 
+
+Bonus (embedded clause):
+My sister, who, by the way, is a terrific writer, won first prize last week… (a relative clause adds information). 
+________________________________________
+
+D. Compound-complex sentence (IC + IC + DC)
+
+You’re simply combining the patterns above: two independent clauses and at least one dependent clause.
+
+Think: Compound backbone + Complex add-on. (We’ll practise these once the first three feel easy.) 
+________________________________________
+
+6) PUTTING IT ALL TOGETHER—COACH’S MINI-DRILLS
+
+Try these rewrite tasks using the rules above:
+
+1.	Start simple, then extend with purpose and time (Pattern B):
+•	Simple: I wrote the email.
+•	Extended: I wrote the email carefully at home last night because my teacher needed it.
+
+2.	Motion pattern (Pattern A) with location and manner:
+•	We walked to the harbour slowly this afternoon to watch the boats.
+
+3.	Make it compound with a FANBOYS word:
+•	We finished our homework, so we had time to play.
+
+4.	Make it compound with a semicolon (emphasis on the second idea):
+•	The sky turned black; thunder followed.
+
+5.	Make it compound with a conjunctive adverb (punctuation matters):
+•	The café was full; however, a table opened near the window.
+
+6.	Make it complex with because/when/although:
+•	Although the rain eased, we kept our coats on.
+
+7.	Combine everything into compound-complex:
+•	Although the rain eased, we kept our coats on, and we caught the bus home.
+________________________________________
+
+FINAL NUDGE
+
+You don’t need to “sound clever.” You need to build clearly: clause by clause, block by block. Keep your word order steady, place adverbs with intention, and join ideas with the right connector and punctuation. That’s how writing becomes calm, confident, and yours.
+
+Try this reflection: This week, write three versions of the same idea—simple → compound → complex—and notice how each version changes the feel of your message. I’m right here cheering you on. `;
+
+  // Back-compat in case other code still reads PUNCT_RULES
+  window.PUNCT_RULES = [window.PUNCT_GUIDE];
+
+  // Overwrite (do not redeclare) the three functions
+  window.renderPunctRules = function(){
+    const list = document.getElementById('punctList');
+    if (!list) return;
+    list.innerHTML = "";
+    list.style.whiteSpace = "pre-wrap";
+    list.style.fontFamily = "inherit";
+    list.style.listStyle = "none";
+    list.textContent = window.PUNCT_GUIDE;
+  };
+
+  window.copyPunctRules = function(){
+    navigator.clipboard?.writeText(window.PUNCT_GUIDE);
+    alert("Punctuation guide copied.");
+  };
+
+  window.exportPunctPDF = function(){
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF){ alert("PDF library failed to load."); return; }
+
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 48;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = margin;
+
+    doc.setFont("Helvetica","bold"); doc.setFontSize(16);
+    doc.text("Punctuation & Sentence Building", margin, y); y += 24;
+
+    doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+    const lines = doc.splitTextToSize(window.PUNCT_GUIDE, pageW - margin*2);
+    const lh = 14;
+
+    lines.forEach(line => {
+      if (y > pageH - margin) { doc.addPage(); y = margin; }
+      doc.text(line, margin, y);
+      y += lh;
+    });
+
+    doc.save("punctuation-guide.pdf");
+  };
+})();
+
+/* ========= Scaffolds renderer ========= */
+function renderScaffold(){
+  const lvl = document.getElementById('scLevel').value;
+  if (lvl==='C2'){ const st=document.getElementById('scType'); if (st && st.value!=='essay'){ st.value='essay'; } }
+  const typ = document.getElementById('scType').value;
+  const d = SCAFFOLDS[lvl][typ];
+  document.getElementById('scMoves').innerHTML = d.moves.map(m => `<li>${escapeHtml(m)}</li>`).join('');
+  document.getElementById('scOpener').textContent = d.opener;
+  document.getElementById('scTips').innerHTML = d.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+  if (document.getElementById('guideOverlay').style.display === 'flex') { renderGuideExample(); }
+}
+function copyScaffold(){ const list=document.getElementById('scMoves'); const items=[...list.querySelectorAll('li')].map(li=>`• ${li.textContent}`); navigator.clipboard?.writeText(items.join("\n")); alert("Scaffold copied."); }
+function copyOpener(){ const text=document.getElementById('scOpener').textContent || ''; navigator.clipboard?.writeText(text); alert("Opener copied."); }
+function exportScaffoldPDF(){
+  const { jsPDF } = window.jspdf || {}; if (!jsPDF){ alert("PDF library failed to load."); return; }
+  const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin;
+  const level=document.getElementById('scLevel').value; const type=document.getElementById('scType').value;
+  doc.setFont("Helvetica","bold"); doc.setFontSize(16); doc.text(`Scaffold – ${level} ${type[0].toUpperCase()+type.slice(1)}`, margin, y); y+=18;
+  doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+  const moves=[...document.querySelectorAll('#scMoves li')].map((li,i)=>`${i+1}) ${li.textContent}`);
+  doc.text(doc.splitTextToSize(moves.join("\n"), 595-margin*2), margin, y); y+=18;
+  doc.text("Opener:", margin, y); y+=14;
+  doc.text(doc.splitTextToSize(document.getElementById('scOpener').textContent||'', 595-margin*2), margin, y); y+=18;
+  doc.text("Tips:", margin, y); y+=14;
+  const tips=[...document.querySelectorAll('#scTips li')].map((li,i)=>`${i+1}) ${li.textContent}`);
+  doc.text(doc.splitTextToSize(tips.join("\n"), 595-margin*2), margin, y);
+  doc.save("scaffold.pdf");
+}
+
+/* ========= Part 2 code ========= */
+function p2TargetForLevel(lvl){ if (lvl==='B2') return {min:140, max:190, label:'Target 140–190 (B2)'}; if (lvl==='C2') return {min:240, max:280, label:'Target 240–280 (C2)'}; return {min:220, max:260, label:'Target 220–260 (C1)'}; }
+function p2UpdateWordPills(){
+  const lvl=document.getElementById('levelSelectP2').value;
+  const {min,max,label}=p2TargetForLevel(lvl);
+  const inWC=(document.getElementById('p2Input').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
+  const outWC=(document.getElementById('p2Output').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
+  document.getElementById('p2InWC').textContent=`Input: ${inWC} words`;
+  const outP=document.getElementById('p2OutWC'); outP.textContent=`Output: ${outWC} words`; outP.className='pill';
+  if (outWC>0 && (outWC<min || outWC>max)) outP.classList.add('warn'); if (outWC>=min && outWC<=max) outP.classList.add('ok');
+  document.getElementById('p2TargetWC').textContent=label;
+}
+['p2Input','p2Output'].forEach(id=>{ document.addEventListener('input',(e)=>{ if(e.target && e.target.id===id) p2UpdateWordPills(); }); });
+
+function p2FindConjAdvMatches(text){ return findConjAdvMatches(text); }
+function p2FindFanboysMatches(text){ return findFanboysMatches(text); }
+function p2CoachClauseNotes(corrected, level){
+  const show = document.getElementById('p2CoachToggle')?.checked !== false;
+  if (!show || !corrected) return { notes: [], marks: [] };
+  const cadv=p2FindConjAdvMatches(corrected); const fanb=p2FindFanboysMatches(corrected);
+  const notes=[];
+  cadv.forEach(({group,label,start,end})=>{
+    if (group==='contrast') notes.push(`Used “${label.trim()}” to join two clauses (C1 style) at chars ${start}–${end}.`);
+    else if (group==='result') notes.push(`Used “${label.trim()}” (result) at chars ${start}–${end}.`);
+    else if (group==='addition') notes.push(`Used “${label.trim()}” (addition) at chars ${start}–${end}.`);
+  });
+  fanb.forEach(({conj,label,start,end})=>{ notes.push(`Coordinating join “${label.trim()}” at ${start}–${end}.`); });
+  let marks=[...cadv, ...fanb].sort((a,b)=>a.start-b.start);
+  const filtered=[]; let lastEnd=-1, counter=1; marks.forEach(m=>{ if(m.start>=lastEnd){ m.id = `p2hl-${counter++}`; filtered.push(m); lastEnd=m.end; } });
+  return { notes, marks: filtered };
+}
+function p2BuildHighlightedHTML(text, marks){
+  if(!marks.length) return escapeHtml(text).replace(/\n/g,'<br>');
+  let html='', idx=0; for(const m of marks){ html += escapeHtml(text.slice(idx, m.start)).replace(/\n/g,'<br>'); const off = false ? ' off' : ''; html += `<mark class="hl${off}" id="${m.id}" title="${escapeHtml(m.label.trim())}">${escapeHtml(text.slice(m.start, m.end))}</mark>`; idx = m.end; }
+  html += escapeHtml(text.slice(idx)).replace(/\n/g,'<br>'); return html;
+}
+function p2RenderPreview(corrected, level){
+  const { notes: coach, marks } = p2CoachClauseNotes(corrected, level || document.getElementById('levelSelectP2').value);
+  document.getElementById('p2Preview').innerHTML = p2BuildHighlightedHTML(corrected, marks);
+  const posBox = document.getElementById('p2Positions');
+  if (!marks.length) posBox.innerHTML = "";
+  else {
+    const chips = marks.map(m=> `<a href="#" onclick="document.getElementById('${m.id}')?.scrollIntoView({behavior:'smooth',block:'center'});return false;">${m.start}–${m.end}</a>`).join(' ');
+    posBox.innerHTML = `<b>Marked spans:</b> ${chips}`;
+  }
+  const notesBox = document.getElementById('p2Notes');
+  if (notesBox.innerHTML.includes("<b>Changes")){
+    const existingCoach = /<br><br><b>Coach notes:[\s\S]*$/i;
+    notesBox.innerHTML = notesBox.innerHTML.replace(existingCoach, "");
+    if (coach.length) notesBox.innerHTML += "<br><br><b>Coach notes:</b><br>" + coach.map(n=>"• "+n).join("<br>");
+  }
+}
+
+function renderAlternativesP2(currentText, alts, level) {
+  const box = document.getElementById("p2AltList");
+  if (!alts.length) { box.innerHTML = "<span class='hint'>No suggestions for this text.</span>"; return; }
+  box.innerHTML = "";
+  alts.forEach(({ simple, options }) => {
+    const sec = document.createElement("div"); sec.className = "alt-section";
+    const label = `“${simple}” → consider:`;
+    const h = document.createElement("h4"); h.textContent = label; sec.appendChild(h);
+    options.slice(0, level === "C1" ? 6 : level === "C2" ? 8 : 4).forEach(opt => {
+      const chip = document.createElement("button"); chip.className = "chip"; chip.textContent = opt;
+      chip.onclick = () => {
+        const re = wordRe(simple);
+        const replaced = (document.getElementById("p2Output").value || currentText).replace(re, m => {
+          const cap = m[0] === m[0].toUpperCase();
+          return cap ? opt[0].toUpperCase() + opt.slice(1) : opt;
+        });
+        document.getElementById("p2Output").value = replaced;
+        p2RenderPreview(replaced, level);
+        p2UpdateWordPills();
+      };
+      sec.appendChild(chip);
+    });
+    box.appendChild(sec);
+  });
+}
+
+function p2GenreRubric(text, lvl, type){
+  const checks=[];
+  const wc=(text.match(/\b[\w’'-]+\b/g)||[]).length;
+  const target= p2TargetForLevel(lvl); const okWC = wc>=target.min && wc<=target.max;
+  checks.push(okWC?`✅ Word count ${wc} in ${target.min}–${target.max}.`:`⚠️ Word count ${wc}; target ${target.min}–${target.max}.`);
+  if(type==='letter'){
+    checks.push(/\bDear\b/.test(text)?'✅ Salutation present.':'⚠️ Add an appropriate salutation (e.g., “Dear Ms X,”).');
+    checks.push(/\bYours (faithfully|sincerely)\b/i.test(text)?'✅ Formal sign-off present.':'⚠️ Add a formal sign-off (“Yours sincerely/faithfully”).');
+    checks.push(/\bI am writing\b|\bI would like to\b/i.test(text)?'✅ Purpose stated early.':'⚠️ State purpose early (“I am writing to…”).');
+  } else if(type==='proposal'){
+    const heads = /(Objective|Objectives|Plan|Benefits|Recommendation|Recommendations)/i.test(text);
+    checks.push(heads?'✅ Structural headings detected.':'⚠️ Use clear sections (Objectives, Plan, Benefits, Recommendations).');
+    checks.push(/\brecommend(ed|ation|ations)?\b|It is recommended\b/i.test(text)?'✅ Explicit recommendations.':'⚠️ Add explicit, actionable recommendations.');
+  } else if(type==='report'){
+    const sections = /(Findings|Analysis|Recommendations)/i.test(text);
+    checks.push(sections?'✅ Findings/Analysis/Recommendations present.':'⚠️ Include Findings → Analysis → Recommendations.');
+    checks.push(/\b(It is|There is|There are|was|were)\b/i.test(text)?'✅ Impersonal register appears.':'⚠️ Prefer an objective/impersonal register.');
+  } else if(type==='review'){
+    checks.push(/\b(recommend|worth|audience|viewers|readers)\b/i.test(text)?'✅ Verdict/audience indicated.':'⚠️ End with a clear verdict and audience.');
+    checks.push(/\b(style|pacing|voice|theme|motif|character)\b/i.test(text)?'✅ Evaluation of craft/themes.':'⚠️ Evaluate craft/themes, not only plot.');
+  }
+  return checks.join('<br>');
+}
+function p2RenderRubric(text, lvl, type){
+  const card=document.getElementById('p2RubricCard'); const box=document.getElementById('p2Rubric'); if(!card||!box) return;
+  card.style.display='';
+  box.innerHTML = p2GenreRubric(String(text||''), lvl, type);
+}
+
+async function runCorrectionPart2(){
+  const input = document.getElementById("p2Input").value.trim();
+  const lvl   = document.getElementById("levelSelectP2").value;
+  const type  = document.getElementById("p2Type").value;
+  const formal= document.getElementById("p2FormalToggle").checked;
+  const useAI = document.getElementById("p2AiToggle").checked && typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
+  const outBox=document.getElementById("p2Output"); const notesBox=document.getElementById("p2Notes"); const altBox=document.getElementById("p2AltList");
+  if (!input){ outBox.value=""; notesBox.innerHTML="<b>Changes:</b><br><span class='hint'>No input provided.</span>"; altBox.innerHTML=""; document.getElementById('p2Preview').innerHTML=""; document.getElementById('p2Positions').innerHTML=""; p2UpdateWordPills(); return; }
+  notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>Processing…</span>"; altBox.innerHTML = "<span class='hint'>Processing…</span>"; outBox.value = ""; document.getElementById('p2Preview').innerHTML=""; document.getElementById('p2Positions').innerHTML="";
+
+  if (useAI){
+    try{
+      const res = await fetch(window.AI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input, level: lvl, formal, style: p2StyleFor(lvl, type), genre: type }) });
+      const raw = await res.text();
+      if (!res.ok) { notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI HTTP "+res.status); }
+      let data; try { data = JSON.parse(raw); } catch { notesBox.innerHTML = `<b>AI returned non-JSON:</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI non-JSON"); }
+      if (data && typeof data.corrected === 'string'){
+        const aiOut=data.corrected;
+        if (_aiMadeNoChanges(input, aiOut)){
+          const { out, notes, alts } = correctLocal(input, lvl);
+          outBox.value = out;
+          notesBox.innerHTML = "<b>Changes (local fallback – AI made no edits):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
+          const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(out, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
+          renderAlternativesP2(out, merged, lvl); p2RenderPreview(out, lvl); p2RenderRubric(out, lvl, type); p2UpdateWordPills(); return;
+        }
+        outBox.value = aiOut;
+        const baseNotes = Array.isArray(data.notes) ? data.notes : [];
+        notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (baseNotes.length ? baseNotes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(none)");
+        if (Array.isArray(data.replacements) && data.replacements.length){
+          notesBox.innerHTML += "<br><b>Upgrades:</b><br>";
+          data.replacements.forEach(r=>{ notesBox.innerHTML += "• Replaced “"+escapeHtml(r.from)+"” → “"+escapeHtml(r.to)+"”<br>"; });
+        } else {
+          const extra=detectIntensifierNotes(input, aiOut); if (extra.length) notesBox.innerHTML += "<br>" + extra.map(n => "• " + escapeHtml(n)).join("<br>");
+        }
+        const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(aiOut, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
+        renderAlternativesP2(aiOut, merged, lvl); p2RenderPreview(aiOut, lvl); p2RenderRubric(aiOut, lvl, type); p2UpdateWordPills(); return;
+      } else { notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error('AI missing corrected'); }
+    } catch(e){ /* fall through to local */ }
+  }
+
+  try{
+    const { out, notes, alts } = correctLocal(input, lvl);
+    outBox.value = out;
+    notesBox.innerHTML = "<b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
+    renderAlternativesP2(out, alts, lvl);
+    p2RenderPreview(out, lvl);
+    p2RenderRubric(out, lvl, type);
+    p2UpdateWordPills();
+  } catch(e){
+    notesBox.innerHTML = `<b>Local corrector failed:</b> ${escapeHtml(e.message)}`;
+    outBox.value = input; p2UpdateWordPills();
+  }
+}
+function clearAllPart2(){
+  document.getElementById("p2Input").value="";
+  document.getElementById("p2Output").value="";
+  document.getElementById("p2Preview").innerHTML="";
+  document.getElementById("p2Positions").innerHTML="";
+  document.getElementById("p2Notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
+  document.getElementById("p2AltList").innerHTML="After correction, suggested upgrades will appear here.";
+  p2UpdateWordPills();
+}
+async function pasteIntoP2(){
+  const ta=document.getElementById("p2Input");
+  try{
+    const text=await navigator.clipboard.readText();
+    if(text){
+      const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
+      ta.value = ta.value.slice(0,start)+text+ta.value.slice(end);
+      ta.focus(); ta.selectionStart=ta.selectionEnd=start+text.length; p2UpdateWordPills();
+    } else alert("Your clipboard is empty.");
+  }catch(e){ alert("Browser blocked clipboard. Try Ctrl/Cmd+V or long-press → Paste."); }
+}
+function downloadPDFPart2(){
+  try{
+    const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; }
+    const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin;
+    doc.setFont("Helvetica","bold"); doc.setFontSize(14); doc.text("EssayCoach – Part 2 Corrected Output", margin, y); y+=20;
+    doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+    const lines=doc.splitTextToSize(document.getElementById("p2Output").value || "(empty)", 595-margin*2);
+    doc.text(lines, margin, y);
+    doc.save("part2-corrected.pdf");
+  }catch(e){ alert("Could not create PDF: "+e.message); }
+}
+
+/* ========= Timer (shared) ========= */
+let _timer=null, _until=0;
+function startTimer(minutes=45){
+  _until = Date.now() + minutes*60*1000;
+  if (_timer) clearInterval(_timer);
+  const paint=()=>{
+    const left = Math.max(0, _until - Date.now());
+    const m = String(Math.floor(left/60000)).padStart(2,'0');
+    const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+    document.getElementById('timer').textContent = `Timer: ${m}:${s}`;
+    const p2t=document.getElementById('p2Timer'); if (p2t) p2t.textContent=`Timer: ${m}:${s}`;
+    if (left<=0) { clearInterval(_timer); _timer=null; }
+  };
+  paint(); _timer=setInterval(paint, 500);
+}
+
+/* ========= Init ========= */
+renderScaffold();
+renderPunctRules();
+window.addEventListener('load',()=>{
+  const aiBox=document.getElementById('aiToggle');
+  if (aiBox) {
+    const hasEndpoint = typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
+    aiBox.checked = hasEndpoint;
+    aiBox.disabled = !hasEndpoint;
+    aiBox.title = hasEndpoint
+      ? "Uses your Cloudflare Worker (AI), falls back to local rules if needed."
+      : "Set window.AI_ENDPOINT in index.html to enable AI corrections.";
+  }
+  const aiBox2=document.getElementById('p2AiToggle');
+  if (aiBox2){
+    const hasEndpoint = typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
+    aiBox2.checked = hasEndpoint; aiBox2.disabled = !hasEndpoint;
+  }
+  if (location.hash==='#corrector')      showTab('corrector');
+  else if (location.hash==='#punct')     showTab('punct');
+  else if (location.hash==='#part2')     showPart2();
+  else                                   showTab('scaffolds');
+  updateWordPills(); p2UpdateWordPills();
+});
+
+/* Error overlay (dev) */
+window.addEventListener('error', (e) => {
+  document.body.insertAdjacentHTML('beforeend', `<pre style="white-space:pre-wrap;background:#fee;border:1px solid #f99;padding:10px;border-radius:8px;margin:12px;color:#800"><b>JS error:</b> ${e.message}</pre>`);
+});
+
+/* Failsafe tab wiring */
+(function () {
+  const tSc = document.getElementById('tab-scaffolds');
+  const tCo = document.getElementById('tab-corrector');
+  const tPu = document.getElementById('tab-punct');
+  const tP2 = document.getElementById('tab-part2');
+  function safeShow(w) {
+    try { if (w==='part2') showPart2(); else showTab(w); }
+    catch {
+      const vs = document.getElementById('view-scaffolds');
+      const vc = document.getElementById('view-corrector');
+      const vp = document.getElementById('view-punct');
+      const v2 = document.getElementById('view-part2');
+      vs.style.display = (w==='scaffolds') ? '' : 'none';
+      vc.style.display = (w==='corrector') ? '' : 'none';
+      vp.style.display = (w==='punct') ? '' : 'none';
+      v2.style.display = (w==='part2') ? '' : 'none';
+    }
+  }
+  tSc?.addEventListener('click', () => safeShow('scaffolds'));
+  tCo?.addEventListener('click', () => safeShow('corrector'));
+  tPu?.addEventListener('click', () => safeShow('punct'));
+  tP2?.addEventListener('click', () => safeShow('part2'));
+})();
   </script>
+  <script>
+(function () {
+  const MAP_IDS_TO_KEYS = {
+    // Scaffolds actions
+    "btnCopyScaffold": "btn.copy_scaffold",
+    "btnCopyOpener": "btn.copy_opener",
+    "btnExportScaffoldPDF": "btn.export_scaffold_pdf",
+    "btnGuideExample": "btn.guide_example",
+    // Corrector actions (Part 1)
+    "btnCorrect": "btn.correct",
+    "btnExportPDF": "btn.export_pdf",
+    "btnClear": "btn.clear",
+    "btnPaste": "btn.paste",
+    "btnStartTimer": "btn.start_timer",
+    // Status badge
+    "timerBadge": "io.timer_dash",
+    // Part 2 (if present)
+    "p2Correct": "btn.correct",
+    "p2ExportPDF": "btn.export_pdf",
+    "p2Clear": "btn.clear",
+    "p2Paste": "btn.paste",
+    "p2StartTimer": "btn.start_timer"
+  };
+
+  // Apply one element: supports text, value, placeholder, aria-label
+  function applyOne(el, dict) {
+    const key = el.getAttribute('data-i18n');
+    if (!key || !dict[key]) return;
+    const target = el.getAttribute('data-i18n-target'); // optional override
+
+    // Special cases by element type or explicit target
+    if (target === 'value' || el.tagName === 'INPUT' && el.type === 'button') {
+      el.value = dict[key];
+      return;
+    }
+    if (target === 'placeholder') {
+      el.setAttribute('placeholder', dict[key]);
+      return;
+    }
+    if (target === 'aria-label') {
+      el.setAttribute('aria-label', dict[key]);
+      return;
+    }
+
+    // Default: replace text only (keeps icons if you tag an inner <span> instead of the whole button)
+    el.textContent = dict[key];
+  }
+
+  function applyAttrs(dict) {
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const k = el.getAttribute('data-i18n-title');
+      if (dict[k]) el.setAttribute('title', dict[k]);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const k = el.getAttribute('data-i18n-placeholder');
+      if (dict[k]) el.setAttribute('placeholder', dict[k]);
+    });
+  }
+
+  function applyAll(dict, root = document) {
+    root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
+    applyAttrs(dict);
+
+    // Safety net: force-set by IDs (works even if your app rewrote text later)
+    Object.entries(MAP_IDS_TO_KEYS).forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (!el || !dict[key]) return;
+      if (el.tagName === 'INPUT' && el.type === 'button') {
+        el.value = dict[key];
+      } else {
+        // If button has an icon + label span, prefer a child with [data-i18n] to avoid nuking the icon
+        const labelSpan = el.querySelector('[data-i18n]');
+        if (labelSpan) {
+          applyOne(labelSpan, dict);
+        } else {
+          el.textContent = dict[key];
+        }
+      }
+    });
+  }
+
+  async function loadDict() {
+    const isSpanish = location.pathname.includes('/essay-coach-instant/es/');
+    const lang = isSpanish ? 'es' : 'en';
+    const basePath = '/essay-coach-instant';
+    const url = `${basePath}/assets/i18n/${lang}.json`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+    const dict = await res.json();
+    document.documentElement.lang = lang;
+    return dict;
+  }
+
+  function observeAndReapply(dict) {
+    const mo = new MutationObserver(muts => {
+      // Reapply only to added nodes (keeps it fast)
+      muts.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if (node.nodeType !== 1) return; // ELEMENT_NODE
+          applyAll(dict, node);
+        });
+      });
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Run after DOM is ready and again after window load (in case your app boot overwrites text)
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const dict = await loadDict();
+      applyAll(dict);
+      observeAndReapply(dict);
+    } catch (e) {
+      console.error('[i18n] error:', e);
+    }
+  });
+  window.addEventListener('load', async () => {
+    try {
+      const dict = await loadDict();
+      applyAll(dict);
+      // small retry to beat late JS updates
+      setTimeout(async () => {
+        const d = await loadDict();
+        applyAll(d);
+      }, 300);
+    } catch (e) {
+      // ignore if already applied
+    }
+  });
+})();
+</script>
+<script>
+(function () {
+  async function loadDict() {
+    const res = await fetch('/essay-coach-instant/assets/i18n/es.json', { cache:'no-store' });
+    if (!res.ok) throw new Error('i18n es ' + res.status);
+    document.documentElement.lang = 'es';
+    return res.json();
+  }
+  function applyOne(el, dict) {
+    const key = el.getAttribute('data-i18n');
+    if (!key || !dict[key]) return;
+    if (el.tagName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type)) { el.value = dict[key]; return; }
+    el.textContent = dict[key];
+  }
+  function applyAll(dict, root=document) {
+    root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
+    root.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const k = el.getAttribute('data-i18n-title'); if (dict[k]) el.setAttribute('title', dict[k]);
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const k = el.getAttribute('data-i18n-placeholder'); if (dict[k]) el.setAttribute('placeholder', dict[k]);
+    });
+  }
+  function observe(dict) {
+    const mo = new MutationObserver(m => m.forEach(x => x.addedNodes.forEach(n => {
+      if (n.nodeType === 1) applyAll(dict, n);
+    })));
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
+  (document.readyState==='loading' ? document.addEventListener('DOMContentLoaded', run) : run());
+  async function run(){
+    try { const dict = await loadDict(); applyAll(dict); observe(dict);
+      setTimeout(()=>applyAll(dict), 200); setTimeout(()=>applyAll(dict), 600);
+    } catch(e){ console.error('[i18n]', e); }
+  }
+})();
+</script>
+<script src="/essay-coach-instant/assets/app.bundle.js" defer></script>
+
 </body>
 </html>
-
-
- 
