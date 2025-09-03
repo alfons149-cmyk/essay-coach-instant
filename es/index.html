@@ -1893,5 +1893,48 @@ window.addEventListener('error', (e) => {
   tP2?.addEventListener('click', () => safeShow('part2'));
 })();
   </script>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  (function () {
+    async function loadI18n(lang, basePath) {
+      try {
+        const res = await fetch(`${basePath}/assets/i18n/${lang}.json`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Failed to load ${lang}.json: HTTP ${res.status}`);
+        const dict = await res.json();
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (dict[key]) el.textContent = dict[key];
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+          const key = el.getAttribute('data-i18n-title');
+          if (dict[key]) el.setAttribute('title', dict[key]);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+          const key = el.getAttribute('data-i18n-placeholder');
+          if (dict[key]) el.setAttribute('placeholder', dict[key]);
+        });
+
+        window.EC_t = (key, vars = {}) => {
+          let s = dict[key] || key;
+          for (const k in vars) s = s.replaceAll(`{${k}}`, String(vars[k]));
+          return s;
+        };
+
+        document.documentElement.lang = lang;
+        console.info(`[i18n] Applied ${lang}`);
+      } catch (e) {
+        console.error('i18n load error', e);
+      }
+    }
+
+    const isSpanish = location.pathname.includes('/essay-coach-instant/es/');
+    const lang = isSpanish ? 'es' : 'en';
+    const basePath = '/essay-coach-instant';
+    loadI18n(lang, basePath);
+  })();
+});
+</script>
+
 </body>
 </html>
