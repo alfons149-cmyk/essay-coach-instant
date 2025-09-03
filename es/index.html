@@ -2180,6 +2180,125 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+<script>
+(function () {
+  // 1) IDs → keys (extend if you add more buttons)
+  const MAP_IDS_TO_KEYS = {
+    btnCopyScaffold: "btn.copy_scaffold",
+    btnCopyOpener: "btn.copy_opener",
+    btnExportScaffoldPDF: "btn.export_scaffold_pdf",
+    btnGuideExample: "btn.guide_example",
+    btnCorrect: "btn.correct",
+    btnExportPDF: "btn.export_pdf",
+    btnClear: "btn.clear",
+    btnPaste: "btn.paste",
+    btnStartTimer: "btn.start_timer",
+    timerBadge: "io.timer_dash",
+    p2Correct: "btn.correct",
+    p2ExportPDF: "btn.export_pdf",
+    p2Clear: "btn.clear",
+    p2Paste: "btn.paste",
+    p2StartTimer: "btn.start_timer",
+    guideModalTitle: "modal.guide_title"
+  };
+
+  // 2) Helpers
+  const T = (el, txt) => {
+    if (!el) return;
+    // Inputs use value=...
+    if (el.tagName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type)) { el.value = txt; return; }
+    // If button contains an inner label span, prefer it (don’t nuke icons)
+    const inner = el.querySelector('[data-i18n], .label, span');
+    if (inner && inner.childElementCount === 0) inner.textContent = txt;
+    else el.textContent = txt;
+  };
+
+  function applyAll(dict, root = document) {
+    // A) data-i18n
+    root.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (dict[k]) T(el, dict[k]);
+    });
+    // B) by ID map
+    Object.entries(MAP_IDS_TO_KEYS).forEach(([id, k]) => {
+      const el = document.getElementById(id);
+      if (el && dict[k]) T(el, dict[k]);
+    });
+  }
+
+  // Build a fast text→text map using en.json→es.json for the same keys
+  function buildTextMap(en, es) {
+    const m = new Map();
+    Object.keys(es).forEach(k => {
+      const enText = en[k];
+      const esText = es[k];
+      if (typeof enText === 'string' && typeof esText === 'string') {
+        m.set(enText.trim(), esText);
+      }
+    });
+    return m;
+  }
+  function applyByTextFallback(textMap, root=document) {
+    // Buttons and clickable elements commonly used
+    root.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"]').forEach(el => {
+      let current = (el.tagName === 'INPUT') ? el.value : el.textContent;
+      if (!current) return;
+      const trimmed = current.trim();
+      if (textMap.has(trimmed)) {
+        const to = textMap.get(trimmed);
+        T(el, to);
+      }
+    });
+    // Also try common headings/labels
+    root.querySelectorAll('h1,h2,h3,h4,label,.hint,.actions .muted').forEach(el => {
+      const trimmed = (el.textContent || '').trim();
+      if (textMap.has(trimmed)) T(el, textMap.get(trimmed));
+    });
+  }
+
+  async function loadJSON(url) {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) throw new Error(url + ' ' + r.status);
+    return r.json();
+  }
+
+  async function run() {
+    const base = '/essay-coach-instant/assets/i18n';
+    const [en, es] = await Promise.all([
+      loadJSON(base + '/en.json'),
+      loadJSON(base + '/es.json')
+    ]);
+    // Apply main passes
+    applyAll(es);
+    // Fallback by English text → Spanish text
+    const textMap = buildTextMap(en, es);
+    applyByTextFallback(textMap);
+
+    // Re-apply on late UI updates
+    const mo = new MutationObserver(muts => {
+      muts.forEach(m => m.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        applyAll(es, node);
+        applyByTextFallback(textMap, node);
+      }));
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    // Extra retries shortly after load (handles late app boot)
+    setTimeout(() => { applyAll(es); applyByTextFallback(textMap); }, 200);
+    setTimeout(() => { applyAll(es); applyByTextFallback(textMap); }, 600);
+    setTimeout(() => { applyAll(es); applyByTextFallback(textMap); }, 1200);
+    console.info('[i18n] hard override in place');
+  }
+
+  // Start after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+})();
+</script>
 
 </body>
 </html>
