@@ -1936,5 +1936,137 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+  <script>
+(function () {
+  const MAP_IDS_TO_KEYS = {
+    // Scaffolds actions
+    "btnCopyScaffold": "btn.copy_scaffold",
+    "btnCopyOpener": "btn.copy_opener",
+    "btnExportScaffoldPDF": "btn.export_scaffold_pdf",
+    "btnGuideExample": "btn.guide_example",
+    // Corrector actions (Part 1)
+    "btnCorrect": "btn.correct",
+    "btnExportPDF": "btn.export_pdf",
+    "btnClear": "btn.clear",
+    "btnPaste": "btn.paste",
+    "btnStartTimer": "btn.start_timer",
+    // Status badge
+    "timerBadge": "io.timer_dash",
+    // Part 2 (if present)
+    "p2Correct": "btn.correct",
+    "p2ExportPDF": "btn.export_pdf",
+    "p2Clear": "btn.clear",
+    "p2Paste": "btn.paste",
+    "p2StartTimer": "btn.start_timer"
+  };
+
+  // Apply one element: supports text, value, placeholder, aria-label
+  function applyOne(el, dict) {
+    const key = el.getAttribute('data-i18n');
+    if (!key || !dict[key]) return;
+    const target = el.getAttribute('data-i18n-target'); // optional override
+
+    // Special cases by element type or explicit target
+    if (target === 'value' || el.tagName === 'INPUT' && el.type === 'button') {
+      el.value = dict[key];
+      return;
+    }
+    if (target === 'placeholder') {
+      el.setAttribute('placeholder', dict[key]);
+      return;
+    }
+    if (target === 'aria-label') {
+      el.setAttribute('aria-label', dict[key]);
+      return;
+    }
+
+    // Default: replace text only (keeps icons if you tag an inner <span> instead of the whole button)
+    el.textContent = dict[key];
+  }
+
+  function applyAttrs(dict) {
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const k = el.getAttribute('data-i18n-title');
+      if (dict[k]) el.setAttribute('title', dict[k]);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const k = el.getAttribute('data-i18n-placeholder');
+      if (dict[k]) el.setAttribute('placeholder', dict[k]);
+    });
+  }
+
+  function applyAll(dict, root = document) {
+    root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
+    applyAttrs(dict);
+
+    // Safety net: force-set by IDs (works even if your app rewrote text later)
+    Object.entries(MAP_IDS_TO_KEYS).forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (!el || !dict[key]) return;
+      if (el.tagName === 'INPUT' && el.type === 'button') {
+        el.value = dict[key];
+      } else {
+        // If button has an icon + label span, prefer a child with [data-i18n] to avoid nuking the icon
+        const labelSpan = el.querySelector('[data-i18n]');
+        if (labelSpan) {
+          applyOne(labelSpan, dict);
+        } else {
+          el.textContent = dict[key];
+        }
+      }
+    });
+  }
+
+  async function loadDict() {
+    const isSpanish = location.pathname.includes('/essay-coach-instant/es/');
+    const lang = isSpanish ? 'es' : 'en';
+    const basePath = '/essay-coach-instant';
+    const url = `${basePath}/assets/i18n/${lang}.json`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+    const dict = await res.json();
+    document.documentElement.lang = lang;
+    return dict;
+  }
+
+  function observeAndReapply(dict) {
+    const mo = new MutationObserver(muts => {
+      // Reapply only to added nodes (keeps it fast)
+      muts.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if (node.nodeType !== 1) return; // ELEMENT_NODE
+          applyAll(dict, node);
+        });
+      });
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Run after DOM is ready and again after window load (in case your app boot overwrites text)
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const dict = await loadDict();
+      applyAll(dict);
+      observeAndReapply(dict);
+    } catch (e) {
+      console.error('[i18n] error:', e);
+    }
+  });
+  window.addEventListener('load', async () => {
+    try {
+      const dict = await loadDict();
+      applyAll(dict);
+      // small retry to beat late JS updates
+      setTimeout(async () => {
+        const d = await loadDict();
+        applyAll(d);
+      }, 300);
+    } catch (e) {
+      // ignore if already applied
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
