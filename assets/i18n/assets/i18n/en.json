@@ -1,0 +1,25 @@
+{
+  "nav.english_ui": "English",
+  "nav.spanish_ui": "Español",
+
+  "app.title": "EssayCoach – Instant",
+  "tabs.scaffolds": "Scaffolds",
+  "tabs.corrector": "Corrector",
+  "tabs.punct_rules": "Punctuation Rules?",
+
+  "label.level": "Level",
+  "label.task_type": "Task type",
+  "label.task_setup": "Task setup",
+
+  "btn.copy_scaffold": "Copy scaffold",
+  "btn.copy_opener": "Copy opener",
+  "btn.export_scaffold_pdf": "Export scaffold as PDF",
+  "btn.guide_example": "Guide & Example",
+  "btn.correct": "Correct",
+  "btn.export_pdf": "Export PDF",
+  "btn.clear": "Clear",
+  "btn.paste": "Paste",
+  "btn.start_timer": "Start timer",
+
+  "home.hero_line": "Scaffolds • Corrector (B2–C2) • Coach notes • Highlights & jumps • Punctuation Rules • Guide & Example • PDF"
+}
