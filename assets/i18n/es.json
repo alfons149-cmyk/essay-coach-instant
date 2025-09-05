@@ -9,6 +9,7 @@
 
   "app.title": "EssayCoach – Instant",
   "home.hero_line": "Andamiajes • Corrector (B2–C2) • Notas del entrenador • Resaltados y saltos • Reglas de puntuación • Guía y ejemplo • PDF",
+  "home.subtitle": "Entrena tu escritura para los exámenes de Cambridge",
 
   "tabs.scaffolds": "Andamiajes",
   "tabs.corrector": "Corrector",
@@ -17,6 +18,9 @@
   "label.level": "Nivel",
   "label.task_type": "Tipo de tarea",
   "label.task_setup": "Preparación de la tarea",
+  "label.wordcount": "Recuento de palabras",
+  "label.c2_synthesis": "Síntesis C2",
+  "label.sentence_analysis": "Análisis de oraciones",
 
   "level.b2": "B2 First",
   "level.c1": "C1 Advanced",
@@ -91,6 +95,7 @@
   "punct.export_rules_pdf": "Exportar reglas en PDF",
   "punct.core_rules_title": "Reglas básicas de puntuación (seguras para examen)",
   "punct.placeholder": "Estos son marcadores de posición. Cámbialos por tus propias reglas más adelante.",
+  "punct.open_guide": "Abrir guía de puntuación",
 
   "part2.corrector_title": "Corrector de la Parte 2",
   "part2.level": "Nivel",
@@ -114,5 +119,87 @@
   "modal.guide_title": "Guía y ejemplo",
   "modal.copy_example": "Copiar ejemplo",
   "modal.export_example_pdf": "Exportar ejemplo en PDF",
-  "modal.close": "Cerrar"
+  "modal.close": "Cerrar",
+
+  "tooltip.level": "Elige el nivel del examen que estás preparando.",
+  "tooltip.task_type": "Elige el tipo de composición que te piden.",
+  "tooltip.correct": "Analiza tu texto según el nivel y el tipo elegidos y propone mejoras sin cambiar tu idea.",
+  "tooltip.export_pdf": "Exporta tu texto con comentarios y resaltados.",
+  "tooltip.vocab_alts": "Sugerencias de palabras y expresiones más precisas (haz clic para aplicar).",
+  "tooltip.sentence_types": "Clasifica oraciones: simple / compuesta / compleja / compuesta-compleja con sugerencias.",
+  "tooltip.c2_synthesis": "Asistente C2: resume Textos A y B, evalúa y fija tu postura.",
+  "tooltip.enforce_formal": "Mantén registro formal: evita jerga y coloquialismos.",
+  "tooltip.timer": "Simula el tiempo de examen (45 minutos).",
+
+  "onboarding.title": "¿Primera vez?",
+  "onboarding.p1": "Pega un párrafo en inglés y pulsa «Corregir».",
+  "onboarding.p2": "Arriba elige tu nivel (B2/C1/C2) y el tipo de texto.",
+  "onboarding.p3": "Si preparas C2, abre «Síntesis C2» para planificar tu ensayo.",
+
+  "banner.c2_reminder": "En C2 debes resumir, evaluar y posicionarte. Evita copiar frases de los textos: reformula con tus palabras.",
+  "banner.register": "Usa registro formal: evita coloquialismos (p. ej., “a lot”, “kids”, “really”) y prefiere términos precisos.",
+
+  "warn.no_text": "Pega tu texto para comenzar.",
+  "warn.long_text": "Tu texto parece largo para este nivel. Ajusta hacia el rango recomendado.",
+  "warn.short_text": "Tu texto parece corto. Desarrolla para alcanzar el rango recomendado.",
+  "warn.meaning_guard": "Las sugerencias no cambiarán el significado de tus ideas.",
+
+  "error.generic": "Ha ocurrido un error. Inténtalo de nuevo.",
+  "error.worker_unavailable": "No se ha podido conectar con el servidor de corrección.",
+
+  "ai.use_ai_label": "Usar IA (ChatGPT)",
+  "ai.worker_url": "URL del Worker",
+  "ai.worker_missing": "Para usar IA, configura la URL del Worker.",
+
+  "sentence.header": "Análisis de oraciones (simple / compuesta / compleja / compuesta-compleja)",
+  "sentence.hover_hint": "Pasa el ratón por un resaltado para ver por qué se ha marcado y cómo mejorarlo.",
+
+  "export.title": "Informe de corrección",
+  "export.student": "Estudiante",
+  "export.date": "Fecha",
+  "export.level": "Nivel",
+  "export.genre": "Tipo de texto",
+  "export.issues": "Principales mejoras",
+  "export.changes": "Cambios aplicados",
+  "export.watermark": "Generado con EssayCoach",
+
+  "c2.meta.task": "Ensayo (C2 Proficiency, Parte 1)",
+  "c2.meta.length": "240–280 palabras",
+  "c2.meta.expects": "Síntesis de dos textos (en tus palabras) • Evaluación crítica (fortalezas/limitaciones, matices) • Postura clara (tesis + conclusión) • Registro formal y precisión léxica • Organización coherente con conectores variados",
+
+  "c2.band5.title": "Banda 5 (Excelente)",
+  "c2.band5.content": "Integra con soltura ideas de ambos textos sin copiar; sintetiza con precisión y mantiene totalmente la relevancia y el propósito.",
+  "c2.band5.comm": "Tono y registro académicos impecables; clara distancia crítica; objetivo cumplido con autoridad y naturalidad.",
+  "c2.band5.org": "Estructura impecable (tesis nítida, desarrollo lógico, conclusión convincente); cohesión variada y discreta.",
+  "c2.band5.lang": "Léxico amplio y preciso; colocaciones maduras; gramática compleja controlada; errores raros y no sistemáticos.",
+
+  "c2.band4.title": "Banda 4 (Muy bueno)",
+  "c2.band4.content": "Síntesis sólida y relevante; mínima dependencia de frases fuente; aporta valoración propia bien enfocada.",
+  "c2.band4.comm": "Registro formal consistente; propósito logrado; voz analítica clara.",
+  "c2.band4.org": "Párrafos bien secuenciados; conectores variados; algún desliz menor de flujo.",
+  "c2.band4.lang": "Amplio rango con buena precisión; alguna elección menos fina o error menor bajo control.",
+
+  "c2.band3.title": "Banda 3 (Adecuado)",
+  "c2.band3.content": "Resume las ideas principales con cierta dependencia del original; evaluación presente pero superficial.",
+  "c2.band3.comm": "Registro generalmente formal; el propósito se cumple aunque con momentos menos académicos.",
+  "c2.band3.org": "Estructura clara pero desigual; repetición de conectores; conclusión algo débil.",
+  "c2.band3.lang": "Rango suficiente; errores ocasionales que no impiden la comunicación; precisión léxica irregular.",
+
+  "c2.band2.title": "Banda 2 (Limitado)",
+  "c2.band2.content": "Tratamiento parcial de las fuentes; puede omitir ideas clave o incluir irrelevancias; escasa evaluación.",
+  "c2.band2.comm": "Registro inestable; objetivo parcialmente logrado; voz poco consistente.",
+  "c2.band2.org": "Coherencia frágil; orden y progresión deficientes; uso limitado de cohesión.",
+  "c2.band2.lang": "Rango limitado; errores frecuentes que distraen; uso impropio de vocabulario académico.",
+
+  "c2.band1.title": "Banda 1 (Insuficiente)",
+  "c2.band1.content": "No sintetiza adecuadamente; copia frases; falta relevancia o no cumple la tarea.",
+  "c2.band1.comm": "Registro inapropiado; no se logra el propósito.",
+  "c2.band1.org": "Desorganizado; apenas hay cohesión; conclusión ausente.",
+  "c2.band1.lang": "Control gramatical débil; errores que entorpecen; léxico pobre o impropio.",
+
+  "c2.checks.synthesis": "¿Has reformulado (no copiado) las ideas de ambos textos?",
+  "c2.checks.evaluation": "¿Has valorado argumentos (fortalezas/limitaciones) y añadido matices?",
+  "c2.checks.thesis": "¿Tu postura se entiende desde la introducción y se mantiene hasta la conclusión?",
+  "c2.checks.cohesion": "¿Varías conectores y referencias (sin abusar de los mismos dos)?",
+  "c2.checks.register": "¿Evitas coloquialismos y mantienes precisión léxica?"
 }
