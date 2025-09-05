@@ -248,11 +248,11 @@
               </select>
             </label>
 
-            <!-- Word count pills: these get updated by JS, see note below -->
+            <!-- Word count pills (dynamic via JS) -->
             <div class="kpi" id="wcPills">
-              <div class="pill" id="inWC">Input: 0 words</div>
-              <div class="pill" id="outWC">Output: 0 words</div>
-              <div class="pill small" id="essayTip">Target 220–260 (C1 essay)</div>
+              <div class="pill" id="inWC"  data-i18n="io.input_words">Input: 0 words</div>
+              <div class="pill" id="outWC" data-i18n="io.output_words">Output: 0 words</div>
+              <div class="pill small" id="essayTip" data-i18n="io.target_example_c1">Target 220–260 (C1 essay)</div>
             </div>
           </div>
 
@@ -266,206 +266,212 @@
           </div>
         </details>
       </div>
-      <!-- (rest of corrector UI…) -->
+
+      <div class="card" style="margin-bottom:12px">
+        <label style="display:block; margin-bottom:8px">
+          <div class="small" data-i18n="io.input_label">Input</div>
+          <textarea id="inputText" rows="7" placeholder="Type or paste your text here..." data-i18n="io.input_placeholder">Type or paste your text here...</textarea>
+        </label>
+
+        <div class="small" data-i18n="actions.title">Actions</div>
+        <div class="row" style="margin-top:6px">
+          <button class="primary" onclick="runCorrection()" data-i18n="btn.correct">Correct</button>
+          <button onclick="downloadPDF()" data-i18n="btn.export_pdf">Export PDF</button>
+          <button onclick="clearAll()" data-i18n="btn.clear">Clear</button>
+          <button onclick="pasteFromClipboard()" data-i18n="btn.paste">Paste</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="small" data-i18n="io.output_label">Corrected Output (plain text)</div>
+        <textarea id="outputText" rows="6" readonly placeholder="Your corrected text will appear here..." data-i18n="io.output_placeholder">Your corrected text will appear here...</textarea>
+
+        <div class="small" style="margin:12px 0 6px" data-i18n="preview.title">
+          Preview with highlights (click a chip to jump; click a highlight to toggle)
+        </div>
+
+        <div id="outputPreview" class="preview">
+          <div style="color:#6b7280;font-size:14px" data-i18n="preview.instructions">
+            Paste your text and press <b>Correct</b>.<br>
+            We’ll highlight clause joins (FANBOYS / conjunctive adverbs) and show <em>Coach notes</em> on how to reach C1.
+          </div>
+        </div>
+
+        <div id="positions" class="poslist hint"></div>
+
+        <div class="notes" id="notes" style="margin-top:10px">
+          <b data-i18n="preview.changes_title">Changes:</b><br>
+          <span class="hint" data-i18n="preview.changes_wait">Corrections will appear here after you click “Correct”.</span>
+        </div>
+      </div>
+
+      <!-- C2 quick rubric (essay) -->
+      <div class="card" id="c2RubricCard" style="display:none">
+        <h3 style="margin:0 0 6px" data-i18n="c2.quick_rubric_title">C2 (CPE) quick rubric – prototype</h3>
+        <div id="c2Rubric" class="hint" data-i18n="c2.quick_rubric_wait">Run a correction to see feedback.</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 6px" data-i18n="vocab.alternatives_title">Vocabulary alternatives (click to apply)</h3>
+        <div id="altList" class="hint" data-i18n="vocab.alternatives_wait">After correction, suggested upgrades will appear here (especially for C1/C2).</div>
+      </div>
+
+      <!-- Toggles (moved here so they follow the corrector panel) -->
+      <div class="card" style="margin-bottom:12px">
+        <label class="toggle">
+          <input type="checkbox" id="formalToggle" checked />
+          <span data-i18n="controls.enforce_formal">Enforce formal tone (avoid slang/colloquialisms)</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="aiToggle" />
+          <span data-i18n="controls.use_ai">Use AI (ChatGPT) with exam-aligned style (requires Worker URL)</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="coachNotesToggle" checked />
+          <span data-i18n="controls.show_coach_notes">Show coach notes & highlights for clause punctuation (B2↔C1)</span>
+        </label>
+
+        <div class="hint" style="margin-top:6px" data-i18n="reminder.essay_counts">
+          Essay reminders: <b>B2</b> 140–190 • <b>C1</b> 220–260 • <b>C2</b> 240–280. Paraphrase prompts, organise clearly, and maintain an academic/neutral–formal voice.
+        </div>
+      </div>
     </section>
 
-          <script>
-function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const k = el.getAttribute('data-i18n');
-    const val = (window.t?.(k)) || k;
-    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-      if (el.hasAttribute('placeholder')) el.setAttribute('placeholder', val);
-      else el.value = val;
-    } else {
-      el.textContent = val;
-    }
-  });
+    <!-- ===== PUNCTUATION GUIDE ===== -->
+    <section id="view-punct" style="display:none">
+      <div class="card" style="margin-bottom:12px">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 style="margin:0" data-i18n="punct.core_rules_title">Reglas básicas de puntuación (seguras para examen)</h2>
+          <div>
+            <button onclick="copyPunctRules()" data-i18n="punct.copy_rules">Copiar reglas</button>
+            <button onclick="exportPunctPDF()" data-i18n="punct.export_rules_pdf">Exportar reglas en PDF</button>
+            <button onclick="openPunctGuide()" data-i18n="punct.open_guide">Abrir guía de puntuación</button>
+          </div>
+        </div>
 
-  // Optional: tooltips via title attribute if you add data-i18n-title later
-  document.querySelectorAll('[data-i18n-title]').forEach(el=>{
-    const k = el.getAttribute('data-i18n-title');
-    const val = (window.t?.(k)) || '';
-    if (val) el.setAttribute('title', val);
-  });
-}
+        <div id="punctRules" class="notes" style="margin-top:10px" data-i18n="punct.placeholder">
+          Estos son marcadores de posición. Cámbialos por tus propias reglas más adelante.
+        </div>
 
-// Call once after loading en/es JSON and defining t()
-applyI18n();
-</script>
+        <div id="punctIndex" class="hint" style="margin-top:10px"></div>
+      </div>
 
+      <div id="punctGuideModal" class="modal" style="display:none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 data-i18n="punct.core_rules_title">Reglas básicas de puntuación (seguras para examen)</h3>
+            <button onclick="closePunctGuide()" class="icon-btn" aria-label="Close">×</button>
+          </div>
+          <div id="punctGuideBody" class="modal-body"></div>
+          <div class="modal-footer">
+            <button onclick="copyPunctRules()" data-i18n="punct.copy_rules">Copiar reglas</button>
+            <button onclick="exportPunctPDF()" data-i18n="punct.export_rules_pdf">Exportar reglas en PDF</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <!-- ===== PART 2 (i18n-wired) ===== -->
+    <section id="view-part2" style="display:none">
+      <div class="card" style="margin-bottom:12px">
+        <details id="part2Setup" open>
+          <summary style="cursor:pointer;font-weight:600" data-i18n="part2.corrector_title">
+            Part 2 (Letter/Email • Proposal • Report • Review)
+          </summary>
 
-          <label class="toggle">
-            <input type="checkbox" id="formalToggle" checked />
-            <span>Enforce formal tone (avoid slang/colloquialisms)</span>
-          </label>
+          <div class="cols" style="margin-top:10px">
+            <label>
+              <div class="small" data-i18n="part2.level">Level</div>
+              <select id="p2Level">
+                <option value="B2" data-i18n="level.b2">B2 First</option>
+                <option value="C1" data-i18n="level.c1">C1 Advanced</option>
+                <option value="C2" data-i18n="level.c2">C2 Proficiency</option>
+              </select>
+            </label>
 
-          <label class="toggle">
-            <input type="checkbox" id="aiToggle" />
-            <span>Use AI (ChatGPT) with exam-aligned style (requires Worker URL)</span>
-          </label>
+            <label>
+              <div class="small" data-i18n="part2.task_type">Task type</div>
+              <select id="p2Type">
+                <option value="letter"   data-i18n="task.letter_email">Letter / Email</option>
+                <option value="proposal" data-i18n="task.proposal">Proposal</option>
+                <option value="report"   data-i18n="task.report">Report</option>
+                <option value="review"   data-i18n="task.review">Review</option>
+              </select>
+            </label>
 
-          <label class="toggle">
-            <input type="checkbox" id="coachNotesToggle" checked />
-            <span>Show coach notes & highlights for clause punctuation (B2↔C1)</span>
-          </label>
+            <div class="kpi" id="p2WcPills">
+              <div class="pill small" data-i18n="part2.tasks_line">Carta/Email, Propuesta, Informe, Reseña</div>
+              <div class="pill small" data-i18n="part2.mirror_timer">El temporizador refleja el principal</div>
+            </div>
+          </div>
 
-          <div class="hint" style="margin-top:6px">
-            Essay reminders: <b>B2</b> 140–190 • <b>C1</b> 220–260 • <b>C2</b> 240–280. Paraphrase prompts, organise clearly, and maintain an academic/neutral–formal voice.
+          <div class="row" style="margin-top:10px">
+            <label class="toggle">
+              <input type="checkbox" id="p2Formal" checked>
+              <span data-i18n="part2.enforce_formal">Forzar registro formal (desactívalo para una reseña más neutral)</span>
+            </label>
+
+            <label class="toggle">
+              <input type="checkbox" id="p2UseAI">
+              <span data-i18n="part2.use_ai">Usar IA (ChatGPT) con género alineado (requiere Worker URL)</span>
+            </label>
+
+            <label class="toggle">
+              <input type="checkbox" id="p2CoachNotes" checked>
+              <span data-i18n="part2.show_coach_notes">Mostrar notas del entrenador y resaltados para la puntuación entre cláusulas</span>
+            </label>
+          </div>
+
+          <div class="hint" style="margin-top:8px" data-i18n="part2.wordcount_note">
+            Word count targets…
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="primary" onclick="runPart2Correction()" data-i18n="btn.correct">Correct</button>
+            <button onclick="downloadPart2PDF()" data-i18n="btn.export_pdf">Export PDF</button>
+            <button onclick="clearPart2()" data-i18n="btn.clear">Clear</button>
+            <button onclick="pastePart2()" data-i18n="btn.paste">Paste</button>
           </div>
         </details>
       </div>
 
       <div class="card" style="margin-bottom:12px">
-        <label style="display:block; margin-bottom:8px">
-          <div class="small">Input</div>
-          <textarea id="inputText" rows="7" placeholder="Type or paste your text here..."></textarea>
-        </label>
-
-        <div class="small">Actions</div>
-        <div class="row" style="margin-top:6px">
-          <button class="primary" onclick="runCorrection()">Correct</button>
-          <button onclick="downloadPDF()">Export PDF</button>
-          <button onclick="clearAll()">Clear</button>
-          <button onclick="pasteFromClipboard()">Paste</button>
-        </div>
+        <div class="small" data-i18n="io.input_label">Input</div>
+        <textarea id="p2Input" rows="6" placeholder="Paste or type your Part 2 draft…" data-i18n="io.input_placeholder">Paste or type your Part 2 draft…</textarea>
       </div>
 
       <div class="card" style="margin-bottom:12px">
-        <div class="small">Corrected Output (plain text)</div>
-        <textarea id="outputText" rows="6" readonly placeholder="Your corrected text will appear here..."></textarea>
-        <div class="small" style="margin:12px 0 6px">Preview with highlights (click a chip to jump; click a highlight to toggle)</div>
-        <div id="outputPreview" class="preview">
-          <div style="color:#6b7280;font-size:14px">
-            Paste your text and press <b>Correct</b>.<br>
-            We’ll highlight clause joins (FANBOYS / conjunctive adverbs) and show <em>Coach notes</em> on how to reach C1.
+        <div class="small" data-i18n="io.output_label">Corrected Output (plain text)</div>
+        <textarea id="p2Output" rows="6" readonly placeholder="Your corrected text will appear here..." data-i18n="io.output_placeholder">Your corrected text will appear here...</textarea>
+
+        <div class="small" style="margin:12px 0 6px" data-i18n="part2.preview_title">Vista previa con resaltados</div>
+        <div id="part2Preview" class="preview">
+          <div style="color:#6b7280;font-size:14px" data-i18n="part2.preview_hint">
+            Pega tu texto y pulsa Corregir para ver las uniones de cláusulas y las notas del entrenador.
           </div>
         </div>
-        <div id="positions" class="poslist hint"></div>
-        <div class="notes" id="notes" style="margin-top:10px"><b>Changes:</b><br><span class='hint'>Corrections will appear here after you click “Correct”.</span></div>
-      </div>
 
-      <!-- C2 quick rubric (essay) -->
-      <div class="card" id="c2RubricCard" style="display:none">
-        <h3 style="margin:0 0 6px">C2 (CPE) quick rubric – prototype</h3>
-        <div id="c2Rubric" class="hint">Run a correction to see feedback.</div>
-      </div>
-
-      <div class="card">
-        <h3 style="margin:0 0 6px">Vocabulary alternatives (click to apply)</h3>
-        <div id="altList" class="hint">After correction, suggested upgrades will appear here (especially for C1/C2).</div>
-      </div>
-    </section>
-
-    <!-- ===== PUNCTUATION GUIDE ===== -->
-<section id="view-punct" style="display:none">
-  <div class="card" style="margin-bottom:12px">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <h2 style="margin:0" data-i18n="punct.core_rules_title">Reglas básicas de puntuación (seguras para examen)</h2>
-      <div>
-        <button onclick="copyPunctRules()" data-i18n="punct.copy_rules">Copiar reglas</button>
-        <button onclick="exportPunctPDF()" data-i18n="punct.export_rules_pdf">Exportar reglas en PDF</button>
-        <button onclick="openPunctGuide()" data-i18n="punct.open_guide">Abrir guía de puntuación</button>
-      </div>
-    </div>
-
-    <div id="punctRules" class="notes" style="margin-top:10px" data-i18n="punct.placeholder">
-      Estos son marcadores de posición. Cámbialos por tus propias reglas más adelante.
-    </div>
-
-    <!-- Optional: anchor list for quick jump -->
-    <div id="punctIndex" class="hint" style="margin-top:10px"></div>
-  </div>
-
-  <!-- If you have a modal/overlay for the full guide, include a container -->
-  <div id="punctGuideModal" class="modal" style="display:none">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 data-i18n="punct.core_rules_title">Reglas básicas de puntuación (seguras para examen)</h3>
-        <button onclick="closePunctGuide()" class="icon-btn" aria-label="Close">×</button>
-      </div>
-      <div id="punctGuideBody" class="modal-body"></div>
-      <div class="modal-footer">
-        <button onclick="copyPunctRules()" data-i18n="punct.copy_rules">Copiar reglas</button>
-        <button onclick="exportPunctPDF()" data-i18n="punct.export_rules_pdf">Exportar reglas en PDF</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-    <!-- PART 2 TAB -->
-    <section id="view-part2" style="display:none">
-      <div class="card" style="margin-bottom:12px">
-        <h3 style="margin:0 0 6px">Part 2 task corrector</h3>
-        <div class="cols">
-          <label>
-            <div class="small">Level</div>
-            <select id="levelSelectP2">
-              <option value="B2">B2 First</option>
-              <option value="C1">C1 Advanced</option>
-              <option value="C2">C2 Proficiency</option>
-            </select>
-          </label>
-          <label>
-            <div class="small">Task type</div>
-            <select id="p2Type">
-              <option value="letter">Letter / Email</option>
-              <option value="proposal">Proposal</option>
-              <option value="report">Report</option>
-              <option value="review">Review</option>
-            </select>
-          </label>
-          <div class="kpi" id="p2WCPills">
-            <div class="pill" id="p2InWC">Input: 0 words</div>
-            <div class="pill" id="p2OutWC">Output: 0 words</div>
-            <div class="pill small" id="p2TargetWC">Target —</div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="primary" onclick="runCorrectionPart2()">Correct</button>
-          <button onclick="downloadPDFPart2()">Export PDF</button>
-          <button onclick="clearAllPart2()">Clear</button>
-          <button onclick="pasteIntoP2()">Paste</button>
-          <button onclick="startTimer()">Start 45-min timer</button>
-          <span id="p2Timer" class="pill small">Timer mirrors main</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="p2FormalToggle" checked />
-          <span>Enforce formal tone (toggle off for a more neutral review)</span>
-        </label>
-        <label class="toggle">
-          <input type="checkbox" id="p2AiToggle" />
-          <span>Use AI (ChatGPT) with genre-aligned style (requires Worker URL)</span>
-        </label>
-        <label class="toggle">
-          <input type="checkbox" id="p2CoachToggle" checked />
-          <span>Show coach notes & highlights for clause punctuation</span>
-        </label>
-        <div class="hint" style="margin-top:6px">Word count targets: <b>B2</b> 140–190 • <b>C1</b> 220–260 • <b>C2</b> 240–280. Registers vary by genre: Letter/Email, Proposal, Report → formal; Review → neutral/semi-formal.</div>
-      </div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="small">Input</div>
-        <textarea id="p2Input" rows="6" placeholder="Paste or type your Part 2 draft…"></textarea>
-      </div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="small">Corrected Output (plain text)</div>
-        <textarea id="p2Output" rows="6" readonly placeholder="Your corrected text will appear here..."></textarea>
-        <div class="small" style="margin:12px 0 6px">Preview with highlights</div>
-        <div id="p2Preview" class="preview">
-          <div style="color:#6b7280;font-size:14px">Paste your text and press <b>Correct</b> to see clause-join highlights and coach notes.</div>
-        </div>
         <div id="p2Positions" class="poslist hint"></div>
-        <div class="notes" id="p2Notes" style="margin-top:10px"><b>Changes:</b><br><span class='hint'>Corrections will appear here after you click “Correct”.</span></div>
+        <div class="notes" id="part2Changes" style="margin-top:10px">
+          <b data-i18n="preview.changes_title">Changes:</b><br>
+          <span class="hint" data-i18n="part2.changes_wait">Las correcciones aparecerán aquí después de pulsar “Corregir”.</span>
+        </div>
       </div>
-      <div class="card" id="p2RubricCard" style="display:none">
-        <h3 style="margin:0 0 6px">Part 2 quick rubric – genre checks</h3>
-        <div id="p2Rubric" class="hint">Run a correction to see feedback specific to letter/proposal/report/review.</div>
+
+      <div class="card" id="p2RubricCard" style="display:block">
+        <h3 style="margin:0 0 6px" data-i18n="part2.quick_rubric_title">Rúbrica rápida de la Parte 2 – comprobaciones por género</h3>
+        <div id="part2Rubric" class="hint" data-i18n="part2.quick_rubric_wait">
+          Ejecuta una corrección para ver retroalimentación específica para carta/propuesta/informe/reseña.
+        </div>
       </div>
+
       <div class="card">
-        <h3 style="margin:0 0 6px">Vocabulary alternatives (click to apply)</h3>
-        <div id="p2AltList" class="hint">After correction, suggested upgrades will appear here.</div>
+        <h3 style="margin:0 0 6px" data-i18n="part2.vocab_alts_title">Alternativas de vocabulario (haz clic para aplicar)</h3>
+        <div id="part2Vocab" class="hint" data-i18n="part2.vocab_alts_wait">
+          Tras la corrección, aparecerán mejoras sugeridas.
+        </div>
       </div>
     </section>
   </div>
@@ -474,23 +480,23 @@ applyI18n();
   <div id="guideOverlay" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
       <div class="modal-header">
-        <div class="modal-title" id="guideTitle">Guide &amp; Example</div>
+        <div class="modal-title" id="guideTitle" data-i18n="modal.guide_title">Guide &amp; Example</div>
         <div class="modal-controls">
-          <label title="Show inline coach notes that contrast B2 vs C1 phrasing">
+          <label title="Show inline coach notes that contrast B2 vs C1 phrasing" data-i18n-title="controls.show_coach_notes">
             <input type="checkbox" id="coachToggle" onchange="renderGuideExample()" />
-            Coach notes (B2/C1 phrasing)
+            <span data-i18n="controls.show_coach_notes">Coach notes (B2/C1 phrasing)</span>
           </label>
         </div>
-        <button class="xbtn" aria-label="Close" onclick="closeGuideModal()">×</button>
+        <button class="xbtn" aria-label="Close" onclick="closeGuideModal()" data-i18n="modal.close">×</button>
       </div>
       <div class="modal-body">
         <div id="guideMeta" class="hint" style="margin-bottom:8px;"></div>
         <div id="guideExample" class="example-box" style="min-height:160px;"></div>
       </div>
       <div class="modal-actions">
-        <button class="primary" onclick="copyGuide()">Copy example</button>
-        <button onclick="exportGuidePDF()">Export example as PDF</button>
-        <button onclick="closeGuideModal()">Close</button>
+        <button class="primary" onclick="copyGuide()" data-i18n="modal.copy_example">Copy example</button>
+        <button onclick="exportGuidePDF()" data-i18n="modal.export_example_pdf">Export example as PDF</button>
+        <button onclick="closeGuideModal()" data-i18n="modal.close">Close</button>
       </div>
     </div>
   </div>
@@ -499,29 +505,30 @@ applyI18n();
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
   <script>
-/* ========= Tabs ========= */
-function showTab(which){
-  document.getElementById('tab-scaffolds').classList.toggle('active', which==='scaffolds');
-  document.getElementById('tab-corrector').classList.toggle('active', which==='corrector');
-  document.getElementById('tab-punct').classList.toggle('active', which==='punct');
-  document.getElementById('tab-part2').classList.remove('active');
-  document.getElementById('view-scaffolds').style.display  = (which==='scaffolds') ? '' : 'none';
-  document.getElementById('view-corrector').style.display  = (which==='corrector') ? '' : 'none';
-  document.getElementById('view-punct').style.display      = (which==='punct') ? '' : 'none';
-  document.getElementById('view-part2').style.display      = 'none';
-  try { history.replaceState(null, "", "#" + which); } catch {}
-}
-function showPart2(){
-  document.getElementById('view-scaffolds').style.display='none';
-  document.getElementById('view-corrector').style.display='none';
-  document.getElementById('view-punct').style.display='none';
-  document.getElementById('view-part2').style.display='';
-  document.getElementById('tab-scaffolds').classList.remove('active');
-  document.getElementById('tab-corrector').classList.remove('active');
-  document.getElementById('tab-punct').classList.remove('active');
-  document.getElementById('tab-part2').classList.add('active');
-  try { history.replaceState(null, "", "#part2"); } catch {}
-}
+  /* ========= Tabs ========= */
+  function showTab(which){
+    document.getElementById('tab-scaffolds').classList.toggle('active', which==='scaffolds');
+    document.getElementById('tab-corrector').classList.toggle('active', which==='corrector');
+    document.getElementById('tab-punct').classList.toggle('active', which==='punct');
+    document.getElementById('tab-part2').classList.remove('active');
+    document.getElementById('view-scaffolds').style.display  = (which==='scaffolds') ? '' : 'none';
+    document.getElementById('view-corrector').style.display  = (which==='corrector') ? '' : 'none';
+    document.getElementById('view-punct').style.display      = (which==='punct') ? '' : 'none';
+    document.getElementById('view-part2').style.display      = 'none';
+    try { history.replaceState(null, "", "#" + which); } catch {}
+  }
+  function showPart2(){
+    document.getElementById('view-scaffolds').style.display='none';
+    document.getElementById('view-corrector').style.display='none';
+    document.getElementById('view-punct').style.display='none';
+    document.getElementById('view-part2').style.display='';
+    document.getElementById('tab-scaffolds').classList.remove('active');
+    document.getElementById('tab-corrector').classList.remove('active');
+    document.getElementById('tab-punct').classList.remove('active');
+    document.getElementById('tab-part2').classList.add('active');
+    try { history.replaceState(null, "", "#part2"); } catch {}
+  }
+  </script>
 
 /* ========= Scaffolds ========= */
 const SCAFFOLDS = {
