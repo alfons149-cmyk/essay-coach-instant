@@ -358,20 +358,42 @@ applyI18n();
       </div>
     </section>
 
-    <!-- PUNCTUATION RULES TAB -->
-    <section id="view-punct" style="display:none">
-      <div class="card" style="margin-bottom:12px">
-        <div class="row">
-          <button onclick="copyPunctRules()">Copy rules</button>
-          <button class="primary" onclick="exportPunctPDF()">Export rules as PDF</button>
-        </div>
+    <!-- ===== PUNCTUATION GUIDE ===== -->
+<section id="view-punct" style="display:none">
+  <div class="card" style="margin-bottom:12px">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 style="margin:0" data-i18n="punct.core_rules_title">Reglas básicas de puntuación (seguras para examen)</h2>
+      <div>
+        <button onclick="copyPunctRules()" data-i18n="punct.copy_rules">Copiar reglas</button>
+        <button onclick="exportPunctPDF()" data-i18n="punct.export_rules_pdf">Exportar reglas en PDF</button>
+        <button onclick="openPunctGuide()" data-i18n="punct.open_guide">Abrir guía de puntuación</button>
       </div>
-      <div class="card">
-        <h3 style="margin:0 0 6px">Core Punctuation Rules (Exam-Safe)</h3>
-        <ol id="punctList"></ol>
-        <div class="hint">These are placeholders. Swap them for your own rules later.</div>
+    </div>
+
+    <div id="punctRules" class="notes" style="margin-top:10px" data-i18n="punct.placeholder">
+      Estos son marcadores de posición. Cámbialos por tus propias reglas más adelante.
+    </div>
+
+    <!-- Optional: anchor list for quick jump -->
+    <div id="punctIndex" class="hint" style="margin-top:10px"></div>
+  </div>
+
+  <!-- If you have a modal/overlay for the full guide, include a container -->
+  <div id="punctGuideModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 data-i18n="punct.core_rules_title">Reglas básicas de puntuación (seguras para examen)</h3>
+        <button onclick="closePunctGuide()" class="icon-btn" aria-label="Close">×</button>
       </div>
-    </section>
+      <div id="punctGuideBody" class="modal-body"></div>
+      <div class="modal-footer">
+        <button onclick="copyPunctRules()" data-i18n="punct.copy_rules">Copiar reglas</button>
+        <button onclick="exportPunctPDF()" data-i18n="punct.export_rules_pdf">Exportar reglas en PDF</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 
     <!-- PART 2 TAB -->
     <section id="view-part2" style="display:none">
