@@ -223,3 +223,16 @@ function updateWordcountPills(inN, outN, level, genre) {
     document.getElementById('essayTip').textContent = tip;
   }
 }
+{
+  "changes": {
+    "expanded_contractions": "Se expandieron las contracciones para un registro formal.",
+    "normalised_spacing": "Se normalizó el espaciado.",
+    "capitalised_tv": "Se capitalizó «TV».",
+    "fixed_a_an": "Se corrigió «a/an».",
+    "added_intro_comma": "Se añadió coma tras la frase introductoria.",
+    "inserted_clause_punct": "Se insertó puntuación entre cláusulas.",
+    "added_final_stop": "Se añadió punto final.",
+    "removed_intensifier_kept_base": "Se eliminó el intensificador «{i}» y se mantuvo «{b}» para mayor formalidad.",
+    "removed_intensifier_upgraded": "Se eliminó el intensificador «{i}» y se mejoró el vocabulario."
+  }
+}
