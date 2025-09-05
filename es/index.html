@@ -1868,70 +1868,137 @@ function exportScaffoldPDF(){
   doc.save("scaffold.pdf");
 }
 
-/* ========= Part 2 code ========= */
-function p2TargetForLevel(lvl){ if (lvl==='B2') return {min:140, max:190, label:'Target 140–190 (B2)'}; if (lvl==='C2') return {min:240, max:280, label:'Target 240–280 (C2)'}; return {min:220, max:260, label:'Target 220–260 (C1)'}; }
-function p2UpdateWordPills(){
-  const lvl=document.getElementById('levelSelectP2').value;
-  const {min,max,label}=p2TargetForLevel(lvl);
-  const inWC=(document.getElementById('p2Input').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
-  const outWC=(document.getElementById('p2Output').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
-  document.getElementById('p2InWC').textContent=`Input: ${inWC} words`;
-  const outP=document.getElementById('p2OutWC'); outP.textContent=`Output: ${outWC} words`; outP.className='pill';
-  if (outWC>0 && (outWC<min || outWC>max)) outP.classList.add('warn'); if (outWC>=min && outWC<=max) outP.classList.add('ok');
-  document.getElementById('p2TargetWC').textContent=label;
+<script>
+// ---------- Part 2: config & helpers ----------
+function p2TargetForLevel(lvl){
+  if (lvl === 'B2') return { min:140, max:190, label: t('part2.target') || 'Target — 140–190 (B2)' };
+  if (lvl === 'C2') return { min:240, max:280, label: t('part2.target') || 'Target — 240–280 (C2)' };
+  return { min:220, max:260, label: t('part2.target') || 'Target — 220–260 (C1)' };
 }
-['p2Input','p2Output'].forEach(id=>{ document.addEventListener('input',(e)=>{ if(e.target && e.target.id===id) p2UpdateWordPills(); }); });
 
-function p2FindConjAdvMatches(text){ return findConjAdvMatches(text); }
-function p2FindFanboysMatches(text){ return findFanboysMatches(text); }
-function p2CoachClauseNotes(corrected, level){
-  const show = document.getElementById('p2CoachToggle')?.checked !== false;
-  if (!show || !corrected) return { notes: [], marks: [] };
-  const cadv=p2FindConjAdvMatches(corrected); const fanb=p2FindFanboysMatches(corrected);
-  const notes=[];
-  cadv.forEach(({group,label,start,end})=>{
-    if (group==='contrast') notes.push(`Used “${label.trim()}” to join two clauses (C1 style) at chars ${start}–${end}.`);
-    else if (group==='result') notes.push(`Used “${label.trim()}” (result) at chars ${start}–${end}.`);
-    else if (group==='addition') notes.push(`Used “${label.trim()}” (addition) at chars ${start}–${end}.`);
+// IDs expected by this script (match the HTML I sent):
+// p2Level, p2Type, p2Formal, p2UseAI, p2CoachNotes
+// p2Input, p2Output, part2Preview, part2Changes, part2Rubric, part2Vocab
+// (Optional) p2InWC, p2OutWC, p2TargetWC, p2Positions  -> add to DOM if you want visible pills
+
+function updatePart2WordcountPills(){
+  const lvl  = document.getElementById('p2Level').value;
+  const type = document.getElementById('p2Type').value;
+
+  const inWC  = (document.getElementById('p2Input').value.trim().match(/\b[\w’'-]+\b/g)  || []).length;
+  const outWC = (document.getElementById('p2Output').value.trim().match(/\b[\w’'-]+\b/g) || []).length;
+
+  const inLabel  = (t('io.input_words')  || 'Input: {n} words').replace('{n}', inWC);
+  const outLabel = (t('io.output_words') || 'Output: {n} words').replace('{n}', outWC);
+
+  const tEl = document.getElementById('p2TargetWC');
+  const pills = p2TargetForLevel(lvl); // {min,max,label}
+
+  // Optional visible pills (render if present)
+  const inEl  = document.getElementById('p2InWC');
+  const outEl = document.getElementById('p2OutWC');
+
+  if (inEl)  inEl.textContent  = inLabel;
+  if (outEl) {
+    outEl.textContent = outLabel;
+    outEl.className = 'pill';
+    if (outWC > 0 && (outWC < pills.min || outWC > pills.max)) outEl.classList.add('warn');
+    if (outWC >= pills.min && outWC <= pills.max) outEl.classList.add('ok');
+  }
+  if (tEl) tEl.textContent = pills.label;
+}
+
+// Wire input listeners
+['p2Input','p2Output'].forEach(id=>{
+  document.addEventListener('input', (e)=>{
+    if (e.target && e.target.id === id) updatePart2WordcountPills();
   });
-  fanb.forEach(({conj,label,start,end})=>{ notes.push(`Coordinating join “${label.trim()}” at ${start}–${end}.`); });
+});
+
+// Clause-highlighting hooks (assumes your helpers exist)
+function p2FindConjAdvMatches(text){ return (typeof findConjAdvMatches==='function') ? findConjAdvMatches(text) : []; }
+function p2FindFanboysMatches(text){ return (typeof findFanboysMatches==='function') ? findFanboysMatches(text) : []; }
+
+function p2CoachClauseNotes(corrected, level){
+  const show = document.getElementById('p2CoachNotes')?.checked !== false;
+  if (!show || !corrected) return { notes: [], marks: [] };
+
+  const cadv = p2FindConjAdvMatches(corrected);
+  const fanb = p2FindFanboysMatches(corrected);
+  const notes = [];
+
+  cadv.forEach(({group,label,start,end})=>{
+    if (group==='contrast') notes.push(`Used “${label?.trim?.()||''}” to join two clauses (C1 style) at chars ${start}–${end}.`);
+    else if (group==='result') notes.push(`Used “${label?.trim?.()||''}” (result) at chars ${start}–${end}.`);
+    else if (group==='addition') notes.push(`Used “${label?.trim?.()||''}” (addition) at chars ${start}–${end}.`);
+  });
+  fanb.forEach(({label,start,end})=>{ notes.push(`Coordinating join “${label?.trim?.()||''}” at ${start}–${end}.`); });
+
   let marks=[...cadv, ...fanb].sort((a,b)=>a.start-b.start);
-  const filtered=[]; let lastEnd=-1, counter=1; marks.forEach(m=>{ if(m.start>=lastEnd){ m.id = `p2hl-${counter++}`; filtered.push(m); lastEnd=m.end; } });
+  const filtered=[]; let lastEnd=-1, counter=1;
+  marks.forEach(m=>{ if(m.start>=lastEnd){ m.id=`p2hl-${counter++}`; filtered.push(m); lastEnd=m.end; } });
   return { notes, marks: filtered };
 }
+
 function p2BuildHighlightedHTML(text, marks){
-  if(!marks.length) return escapeHtml(text).replace(/\n/g,'<br>');
-  let html='', idx=0; for(const m of marks){ html += escapeHtml(text.slice(idx, m.start)).replace(/\n/g,'<br>'); const off = false ? ' off' : ''; html += `<mark class="hl${off}" id="${m.id}" title="${escapeHtml(m.label.trim())}">${escapeHtml(text.slice(m.start, m.end))}</mark>`; idx = m.end; }
-  html += escapeHtml(text.slice(idx)).replace(/\n/g,'<br>'); return html;
-}
-function p2RenderPreview(corrected, level){
-  const { notes: coach, marks } = p2CoachClauseNotes(corrected, level || document.getElementById('levelSelectP2').value);
-  document.getElementById('p2Preview').innerHTML = p2BuildHighlightedHTML(corrected, marks);
-  const posBox = document.getElementById('p2Positions');
-  if (!marks.length) posBox.innerHTML = "";
-  else {
-    const chips = marks.map(m=> `<a href="#" onclick="document.getElementById('${m.id}')?.scrollIntoView({behavior:'smooth',block:'center'});return false;">${m.start}–${m.end}</a>`).join(' ');
-    posBox.innerHTML = `<b>Marked spans:</b> ${chips}`;
+  if(!marks.length) return (typeof escapeHtml==='function' ? escapeHtml(text) : text).replace(/\n/g,'<br>');
+  let html='', idx=0;
+  for(const m of marks){
+    const chunk = text.slice(idx, m.start);
+    html += (typeof escapeHtml==='function' ? escapeHtml(chunk) : chunk).replace(/\n/g,'<br>');
+    const inner = text.slice(m.start, m.end);
+    const safe  = (typeof escapeHtml==='function' ? escapeHtml(inner) : inner);
+    const title = (typeof escapeHtml==='function' ? escapeHtml(m.label?.trim?.()||'') : (m.label||''));
+    html += `<mark class="hl" id="${m.id}" title="${title}">${safe}</mark>`;
+    idx = m.end;
   }
-  const notesBox = document.getElementById('p2Notes');
-  if (notesBox.innerHTML.includes("<b>Changes")){
-    const existingCoach = /<br><br><b>Coach notes:[\s\S]*$/i;
-    notesBox.innerHTML = notesBox.innerHTML.replace(existingCoach, "");
-    if (coach.length) notesBox.innerHTML += "<br><br><b>Coach notes:</b><br>" + coach.map(n=>"• "+n).join("<br>");
+  const tail = text.slice(idx);
+  html += (typeof escapeHtml==='function' ? escapeHtml(tail) : tail).replace(/\n/g,'<br>');
+  return html;
+}
+
+function p2RenderPreview(corrected, level){
+  const lvl = level || document.getElementById('p2Level').value;
+  const { notes: coach, marks } = p2CoachClauseNotes(corrected, lvl);
+
+  const prev = document.getElementById('part2Preview');
+  if (prev) prev.innerHTML = p2BuildHighlightedHTML(corrected, marks);
+
+  const posBox = document.getElementById('p2Positions');
+  if (posBox){
+    if (!marks.length) posBox.innerHTML = "";
+    else {
+      const chips = marks.map(m=> `<a href="#" onclick="document.getElementById('${m.id}')?.scrollIntoView({behavior:'smooth',block:'center'});return false;">${m.start}–${m.end}</a>`).join(' ');
+      posBox.innerHTML = `<b>Marked spans:</b> ${chips}`;
+    }
+  }
+
+  const notesBox = document.getElementById('part2Changes');
+  if (notesBox && coach.length){
+    // append “Coach notes” under existing “Changes”
+    notesBox.innerHTML += "<br><br><b>Coach notes:</b><br>" + coach.map(n=>"• "+(typeof escapeHtml==='function'?escapeHtml(n):n)).join("<br>");
   }
 }
 
 function renderAlternativesP2(currentText, alts, level) {
-  const box = document.getElementById("p2AltList");
-  if (!alts.length) { box.innerHTML = "<span class='hint'>No suggestions for this text.</span>"; return; }
+  const box = document.getElementById("part2Vocab");
+  if (!box) return;
+
+  if (!alts || !alts.length) {
+    box.innerHTML = `<span class='hint'>${t('part2.vocab_alts_wait') || 'After correction, suggested upgrades will appear here.'}</span>`;
+    return;
+  }
   box.innerHTML = "";
   alts.forEach(({ simple, options }) => {
     const sec = document.createElement("div"); sec.className = "alt-section";
-    const label = `“${simple}” → consider:`;
-    const h = document.createElement("h4"); h.textContent = label; sec.appendChild(h);
+    const h = document.createElement("h4");
+    h.textContent = `“${simple}” → ${t('vocab.alternatives_title') || 'Consider alternatives:'}`;
+    sec.appendChild(h);
+
     options.slice(0, level === "C1" ? 6 : level === "C2" ? 8 : 4).forEach(opt => {
       const chip = document.createElement("button"); chip.className = "chip"; chip.textContent = opt;
       chip.onclick = () => {
+        if (typeof wordRe !== 'function') return;
         const re = wordRe(simple);
         const replaced = (document.getElementById("p2Output").value || currentText).replace(re, m => {
           const cap = m[0] === m[0].toUpperCase();
@@ -1939,7 +2006,7 @@ function renderAlternativesP2(currentText, alts, level) {
         });
         document.getElementById("p2Output").value = replaced;
         p2RenderPreview(replaced, level);
-        p2UpdateWordPills();
+        updatePart2WordcountPills();
       };
       sec.appendChild(chip);
     });
@@ -1949,9 +2016,15 @@ function renderAlternativesP2(currentText, alts, level) {
 
 function p2GenreRubric(text, lvl, type){
   const checks=[];
-  const wc=(text.match(/\b[\w’'-]+\b/g)||[]).length;
-  const target= p2TargetForLevel(lvl); const okWC = wc>=target.min && wc<=target.max;
-  checks.push(okWC?`✅ Word count ${wc} in ${target.min}–${target.max}.`:`⚠️ Word count ${wc}; target ${target.min}–${target.max}.`);
+  const wc = (String(text||'').match(/\b[\w’'-]+\b/g)||[]).length;
+  const target = p2TargetForLevel(lvl);
+  const okWC = wc>=target.min && wc<=target.max;
+
+  checks.push(okWC
+    ? `✅ ${t('io.output_words')?.replace('{n}', wc) || ('Word count '+wc)} ${t('part2.target') ? '' : `in ${target.min}–${target.max}.`}`
+    : `⚠️ ${t('io.output_words')?.replace('{n}', wc) || ('Word count '+wc)}; ${t('part2.target') || 'target'} ${target.min}–${target.max}.`
+  );
+
   if(type==='letter'){
     checks.push(/\bDear\b/.test(text)?'✅ Salutation present.':'⚠️ Add an appropriate salutation (e.g., “Dear Ms X,”).');
     checks.push(/\bYours (faithfully|sincerely)\b/i.test(text)?'✅ Formal sign-off present.':'⚠️ Add a formal sign-off (“Yours sincerely/faithfully”).');
@@ -1970,96 +2043,150 @@ function p2GenreRubric(text, lvl, type){
   }
   return checks.join('<br>');
 }
+
 function p2RenderRubric(text, lvl, type){
-  const card=document.getElementById('p2RubricCard'); const box=document.getElementById('p2Rubric'); if(!card||!box) return;
-  card.style.display='';
+  const box = document.getElementById('part2Rubric');
+  if (!box) return;
   box.innerHTML = p2GenreRubric(String(text||''), lvl, type);
 }
 
-async function runCorrectionPart2(){
-  const input = document.getElementById("p2Input").value.trim();
-  const lvl   = document.getElementById("levelSelectP2").value;
-  const type  = document.getElementById("p2Type").value;
-  const formal= document.getElementById("p2FormalToggle").checked;
-  const useAI = document.getElementById("p2AiToggle").checked && typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
-  const outBox=document.getElementById("p2Output"); const notesBox=document.getElementById("p2Notes"); const altBox=document.getElementById("p2AltList");
-  if (!input){ outBox.value=""; notesBox.innerHTML="<b>Changes:</b><br><span class='hint'>No input provided.</span>"; altBox.innerHTML=""; document.getElementById('p2Preview').innerHTML=""; document.getElementById('p2Positions').innerHTML=""; p2UpdateWordPills(); return; }
-  notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>Processing…</span>"; altBox.innerHTML = "<span class='hint'>Processing…</span>"; outBox.value = ""; document.getElementById('p2Preview').innerHTML=""; document.getElementById('p2Positions').innerHTML="";
+// ---------- Main actions ----------
 
-  if (useAI){
-    try{
-      const res = await fetch(window.AI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input, level: lvl, formal, style: p2StyleFor(lvl, type), genre: type }) });
-      const raw = await res.text();
-      if (!res.ok) { notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI HTTP "+res.status); }
-      let data; try { data = JSON.parse(raw); } catch { notesBox.innerHTML = `<b>AI returned non-JSON:</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI non-JSON"); }
-      if (data && typeof data.corrected === 'string'){
-        const aiOut=data.corrected;
-        if (_aiMadeNoChanges(input, aiOut)){
-          const { out, notes, alts } = correctLocal(input, lvl);
-          outBox.value = out;
-          notesBox.innerHTML = "<b>Changes (local fallback – AI made no edits):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
-          const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(out, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
-          renderAlternativesP2(out, merged, lvl); p2RenderPreview(out, lvl); p2RenderRubric(out, lvl, type); p2UpdateWordPills(); return;
-        }
-        outBox.value = aiOut;
-        const baseNotes = Array.isArray(data.notes) ? data.notes : [];
-        notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (baseNotes.length ? baseNotes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(none)");
-        if (Array.isArray(data.replacements) && data.replacements.length){
-          notesBox.innerHTML += "<br><b>Upgrades:</b><br>";
-          data.replacements.forEach(r=>{ notesBox.innerHTML += "• Replaced “"+escapeHtml(r.from)+"” → “"+escapeHtml(r.to)+"”<br>"; });
-        } else {
-          const extra=detectIntensifierNotes(input, aiOut); if (extra.length) notesBox.innerHTML += "<br>" + extra.map(n => "• " + escapeHtml(n)).join("<br>");
-        }
-        const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(aiOut, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
-        renderAlternativesP2(aiOut, merged, lvl); p2RenderPreview(aiOut, lvl); p2RenderRubric(aiOut, lvl, type); p2UpdateWordPills(); return;
-      } else { notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error('AI missing corrected'); }
-    } catch(e){ /* fall through to local */ }
+async function runPart2Correction(){
+  const input = document.getElementById("p2Input").value.trim();
+  const lvl   = document.getElementById("p2Level").value;
+  const type  = document.getElementById("p2Type").value;
+  const formal= document.getElementById("p2Formal").checked;
+  const useAI = document.getElementById("p2UseAI").checked && typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
+
+  const outBox   = document.getElementById("p2Output");
+  const changes  = document.getElementById("part2Changes");
+  const vocabBox = document.getElementById("part2Vocab");
+
+  if (!input){
+    outBox.value = "";
+    changes.innerHTML = "<b>" + (t('preview.changes_title') || 'Changes:') + "</b><br><span class='hint'>" + (t('warn.no_text') || 'Paste your text to get started.') + "</span>";
+    vocabBox.innerHTML = "<span class='hint'>" + (t('part2.vocab_alts_wait') || 'After correction, suggested upgrades will appear here.') + "</span>";
+    document.getElementById('part2Preview').innerHTML = "";
+    if (document.getElementById('p2Positions')) document.getElementById('p2Positions').innerHTML="";
+    updatePart2WordcountPills();
+    return;
   }
 
+  changes.innerHTML = "<b>" + (t('preview.changes_title') || 'Changes:') + "</b><br><span class='hint'>Processing…</span>";
+  vocabBox.innerHTML = "<span class='hint'>Processing…</span>";
+  outBox.value = "";
+  document.getElementById('part2Preview').innerHTML = "";
+  if (document.getElementById('p2Positions')) document.getElementById('p2Positions').innerHTML="";
+
+  // Use AI if available, else local
+  if (useAI){
+    try{
+      // Assumes you have p2StyleFor, _aiMadeNoChanges, correctLocal, buildAlternatives, mergeAlternatives, detectIntensifierNotes
+      const res = await fetch(window.AI_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ text: input, level: lvl, formal, style: (typeof p2StyleFor==='function'?p2StyleFor(lvl, type):null), genre: type })
+      });
+      const raw = await res.text();
+      if (!res.ok) { changes.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${(typeof escapeHtml==='function'?escapeHtml(raw):raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI HTTP "+res.status); }
+
+      let data; try { data = JSON.parse(raw); } catch {
+        changes.innerHTML = `<b>AI returned non-JSON:</b><br><pre style="white-space:pre-wrap">${(typeof escapeHtml==='function'?escapeHtml(raw):raw)}</pre><br><i>Using local rules instead.</i>`;
+        throw new Error("AI non-JSON");
+      }
+
+      if (data && typeof data.corrected === 'string'){
+        const aiOut = data.corrected;
+        if (typeof _aiMadeNoChanges==='function' && _aiMadeNoChanges(input, aiOut)){
+          const { out, notes, alts } = (typeof correctLocal==='function' ? correctLocal(input, lvl) : { out: input, notes: [], alts: [] });
+          outBox.value = out;
+          changes.innerHTML = "<b>" + (t('preview.changes_title') || 'Changes:') + " (local fallback – AI made no edits)</b><br>" + (notes.length ? notes.map(n=>"• "+(typeof escapeHtml==='function'?escapeHtml(n):n)).join("<br>") : "("+(t('vocab.alternatives_wait')||'No major changes')+")");
+          const fromAI = (data.alternatives && typeof data.alternatives==='object') ? data.alternatives : {};
+          const fromLocal = (typeof buildAlternatives==='function' ? buildAlternatives(out, lvl) : []);
+          let merged; try { merged = (typeof mergeAlternatives==='function' ? mergeAlternatives(fromAI, fromLocal) : (fromLocal || [])); } catch { merged = fromLocal || []; }
+          renderAlternativesP2(out, merged, lvl); p2RenderPreview(out, lvl); p2RenderRubric(out, lvl, type); updatePart2WordcountPills(); return;
+        }
+
+        outBox.value = aiOut;
+        const baseNotes = Array.isArray(data.notes) ? data.notes : [];
+        changes.innerHTML = "<b>" + (t('preview.changes_title') || 'Changes:') + " (AI)</b><br>" + (baseNotes.length ? baseNotes.map(n=>"• "+(typeof escapeHtml==='function'?escapeHtml(n):n)).join("<br>") : "("+(t('vocab.alternatives_wait')||'none')+")");
+        if (Array.isArray(data.replacements) && data.replacements.length){
+          changes.innerHTML += "<br><b>Upgrades:</b><br>";
+          data.replacements.forEach(r=>{ changes.innerHTML += "• Replaced “"+(typeof escapeHtml==='function'?escapeHtml(r.from):r.from)+"” → “"+(typeof escapeHtml==='function'?escapeHtml(r.to):r.to)+"”<br>"; });
+        } else if (typeof detectIntensifierNotes==='function') {
+          const extra = detectIntensifierNotes(input, aiOut);
+          if (extra.length) changes.innerHTML += "<br>" + extra.map(n => "• " + (typeof escapeHtml==='function'?escapeHtml(n):n)).join("<br>");
+        }
+        const fromAI = (data.alternatives && typeof data.alternatives==='object') ? data.alternatives : {};
+        const fromLocal = (typeof buildAlternatives==='function' ? buildAlternatives(aiOut, lvl) : []);
+        let merged; try { merged = (typeof mergeAlternatives==='function' ? mergeAlternatives(fromAI, fromLocal) : (fromLocal || [])); } catch { merged = fromLocal || []; }
+        renderAlternativesP2(aiOut, merged, lvl); p2RenderPreview(aiOut, lvl); p2RenderRubric(aiOut, lvl, type); updatePart2WordcountPills(); return;
+      } else {
+        changes.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${(typeof escapeHtml==='function'?escapeHtml(raw):raw)}</pre><br><i>Using local rules instead.</i>`;
+        throw new Error('AI missing corrected');
+      }
+    } catch(e){
+      // fall through to local
+    }
+  }
+
+  // Local path
   try{
-    const { out, notes, alts } = correctLocal(input, lvl);
+    const { out, notes, alts } = (typeof correctLocal==='function' ? correctLocal(input, lvl) : { out: input, notes: [], alts: [] });
+    const title = t('preview.changes_title') || 'Changes:';
     outBox.value = out;
-    notesBox.innerHTML = "<b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
+    const body = (notes.length ? notes.map(n=>"• "+(typeof escapeHtml==='function'?escapeHtml(n):n)).join("<br>") : "("+(t('vocab.alternatives_wait')||'No major changes')+")");
+    changes.innerHTML = "<b>"+title+" (local)</b><br>"+body;
     renderAlternativesP2(out, alts, lvl);
     p2RenderPreview(out, lvl);
     p2RenderRubric(out, lvl, type);
-    p2UpdateWordPills();
+    updatePart2WordcountPills();
   } catch(e){
-    notesBox.innerHTML = `<b>Local corrector failed:</b> ${escapeHtml(e.message)}`;
-    outBox.value = input; p2UpdateWordPills();
+    changes.innerHTML = `<b>Local corrector failed:</b> ${(typeof escapeHtml==='function'?escapeHtml(e.message):e.message)}`;
+    outBox.value = input;
+    updatePart2WordcountPills();
   }
 }
-function clearAllPart2(){
-  document.getElementById("p2Input").value="";
-  document.getElementById("p2Output").value="";
-  document.getElementById("p2Preview").innerHTML="";
-  document.getElementById("p2Positions").innerHTML="";
-  document.getElementById("p2Notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
-  document.getElementById("p2AltList").innerHTML="After correction, suggested upgrades will appear here.";
-  p2UpdateWordPills();
+
+function clearPart2(){
+  (document.getElementById("p2Input")||{}).value="";
+  (document.getElementById("p2Output")||{}).value="";
+  const prev = document.getElementById("part2Preview"); if (prev) prev.innerHTML="";
+  const pos  = document.getElementById("p2Positions");  if (pos)  pos.innerHTML="";
+  const ch   = document.getElementById("part2Changes");
+  if (ch) ch.innerHTML = "<b>"+(t('preview.changes_title')||'Changes:')+"</b><br><span class='hint'>"+(t('btn.clear')||'Cleared')+".</span>";
+  const vb   = document.getElementById("part2Vocab");
+  if (vb) vb.innerHTML = (t('part2.vocab_alts_wait') || 'After correction, suggested upgrades will appear here.');
+  updatePart2WordcountPills();
 }
-async function pasteIntoP2(){
+
+async function pastePart2(){
   const ta=document.getElementById("p2Input");
   try{
     const text=await navigator.clipboard.readText();
     if(text){
       const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
       ta.value = ta.value.slice(0,start)+text+ta.value.slice(end);
-      ta.focus(); ta.selectionStart=ta.selectionEnd=start+text.length; p2UpdateWordPills();
-    } else alert("Your clipboard is empty.");
+      ta.focus(); ta.selectionStart=ta.selectionEnd=start+text.length; updatePart2WordcountPills();
+    } else alert(t('warn.no_text') || "Your clipboard is empty.");
   }catch(e){ alert("Browser blocked clipboard. Try Ctrl/Cmd+V or long-press → Paste."); }
 }
-function downloadPDFPart2(){
+
+function downloadPart2PDF(){
   try{
     const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; }
     const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin;
-    doc.setFont("Helvetica","bold"); doc.setFontSize(14); doc.text("EssayCoach – Part 2 Corrected Output", margin, y); y+=20;
+    doc.setFont("Helvetica","bold"); doc.setFontSize(14);
+    doc.text((t('export.title') || "Correction report") + " – Part 2", margin, y); y+=20;
     doc.setFont("Helvetica","normal"); doc.setFontSize(12);
-    const lines=doc.splitTextToSize(document.getElementById("p2Output").value || "(empty)", 595-margin*2);
+    const text = document.getElementById("p2Output").value || "("+(t('warn.no_text')||'empty')+")";
+    const lines=doc.splitTextToSize(text, 595-margin*2);
     doc.text(lines, margin, y);
     doc.save("part2-corrected.pdf");
   }catch(e){ alert("Could not create PDF: "+e.message); }
 }
+</script>
 
 /* ========= Timer (shared) ========= */
 let _timer=null, _until=0;
