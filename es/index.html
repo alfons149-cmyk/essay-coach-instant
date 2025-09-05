@@ -14,6 +14,17 @@
   <link rel="manifest" href="/essay-coach-instant/manifest.webmanifest">
   <meta name="theme-color" content="#111111" />
 
+  <script>
+(function(){
+  const isES = location.pathname.replace(/\/+$/,'').endsWith('/essay-coach-instant/es');
+  const lang = isES ? 'es' : 'en';
+  // expose
+  window.CURRENT_LANG = lang;
+  // set <html lang="...">
+  document.documentElement.setAttribute('lang', lang);
+})();
+</script>
+
   <!-- ===== Spanish UI + C2 Rubric (paste once) ===== -->
 <script>
 /* Minimal translator. Use t('key') or t(['group','key']). */
