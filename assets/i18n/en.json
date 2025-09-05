@@ -8,5 +8,94 @@
   "btn.clear": "Clear",
   "btn.paste": "Paste",
   "btn.start_timer": "Start 45-min timer",
-  "io.timer_dash": "Timer: --:--"
+  "io.timer_dash": "Timer: --:--",
+
+  "home.subtitle": "Train your writing for Cambridge exams",
+  "label.wordcount": "Word count",
+  "label.c2_synthesis": "C2 Synthesis",
+  "label.sentence_analysis": "Sentence analysis",
+
+  "tooltip.level": "Choose the exam level you’re preparing for.",
+  "tooltip.task_type": "Choose the text type you’re asked to write.",
+  "tooltip.correct": "Analyses your text for the chosen level and type and suggests improvements without changing your ideas.",
+  "tooltip.export_pdf": "Export your text with comments and highlights.",
+  "tooltip.vocab_alts": "Suggestions for more precise words and expressions (click to apply).",
+  "tooltip.sentence_types": "Classifies sentences: simple / compound / complex / compound–complex, with suggestions.",
+  "tooltip.c2_synthesis": "C2 helper: summarise Texts A and B, evaluate, and fix your stance.",
+  "tooltip.enforce_formal": "Keep a formal register: avoid slang and colloquialisms.",
+  "tooltip.timer": "Simulate exam timing (45 minutes).",
+
+  "onboarding.title": "First time?",
+  "onboarding.p1": "Paste a paragraph in English and press “Correct”.",
+  "onboarding.p2": "Choose your level (B2/C1/C2) and the text type at the top.",
+  "onboarding.p3": "If you’re preparing C2, open “C2 Synthesis” to plan your essay.",
+
+  "banner.c2_reminder": "At C2 you must summarise, evaluate, and take a position. Avoid copying sentences from the sources: reformulate in your own words.",
+  "banner.register": "Use a formal register: avoid colloquialisms (e.g., “a lot”, “kids”, “really”) and prefer precise terms.",
+
+  "warn.no_text": "Paste your text to get started.",
+  "warn.long_text": "Your text looks long for this level. Adjust towards the recommended range.",
+  "warn.short_text": "Your text looks short. Add development to reach the recommended range.",
+  "warn.meaning_guard": "Suggestions won’t change the meaning of your ideas.",
+
+  "error.generic": "Something went wrong. Please try again.",
+  "error.worker_unavailable": "Could not connect to the correction server.",
+
+  "ai.use_ai_label": "Use AI (ChatGPT)",
+  "ai.worker_url": "Worker URL",
+  "ai.worker_missing": "To use AI, set the Worker URL.",
+
+  "sentence.header": "Sentence analysis (simple / compound / complex / compound–complex)",
+  "sentence.hover_hint": "Hover a highlight to see why it was flagged and how to improve it.",
+
+  "export.title": "Correction report",
+  "export.student": "Student",
+  "export.date": "Date",
+  "export.level": "Level",
+  "export.genre": "Text type",
+  "export.issues": "Key improvements",
+  "export.changes": "Changes applied",
+  "export.watermark": "Generated with EssayCoach",
+
+  "punct.open_guide": "Open punctuation guide",
+
+  "c2.meta.task": "Essay (C2 Proficiency, Part 1)",
+  "c2.meta.length": "240–280 words",
+  "c2.meta.expects": "Synthesis of two texts (in your own words) • Critical evaluation (strengths/limitations, nuance) • Clear stance (thesis + conclusion) • Formal register and lexical precision • Coherent organisation with varied connectors",
+
+  "c2.band5.title": "Band 5 (Excellent)",
+  "c2.band5.content": "Integrates ideas from both texts with ease, without copying; synthesises accurately and stays fully relevant to the task.",
+  "c2.band5.comm": "Impeccable academic tone and register; clear critical distance; purpose achieved with authority and naturalness.",
+  "c2.band5.org": "Faultless structure (clear thesis, logical development, convincing conclusion); varied, unobtrusive cohesion.",
+  "c2.band5.lang": "Wide and precise lexis; mature collocations; controlled complex grammar; rare, non-systematic errors.",
+
+  "c2.band4.title": "Band 4 (Very good)",
+  "c2.band4.content": "Solid, relevant synthesis; minimal dependence on source phrasing; well-focused evaluation in own voice.",
+  "c2.band4.comm": "Consistent formal register; purpose achieved; clear analytical voice.",
+  "c2.band4.org": "Well-sequenced paragraphs; varied connectors; minor lapses in flow only.",
+  "c2.band4.lang": "Wide range with good accuracy; occasional less-refined choice or minor error under control.",
+
+  "c2.band3.title": "Band 3 (Adequate)",
+  "c2.band3.content": "Summarises main ideas with some dependence on the original; evaluation present but superficial.",
+  "c2.band3.comm": "Generally formal register; purpose achieved though with less academic moments.",
+  "c2.band3.org": "Clear but uneven structure; repeated connectors; somewhat weak conclusion.",
+  "c2.band3.lang": "Sufficient range; occasional errors that do not impede; uneven lexical precision.",
+
+  "c2.band2.title": "Band 2 (Limited)",
+  "c2.band2.content": "Partial treatment of sources; may omit key ideas or include irrelevances; little evaluation.",
+  "c2.band2.comm": "Unstable register; purpose only partly achieved; inconsistent voice.",
+  "c2.band2.org": "Fragile coherence; weak ordering and progression; limited cohesion devices.",
+  "c2.band2.lang": "Limited range; frequent distracting errors; inappropriate academic vocabulary use.",
+
+  "c2.band1.title": "Band 1 (Insufficient)",
+  "c2.band1.content": "Fails to synthesise; copies sentences; lacks relevance or does not meet the task.",
+  "c2.band1.comm": "Inappropriate register; purpose not achieved.",
+  "c2.band1.org": "Disorganised; little cohesion; no conclusion.",
+  "c2.band1.lang": "Poor grammatical control; impeding errors; weak or inappropriate lexis.",
+
+  "c2.checks.synthesis": "Have you reformulated (not copied) ideas from both texts?",
+  "c2.checks.evaluation": "Have you evaluated arguments (strengths/limitations) and added nuance?",
+  "c2.checks.thesis": "Is your stance clear from the introduction and maintained to the conclusion?",
+  "c2.checks.cohesion": "Do you vary connectors and references (without overusing the same two)?",
+  "c2.checks.register": "Do you avoid colloquialisms and maintain lexical precision?"
 }
