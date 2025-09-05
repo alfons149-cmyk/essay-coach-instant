@@ -99,3 +99,16 @@
   "c2.checks.cohesion": "Do you vary connectors and references (without overusing the same two)?",
   "c2.checks.register": "Do you avoid colloquialisms and maintain lexical precision?"
 }
+{
+  "changes": {
+    "expanded_contractions": "Expanded contractions for formality.",
+    "normalised_spacing": "Normalised spacing.",
+    "capitalised_tv": "Capitalised 'TV'.",
+    "fixed_a_an": "Fixed 'a/an'.",
+    "added_intro_comma": "Added comma after introductory phrase.",
+    "inserted_clause_punct": "Inserted clause punctuation.",
+    "added_final_stop": "Added final full stop.",
+    "removed_intensifier_kept_base": "Removed intensifier “{i}” and kept “{b}” for formality.",
+    "removed_intensifier_upgraded": "Removed intensifier “{i}” and upgraded vocabulary."
+  }
+}
