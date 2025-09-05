@@ -4,7 +4,7 @@
 */
 
 const REPO_BASE = '/essay-coach-instant'; // ✅ update
-const CACHE_VERSION = 'v¡70';              // 🔼 bump this
+const CACHE_VERSION = 'v¡71';              // 🔼 bump this
 
 const STATIC_CACHE  = `essaycoach-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `essaycoach-runtime-${CACHE_VERSION}`;
