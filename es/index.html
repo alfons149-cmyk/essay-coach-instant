@@ -14,6 +14,225 @@
   <link rel="manifest" href="/essay-coach-instant/manifest.webmanifest">
   <meta name="theme-color" content="#111111" />
 
+  <!-- ===== Spanish UI + C2 Rubric (paste once) ===== -->
+<script>
+/* Minimal translator. Use t('key') or t(['group','key']). */
+(function(){
+  const I18N_ES = {
+    app: {
+      title: "EssayCoach",
+      subtitle: "Entrena tu escritura para los exámenes de Cambridge",
+      taskSetup: "Configuración de la tarea",
+      level: "Nivel",
+      levels: {
+        B2: "B2 First (FCE)",
+        C1: "C1 Advanced (CAE)",
+        C2: "C2 Proficiency (CPE)"
+      },
+      genre: "Tipo de texto",
+      genres: {
+        essay: "Ensayo",
+        report: "Informe",
+        review: "Reseña",
+        letter: "Carta/Correo formal",
+        proposal: "Propuesta"
+      },
+      inputLabel: "Tu texto (en inglés)",
+      inputPlaceholder: "Pega aquí tu redacción en inglés y pulsa «Corregir». Usa el selector de nivel y tipo de texto arriba.",
+      wordcount: "Recuento de palabras",
+      targets: {
+        essay: {
+          B2: "Objetivo: 140–190 palabras",
+          C1: "Objetivo: 220–260 palabras",
+          C2: "Objetivo: 240–280 palabras"
+        }
+      },
+      actions: {
+        analyze: "Corregir",
+        improve: "Mejorar redacción",
+        clear: "Limpiar",
+        copy: "Copiar",
+        pasteSample: "Pegar ejemplo",
+        exportPDF: "Exportar PDF",
+        guide: "Guía y ejemplos",
+        rubric: "Criterios (rúbrica)",
+        altVocab: "Vocabulario alternativo",
+        showNotes: "Notas del coach",
+        showHighlights: "Ver subrayados",
+        sentenceAnalysis: "Análisis de oraciones",
+        c2Synthesis: "Síntesis C2"
+      },
+      tooltips: {
+        level: "Elige el nivel del examen que estás preparando.",
+        genre: "Elige el tipo de composición que te piden.",
+        analyze: "Analiza tu texto según el nivel y tipo elegidos y propone mejoras sin cambiar tu idea.",
+        improve: "Reescribe la redacción con mejoras de claridad, cohesión y registro (manteniendo tu intención).",
+        exportPDF: "Exporta tu texto con comentarios y subrayados.",
+        altVocab: "Sugerencias de palabras y expresiones más precisas (haz clic para aplicar).",
+        sentenceAnalysis: "Clasifica oraciones: simple / compuesta / compleja / compuesta-compleja con sugerencias.",
+        c2Synthesis: "Asistente de C2: resume Textos A y B, evalúa y fija tu postura.",
+      },
+      notesCoachHeader: "Notas del coach",
+      warnings: {
+        aiDisabled: "AI desactivada: falta la URL del Worker.",
+        noText: "Pega tu texto para comenzar.",
+        longText: "Tu texto parece muy largo para este nivel. Ajusta hacia el rango recomendado.",
+        shortText: "Tu texto parece corto. Añade desarrollo para alcanzar el rango recomendado.",
+        meaningChangeGuard: "Las sugerencias no cambiarán el significado de tus ideas."
+      },
+      errors: {
+        generic: "Ha ocurrido un error. Inténtalo de nuevo.",
+        workerUnavailable: "No se ha podido conectar con el servidor de corrección.",
+      },
+      banners: {
+        c2Reminder: "En C2 debes resumir, evaluar y posicionarte. Evita copiar frases de los textos: reformula con tus palabras.",
+        register: "Usa registro formal: evita coloquialismos (p. ej., “a lot”, “kids”, “really”) y prefiere términos precisos.",
+      },
+      export: {
+        title: "Informe de corrección",
+        student: "Estudiante",
+        date: "Fecha",
+        level: "Nivel",
+        genre: "Tipo de texto",
+        issues: "Principales mejoras",
+        changes: "Cambios aplicados",
+        watermark: "Generado con EssayCoach"
+      },
+      c2Synth: {
+        title: "Síntesis C2 (Ensayo – Parte 1)",
+        a: "Ideas clave – Texto A",
+        b: "Ideas clave – Texto B",
+        eval: "Evaluación crítica (acuerdos, matices, limitaciones)",
+        stance: "Tu postura (tesis)",
+        plan: "Plan (párrafos y conectores)",
+        buildPlan: "Construir esquema",
+        insertThesis: "Insertar tesis y plan"
+      },
+      sentence: {
+        header: "Análisis de oraciones (simple / compuesta / compleja / compuesta-compleja)",
+        hoverHint: "Pasa el ratón para ver el porqué de la clasificación y sugerencias."
+      },
+      punctuation: {
+        title: "Puntuación esencial (apta para examen)",
+        openGuide: "Abrir guía de puntuación"
+      },
+      ai: {
+        useAI: "Usar AI (ChatGPT)",
+        workerUrl: "URL del Worker",
+        workerMissing: "Para usar AI, configura la URL del Worker."
+      },
+      onboarding: {
+        title: "¿Primera vez?",
+        p1: "Pega un párrafo en inglés y pulsa «Corregir».",
+        p2: "Arriba elige tu nivel (B2/C1/C2) y el tipo de texto.",
+        p3: "Si preparas C2, abre «Síntesis C2» para planificar tu ensayo."
+      }
+    },
+
+    // Microcopys reusables
+    micro: {
+      formalSwap: "Evita intensificadores («very», «really»). Prueba alternativas formales.",
+      cohesionVariety: "Varía conectores: no repitas los mismos dos en todo el texto.",
+      paragraphing: "Asegura párrafos nítidos: introducción, desarrollo, conclusión.",
+    }
+  };
+
+  // Concise C2 (CPE) rubric in Spanish – exam-safe public-bands style
+  const C2_RUBRIC_ES = {
+    meta: {
+      task: "Ensayo (C2 Proficiency, Parte 1)",
+      length: "240–280 palabras",
+      expects: [
+        "Síntesis de dos textos (ideas clave en tus palabras)",
+        "Evaluación crítica (fortalezas/limitaciones, matices)",
+        "Postura clara y sostenida (tesis + conclusión)",
+        "Registro formal, precisión léxica y gramatical",
+        "Organización coherente con conectores variados"
+      ]
+    },
+    bands: [
+      {
+        name: "Banda 5 (Excelente)",
+        Content:
+          "Integra con soltura ideas de ambos textos sin copiar; sintetiza con precisión y mantiene totalmente la relevancia y el propósito.",
+        CommunicativeAchievement:
+          "Tono y registro académicos impecables; clara distancia crítica; objetivo cumplido con autoridad y naturalidad.",
+        Organisation:
+          "Estructura impecable (tesis nítida, desarrollo lógico, conclusión convincente); cohesión variada y discreta.",
+        Language:
+          "Léxico amplio y preciso; colocaciones maduras; gramática compleja controlada; errores raros y no sistemáticos."
+      },
+      {
+        name: "Banda 4 (Muy bueno)",
+        Content:
+          "Síntesis sólida y relevante; mínima dependencia de frases fuente; aporta valoración propia bien enfocada.",
+        CommunicativeAchievement:
+          "Registro formal consistente; propósito logrado; voz analítica clara.",
+        Organisation:
+          "Párrafos bien secuenciados; conectores variados; alguno menor desliz de flujo.",
+        Language:
+          "Amplio rango con buena precisión; alguna elección menos fina o error menor bajo control."
+      },
+      {
+        name: "Banda 3 (Adecuado)",
+        Content:
+          "Resume las ideas principales con cierta dependencia del original; evaluación presente pero superficial.",
+        CommunicativeAchievement:
+          "Registro generalmente formal; el propósito se cumple aunque con momentos menos académicos.",
+        Organisation:
+          "Estructura clara pero desigual; repetición de conectores; conclusión algo débil.",
+        Language:
+          "Rango suficiente; errores ocasionales que no impiden la comunicación; precisión léxica irregular."
+      },
+      {
+        name: "Banda 2 (Limitado)",
+        Content:
+          "Tratamiento parcial de las fuentes; puede omitir ideas clave o incluir irrelevancias; escasa evaluación.",
+        CommunicativeAchievement:
+          "Registro inestable; objetivo parcialmente logrado; voz poco consistente.",
+        Organisation:
+          "Coherencia frágil; orden y progresión deficientes; uso limitado de cohesión.",
+        Language:
+          "Rango limitado; errores frecuentes que distraen; uso impropio de vocabulario académico."
+      },
+      {
+        name: "Banda 1 (Insuficiente)",
+        Content:
+          "No sintetiza adecuadamente; copia frases; falta relevancia o no cumple la tarea.",
+        CommunicativeAchievement:
+          "Registro inapropiado; no se logra el propósito.",
+        Organisation:
+          "Desorganizado; apenas hay cohesión; conclusión ausente.",
+        Language:
+          "Control gramatical débil; errores que entorpecen; léxico pobre o impropio."
+      }
+    ],
+    quickChecks: {
+      synthesis: "¿Has reformulado (no copiado) las ideas de ambos textos?",
+      evaluation: "¿Has valorado argumentos (fortalezas/limitaciones) y añadido matices?",
+      thesis: "¿Tu postura se entiende desde la introducción y se mantiene hasta la conclusión?",
+      cohesion: "¿Varías conectores y referencias? (no abuses de un par de conectores)",
+      register: "¿Evitas coloquialismos y mantienes precisión léxica?",
+    }
+  };
+
+  // Tiny translator and exposure
+  const I18N = { es: I18N_ES };
+  function t(path) {
+    const p = Array.isArray(path) ? path : String(path).split('.');
+    let cur = I18N.es; // defaulting to ES for this build
+    for (const k of p) cur = cur?.[k];
+    return (typeof cur === 'string') ? cur : cur ?? '';
+  }
+
+  // Expose to your app
+  window.I18N = I18N;
+  window.t = t;
+  window.C2_RUBRIC_ES = C2_RUBRIC_ES;
+})();
+</script>
+
+
   <!-- === GLOBALS: AI endpoint === -->
   <script>
     window.AI_ENDPOINT = "https://essaycoach.alfons149.workers.dev"; // set to your Worker URL (or leave off to use local rules only)
