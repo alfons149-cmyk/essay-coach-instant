@@ -24,7 +24,45 @@
   document.documentElement.setAttribute('lang', lang);
 })();
 </script>
+<script>
+window.I18N = window.I18N || {};
+(async function loadI18n(){
+  const v = '2025-09-05-1'; // bump when you change strings
+  const lang = window.CURRENT_LANG || 'en';
+  const base = '/essay-coach-instant';
+  const url = `${base}/${lang}.json?v=${v}`;
+  try {
+    const res = await fetch(url, { cache:'reload' });
+    window.I18N[lang] = await res.json();
+    // simple translator with EN fallback
+    window.t = (key)=>{
+      const get=(obj,p)=>p.split('.').reduce((o,k)=>o?.[k],obj);
+      return get(window.I18N[lang], key) ?? get(window.I18N.en||{}, key) ?? key;
+    };
+    // now apply labels
+    applyI18n();
+  } catch(e){
+    console.error('[i18n] load failed', e);
+  }
+})();
 
+function applyI18n(){
+  // data-i18n="btn.correct" on elements you want translated
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.getAttribute('data-i18n');
+    const txt = t(k);
+    if (el.hasAttribute('data-i18n-title')) el.setAttribute('title', txt);
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      if (el.hasAttribute('placeholder')) el.setAttribute('placeholder', txt);
+      else el.value = txt;
+    } else {
+      el.textContent = txt;
+    }
+  });
+}
+</script>
+
+  
   <!-- ===== Spanish UI + C2 Rubric (paste once) ===== -->
 <script>
 /* Minimal translator. Use t('key') or t(['group','key']). */
