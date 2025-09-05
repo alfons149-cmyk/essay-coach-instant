@@ -203,3 +203,23 @@
   "c2.checks.cohesion": "¿Varías conectores y referencias (sin abusar de los mismos dos)?",
   "c2.checks.register": "¿Evitas coloquialismos y mantienes precisión léxica?"
 }
+// Example updater you can call whenever text/level changes
+function updateWordcountPills(inN, outN, level, genre) {
+  // Text counts
+  const inLabel  = (t && I18N[CURRENT_LANG]?.['io.input_words'])  ? t('io.input_words').replace('{n}', inN)   : `Input: ${inN} words`;
+  const outLabel = (t && I18N[CURRENT_LANG]?.['io.output_words']) ? t('io.output_words').replace('{n}', outN) : `Output: ${outN} words`;
+  document.getElementById('inWC').textContent  = inLabel;
+  document.getElementById('outWC').textContent = outLabel;
+
+  // Target hint for essays (you can branch by level/genre; example shown for C1 essay)
+  if (genre === 'essay') {
+    const tipKey = {
+      B2: 'io.target_example_b2', // add if you want; else keep your reminder banner
+      C1: 'io.target_example_c1',
+      C2: 'io.target_example_c2'  // add if you want
+    }[level] || 'io.target_example_c1';
+
+    const tip = t(tipKey) || t('reminder.essay_counts');
+    document.getElementById('essayTip').textContent = tip;
+  }
+}
