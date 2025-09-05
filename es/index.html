@@ -517,6 +517,7 @@
     document.getElementById('view-part2').style.display      = 'none';
     try { history.replaceState(null, "", "#" + which); } catch {}
   }
+  <script>
   function showPart2(){
     document.getElementById('view-scaffolds').style.display='none';
     document.getElementById('view-corrector').style.display='none';
@@ -528,9 +529,10 @@
     document.getElementById('tab-part2').classList.add('active');
     try { history.replaceState(null, "", "#part2"); } catch {}
   }
-  </script>
+</script>
 
-/* ========= Scaffolds ========= */
+<!-- ========= Scaffolds ========= -->
+<script>
 const SCAFFOLDS = {
   B2: {
     essay: { moves: [
@@ -662,7 +664,7 @@ function injectHints(template, level, showNotes){
   });
 }
 
-/* Guide examples */
+/* Guide examples (data) */
 const EXAMPLES = {
   B2: {
     essay: `Title: Do teenagers spend too much time on their phones?
@@ -809,21 +811,60 @@ Nudges should be permitted where goals are publicly justified (e.g., reducing wa
   }
 };
 
-function openGuideModal(){ renderGuideExample(); const ov=document.getElementById('guideOverlay'); ov.style.display='flex'; ov.setAttribute('aria-hidden','false'); }
-function closeGuideModal(){ const ov=document.getElementById('guideOverlay'); ov.style.display='none'; ov.setAttribute('aria-hidden','true'); }
+/* Guide modal + PDF (now i18n-aware) */
+function openGuideModal(){
+  renderGuideExample();
+  const ov = document.getElementById('guideOverlay');
+  ov.style.display='flex'; ov.setAttribute('aria-hidden','false');
+}
+function closeGuideModal(){
+  const ov = document.getElementById('guideOverlay');
+  ov.style.display='none'; ov.setAttribute('aria-hidden','true');
+}
 function renderGuideExample(){
   const lvl = document.getElementById('scLevel').value;
   const typ = document.getElementById('scType').value;
   const showNotes = document.getElementById('coachToggle').checked;
-  const meta = `${lvl} • ${typ[0].toUpperCase()+typ.slice(1)}`;
+
+  const cap = typ ? typ[0].toUpperCase()+typ.slice(1) : '';
+  const meta = `${lvl} • ${cap}`;
   document.getElementById('guideMeta').textContent = meta;
-  const raw = (EXAMPLES[lvl] && EXAMPLES[lvl][typ]) ? EXAMPLES[lvl][typ] : "No example available.";
+
+  const raw = (EXAMPLES[lvl] && EXAMPLES[lvl][typ]) ? EXAMPLES[lvl][typ] : (t('guide.no_example') || "No example available.");
   const rendered = (lvl==='C2') ? raw : injectHints(raw, lvl, showNotes);
-  document.getElementById('guideExample').innerHTML = escapeHtml(rendered).replace(/\n/g, "<br>").replace(/&lt;span class=&quot;inline-note&quot;&gt;([^]+?)&lt;\/span&gt;/g,'<span class="inline-note">$1</span>');
-  document.getElementById('guideTitle').textContent = `Guide & Example – ${typ[0].toUpperCase()+typ.slice(1)}`;
+
+  const box = document.getElementById('guideExample');
+  box.innerHTML = escapeHtml(rendered)
+    .replace(/\n/g, "<br>")
+    .replace(/&lt;span class=&quot;inline-note&quot;&gt;([^]+?)&lt;\/span&gt;/g,'<span class="inline-note">$1</span>');
+
+  // Title
+  const title = (t('modal.guide_title') || 'Guide & Example') + (cap ? ` – ${cap}` : '');
+  document.getElementById('guideTitle').textContent = title;
 }
-function copyGuide(){ const tmp=document.createElement('div'); tmp.innerHTML=document.getElementById('guideExample').innerHTML.replace(/<br>/g,"\n"); const text=tmp.textContent||tmp.innerText||""; navigator.clipboard?.writeText(text); alert("Example copied."); }
-function exportGuidePDF(){ const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; } const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin; const title=document.getElementById('guideTitle').textContent || "Guide & Example"; const tmp=document.createElement('div'); tmp.innerHTML=document.getElementById('guideExample').innerHTML.replace(/<br>/g,"\n"); const body=(tmp.textContent||"").trim(); doc.setFont("Helvetica","bold"); doc.setFontSize(16); doc.text(title, margin, y); y+=20; doc.setFont("Helvetica","normal"); doc.setFontSize(12); const lines=doc.splitTextToSize(body, 595-margin*2); doc.text(lines, margin, y); doc.save("guide-example.pdf"); }
+function copyGuide(){
+  const tmp=document.createElement('div');
+  tmp.innerHTML=document.getElementById('guideExample').innerHTML.replace(/<br>/g,"\n");
+  const text=tmp.textContent||tmp.innerText||"";
+  navigator.clipboard?.writeText(text);
+  alert(t('modal.copy_done') || "Example copied.");
+}
+function exportGuidePDF(){
+  const { jsPDF } = window.jspdf || {};
+  if(!jsPDF){ alert(t('errors.pdf_lib') || "PDF library failed to load."); return; }
+
+  const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin;
+  const title=document.getElementById('guideTitle').textContent || (t('modal.guide_title') || "Guide & Example");
+  const tmp=document.createElement('div');
+  tmp.innerHTML=document.getElementById('guideExample').innerHTML.replace(/<br>/g,"\n");
+  const body=(tmp.textContent||"").trim();
+
+  doc.setFont("Helvetica","bold"); doc.setFontSize(16); doc.text(title, margin, y); y+=20;
+  doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+  const lines=doc.splitTextToSize(body, 595-margin*2);
+  doc.text(lines, margin, y);
+  doc.save("guide-example.pdf");
+}
 
 /* ========= Utilities ========= */
 const escapeHtml = (s) => String(s).replace(/[&<>\"']/g, (m)=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" }[m]));
@@ -917,7 +958,7 @@ function mergeAlternatives(aiAltObj, localArr) {
   return merged;
 }
 
-/* ========= Highlights & coach notes ========= */
+/* ========= Highlights & coach notes (Part 1 panel) ========= */
 const ADV_GROUPS = {
   contrast: ["however","nevertheless","nonetheless","instead","still"],
   result:   ["therefore","consequently","thus","accordingly","otherwise"],
@@ -962,21 +1003,34 @@ function coachClauseNotes(corrected, level) {
 }
 function buildHighlightedHTML(text, marks){
   if(!marks.length) return escapeHtml(text).replace(/\n/g,'<br>');
-  let html='', idx=0; for(const m of marks){ html += escapeHtml(text.slice(idx, m.start)).replace(/\n/g,'<br>'); const off = hiddenIds.has(m.id) ? ' off' : ''; html += `<mark class="hl${off}" id="${m.id}" title="${escapeHtml(m.label.trim())}">${escapeHtml(text.slice(m.start, m.end))}</mark>`; idx = m.end; }
-  html += escapeHtml(text.slice(idx)).replace(/\n/g,'<br>'); return html;
+  let html='', idx=0;
+  for(const m of marks){
+    html += escapeHtml(text.slice(idx, m.start)).replace(/\n/g,'<br>');
+    const off = hiddenIds.has(m.id) ? ' off' : '';
+    html += `<mark class="hl${off}" id="${m.id}" title="${escapeHtml(m.label.trim())}">${escapeHtml(text.slice(m.start, m.end))}</mark>`;
+    idx = m.end;
+  }
+  html += escapeHtml(text.slice(idx)).replace(/\n/g,'<br>');
+  return html;
 }
 function renderPreviewAndPositions(corrected, level){
   const { notes: coach, marks } = coachClauseNotes(corrected, level || document.getElementById('levelSelect').value);
   const signature = corrected.length + ':' + (marks.map(m=>m.start+'-'+m.end).join('|'));
   if (window._lastSignature !== signature) { hiddenIds.clear(); window._lastSignature = signature; }
   currentMarks = marks;
+
   document.getElementById('outputPreview').innerHTML = buildHighlightedHTML(corrected, marks);
+
   const posBox = document.getElementById('positions');
   if (!marks.length) posBox.innerHTML = "";
   else {
     const chips = marks.map(m=>{ const off = hiddenIds.has(m.id) ? 'off' : ''; return `<a href="#" data-target="${m.id}" class="${off}">${m.start}–${m.end}</a>`; }).join(' ');
-    posBox.innerHTML = `<b>Marked spans:</b> ${chips} <span class="controls"><button onclick="showAllHighlights()">Show all</button><button onclick="hideAllHighlights()">Hide all</button></span>`;
+    const label = t?.('preview.marked_spans') || 'Marked spans:';
+    const showAll = t?.('preview.show_all') || 'Show all';
+    const hideAll = t?.('preview.hide_all') || 'Hide all';
+    posBox.innerHTML = `<b>${label}</b> ${chips} <span class="controls"><button onclick="showAllHighlights()">${showAll}</button><button onclick="hideAllHighlights()">${hideAll}</button></span>`;
   }
+
   const notesBox = document.getElementById('notes');
   if (notesBox.innerHTML.includes("<b>Changes")){
     const existingCoach = /<br><br><b>Coach notes:[\s\S]*$/i;
@@ -1024,6 +1078,10 @@ function correctLocal(text, lvl){
     const before=out; out=out.replace(re,(m)=>m[0]===m[0].toUpperCase()?v[0].toUpperCase()+v.slice(1):v);
     if(out!==before) notes.push("Expanded contractions for formality.");
   }
+  /* … rest of correctLocal continues after this chunk … */
+}
+</script>
+
   const bs=out; out=out.replace(/\s+([,;:.!?])/g,"$1").replace(/([,;:.!?])(\S)/g,"$1 $2").replace(/\s{2,}/g," ");
   if(out!==bs) notes.push("Normalised spacing.");
   const btv=out; out=out.replace(/\btv\b/gi,"TV"); if(out!==btv) notes.push("Capitalised 'TV'.");
