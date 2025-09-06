@@ -1351,6 +1351,121 @@ async function runCorrection(){
     updateWordPills();
   }
 }
+<script>
+// ===== Scaffolds actions (i18n’d) =====
+function copyScaffold(){
+  const list = document.getElementById('scMoves');
+  const items = [...list.querySelectorAll('li')].map(li => `• ${li.textContent}`);
+  navigator.clipboard?.writeText(items.join("\n"));
+  alert(t('toast.scaffold_copied') || 'Scaffold copied.');
+}
+function copyOpener(){
+  const text = document.getElementById('scOpener').textContent || '';
+  navigator.clipboard?.writeText(text);
+  alert(t('toast.opener_copied') || 'Opener copied.');
+}
+function exportScaffoldPDF(){
+  const { jsPDF } = window.jspdf || {};
+  if (!jsPDF){ alert(t('error.pdf_load') || "PDF library failed to load."); return; }
+
+  const doc = new jsPDF({ unit:"pt", format:"a4" });
+  const margin = 48; let y = margin;
+  const level = document.getElementById('scLevel').value;
+  const type  = document.getElementById('scType').value;
+  const typeLabel = type[0].toUpperCase()+type.slice(1);
+
+  const title = (t('pdf.scaffold_title') || 'Scaffold – {level} {type}')
+                  .replace('{level}', level).replace('{type}', typeLabel);
+
+  doc.setFont("Helvetica","bold"); doc.setFontSize(16); doc.text(title, margin, y); y+=18;
+  doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+
+  const moves=[...document.querySelectorAll('#scMoves li')].map((li,i)=>`${i+1}) ${li.textContent}`);
+  doc.text(doc.splitTextToSize(moves.join("\n"), 595-margin*2), margin, y); y+=18;
+
+  doc.text(t('section.opener') || "Opener:", margin, y); y+=14;
+  doc.text(doc.splitTextToSize(document.getElementById('scOpener').textContent||'', 595-margin*2), margin, y); y+=18;
+
+  doc.text(t('section.tips') || "Tips:", margin, y); y+=14;
+  const tips=[...document.querySelectorAll('#scTips li')].map((li,i)=>`${i+1}) ${li.textContent}`);
+  doc.text(doc.splitTextToSize(tips.join("\n"), 595-margin*2), margin, y);
+
+  doc.save("scaffold.pdf");
+}
+
+// ===== Part 2 wordcount pills (unchanged behaviour; i18n already used) =====
+function updatePart2WordcountPills(){
+  const lvl  = document.getElementById('p2Level').value;
+  const inWC  = (document.getElementById('p2Input').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
+  const outWC = (document.getElementById('p2Output').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
+
+  const inLabel  = (t('io.input_words')  || 'Input: {n} words').replace('{n}', inWC);
+  const outLabel = (t('io.output_words') || 'Output: {n} words').replace('{n}', outWC);
+
+  const pills = p2TargetForLevel(lvl);
+  const inEl  = document.getElementById('p2InWC');
+  const outEl = document.getElementById('p2OutWC');
+  const tEl   = document.getElementById('p2TargetWC');
+
+  if (inEl) inEl.textContent = inLabel;
+  if (outEl){
+    outEl.textContent = outLabel;
+    outEl.className = 'pill';
+    if (outWC>0 && (outWC<pills.min || outWC>pills.max)) outEl.classList.add('warn');
+    if (outWC>=pills.min && outWC<=pills.max) outEl.classList.add('ok');
+  }
+  if (tEl) tEl.textContent = pills.label;
+}
+
+// ===== Part 2 “processing” strings (use i18n) =====
+async function runPart2Correction(){
+  const input = document.getElementById("p2Input").value.trim();
+  const lvl   = document.getElementById("p2Level").value;
+  const type  = document.getElementById("p2Type").value;
+  const formal= document.getElementById("p2Formal").checked;
+  const useAI = document.getElementById("p2UseAI").checked && typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
+
+  const outBox   = document.getElementById("p2Output");
+  const changes  = document.getElementById("part2Changes");
+  const vocabBox = document.getElementById("part2Vocab");
+  const processing = t('io.processing') || 'Processing…';
+
+  if (!input){
+    outBox.value = "";
+    changes.innerHTML = "<b>"+(t('preview.changes_title')||'Changes:')+"</b><br><span class='hint'>"+(t('warn.no_text')||'Paste your text to get started.')+"</span>";
+    vocabBox.innerHTML = "<span class='hint'>"+(t('part2.vocab_alts_wait')||'After correction, suggested upgrades will appear here.')+"</span>";
+    document.getElementById('part2Preview').innerHTML = "";
+    const pos = document.getElementById('p2Positions'); if (pos) pos.innerHTML = "";
+    updatePart2WordcountPills(); return;
+  }
+
+  changes.innerHTML = "<b>"+(t('preview.changes_title')||'Changes:')+"</b><br><span class='hint'>"+processing+"</span>";
+  vocabBox.innerHTML = "<span class='hint'>"+processing+"</span>";
+  outBox.value = ""; document.getElementById('part2Preview').innerHTML = "";
+  const pos = document.getElementById('p2Positions'); if (pos) pos.innerHTML = "";
+
+  // … keep the rest of your AI/local paths exactly as you have them …
+}
+</script>
+
+<!-- ===== Shared timer (i18n’d label) ===== -->
+<script>
+let _timer=null, _until=0;
+function startTimer(minutes=45){
+  _until = Date.now() + minutes*60*1000;
+  if (_timer) clearInterval(_timer);
+  const paint=()=>{
+    const left = Math.max(0, _until - Date.now());
+    const m = String(Math.floor(left/60000)).padStart(2,'0');
+    const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+    const label = (t('io.timer_label') || 'Timer: {m}:{s}').replace('{m}', m).replace('{s}', s);
+    const main = document.getElementById('timer'); if (main) main.textContent = label;
+    const p2t  = document.getElementById('p2Timer'); if (p2t) p2t.textContent = label;
+    if (left<=0) { clearInterval(_timer); _timer=null; }
+  };
+  paint(); _timer=setInterval(paint, 500);
+}
+</script>
 
 /* ========= Clear / Paste / PDF ========= */
 function clearAll(){
