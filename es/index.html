@@ -2452,58 +2452,82 @@ function downloadPart2PDF(){
 }
 </script>
 
-/* ========= Timer (shared) ========= */
-let _timer=null, _until=0;
-function startTimer(minutes=45){
+<!-- ===== Shared timer (i18n) ===== -->
+<script>
+let _timer = null, _until = 0;
+function startTimer(minutes = 45){
   _until = Date.now() + minutes*60*1000;
   if (_timer) clearInterval(_timer);
-  const paint=()=>{
+  const paint = () => {
     const left = Math.max(0, _until - Date.now());
     const m = String(Math.floor(left/60000)).padStart(2,'0');
     const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
-    document.getElementById('timer').textContent = `Timer: ${m}:${s}`;
-    const p2t=document.getElementById('p2Timer'); if (p2t) p2t.textContent=`Timer: ${m}:${s}`;
-    if (left<=0) { clearInterval(_timer); _timer=null; }
+    const label = (window.t?.('io.timer_label') || 'Timer: {m}:{s}')
+      .replace('{m}', m).replace('{s}', s);
+    const main = document.getElementById('timer');   if (main) main.textContent = label;
+    const p2t  = document.getElementById('p2Timer'); if (p2t)  p2t.textContent  = label;
+    if (left <= 0) { clearInterval(_timer); _timer = null; }
   };
-  paint(); _timer=setInterval(paint, 500);
+  paint(); _timer = setInterval(paint, 500);
 }
+</script>
 
-/* ========= Init ========= */
-renderScaffold();
-renderPunctRules();
-window.addEventListener('load',()=>{
-  const aiBox=document.getElementById('aiToggle');
+<!-- ===== Init / boot ===== -->
+<script>
+/* Call initial renders that are safe if already defined */
+try { renderScaffold?.(); } catch {}
+try { renderPunctRules?.(); } catch {}
+
+window.addEventListener('load', () => {
+  // AI toggle (Part 1)
+  const aiBox = document.getElementById('aiToggle');
   if (aiBox) {
     const hasEndpoint = typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
     aiBox.checked = hasEndpoint;
     aiBox.disabled = !hasEndpoint;
     aiBox.title = hasEndpoint
-      ? "Uses your Cloudflare Worker (AI), falls back to local rules if needed."
-      : "Set window.AI_ENDPOINT in index.html to enable AI corrections.";
+      ? (window.t?.('hint.ai_enabled') || "Uses your Worker (AI); falls back to local rules.")
+      : (window.t?.('hint.ai_disabled') || "Set window.AI_ENDPOINT to enable AI corrections.");
   }
-  const aiBox2=document.getElementById('p2AiToggle');
-  if (aiBox2){
+
+  // AI toggle (Part 2) – support either id
+  const p2Ai = document.getElementById('p2AiToggle') || document.getElementById('p2UseAI');
+  if (p2Ai){
     const hasEndpoint = typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
-    aiBox2.checked = hasEndpoint; aiBox2.disabled = !hasEndpoint;
+    p2Ai.checked = hasEndpoint;
+    p2Ai.disabled = !hasEndpoint;
+    if (!p2Ai.title) p2Ai.title = hasEndpoint
+      ? (window.t?.('hint.ai_enabled') || "Uses your Worker (AI); falls back to local rules.")
+      : (window.t?.('hint.ai_disabled') || "Set window.AI_ENDPOINT to enable AI corrections.");
   }
-  if (location.hash==='#corrector')      showTab('corrector');
-  else if (location.hash==='#punct')     showTab('punct');
-  else if (location.hash==='#part2')     showPart2();
-  else                                   showTab('scaffolds');
-  updateWordPills(); p2UpdateWordPills();
+
+  // Hash routing
+  if (location.hash === '#corrector')      { try{ showTab('corrector'); }catch{} }
+  else if (location.hash === '#punct')     { try{ showTab('punct'); }catch{} }
+  else if (location.hash === '#part2')     { try{ showPart2(); }catch{} }
+  else                                     { try{ showTab('scaffolds'); }catch{} }
+
+  // Wordcount pills for Part 1 + Part 2 (support old/new fn names)
+  try { updateWordPills?.(); } catch {}
+  try {
+    if (typeof p2UpdateWordPills === 'function') p2UpdateWordPills();
+    else if (typeof updatePart2WordcountPills === 'function') updatePart2WordcountPills();
+  } catch {}
 });
 
-/* Error overlay (dev) */
+// Error overlay (dev)
 window.addEventListener('error', (e) => {
-  document.body.insertAdjacentHTML('beforeend', `<pre style="white-space:pre-wrap;background:#fee;border:1px solid #f99;padding:10px;border-radius:8px;margin:12px;color:#800"><b>JS error:</b> ${e.message}</pre>`);
+  document.body.insertAdjacentHTML('beforeend',
+    `<pre style="white-space:pre-wrap;background:#fee;border:1px solid #f99;padding:10px;border-radius:8px;margin:12px;color:#800"><b>JS error:</b> ${e.message}</pre>`);
 });
 
-/* Failsafe tab wiring */
+// Failsafe tab wiring
 (function () {
   const tSc = document.getElementById('tab-scaffolds');
   const tCo = document.getElementById('tab-corrector');
   const tPu = document.getElementById('tab-punct');
   const tP2 = document.getElementById('tab-part2');
+
   function safeShow(w) {
     try { if (w==='part2') showPart2(); else showTab(w); }
     catch {
@@ -2511,10 +2535,12 @@ window.addEventListener('error', (e) => {
       const vc = document.getElementById('view-corrector');
       const vp = document.getElementById('view-punct');
       const v2 = document.getElementById('view-part2');
-      vs.style.display = (w==='scaffolds') ? '' : 'none';
-      vc.style.display = (w==='corrector') ? '' : 'none';
-      vp.style.display = (w==='punct') ? '' : 'none';
-      v2.style.display = (w==='part2') ? '' : 'none';
+      if (vs && vc && vp && v2){
+        vs.style.display = (w==='scaffolds') ? '' : 'none';
+        vc.style.display = (w==='corrector') ? '' : 'none';
+        vp.style.display = (w==='punct') ? '' : 'none';
+        v2.style.display = (w==='part2') ? '' : 'none';
+      }
     }
   }
   tSc?.addEventListener('click', () => safeShow('scaffolds'));
@@ -2522,89 +2548,78 @@ window.addEventListener('error', (e) => {
   tPu?.addEventListener('click', () => safeShow('punct'));
   tP2?.addEventListener('click', () => safeShow('part2'));
 })();
-  </script>
-  <script>
+</script>
+
+<!-- ===== App bundle ===== -->
+<script src="/essay-coach-instant/assets/app.bundle.js" defer></script>
+
+<!-- ===== Single unified i18n loader (auto en/es) ===== -->
+<script>
 (function () {
+  // Optional ID → key map (for elements without data-i18n)
   const MAP_IDS_TO_KEYS = {
-    // Scaffolds actions
+    // Scaffolds
     "btnCopyScaffold": "btn.copy_scaffold",
     "btnCopyOpener": "btn.copy_opener",
     "btnExportScaffoldPDF": "btn.export_scaffold_pdf",
     "btnGuideExample": "btn.guide_example",
-    // Corrector actions (Part 1)
+    // Corrector (Part 1)
     "btnCorrect": "btn.correct",
     "btnExportPDF": "btn.export_pdf",
     "btnClear": "btn.clear",
     "btnPaste": "btn.paste",
     "btnStartTimer": "btn.start_timer",
-    // Status badge
     "timerBadge": "io.timer_dash",
-    // Part 2 (if present)
+    // Part 2
     "p2Correct": "btn.correct",
     "p2ExportPDF": "btn.export_pdf",
     "p2Clear": "btn.clear",
     "p2Paste": "btn.paste",
-    "p2StartTimer": "btn.start_timer"
+    "p2StartTimer": "btn.start_timer",
+    // Modal
+    "guideModalTitle": "modal.guide_title"
   };
 
-  // Apply one element: supports text, value, placeholder, aria-label
+  function setLabel(el, text) {
+    if (!el) return;
+    if (el.tagName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type)) { el.value = text; return; }
+    const span = el.querySelector('[data-i18n], .label, span');
+    if (span && span.childElementCount === 0) span.textContent = text;
+    else el.textContent = text;
+  }
+
+  // Apply one [data-i18n] element; supports target attributes
   function applyOne(el, dict) {
     const key = el.getAttribute('data-i18n');
     if (!key || !dict[key]) return;
-    const target = el.getAttribute('data-i18n-target'); // optional override
-
-    // Special cases by element type or explicit target
-    if (target === 'value' || el.tagName === 'INPUT' && el.type === 'button') {
-      el.value = dict[key];
-      return;
-    }
-    if (target === 'placeholder') {
-      el.setAttribute('placeholder', dict[key]);
-      return;
-    }
-    if (target === 'aria-label') {
-      el.setAttribute('aria-label', dict[key]);
-      return;
-    }
-
-    // Default: replace text only (keeps icons if you tag an inner <span> instead of the whole button)
-    el.textContent = dict[key];
+    const target = el.getAttribute('data-i18n-target');
+    if (target === 'value' || (el.tagName === 'INPUT' && el.type === 'button')) { el.value = dict[key]; return; }
+    if (target === 'placeholder') { el.setAttribute('placeholder', dict[key]); return; }
+    if (target === 'aria-label') { el.setAttribute('aria-label', dict[key]); return; }
+    setLabel(el, dict[key]);
   }
 
-  function applyAttrs(dict) {
-    document.querySelectorAll('[data-i18n-title]').forEach(el => {
-      const k = el.getAttribute('data-i18n-title');
-      if (dict[k]) el.setAttribute('title', dict[k]);
+  function applyAttrs(dict, root=document){
+    root.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const k = el.getAttribute('data-i18n-title'); if (dict[k]) el.setAttribute('title', dict[k]);
     });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      const k = el.getAttribute('data-i18n-placeholder');
-      if (dict[k]) el.setAttribute('placeholder', dict[k]);
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const k = el.getAttribute('data-i18n-placeholder'); if (dict[k]) el.setAttribute('placeholder', dict[k]);
     });
   }
 
-  function applyAll(dict, root = document) {
+  function applyAll(dict, root=document){
     root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
-    applyAttrs(dict);
-
-    // Safety net: force-set by IDs (works even if your app rewrote text later)
+    applyAttrs(dict, root);
+    // by IDs (safety net)
     Object.entries(MAP_IDS_TO_KEYS).forEach(([id, key]) => {
       const el = document.getElementById(id);
-      if (!el || !dict[key]) return;
-      if (el.tagName === 'INPUT' && el.type === 'button') {
-        el.value = dict[key];
-      } else {
-        // If button has an icon + label span, prefer a child with [data-i18n] to avoid nuking the icon
-        const labelSpan = el.querySelector('[data-i18n]');
-        if (labelSpan) {
-          applyOne(labelSpan, dict);
-        } else {
-          el.textContent = dict[key];
-        }
-      }
+      if (el && dict[key]) setLabel(el, dict[key]);
     });
   }
 
   async function loadDict() {
+    // Detect by path; default to en
     const isSpanish = location.pathname.includes('/essay-coach-instant/es/');
     const lang = isSpanish ? 'es' : 'en';
     const basePath = '/essay-coach-instant';
@@ -2613,28 +2628,24 @@ window.addEventListener('error', (e) => {
     if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
     const dict = await res.json();
     document.documentElement.lang = lang;
+    // Expose tiny t() helper globally
+    window.t = (k) => dict[k];
     return dict;
   }
 
-  function observeAndReapply(dict) {
-    const mo = new MutationObserver(muts => {
-      // Reapply only to added nodes (keeps it fast)
-      muts.forEach(m => {
-        m.addedNodes.forEach(node => {
-          if (node.nodeType !== 1) return; // ELEMENT_NODE
-          applyAll(dict, node);
-        });
-      });
-    });
+  function observe(dict){
+    const mo = new MutationObserver(muts => muts.forEach(m =>
+      m.addedNodes.forEach(n => { if (n.nodeType === 1) applyAll(dict, n); })
+    ));
     mo.observe(document.body, { childList: true, subtree: true });
   }
 
-  // Run after DOM is ready and again after window load (in case your app boot overwrites text)
+  // Boot
   document.addEventListener('DOMContentLoaded', async () => {
     try {
       const dict = await loadDict();
       applyAll(dict);
-      observeAndReapply(dict);
+      observe(dict);
     } catch (e) {
       console.error('[i18n] error:', e);
     }
@@ -2643,208 +2654,11 @@ window.addEventListener('error', (e) => {
     try {
       const dict = await loadDict();
       applyAll(dict);
-      // small retry to beat late JS updates
-      setTimeout(async () => {
-        const d = await loadDict();
-        applyAll(d);
-      }, 300);
-    } catch (e) {
-      // ignore if already applied
-    }
-  });
-})();
-</script>
-<script>
-(function () {
-  async function loadDict() {
-    const res = await fetch('/essay-coach-instant/assets/i18n/es.json', { cache:'no-store' });
-    if (!res.ok) throw new Error('i18n es ' + res.status);
-    document.documentElement.lang = 'es';
-    return res.json();
-  }
-  function applyOne(el, dict) {
-    const key = el.getAttribute('data-i18n');
-    if (!key || !dict[key]) return;
-    if (el.tagName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type)) { el.value = dict[key]; return; }
-    el.textContent = dict[key];
-  }
-  function applyAll(dict, root=document) {
-    root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
-    root.querySelectorAll('[data-i18n-title]').forEach(el => {
-      const k = el.getAttribute('data-i18n-title'); if (dict[k]) el.setAttribute('title', dict[k]);
-    });
-    root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      const k = el.getAttribute('data-i18n-placeholder'); if (dict[k]) el.setAttribute('placeholder', dict[k]);
-    });
-  }
-  function observe(dict) {
-    const mo = new MutationObserver(m => m.forEach(x => x.addedNodes.forEach(n => {
-      if (n.nodeType === 1) applyAll(dict, n);
-    })));
-    mo.observe(document.body, { childList:true, subtree:true });
-  }
-  (document.readyState==='loading' ? document.addEventListener('DOMContentLoaded', run) : run());
-  async function run(){
-    try { const dict = await loadDict(); applyAll(dict); observe(dict);
-      setTimeout(()=>applyAll(dict), 200); setTimeout(()=>applyAll(dict), 600);
-    } catch(e){ console.error('[i18n]', e); }
-  }
-})();
-</script>
-  <!-- App script -->
-  <script src="/essay-coach-instant/assets/app.bundle.js" defer></script>
-
-  <!-- Gentle i18n -->
-  <script>
-  (function () {
-    async function loadDict() {
-      const res = await fetch('/essay-coach-instant/assets/i18n/es.json', { cache:'no-store' });
-      if (!res.ok) throw new Error('i18n es ' + res.status);
-      document.documentElement.lang = 'es';
-      return res.json();
-    }
-    function applyOne(el, dict) {
-      const key = el.getAttribute('data-i18n');
-      if (!key || !dict[key]) return;
-      if (el.tagName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type)) { el.value = dict[key]; return; }
-      el.textContent = dict[key];
-    }
-    function applyAll(dict, root=document) {
-      root.querySelectorAll('[data-i18n]').forEach(el => applyOne(el, dict));
-      root.querySelectorAll('[data-i18n-title]').forEach(el => {
-        const k = el.getAttribute('data-i18n-title'); if (dict[k]) el.setAttribute('title', dict[k]);
-      });
-      root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const k = el.getAttribute('data-i18n-placeholder'); if (dict[k]) el.setAttribute('placeholder', dict[k]);
-      });
-    }
-    function observe(dict) {
-      const mo = new MutationObserver(m => m.forEach(x => x.addedNodes.forEach(n => {
-        if (n.nodeType === 1) applyAll(dict, n);
-      })));
-      mo.observe(document.body, { childList:true, subtree:true });
-    }
-    (document.readyState==='loading' ? document.addEventListener('DOMContentLoaded', run) : run());
-    async function run(){
-      try { const dict = await loadDict(); applyAll(dict); observe(dict);
-        setTimeout(()=>applyAll(dict), 200); setTimeout(()=>applyAll(dict), 600);
-      } catch(e){ console.error('[i18n]', e); }
-    }
-  })();
-  </script>
-  <script>
-(function () {
-  // Map element IDs → translation keys in es.json
-  const MAP = {
-    // Scaffolds actions
-    "btnCopyScaffold": "btn.copy_scaffold",
-    "btnCopyOpener": "btn.copy_opener",
-    "btnExportScaffoldPDF": "btn.export_scaffold_pdf",
-    "btnGuideExample": "btn.guide_example",
-
-    // Corrector actions (Part 1)
-    "btnCorrect": "btn.correct",
-    "btnExportPDF": "btn.export_pdf",
-    "btnClear": "btn.clear",
-    "btnPaste": "btn.paste",
-    "btnStartTimer": "btn.start_timer",
-    "timerBadge": "io.timer_dash",
-
-    // Part 2 (if present)
-    "p2Correct": "btn.correct",
-    "p2ExportPDF": "btn.export_pdf",
-    "p2Clear": "btn.clear",
-    "p2Paste": "btn.paste",
-    "p2StartTimer": "btn.start_timer",
-
-    // Misc headings
-    "guideModalTitle": "modal.guide_title"
-  };
-
-  function setLabel(el, text) {
-    if (!el) return;
-    if (el.tagName === 'INPUT') {
-      if (el.type === 'button' || el.type === 'submit' || el.type === 'reset') {
-        el.value = text;
-        return;
-      }
-      // fall through for other inputs
-    }
-    // If the button has an inner span for the label, prefer it
-    const span = el.querySelector('[data-i18n], .label, span');
-    if (span) {
-      // be conservative: don’t nuke icons
-      if (span.childElementCount === 0) span.textContent = text;
-      else el.textContent = text; // fallback
-    } else {
-      el.textContent = text;
-    }
-  }
-
-  function applyAll(dict, root=document) {
-    // 1) Translate any [data-i18n] elements
-    root.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (dict[key]) setLabel(el, dict[key]);
-    });
-    // 2) Translate by IDs (for elements without data-i18n)
-    Object.entries(MAP).forEach(([id, key]) => {
-      const el = document.getElementById(id);
-      if (el && dict[key]) setLabel(el, dict[key]);
-    });
-    // 3) Attribute helpers
-    root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      const k = el.getAttribute('data-i18n-placeholder');
-      if (dict[k]) el.setAttribute('placeholder', dict[k]);
-    });
-    root.querySelectorAll('[data-i18n-title]').forEach(el => {
-      const k = el.getAttribute('data-i18n-title');
-      if (dict[k]) el.setAttribute('title', dict[k]);
-    });
-  }
-
-  async function loadDict() {
-    const url = '/essay-coach-instant/assets/i18n/es.json';
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Cannot load ' + url + ' (' + res.status + ')');
-    return res.json();
-  }
-
-  function observe(dict) {
-    const mo = new MutationObserver(muts => {
-      muts.forEach(m => m.addedNodes.forEach(node => {
-        if (node.nodeType === 1) applyAll(dict, node);
-      }));
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
-  }
-
-  function ready(fn) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', fn);
-    } else {
-      fn();
-    }
-  }
-
-  ready(async () => {
-    try {
-      const dict = await loadDict();
-      applyAll(dict);
-      // Apply again after window load (in case app boot overwrites labels)
-      window.addEventListener('load', () => applyAll(dict));
-      // Small retry shortly after
-      setTimeout(() => applyAll(dict), 250);
-      // Watch for future DOM changes
-      observe(dict);
-      console.info('[i18n] Spanish labels applied.');
-    } catch (e) {
-      console.error('[i18n] failed:', e);
-    }
+      setTimeout(async () => { const d = await loadDict(); applyAll(d); }, 300);
+    } catch (e) { /* ignore if already applied */ }
   });
 })();
 </script>
 
 </body>
 </html>
-
