@@ -1300,172 +1300,27 @@ async function runCorrection(){
   if (!input){ outBox.value=""; notesBox.innerHTML="<b>Changes:</b><br><span class='hint'>No input provided.</span>"; altBox.innerHTML=""; document.getElementById('outputPreview').innerHTML=""; document.getElementById('positions').innerHTML=""; updateWordPills(); return; }
   notesBox.innerHTML = "<b>Changes:</b><br><span class='hint'>Processing…</span>"; altBox.innerHTML = "<span class='hint'>Processing…</span>"; outBox.value = ""; document.getElementById('outputPreview').innerHTML=""; document.getElementById('positions').innerHTML="";
 
-  if (useAI){
-    try{
-      const res = await fetch(window.AI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input, level: lvl, formal, style: essayStyleForLevel(lvl) }) });
-      const raw = await res.text();
-      if (!res.ok) { notesBox.innerHTML = `<b>AI call failed:</b> HTTP ${res.status}<br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI HTTP "+res.status); }
-      let data; try { data = JSON.parse(raw); } catch { notesBox.innerHTML = `<b>AI returned non-JSON.</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`; throw new Error("AI non-JSON"); }
-      if (data && typeof data.corrected === 'string'){
-        const aiOut=data.corrected;
-
-        // Fallback if AI didn't change anything
-        if (_aiMadeNoChanges(input, aiOut)){
-          const { out, notes, alts } = correctLocal(input, lvl);
-          outBox.value = out;
-          notesBox.innerHTML = "<b>Changes (local fallback – AI made no edits):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
-          const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(out, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
-          renderAlternatives(out, merged, lvl); renderPreviewAndPositions(out, lvl); renderC2Rubric(out, lvl); updateWordPills(); return;
-        }
-
-        // Keep AI result
-        outBox.value = aiOut;
-        const baseNotes = Array.isArray(data.notes) ? data.notes : [];
-        notesBox.innerHTML = "<b>Changes (AI):</b><br>" + (baseNotes.length ? baseNotes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(none)");
-        if (Array.isArray(data.replacements) && data.replacements.length){
-          notesBox.innerHTML += "<br><b>Upgrades:</b><br>";
-          data.replacements.forEach(r=>{ notesBox.innerHTML += "• Replaced “"+escapeHtml(r.from)+"” → “"+escapeHtml(r.to)+"”<br>"; });
-        } else {
-          const extra=detectIntensifierNotes(input, aiOut); if (extra.length) notesBox.innerHTML += "<br>" + extra.map(n => "• " + escapeHtml(n)).join("<br>");
-        }
-        const fromAI=(data.alternatives && typeof data.alternatives==='object')?data.alternatives:{}; const fromLocal=buildAlternatives(aiOut, lvl); let merged; try{ merged=mergeAlternatives(fromAI, fromLocal) }catch{ merged=fromLocal }
-        renderAlternatives(aiOut, merged, lvl); renderPreviewAndPositions(aiOut, lvl); renderC2Rubric(aiOut, lvl); updateWordPills(); return;
-      } else {
-        notesBox.innerHTML = `<b>AI response missing "corrected".</b><br><pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre><br><i>Using local rules instead.</i>`;
-        throw new Error('AI missing corrected');
-      }
-    } catch(e){ /* fall through to local */ }
-  }
+  <script>
+// … keep everything above as-is …
 
   try{
     const { out, notes, alts } = correctLocal(input, lvl);
     outBox.value = out;
-    notesBox.innerHTML = "<b>Changes (local):</b><br>" + (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>") : "(No major changes)");
+    // i18n: "Changes (local)" + fallback
+    notesBox.innerHTML = "<b>" + (t?.('preview.changes_title') || "Changes:") + "</b><br>" +
+                         (notes.length ? notes.map(n=>"• "+escapeHtml(n)).join("<br>")
+                                       : "(" + (t?.('preview.changes_wait') || "No major changes") + ")");
     renderAlternatives(out, alts, lvl);
     renderPreviewAndPositions(out, lvl);
     renderC2Rubric(out, lvl);
     updateWordPills();
   } catch(e){
-    notesBox.innerHTML = `<b>Local corrector failed:</b> ${escapeHtml(e.message)}`;
+    // i18n: error prefix
+    notesBox.innerHTML = `<b>${t?.('errors.generic') || "Local corrector failed:"}</b> ${escapeHtml(e.message)}`;
     outBox.value = input;
     updateWordPills();
   }
 }
-<script>
-// ===== Scaffolds actions (i18n’d) =====
-function copyScaffold(){
-  const list = document.getElementById('scMoves');
-  const items = [...list.querySelectorAll('li')].map(li => `• ${li.textContent}`);
-  navigator.clipboard?.writeText(items.join("\n"));
-  alert(t('toast.scaffold_copied') || 'Scaffold copied.');
-}
-function copyOpener(){
-  const text = document.getElementById('scOpener').textContent || '';
-  navigator.clipboard?.writeText(text);
-  alert(t('toast.opener_copied') || 'Opener copied.');
-}
-function exportScaffoldPDF(){
-  const { jsPDF } = window.jspdf || {};
-  if (!jsPDF){ alert(t('error.pdf_load') || "PDF library failed to load."); return; }
-
-  const doc = new jsPDF({ unit:"pt", format:"a4" });
-  const margin = 48; let y = margin;
-  const level = document.getElementById('scLevel').value;
-  const type  = document.getElementById('scType').value;
-  const typeLabel = type[0].toUpperCase()+type.slice(1);
-
-  const title = (t('pdf.scaffold_title') || 'Scaffold – {level} {type}')
-                  .replace('{level}', level).replace('{type}', typeLabel);
-
-  doc.setFont("Helvetica","bold"); doc.setFontSize(16); doc.text(title, margin, y); y+=18;
-  doc.setFont("Helvetica","normal"); doc.setFontSize(12);
-
-  const moves=[...document.querySelectorAll('#scMoves li')].map((li,i)=>`${i+1}) ${li.textContent}`);
-  doc.text(doc.splitTextToSize(moves.join("\n"), 595-margin*2), margin, y); y+=18;
-
-  doc.text(t('section.opener') || "Opener:", margin, y); y+=14;
-  doc.text(doc.splitTextToSize(document.getElementById('scOpener').textContent||'', 595-margin*2), margin, y); y+=18;
-
-  doc.text(t('section.tips') || "Tips:", margin, y); y+=14;
-  const tips=[...document.querySelectorAll('#scTips li')].map((li,i)=>`${i+1}) ${li.textContent}`);
-  doc.text(doc.splitTextToSize(tips.join("\n"), 595-margin*2), margin, y);
-
-  doc.save("scaffold.pdf");
-}
-
-// ===== Part 2 wordcount pills (unchanged behaviour; i18n already used) =====
-function updatePart2WordcountPills(){
-  const lvl  = document.getElementById('p2Level').value;
-  const inWC  = (document.getElementById('p2Input').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
-  const outWC = (document.getElementById('p2Output').value.trim().match(/\b[\w’'-]+\b/g)||[]).length;
-
-  const inLabel  = (t('io.input_words')  || 'Input: {n} words').replace('{n}', inWC);
-  const outLabel = (t('io.output_words') || 'Output: {n} words').replace('{n}', outWC);
-
-  const pills = p2TargetForLevel(lvl);
-  const inEl  = document.getElementById('p2InWC');
-  const outEl = document.getElementById('p2OutWC');
-  const tEl   = document.getElementById('p2TargetWC');
-
-  if (inEl) inEl.textContent = inLabel;
-  if (outEl){
-    outEl.textContent = outLabel;
-    outEl.className = 'pill';
-    if (outWC>0 && (outWC<pills.min || outWC>pills.max)) outEl.classList.add('warn');
-    if (outWC>=pills.min && outWC<=pills.max) outEl.classList.add('ok');
-  }
-  if (tEl) tEl.textContent = pills.label;
-}
-
-// ===== Part 2 “processing” strings (use i18n) =====
-async function runPart2Correction(){
-  const input = document.getElementById("p2Input").value.trim();
-  const lvl   = document.getElementById("p2Level").value;
-  const type  = document.getElementById("p2Type").value;
-  const formal= document.getElementById("p2Formal").checked;
-  const useAI = document.getElementById("p2UseAI").checked && typeof window.AI_ENDPOINT === "string" && window.AI_ENDPOINT.startsWith("https://");
-
-  const outBox   = document.getElementById("p2Output");
-  const changes  = document.getElementById("part2Changes");
-  const vocabBox = document.getElementById("part2Vocab");
-  const processing = t('io.processing') || 'Processing…';
-
-  if (!input){
-    outBox.value = "";
-    changes.innerHTML = "<b>"+(t('preview.changes_title')||'Changes:')+"</b><br><span class='hint'>"+(t('warn.no_text')||'Paste your text to get started.')+"</span>";
-    vocabBox.innerHTML = "<span class='hint'>"+(t('part2.vocab_alts_wait')||'After correction, suggested upgrades will appear here.')+"</span>";
-    document.getElementById('part2Preview').innerHTML = "";
-    const pos = document.getElementById('p2Positions'); if (pos) pos.innerHTML = "";
-    updatePart2WordcountPills(); return;
-  }
-
-  changes.innerHTML = "<b>"+(t('preview.changes_title')||'Changes:')+"</b><br><span class='hint'>"+processing+"</span>";
-  vocabBox.innerHTML = "<span class='hint'>"+processing+"</span>";
-  outBox.value = ""; document.getElementById('part2Preview').innerHTML = "";
-  const pos = document.getElementById('p2Positions'); if (pos) pos.innerHTML = "";
-
-  // … keep the rest of your AI/local paths exactly as you have them …
-}
-</script>
-
-<!-- ===== Shared timer (i18n’d label) ===== -->
-<script>
-let _timer=null, _until=0;
-function startTimer(minutes=45){
-  _until = Date.now() + minutes*60*1000;
-  if (_timer) clearInterval(_timer);
-  const paint=()=>{
-    const left = Math.max(0, _until - Date.now());
-    const m = String(Math.floor(left/60000)).padStart(2,'0');
-    const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
-    const label = (t('io.timer_label') || 'Timer: {m}:{s}').replace('{m}', m).replace('{s}', s);
-    const main = document.getElementById('timer'); if (main) main.textContent = label;
-    const p2t  = document.getElementById('p2Timer'); if (p2t) p2t.textContent = label;
-    if (left<=0) { clearInterval(_timer); _timer=null; }
-  };
-  paint(); _timer=setInterval(paint, 500);
-}
-</script>
 
 /* ========= Clear / Paste / PDF ========= */
 function clearAll(){
@@ -1473,13 +1328,19 @@ function clearAll(){
   document.getElementById("outputText").value="";
   document.getElementById("outputPreview").innerHTML="";
   document.getElementById("positions").innerHTML="";
-  document.getElementById("notes").innerHTML="<b>Changes:</b><br><span class='hint'>Cleared.</span>";
-  document.getElementById("altList").innerHTML="After correction, suggested upgrades will appear here (especially for C1/C2).";
+  // i18n: "Changes:" + "Cleared."
+  document.getElementById("notes").innerHTML =
+    "<b>" + (t?.('preview.changes_title') || "Changes:") + "</b><br>" +
+    "<span class='hint'>" + (t?.('status.cleared') || "Cleared.") + "</span>";
+  // i18n: vocab placeholder
+  document.getElementById("altList").innerHTML =
+    t?.('vocab.alternatives_wait') || "After correction, suggested upgrades will appear here (especially for C1/C2).";
   hiddenIds.clear(); currentMarks=[]; window._lastSignature="";
   const c2c=document.getElementById('c2RubricCard'); const c2b=document.getElementById('c2Rubric');
   if(c2c){ c2c.style.display='none'; } if(c2b){ c2b.innerHTML=''; }
   updateWordPills();
 }
+
 async function pasteFromClipboard(){
   const ta=document.getElementById("inputText");
   try{
@@ -1488,577 +1349,95 @@ async function pasteFromClipboard(){
       const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
       ta.value = ta.value.slice(0,start)+text+ta.value.slice(end);
       ta.focus(); ta.selectionStart=ta.selectionEnd=start+text.length; updateWordPills();
-    } else alert("Your clipboard is empty.");
+    } else alert(t?.('status.clipboard_empty') || "Your clipboard is empty.");
   }catch(e){
-    alert("Browser blocked clipboard. Try Ctrl/Cmd+V on desktop, or long-press → Paste on mobile.");
+    alert(t?.('errors.clipboard_blocked') || "Browser blocked clipboard. Try Ctrl/Cmd+V on desktop, or long-press → Paste on mobile.");
   }
 }
+
 function downloadPDF(){
   try{
-    const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert("PDF library failed to load."); return; }
+    const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert(t?.('errors.pdf_lib_failed') || "PDF library failed to load."); return; }
     const doc=new jsPDF({ unit:"pt", format:"a4" }); const margin=48; let y=margin;
-    doc.setFont("Helvetica","bold"); doc.setFontSize(14); doc.text("EssayCoach – Corrected Output", margin, y); y+=20;
+    // i18n: use export.title if available
+    const title = t?.('export.title') || "EssayCoach – Corrected Output";
+    doc.setFont("Helvetica","bold"); doc.setFontSize(14); doc.text(title, margin, y); y+=20;
     doc.setFont("Helvetica","normal"); doc.setFontSize(12);
     const lines=doc.splitTextToSize(document.getElementById("outputText").value || "(empty)", 595-margin*2);
     doc.text(lines, margin, y);
     doc.save("essay-corrected.pdf");
-  }catch(e){ alert("Could not create PDF: "+e.message); }
+  }catch(e){ alert((t?.('errors.pdf_failed') || "Could not create PDF: ") + e.message); }
 }
 
 /* ========= Punctuation Guide (safe overwrite) ========= */
 (function () {
   // Full text (exactly as-is). Make sure the FIRST and LAST characters are backticks (`).
-  
-  window.PUNCT_GUIDE = String.raw`¿Por qué deberías aprender puntuación?
-  
-Sé lo que quizá estés pensando: “La mayoría de los hablantes nativos no la usan bien, ¿para qué voy a molestarme?”. Y tienes razón: mucha gente pone comas al azar o se olvida de los puntos por completo. Pero aquí está la diferencia: tú no estás escribiendo solo para salir del paso, estás escribiendo para Cambridge.
-
-En un examen, la puntuación no es decoración. Es una señal que demuestra al examinador que sabes lo que haces. Cada coma, punto o punto y coma les dice en silencio: este escritor tiene el control. Y ese control añade valor a tu redacción
-Así que sí, merece la pena aprenderla. Más aún: merece la pena dominarla. Porque cuando usas la puntuación de manera correcta y eficaz, tu escritura fluye, tus ideas llegan claras y tu nivel brilla.
-
-¿Mi consejo? No lo subestimes. Tómate la puntuación en serio, practícala y deja que eleve tu escritura. Los beneficios vendrán solos: los verás en tus notas y, lo que es más importante, en tu confianza cada vez que escribas.
-
-1. Punto ( . )
-
-El punto es el signo más sencillo de todos. Cierra una oración.
-
-Trabajé hasta tarde anoche.   •	I worked late last night.
-Perdimos el tren.             •	We missed the train.
-
-Consejo del coach: No dejes que tus oraciones se alarguen sin fin. Demuestra al examinador que puedes terminar una idea antes de empezar la siguiente.
-
-2. Coma ( , )
-
-Las comas son complicadas: muchos hablantes nativos las usan mal. Pero una vez que aprendes lo básico, se convierten en tus aliadas.
-
-Se usan en:
-
-Listas:
-Compramos manzanas, plátanos y peras.  •  We bought apples, bananas, and pears. 
-
-Después de un inicio:
-Ayer, fui al gimnasio.  •  Yesterday, I went to the gym.
-
-Para información extra:
-Mi hermana, que vive en Londres, nos va a visitar.   •  My sister, who lives in London, is visiting us.
-
-Antes de un FANBOYS (, For , And , Nor , But , Or , Yet , So) al unir dos oraciones independientes:
-Quería salir, pero estaba lloviendo.   •  I wanted to go out, but it was raining.
-
-Advertencia del coach: No esparzas comas por todas partes. Cada una debe tener un motivo.
-
-3. Punto y coma ( ; )
-
-El punto y coma es una pausa más fuerte que la coma, pero más débil que el punto. Une dos oraciones independientes cuando las ideas están estrechamente relacionadas.
-
-Estudié mucho; quería aprobar el examen.          •	I studied hard; I wanted to pass my exam.
-El bar estaba lleno; decidimos sentarnos fuera.   •	The café was full; we decided to sit outside.
-
-Es una forma sutil de mostrar madurez en tu escritura. Úsalo con moderación, pero cuando lo hagas, los examinadores lo notan.
-
-4. Dos puntos ( : )
-
-Los dos puntos introducen algo: una lista, una explicación o una cita.
-
-Compró tres cosas: pan, leche y mantequilla.      •	She bought three things: bread, milk, and butter.
-Hay algo que no puedo aceptar: la deshonestidad.  •	There’s one thing I can’t accept: dishonesty.
-
-Le dicen al lector: “Atención, lo que viene a continuación explica o completa lo anterior”.
-
-5. Apóstrofo ( ’ )
-
-Pequeño pero poderoso. Tiene dos funciones principales:
-
-Mostrar posesión:
-
-El libro de Emma → Emma’s book.             o	Emma’s book (the book belongs to Emma).
-La casa de mis padres → my parents’ house.  o	My parents’ house (the house belongs to both parents).
-
-
-Mostrar letras omitidas (contracciones):
-
-don’t = do not          o	don’t = do not
-it’s = it is / it has   o	it’s = it is / it has
-
-Advertencia: its (sin apóstrofo) es posesivo: The dog wagged its tail → El perro movió la cola.
-
-6. Signo de interrogación ( ? )
-
-Cierra una pregunta directa:
-
-¿Estás listo?   •	Are you ready?
-¿Qué hora es?   •	What time is it?
-
-7. Signo de exclamación ( ! )
-
-Añade emoción, sorpresa o sentimiento intenso:
-
-¡Cuidado!       •	Watch out!
-¡Es increíble!  •	That’s amazing!
-
-Úsalo con moderación en redacciones formales. Demasiados signos de exclamación hacen que parezca que estás gritando.
-
-8. Comillas ( “ ” )
-
-Muestran discurso directo o palabras citadas.
-
-“Llegaré tarde”, dijo ella.  
-•	“I’ll be late,” she said.
-“El artículo afirmaba: ‘El cambio climático es el mayor desafío de nuestro tiempo.’”
-•	“The article stated, “Climate change is the greatest challenge of our time.””
-
-9. Raya ( – ) y Paréntesis ( )
-
-Ambos añaden información extra.                  
-Raya: Llegó por fin – con dos horas de retraso.             •	Dash: He finally arrived – two hours late.
-Paréntesis: Visitamos París (mi ciudad favorita) en julio.  •	Parentheses: We visited Paris (my favourite city) in July.
-
-Aportan variedad a tu estilo de oración y añaden fluidez.
-
-¿Por qué importa esto en Cambridge?    • Why does this matter for Cambridge?
-
-Porque la puntuación no es adorno: es evidencia. Cada signo correcto demuestra que puedes controlar una escritura compleja. En los exámenes, eleva tu trabajo de “suficiente” a “impresionante”.
-
-Reflexión final
-
-La puntuación es tu superpoder silencioso. No grita, pero lo moldea todo. Apréndela. Practícala. Úsala con intención. Y entonces, cuando te sientes en Cambridge o en cualquier otro lugar, tus frases no solo tendrán sentido: brillarán.
-
-👉 Ejercicio de esta noche: Toma un párrafo que hayas escrito antes. Añade las comas que faltan. Prueba un punto y coma. Sustituye un punto débil por dos puntos. Observa cómo cambia el ritmo.
-
-Te prometo: notarás la diferencia.
-
-Construyendo oraciones claras y seguras (paso a paso, en inglés sencillo)
-
-________________________________________
-
-1) ORACIONES, FRASES Y CLÁUSULAS (TUS BLOQUES DE CONSTRUCCIÓN)
-
-¿Qué es una cláusula?
-Una cláusula es un grupo de palabras que contiene al menos un sujeto y un verbo. Existen dos tipos:
-Cláusula independiente (IC): una idea completa; puede funcionar sola como oración.
-Cláusula dependiente (DC): no es una idea completa; necesita una IC para tener sentido.
-
-Ejemplos (DC + IC): (puedes intercambiar el orden)
-
-•	If I work hard, I can pass my exam.
-•	I can pass my exam if I work hard
-•	Whenever I go out, I take my umbrella.
-•	I take my umbrella whenever I go out.
-•	Unless I have to work, I will come for a drink.
-•	Because it had just stopped raining, we could meet for a coffee. 
-
-👉 Recuerda: pon coma cuando la oración empiece con una conjunción subordinante.
-
-¿Qué es una frase?
-Una frase es un grupo de palabras que tiene sentido, pero no contiene sujeto y verbo a la vez.
-Ejemplo: the big blue house at the end of the road (la gran casa azul al final de la calle).
-
-¿Qué es una oración?
-Una oración expresa un pensamiento completo. Puede ser:
-
-Una cláusula independiente (simple), o
-
-Una combinación de cláusulas independientes y dependientes (compuesta, compleja o compuesta-compleja).
-
-2) ORDEN DE PALABRAS QUE “FUNCIONA SIEMPRE” (PIENSA EN BLOQUES)
-
-En inglés, los lectores esperan un orden estable. Si sigues estos patrones, tus frases serán claras. Esto no ocurre igual en otros idiomas.
-
-❌ I went quickly home after the meeting. (¡Incorrecto!)
-
-Patrón A: verbo de movimiento (alguien o algo va de A a B)
-Sujeto → Verbo → Lugar → Manera → Tiempo → Propósito
-Ejemplo: I went to the city centre by bus this morning to buy a new shirt.
-
-(Verbos de movimiento: go, fly, arrive, walk, dash…).
-
-Patrón B: verbo sin movimiento
-Sujeto → Verbo → Objeto directo → Manera → Lugar → Tiempo → Propósito
-Ejemplo: I ate my breakfast quickly at home this morning because I was in a hurry.
-
-👉 Mantén el orden estable. Puedes mover el tiempo al principio para variar, pero no desordenes todo.
-
-Ejemplo: Yesterday, I had to dash because I was late for the bus.
-
-Consejo: piensa en bloques, no en palabras sueltas: Sujeto, Verbo, Objeto, Manera, Lugar, Tiempo, Propósito. Con práctica, se vuelve automático.
-
-Ejemplos para practicar (encuentra los bloques):
-
-The man snatched my phone from the table just as I was speaking to my sister.
-
-We arrived at the airport at ten o’clock after a delay of fifteen minutes.
-
-I wiped the sweat from my forehead when I discovered the problem.
-
-We finished our homework quickly when Mum told us she wanted to take us for a meal.
-
-3) LOS ADVERBIOS — CÓMO, DÓNDE, CUÁNDO, CON QUÉ FRECUENCIA (ÚSALOS CON SABIDURÍA)
-
-Los adverbios añaden sabor: gently, accurately, yesterday, usually. Úsalos, pero no satures tu escritura; demasiados hacen que suene pesada.
-
-Familias útiles de adverbios:
-
-De manera: quickly, quietly, correctly, cheerfully, loudly, politely…
-
-De lugar: here, ahead, under, above, behind, outside, near, in/at, towards…
-
-De tiempo: before, early, after, yesterday, later, when, at, next, sometime…
-
-Negativos: barely, hardly, never, seldom, scarcely, no sooner, only if/when, in no way…
-
-De frecuencia: always, normally, rarely, frequently, generally, occasionally, sometimes, usually…
-
-¿Dónde se colocan?
-
-- Después de un modal (afirmativo): I can always help you.
-- Antes de un modal (negativo): I probably won’t come to the party.
-- Antes del verbo principal: I always go by bus.
-- Después del verbo to be: I am always happy.
-
-Modales comunes: can, could, may, might, will, would, must, should.
-(have to, need to, ought to funcionan distinto: no son modales puros).
-
-Ejemplos:
-
-When I phone Mike, he is never at home.
-My sister always has to hurry because she usually gets up too late.
-We had to work very hard, so we were too tired to go to the party.
-I probably won’t see you at the party; I’ll probably be on holiday.
-Bus services have been seriously affected by the bad weather.
-The lady accurately recounted what she had seen.
-
-4) DE BUENAS ORACIONES A PÁRRAFOS SÓLIDOS (CONECTA CON PROPÓSITO)
-
-Ahora que ya sabes formar frases claras, toca conectarlas. El conector correcto —usado con la puntuación adecuada— eleva tu escritura. Practicaremos tres familias grandes:
-
-Conjunciones coordinantes (FANBOYS)
-
-Adverbios conjuntivos
-
-Conjunciones subordinantes
-
-5) LOS CUATRO TIPOS DE ORACIÓN (Y CÓMO ESCRIBIR CADA UNA)
-
-A. Oración simple (solo un grupo de sujeto)
-Es una cláusula independiente: una idea clara con sujeto y verbo.
-
-I did my homework yesterday.
-I did my homework and went out.
-My friend and I did our homework and went out.
-
-(Aunque diga my friend and I, sigue siendo un solo grupo de sujeto).
-
-B. Oración compuesta (IC + IC)
-Unimos dos cláusulas independientes con:
-
-una conjunción coordinante (FANBOYS),
-
-un punto y coma, o
-
-un adverbio conjuntivo (con ; antes y , después).
-
-1) Conjunciones coordinantes (FANBOYS)
-Sirven para conectar palabras, frases o ICs.
-👉 Regla de la coma: úsala entre dos ICs de igual peso.
-Excepción: si la primera cláusula tiene cinco palabras o menos, puedes omitir la coma.
-
-FANBOYS = For, And, Nor, But, Or, Yet, So.
-
-Ejemplos:
-
-I went home, for I was tired. (for = because).
-Mum was born in Britain, and Dad in Germany.
-I don’t like apples, nor do I like pears.
-It rained a lot, but we had to leave.
-We can watch TV at home, or go to the cinema.
-I went to the party, yet I didn’t like it.
-I ate a lot, so I went for a walk.
-
-Comparación:
-
-Simple: I did my homework and went out.
-
-Compound: I did my homework, and I went out.
-
-2) Punto y coma
-Une dos ICs sin conjunción; da énfasis a la segunda parte:
-
-I went home; I was tired.
-
-I did my homework quickly; I went to the bar.
-
-3) Adverbios conjuntivos (con puntuación)
-Algunos frecuentes: however, therefore, consequently, moreover, nevertheless, instead, meanwhile, hence, thus, accordingly.
-
-Patrón: IC ; adverbio conjuntivo , IC
-
-I wanted to go for a swim; however, I was too busy at work.
-
-También pueden moverse dentro de la segunda cláusula:
-
-I wanted to go for a swim, I was, however, too busy…
-I wanted to go for a swim, I was too busy…, however.
-
-C. Oración compleja (IC + DC)
-Combina una IC con una (o más) DC usando conjunciones subordinantes (because, when, although, if, after, before, unless, while, even though, whether, once, provided that…).
-
-Dos órdenes posibles:
-
-IC + because/when… + DC → I studied hard because I wanted to pass.
-
-Because/When… + DC, IC → Because I wanted to pass, I studied hard.
-
-👉 Regla de la coma: si la DC va primero, pon coma antes de la IC.
-
-Ejemplo largo (IC + DC + DC):
-When I go to see my grandmother, I make sure I bring her something she likes to eat because that makes her feel happy.
-
-Extra (cláusula incrustada):
-My sister, who, by the way, is a terrific writer, won first prize last week…
-
-D. Oración compuesta-compleja (IC + IC + DC)
-Simplemente combinas los patrones: dos ICs + al menos una DC.
-Piensa: estructura compuesta + añadido complejo.
-
-6) TODO JUNTO — MINI-DRILLS DEL COACH
-
-Prueba estos ejercicios usando las reglas:
-
-Empieza simple, luego amplía con propósito y tiempo:
-
-Simple: I wrote the email.
-
-Extendida: I wrote the email carefully at home last night because my teacher needed it.
-
-Patrón de movimiento (A) con lugar y manera:
-
-We walked to the harbour slowly this afternoon to watch the boats.
-
-Hazla compuesta con un FANBOYS:
-
-We finished our homework, so we had time to play.
-
-Hazla compuesta con punto y coma:
-
-The sky turned black; thunder followed.
-
-Hazla compuesta con adverbio conjuntivo:
-
-The café was full; however, a table opened near the window.
-
-Hazla compleja con because/when/although:
-
-Although the rain eased, we kept our coats on.
-
-Combínalo todo en una compuesta-compleja:
-
-Although the rain eased, we kept our coats on, and we caught the bus home.
-
-EMPUJÓN FINAL
-
-No necesitas “sonar inteligente”. Necesitas construir con claridad: cláusula a cláusula, bloque a bloque. Mantén el orden de palabras estable, coloca los adverbios con intención y une ideas con el conector y la puntuación correctos. Así es como la escritura se vuelve clara, segura y tuya.
-
-👉 Reflexión: Esta semana, escribe tres versiones de la misma idea —simple → compuesta → compleja— y observa cómo cambia el efecto de tu mensaje. Estoy aquí animándote.
-What’s a phrase?
-
-A phrase is a group of words that makes sense but doesn’t have both a subject and a verb.
-Example: the big blue house at the end of the road (no full S+V) 
-
-What’s a sentence?
-A sentence expresses a complete thought. It can be:
-•	one independent clause (simple), or
-•	a mix of independent and dependent clauses (compound / complex / compound-complex). We’ll explore these fully below. 
-________________________________________
-
-2) WORD ORDER THAT “JUST WORKS” (THINK IN BLOCKS)
-In English, readers expect a steady order. If you follow these patterns, your sentences will land clearly. This is unlike any other language.
-I went quickly home after the meeting. (This is wrong!!)
-
-Pattern A: Verb of motion (someone/thing moves from A to B)
-
-Subject → Verb → Location → Manner → Time → Purpose
-Example: I went to the city centre by bus this morning to buy a new shirt.
-(“go, fly, arrive, walk, dash…” are motion verbs.) 
-
-Pattern B: Verb of no motion
-
-Subject → Verb → Direct object → Manner → Location → Time → Purpose
-Example: I ate my breakfast quickly at home this morning because I was in a hurry. 
-
-Keep the order steady. You can move the time to the front for variety, but don’t shuffle everything.
-Example: Yesterday, I had to dash because I was late for the bus. 
-
-Tip: Think in blocks, not single words—Subject, Verb, Object, Manner, Location, Time, Purpose. With practice, this becomes automatic. 
-
-Quick practice (spot the blocks):
-
-•	The man snatched my phone from the table just as I was speaking to my sister.
-•	We arrived at the airport at ten o’clock after a delay of fifteen minutes.
-•	I wiped the sweat from my forehead when I discovered the problem.
-•	We finished our homework quickly when Mum told us she wanted to take us for a meal. 
-________________________________________
-
-3) ADVERBS—HOW, WHERE, WHEN, HOW OFTEN (USE THEM WISELY)
-
-Adverbs add flavour—gently, accurately, yesterday, usually. Use them, but don’t drown your writing in them; too many can make the prose flabby. We’ll keep it tidy and purposeful. 
-
-Useful families of adverbs
-
-•	Manner: quickly, quietly, correctly, cheerfully, loudly, politely…
-•	Place: here, ahead, under, above, behind, outside, near, in/at, towards…
-•	Time: before, early, after, yesterday, later, when, at, next, sometime…
-•	Negative: barely, hardly, never, seldom, scarcely, no sooner, only if/when, in no way…
-•	Frequency: always, normally, rarely, frequently, generally, occasionally, sometimes, usually… 
-
-Where do they go?
-
-•	After a modal (positive): I can always help you.
-•	Before a modal (negative): I probably won’t come to the party.
-•	Before the main verb: I always go by bus.
-•	After “to be”: I am always happy.
-
-Common modal verbs: can, could, may, might, will, would, must, should.
-
-Note: have to, need to, ought to behave differently; they’re not true modals.
-
-Try these (notice position & meaning):
-•	When I phone Mike, he is never at home.
-•	My sister always has to hurry because she usually gets up too late.
-•	We had to work very hard, so we were too tired to go to the party.
-•	I probably won’t see you at the party; I’ll probably be on holiday.
-•	Bus services have been seriously affected by the bad weather.
-•	The lady accurately recounted what she had seen. 
-________________________________________
-
-4) FROM GOOD SENTENCES TO STRONG PARAGRAPHS (CONNECT WITH PURPOSE)
-
-Now that you can form clear sentences, we’ll connect them. The right connector—used with the right punctuation—pushes your writing up a level. We’ll practise three big families: coordinating conjunctions, conjunctive adverbs, and subordinating conjunctions. 
-________________________________________
-
-5) THE FOUR SENTENCE TYPES (AND HOW TO WRITE EACH)
-
-A. Simple sentence (just one subject group)
-A simple sentence is an independent clause—a clear thought with a subject and (at least) one verb.
-
-•	I did my homework yesterday.
-•	I did my homework and went out.
-•	My friend and I did our homework and went out.
-
-(Even with “my friend and I,” it’s still one subject group, so the sentence is simple.) 
-________________________________________
-
-B. Compound sentence (IC + IC)
-
-You join two independent clauses with one of these:
-
-1.	a coordinating conjunction (FANBOYS),
-2.	a semicolon ;, or
-3.	a conjunctive adverb (with semicolon before and comma after). 
-
-1) Coordinating conjunctions (FANBOYS)
-
-They connect words, phrases, or independent clauses.
-
-Comma rule: use a comma between two ICs of equal strength.
-
-Tiny exception: if the first clause has five words or fewer, you can omit the comma.
-
-FANBOYS = For, And, Nor, But, Or, Yet, So. 
-•	For = because: I went home, for I was tired.
-•	And: Mum was born in Britain, and Dad in Germany.
-•	Nor = and not (needs inversion in the second clause):
-I don’t like apples, nor do I like pears.
-I can’t come to the party, nor can I come to the dinner.
-•	But: It rained a lot, but we had to leave.
-•	Or: We can watch TV at home, or go to the cinema.
-•	Yet = but: I went to the party, yet I didn’t like it.
-•	So (result): I ate a lot, so I went for a walk.
-
-Compare:
-
-Simple: I did my homework and went out.
-
-Compound: I did my homework, and I went out. (Two ICs.) 
-
-2) Semicolon
-
-Use ; to link two ICs without a conjunction; it can emphasise the second part:
-•	I went home; I was tired.
-•	I did my homework quickly; I went to the bar. 
-
-3) Conjunctive adverbs (with punctuation)
-
-Common ones you’ll see: however, therefore, consequently, moreover, furthermore, nevertheless, instead, meanwhile, hence, thus, accordingly (and more). Grouped examples are shown in your notes. 
-
-Pattern: IC ; conjunctive adverb , IC
-•	I wanted to go for a swim; however, I was too busy at work.
-
-These adverbs can move around within the second clause; only when they sit between two ICs with the ; and , do we call them conjunctive adverbs in a compound sentence:
-•	I wanted to go for a swim, I was, however, too busy at work to go.
-•	I wanted to go for a swim, I was too busy at work to go, however.
-
-(Here, as your notes point out, “however” isn’t functioning as a conjunctive adverb in the strict sense.)
-________________________________________
-
-C. Complex sentence (IC + DC)
-
-A complex sentence combines one independent clause with one (or more) dependent clause(s) using a subordinating conjunction (because, when, although, if, after, before, unless, while, even though, whether, once, provided that, etc.). 
-
-Two correct orders:
-•	IC + because/when/… + DC → I studied hard because I wanted to pass.
-•	Because/When/… + DC, IC → Because I wanted to pass, I studied hard.
-
-Comma rule: if the DC comes first, add a comma before the IC. 
-
-Longer example (spot DC + IC + DC):
-When I go to see my grandmother, I make sure I bring her something she likes to eat because that makes her feel happy. 
-
-Bonus (embedded clause):
-My sister, who, by the way, is a terrific writer, won first prize last week… (a relative clause adds information). 
-________________________________________
-
-D. Compound-complex sentence (IC + IC + DC)
-
-You’re simply combining the patterns above: two independent clauses and at least one dependent clause.
-
-Think: Compound backbone + Complex add-on. (We’ll practise these once the first three feel easy.) 
-________________________________________
-
-6) PUTTING IT ALL TOGETHER—COACH’S MINI-DRILLS
-
-Try these rewrite tasks using the rules above:
-
-1.	Start simple, then extend with purpose and time (Pattern B):
-•	Simple: I wrote the email.
-•	Extended: I wrote the email carefully at home last night because my teacher needed it.
-
-2.	Motion pattern (Pattern A) with location and manner:
-•	We walked to the harbour slowly this afternoon to watch the boats.
-
-3.	Make it compound with a FANBOYS word:
-•	We finished our homework, so we had time to play.
-
-4.	Make it compound with a semicolon (emphasis on the second idea):
-•	The sky turned black; thunder followed.
-
-5.	Make it compound with a conjunctive adverb (punctuation matters):
-•	The café was full; however, a table opened near the window.
-
-6.	Make it complex with because/when/although:
-•	Although the rain eased, we kept our coats on.
-
-7.	Combine everything into compound-complex:
-•	Although the rain eased, we kept our coats on, and we caught the bus home.
-________________________________________
-
-FINAL NUDGE
-
-You don’t need to “sound clever.” You need to build clearly: clause by clause, block by block. Keep your word order steady, place adverbs with intention, and join ideas with the right connector and punctuation. That’s how writing becomes calm, confident, and yours.
-
-Try this reflection: This week, write three versions of the same idea—simple → compound → complex—and notice how each version changes the feel of your message. I’m right here cheering you on. `;
+  window.PUNCT_GUIDE = String.raw`…(unchanged huge guide)…`;
 
   // Back-compat in case other code still reads PUNCT_RULES
   window.PUNCT_RULES = [window.PUNCT_GUIDE];
+
+  // Overwrite (do not redeclare) the three functions
+  window.renderPunctRules = function(){
+    // BUGFIX: use the real element id in your HTML: #punctRules (not #punctList)
+    const box = document.getElementById('punctRules'); // fixed
+    if (!box) return;
+    box.style.whiteSpace = "pre-wrap";
+    box.style.fontFamily = "inherit";
+    box.textContent = window.PUNCT_GUIDE;
+  };
+
+  window.copyPunctRules = function(){
+    navigator.clipboard?.writeText(window.PUNCT_GUIDE);
+    alert(t?.('status.punct_copied') || "Punctuation guide copied."); // i18n
+  };
+
+  window.exportPunctPDF = function(){
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF){ alert(t?.('errors.pdf_lib_failed') || "PDF library failed to load."); return; }
+
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 48;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = margin;
+
+    // i18n: separate PDF title for the guide
+    const pdfTitle = t?.('punct.pdf_title') || "Punctuation & Sentence Building";
+    doc.setFont("Helvetica","bold"); doc.setFontSize(16);
+    doc.text(pdfTitle, margin, y); y += 24;
+
+    doc.setFont("Helvetica","normal"); doc.setFontSize(12);
+    const lines = doc.splitTextToSize(window.PUNCT_GUIDE, pageW - margin*2);
+    const lh = 14;
+
+    lines.forEach(line => {
+      if (y > pageH - margin) { doc.addPage(); y = margin; }
+      doc.text(line, margin, y);
+      y += lh;
+    });
+
+    // i18n: allow a localised filename
+    const fname = t?.('punct.pdf_filename') || "punctuation-guide.pdf";
+    doc.save(fname);
+  };
+})();
+  
+/* ========= Scaffolds renderer ========= */
+function renderScaffold(){
+  const lvl = document.getElementById('scLevel').value;
+  if (lvl==='C2'){ const st=document.getElementById('scType'); if (st && st.value!=='essay'){ st.value='essay'; } }
+  const typ = document.getElementById('scType').value;
+  const d = SCAFFOLDS[lvl][typ];
+  document.getElementById('scMoves').innerHTML = d.moves.map(m => `<li>${escapeHtml(m)}</li>`).join('');
+  document.getElementById('scOpener').textContent = d.opener;
+  document.getElementById('scTips').innerHTML = d.tips.map(ti => `<li>${escapeHtml(ti)}</li>`).join('');
+  if (document.getElementById('guideOverlay').style.display === 'flex') { renderGuideExample(); }
+}
+
+// … keep everything below as-is …
+</script>
+
 
   // Overwrite (do not redeclare) the three functions
   window.renderPunctRules = function(){
