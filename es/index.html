@@ -146,6 +146,8 @@
   const path = location.pathname.toLowerCase();
   const LOCALE = /\/es(\/|$)/.test(path) ? 'es' : 'en';
   document.documentElement.lang = LOCALE;
+const dict = await loadDict(LOCALE);
+try { applyI18n(dict); } catch(e) { console.warn('i18n apply failed', e); }
 
 
   // Restore trial session & auto-expire
