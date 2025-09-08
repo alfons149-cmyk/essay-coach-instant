@@ -180,6 +180,14 @@ try { applyI18n(dict); } catch(e) { console.warn('i18n apply failed', e); }
       if(typeof val==='string') el.textContent = val;
     });
   }
+    function t(path, fallback){
+  try{
+    const d = window._i18nDict || {};
+    const v = path.split('.').reduce((o,k)=>o && o[k], d);
+    return (typeof v === 'string' && v) ? v : (fallback || path);
+  }catch(e){ return fallback || path; }
+}
+
 
   // ===== Helpers =====
   const $ = s=>document.querySelector(s);
