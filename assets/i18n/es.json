@@ -51,9 +51,11 @@
       "error": "Rojo = errores (run-ons, coma mal usada)"
     }
   },
-  "punct": {
-    "header": "Reglas básicas de puntuación (seguras para el examen)"
-  },
+ "punct": {
+  "header": "Reglas básicas de puntuación (seguras para el examen)",
+  "guide": "¿Por qué aprender puntuación?\nMuchos hablantes nativos no la usan correctamente. Entonces, ¿cuál es el sentido? La respuesta es simple: esto es Cambridge. Usar la puntuación correctamente y de forma eficaz demuestra tu nivel y añade valor a tu composición.\n— Punto (.)\n— Coma (,)\n— Punto y coma (;)\n— Dos puntos (:)\n— Raya (—)\n— Apóstrofo (’)"
+}
+
   "part2": {
     "title": "Parte 2 – comprobaciones rápidas por género"
   },
