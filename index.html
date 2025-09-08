@@ -143,12 +143,11 @@
   window.EC_CONFIG = { API_BASE:'/api', REQUIRE_SUBSCRIPTION:true, SHOW_TRIAL:true, QUOTA_CAP:20, TRIAL_DAYS:2 };
   window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
   window.QUOTA = { used:0, cap:window.EC_CONFIG.QUOTA_CAP };
+
+  // Robust locale detection: matches "/es" and "/es/"
   const path = location.pathname.toLowerCase();
-const path = location.pathname.toLowerCase();
-const LOCALE = /\/es(\/|$)/.test(path) ? 'es' : 'en';
-document.documentElement.lang = LOCALE;
-const dict = await loadDict(LOCALE);
-try { applyI18n(dict); } catch(e) { console.warn('i18n apply failed', e); }
+  const LOCALE = /\/es(\/|$)/.test(path) ? 'es' : 'en';
+  document.documentElement.lang = LOCALE;
 
   // Restore trial session & auto-expire
   try{
@@ -163,14 +162,14 @@ try { applyI18n(dict); } catch(e) { console.warn('i18n apply failed', e); }
   // ===== i18n (minimal loader) =====
   const BASE = '/essay-coach-instant';
   async function loadDict(lang){
-  const url = `${BASE}/i18n/${lang}.json?v=${Date.now()}`;
-  try {
-    const r = await fetch(url, { cache: 'no-store' });
-    return r.ok ? r.json() : {};
-  } catch(e) {
-    return {};
+    const url = `${BASE}/i18n/${lang}.json?v=${Date.now()}`;
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      return r.ok ? r.json() : {};
+    } catch(e) {
+      return {};
+    }
   }
-}
 
   function applyI18n(dict){
     window._i18nDict = dict||{};
@@ -180,13 +179,14 @@ try { applyI18n(dict); } catch(e) { console.warn('i18n apply failed', e); }
       if(typeof val==='string') el.textContent = val;
     });
   }
-    function t(path, fallback){
-  try{
-    const d = window._i18nDict || {};
-    const v = path.split('.').reduce((o,k)=>o && o[k], d);
-    return (typeof v === 'string' && v) ? v : (fallback || path);
-  }catch(e){ return fallback || path; }
-}
+
+  function t(path, fallback){
+    try{
+      const d = window._i18nDict || {};
+      const v = path.split('.').reduce((o,k)=>o && o[k], d);
+      return (typeof v === 'string' && v) ? v : (fallback || path);
+    }catch(e){ return fallback || path; }
+  }
 
 
   // ===== Helpers =====
