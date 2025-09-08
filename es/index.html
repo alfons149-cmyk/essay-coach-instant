@@ -1,96 +1,171 @@
-{
-  "nav": {
-    "english": "English",
-    "spanish": "Español"
-  },
-  "app": {
-    "title": "EssayCoach – Kit de Cambridge",
-    "subtitle": "Compilación unificada. Las mismas funciones en inglés y en español."
-  },
-  "scaffolds": {
-    "title": "Preparación de la tarea",
-    "level": "Nivel",
-    "type": "Tipo",
-    "moves": "Movimientos",
-    "opener": "Apertura",
-    "tips": "Consejos"
-  },
-  "types": {
-    "essay": "Ensayo",
-    "review": "Reseña",
-    "report": "Informe",
-    "proposal": "Propuesta",
-    "letter": "Carta/Correo"
-  },
-  "buttons": {
-    "copyScaffold": "Copiar andamiaje",
-    "correct": "Corregir",
-    "exportPdf": "Exportar PDF",
-    "clear": "Limpiar",
-    "paste": "Pegar",
-    "startTimer": "Iniciar temporizador",
-    "copyRules": "Copiar reglas",
-    "exportRules": "Exportar reglas en PDF"
-  },
-  "toggles": {
-    "formalTone": "Registro formal",
-    "coachNotes": "Notas del coach",
-    "rubricPoints": "Puntos de la rúbrica"
-  },
-  "corrector": {
-    "title": "Corrector de ensayos con IA",
-    "hint": "La salida refleja los descriptores de Cambridge. Ajusta las opciones arriba."
-  },
-  "sentences": {
-    "title": "Análisis de tipos de oraciones (simple / compuesta / compleja / compuesta–compleja)",
-    "hint": "Pasa el ratón por una oración para ver la explicación y posibles problemas.",
-    "legend": {
-      "title": "Leyenda:",
-      "good": "Verde = tipos correctos de oración (simple, compuesta, compleja, compuesta–compleja)",
-      "warn": "Naranja = posibles fragmentos",
-      "error": "Rojo = errores (run-ons, coma mal usada)"
+<!doctype html>
+<html data-theme="coral">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit (Unified EN/ES)</title>
+  <meta name="x-build" content="v2025-09-08-unified-coral" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fff1f2;
+      --fg:#111827;
+      --card:#ffffff;
+      --line:#ffd4d4;
+      --muted:#6b7280;
+      --pill:#ffe4e6;
+      --btn:#ffe4e6;
+      --btn-line:#ffb4c2;
     }
-  },
-  "punct": {
-    "header": "Reglas básicas de puntuación (seguras para el examen)"
-  },
-  "part2": {
-    "title": "Parte 2 – comprobaciones rápidas por género"
-  },
-  "account": {
-    "login": "Iniciar sesión",
-    "signUp": "Crear cuenta",
-    "subscribe": "Suscribirse",
-    "manage": "Gestionar plan",
-    "signOut": "Cerrar sesión",
-    "trialActive": "Prueba activa"
-  },
-  "paywall": {
-    "title": "Suscríbete para usar el corrector",
-    "desc": "Correcciones ilimitadas, exportación a PDF y analizador.",
-    "seePlans": "Ver planes",
-    "startTrial": "Empezar prueba de 2 días"
-  },
-  "pricing": {
-    "title": "Planes",
-    "monthly": {
-      "name": "Mensual",
-      "price": "10 €",
-      "note": "por mes, se renueva automáticamente hasta cancelación"
-    },
-    "exam": {
-      "name": "Pack Examen (6 meses)",
-      "price": "50 €",
-      "note": "pago único, caduca automáticamente"
-    },
-    "chooseMonthly": "Elegir Mensual",
-    "chooseExam": "Elegir Pack Examen"
-  },
-  "errors": {
-    "subscriptionRequired": "Necesitas una suscripción activa para usar el corrector."
-  },
-  "trial": {
-    "pill": "Prueba",
-    "expiringSoon": "La prueba termina pronto"
+    *{box-sizing:border-box}
+    body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;margin:0;background:var(--bg);color:var(--fg)}
+    header,main{max-width:1100px;margin:0 auto;padding:16px}
+    nav.row{display:flex;gap:8px;padding:8px 0}
+    a{color:#0ea5e9;text-decoration:none}
+    .grid{display:grid;gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 4px rgba(255,127,80,.15)}
+    .card h2{margin:0 0 8px;font-size:20px}
+    .muted{color:var(--muted);font-size:14px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+    .toolbar button,.toolbar .toggle{background:var(--btn);border:1px solid var(--btn-line);border-radius:10px;padding:8px 12px;color:var(--fg);cursor:pointer}
+    .toolbar .toggle{display:flex;align-items:center;gap:8px}
+    .row{display:flex;gap:10px;align-items:center}
+    .headerbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .pill{border:1px solid var(--btn-line);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--fg);background:var(--pill)}
+    .btn-primary{background:var(--btn);border:1px solid var(--btn-line);color:var(--fg);border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid var(--btn-line);color:var(--fg);border-radius:10px;padding:8px 12px;cursor:pointer}
+    textarea{width:100%;min-height:160px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--fg);padding:12px}
+    .hint{color:#64748b;font-size:12px;margin-top:6px}
+    .preview{background:#fff;border:1px dashed var(--line);border-radius:12px;padding:12px}
+    .hidden{display:none !important}
+    .center{text-align:center}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="headerbar">
+      <div>
+        <nav class="row" aria-label="Language switch">
+          <a href="/essay-coach-instant/" data-i18n="nav.english">English</a> |
+          <a href="/essay-coach-instant/es/" data-i18n="nav.spanish">Español</a>
+        </nav>
+        <h1 data-i18n="app.title">EssayCoach – Cambridge Toolkit</h1>
+        <p class="muted" data-i18n="app.subtitle">Unified build. Same features in English and Spanish.</p>
+      </div>
+      <div class="row" style="gap:8px">
+        <span id="quotaPill" class="pill">0/20</span>
+        <div id="accountMenu"></div>
+      </div>
+    </div>
+    <!-- Trial expiry banner -->
+    <div id="trialBanner" class="hidden" style="margin:8px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff7ed;color:#7c2d12;border-radius:10px">
+      <strong data-i18n="trial.expiringSoon">Trial ending soon</strong>
+      <span id="trialBannerMsg" style="margin-left:8px"></span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- PAYWALL -->
+    <section id="paywall" class="card hidden center">
+      <h2 data-i18n="paywall.title">Subscribe to use the corrector</h2>
+      <p class="muted" data-i18n="paywall.desc">Unlimited corrections, PDF export, and analyzer.</p>
+      <div class="row center" style="justify-content:center">
+        <button id="btnGoPricing" class="btn-primary" data-i18n="paywall.seePlans">See plans</button>
+        <button id="btnStartTrial" class="btn-ghost" data-i18n="paywall.startTrial">Start 2-day trial</button>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section id="pricing" class="card hidden">
+      <h2 data-i18n="pricing.title">Plans</h2>
+      <ul>
+        <li><strong data-i18n="pricing.monthly.name">Monthly</strong> — <span data-i18n="pricing.monthly.price">€10</span> <span class="muted" data-i18n="pricing.monthly.note">per month, auto-renews until cancelled</span></li>
+        <li><strong data-i18n="pricing.exam.name">Exam Pack (6 months)</strong> — <span data-i18n="pricing.exam.price">€50</span> <span class="muted" data-i18n="pricing.exam.note">one-time, auto-expires</span></li>
+      </ul>
+      <div class="row">
+        <button id="btnChooseMonthly" class="btn-primary" data-i18n="pricing.chooseMonthly">Choose Monthly</button>
+        <button id="btnChooseExam" class="btn-ghost" data-i18n="pricing.chooseExam">Choose Exam Pack</button>
+      </div>
+    </section>
+
+    <!-- CORRECTOR -->
+    <section id="corrector" class="card">
+      <h2 data-i18n="corrector.title">AI Essay Corrector</h2>
+      <div class="toolbar">
+        <button id="btnCorrect" class="btn-primary" data-i18n="buttons.correct">Correct</button>
+        <button id="btnExportPDF" class="btn-ghost" data-i18n="buttons.exportPdf">Export PDF</button>
+        <button id="btnClear" class="btn-ghost" data-i18n="buttons.clear">Clear</button>
+        <button id="btnPaste" class="btn-ghost" data-i18n="buttons.paste">Paste</button>
+        <button id="btnTimer" class="btn-ghost" data-i18n="buttons.startTimer">Start timer</button>
+      </div>
+      <div class="row">
+        <label class="toggle"><input type="checkbox" id="tgFormal" checked> <span data-i18n="toggles.formalTone">Formal tone</span></label>
+        <label class="toggle"><input type="checkbox" id="tgCoachNotes" checked> <span data-i18n="toggles.coachNotes">Coach notes</span></label>
+        <label class="toggle"><input type="checkbox" id="tgRubric" checked> <span data-i18n="toggles.rubricPoints">Rubric points</span></label>
+      </div>
+      <textarea id="essayIn" placeholder="Paste your essay here…"></textarea>
+      <div id="essayOut" class="preview" aria-live="polite"></div>
+      <div class="hint" data-i18n="corrector.hint">The output mirrors Cambridge descriptors. Toggle options above to customise.</div>
+    </section>
+
+    <!-- SENTENCES -->
+    <section id="sentences" class="card">
+      <h2 data-i18n="sentences.title">Sentence-Type Analysis (simple / compound / complex / compound–complex)</h2>
+      <div id="sentenceAnalysis" class="preview"></div>
+      <div class="hint" data-i18n="sentences.hint">Hover a sentence to see why it was classified and any issues spotted.</div>
+    </section>
+
+    <!-- PUNCTUATION -->
+    <section id="punct" class="card">
+      <h2 data-i18n="punct.header">Core Punctuation Rules (Exam-Safe)</h2>
+      <div class="toolbar">
+        <button id="btnCopyRules" class="btn-ghost" data-i18n="buttons.copyRules">Copy rules</button>
+        <button id="btnExportRules" class="btn-ghost" data-i18n="buttons.exportRules">Export rules as PDF</button>
+      </div>
+      <div id="punctList" class="preview"></div>
+    </section>
+
+    <!-- PART 2 RUBRIC -->
+    <section id="part2" class="card">
+      <h2 data-i18n="part2.title">Part 2 quick rubric – genre checks</h2>
+      <div id="part2Rubric" class="preview"></div>
+    </section>
+  </main>
+
+  <!-- Analyzer -->
+  <script src="/essay-coach-instant/js/ec_sentences.js"></script>
+
+  <script>
+  window.EC_CONFIG = { API_BASE:'/api', REQUIRE_SUBSCRIPTION:true, SHOW_TRIAL:true, QUOTA_CAP:20, TRIAL_DAYS:2 };
+  window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
+  window.QUOTA = { used:0, cap:window.EC_CONFIG.QUOTA_CAP };
+  const LOCALE = location.pathname.includes('/es/') ? 'es' : 'en';
+  document.documentElement.lang = LOCALE;
+
+  async function loadDict(lang){ try{ const r=await fetch(`/essay-coach-instant/i18n/${lang}.json`); return r.ok? r.json(): {}; }catch(e){ return {}; } }
+  function applyI18n(dict){ window._i18nDict=dict||{}; document.querySelectorAll('[data-i18n]').forEach(el=>{ const key=el.getAttribute('data-i18n'); const val=key.split('.').reduce((o,k)=>o&&o[k], dict); if(typeof val==='string') el.textContent=val; }); }
+
+  const $=s=>document.querySelector(s);
+  function escapeHtml(s){return (s||'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}
+  function canUseCorrector(){ return window.SESSION.status==='active'||window.SESSION.status==='trial'; }
+
+  async function runCorrection(src){
+    if(!canUseCorrector()) throw new Error(LOCALE==='es'?'Necesitas una suscripción activa para usar el corrector.':'You need an active subscription to use the corrector.');
+    const res=await fetch(window.EC_CONFIG.API_BASE+'/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:src,options:{locale:LOCALE}})});
+    if(!res.ok) throw new Error('Correction failed'); const data=await res.json(); return data.output||'';
   }
-}
+
+  function updateSentenceAnalysis(text){ const box=$('#sentenceAnalysis'); if(box) box.innerHTML=EC_Sentences.analyzeToHTML(text||'',{locale:LOCALE}); }
+
+  document.addEventListener('click',async e=>{
+    if(e.target.id==='btnCorrect'){ const src=$('#essayIn').value.trim(); if(!src){$('#essayOut').innerHTML=''; updateSentenceAnalysis(''); return;} $('#essayOut').innerHTML=LOCALE==='es'?'Procesando…':'Processing…'; try{ const html=await runCorrection(src); $('#essayOut').innerHTML=html; updateSentenceAnalysis(src);}catch(err){ $('#essayOut').innerHTML=`<div class=\"hint\">${escapeHtml(err.message)}</div>`; } }
+    if(e.target.id==='btnClear'){ $('#essayIn').value=''; $('#essayOut').innerHTML=''; updateSentenceAnalysis(''); }
+    if(e.target.id==='btnPaste'){ try{ const t=await navigator.clipboard.readText(); $('#essayIn').value=t; }catch(_){ } }
+  });
+
+  async function init(){ const dict=await loadDict(LOCALE); applyI18n(dict); $('#punctList').textContent='Why should you learn about punctuation?...'; }
+  init();
+  </script>
+</body>
+</html>
