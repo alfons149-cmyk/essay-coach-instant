@@ -143,8 +143,10 @@
   window.EC_CONFIG = { API_BASE:'/api', REQUIRE_SUBSCRIPTION:true, SHOW_TRIAL:true, QUOTA_CAP:20, TRIAL_DAYS:2 };
   window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
   window.QUOTA = { used:0, cap:window.EC_CONFIG.QUOTA_CAP };
-  const LOCALE = location.pathname.includes('/es/') ? 'es' : 'en';
+  const path = location.pathname.toLowerCase();
+  const LOCALE = /\/es(\/|$)/.test(path) ? 'es' : 'en';
   document.documentElement.lang = LOCALE;
+
 
   // Restore trial session & auto-expire
   try{
@@ -158,7 +160,16 @@
 
   // ===== i18n (minimal loader) =====
   const BASE = '/essay-coach-instant';
-  async function loadDict(lang){ try{ const r=await fetch(`${BASE}/i18n/${lang}.json`); return r.ok? r.json(): {}; }catch(e){ return {}; } }
+  async function loadDict(lang){
+  const url = `${BASE}/i18n/${lang}.json?v=${Date.now()}`;
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    return r.ok ? r.json() : {};
+  } catch(e) {
+    return {};
+  }
+}
+
   function applyI18n(dict){
     window._i18nDict = dict||{};
     document.querySelectorAll('[data-i18n]').forEach(el=>{
@@ -266,7 +277,11 @@
   // ===== Init =====
   async function init(){
     const dict = await loadDict(LOCALE); applyI18n(dict);
-    document.getElementById('punctList').textContent = PUNCT_GUIDE;
+    document.getElementById('punctList').textContent =
+  (window._i18nDict && window._i18nDict.punct && window._i18nDict.punct.guide)
+    ? window._i18nDict.punct.guide
+    : PUNCT_GUIDE; // fallback
+
     refreshGates(); showQuota(); updateTrialBanner();
   }
   init();
