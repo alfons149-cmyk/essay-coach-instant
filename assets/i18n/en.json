@@ -112,3 +112,27 @@
     "removed_intensifier_upgraded": "Removed intensifier “{i}” and upgraded vocabulary."
   }
 }
+<!--
+==== i18n additions (copy into your JSON files) ====
+
+
+/en.json additions:
+{
+"nav": {"english": "English", "spanish": "Español"},
+"app": {"title": "EssayCoach – Cambridge Toolkit", "subtitle": "Unified build. Same features in English and Spanish."},
+"scaffolds": {"title": "Task setup", "level": "Level", "type": "Type", "moves": "Moves", "opener": "Opener", "tips": "Tips"},
+"types": {"essay": "Essay", "review": "Review", "report": "Report", "proposal": "Proposal", "letter": "Letter/Email"},
+"buttons": {"copyScaffold": "Copy scaffold", "correct": "Correct", "exportPdf": "Export PDF", "clear": "Clear", "paste": "Paste", "startTimer": "Start timer", "copyRules": "Copy rules", "exportRules": "Export rules as PDF"},
+"toggles": {"formalTone": "Formal tone", "coachNotes": "Coach notes", "rubricPoints": "Rubric points"},
+"corrector": {"title": "AI Essay Corrector", "hint": "The output mirrors Cambridge descriptors. Toggle options above to customise."},
+"sentences": {"title": "Sentence-Type Analysis (simple / compound / complex / compound–complex)", "hint": "Hover a sentence to see why it was classified and any issues spotted.", "legend": {"title": "Legend:", "good": "Green = correct sentence types (simple, compound, complex, compound–complex)", "warn": "Orange = possible fragments", "error": "Red = errors (run-ons, comma splices)"}},
+"punct": {"header": "Core Punctuation Rules (Exam-Safe)"},
+"part2": {"title": "Part 2 quick rubric – genre checks"},
+
+
+"account": {"login":"Log in","signUp":"Sign up","subscribe":"Subscribe","manage":"Manage plan","signOut":"Sign out","trialActive":"Trial active"},
+"paywall": {"title":"Subscribe to use the corrector","desc":"Unlimited corrections, PDF export, and analyzer.","seePlans":"See plans","startTrial":"Start 2‑day trial"},
+"pricing": {"title":"Plans","monthly":{"name":"Monthly","price":"€10","note":"per month, auto‑renews until cancelled"},"exam":{"name":"Exam Pack (6 months)","price":"€50","note":"one‑time, auto‑expires"},"chooseMonthly":"Choose Monthly","chooseExam":"Choose Exam Pack"},
+"errors": {"subscriptionRequired":"You need an active subscription to use the corrector."},
+"trial": {"pill": "Trial", "expiringSoon": "Trial ending soon"}
+}
