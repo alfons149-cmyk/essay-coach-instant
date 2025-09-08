@@ -201,12 +201,23 @@ try { applyI18n(dict); } catch(e) { console.warn('i18n apply failed', e); }
     renderAccountMenu();
   }
   function renderAccountMenu(){
-    const el = document.getElementById('accountMenu'); if(!el) return;
-    const s = window.SESSION.status;
-    if(s==='active') el.innerHTML = `<span class="pill">${escapeHtml(window.SESSION.email||'Account')}</span> <button id="btnManagePlan" class="btn-ghost">Manage plan</button> <button id="btnSignOut" class="btn-ghost">Sign out</button>`;
-    else if(s==='trial') el.innerHTML = `<span class="pill">Trial active</span> <button id="btnSubscribe" class="btn-primary">Subscribe</button> <button id="btnSignOut" class="btn-ghost">Sign out</button>`;
-    else el.innerHTML = `<button id="btnLogin" class="btn-primary">Log in</button> <button id="btnSignUp" class="btn-ghost">Sign up</button>`;
+  const el = document.getElementById('accountMenu'); if(!el) return;
+  const s = window.SESSION.status;
+  const acct = escapeHtml(window.SESSION.email || t('account.account','Account'));
+  if(s==='active'){
+    el.innerHTML = `<span class="pill">${acct}</span>
+      <button id="btnManagePlan" class="btn-ghost">${t('account.manage','Manage plan')}</button>
+      <button id="btnSignOut" class="btn-ghost">${t('account.signOut','Sign out')}</button>`;
+  } else if(s==='trial'){
+    el.innerHTML = `<span class="pill">${t('account.trialActive','Trial active')}</span>
+      <button id="btnSubscribe" class="btn-primary">${t('account.subscribe','Subscribe')}</button>
+      <button id="btnSignOut" class="btn-ghost">${t('account.signOut','Sign out')}</button>`;
+  } else {
+    el.innerHTML = `<button id="btnLogin" class="btn-primary">${t('account.login','Log in')}</button>
+      <button id="btnSignUp" class="btn-ghost">${t('account.signUp','Sign up')}</button>`;
   }
+}
+
 
   // Trial countdown + banner
   function msLeftTrial(){ return (window.SESSION.status==='trial' && window.SESSION.trialEnd) ? Math.max(0, Number(window.SESSION.trialEnd)-Date.now()) : null; }
