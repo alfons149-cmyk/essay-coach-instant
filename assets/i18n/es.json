@@ -236,3 +236,24 @@ function updateWordcountPills(inN, outN, level, genre) {
     "removed_intensifier_upgraded": "Se eliminó el intensificador «{i}» y se mejoró el vocabulario."
   }
 }
+/es.json additions:
+{
+"nav": {"english": "English", "spanish": "Español"},
+"app": {"title": "EssayCoach – Kit de Cambridge", "subtitle": "Compilación unificada. Las mismas funciones en inglés y en español."},
+"scaffolds": {"title": "Preparación de la tarea", "level": "Nivel", "type": "Tipo", "moves": "Movimientos", "opener": "Apertura", "tips": "Consejos"},
+"types": {"essay": "Ensayo", "review": "Reseña", "report": "Informe", "proposal": "Propuesta", "letter": "Carta/Correo"},
+"buttons": {"copyScaffold": "Copiar andamiaje", "correct": "Corregir", "exportPdf": "Exportar PDF", "clear": "Limpiar", "paste": "Pegar", "startTimer": "Iniciar temporizador", "copyRules": "Copiar reglas", "exportRules": "Exportar reglas en PDF"},
+"toggles": {"formalTone": "Registro formal", "coachNotes": "Notas del coach", "rubricPoints": "Puntos de la rúbrica"},
+"corrector": {"title": "Corrector de ensayos con IA", "hint": "La salida refleja los descriptores de Cambridge. Ajusta las opciones arriba."},
+"sentences": {"title": "Análisis de tipos de oraciones (simple / compuesta / compleja / compuesta–compleja)", "hint": "Pasa el ratón por una oración para ver la explicación y posibles problemas.", "legend": {"title": "Leyenda:", "good": "Verde = tipos correctos de oración (simple, compuesta, compleja, compuesta–compleja)", "warn": "Naranja = posibles fragmentos", "error": "Rojo = errores (run‑ons, coma mal usada)"}},
+"punct": {"header": "Reglas básicas de puntuación (seguras para el examen)"},
+"part2": {"title": "Parte 2 – comprobaciones rápidas por género"},
+
+
+"account": {"login":"Iniciar sesión","signUp":"Crear cuenta","subscribe":"Suscribirse","manage":"Gestionar plan","signOut":"Cerrar sesión","trialActive":"Prueba activa"},
+"paywall": {"title":"Suscríbete para usar el corrector","desc":"Correcciones ilimitadas, exportación a PDF y analizador.","seePlans":"Ver planes","startTrial":"Empezar prueba de 2 días"},
+"pricing": {"title":"Planes","monthly":{"name":"Mensual","price":"10 €","note":"por mes, se renueva automáticamente hasta cancelación"},"exam":{"name":"Pack Examen (6 meses)","price":"50 €","note":"pago único, caduca automáticamente"},"chooseMonthly":"Elegir Mensual","chooseExam":"Elegir Pack Examen"},
+"errors": {"subscriptionRequired":"Necesitas una suscripción activa para usar el corrector."},
+"trial": {"pill": "Prueba", "expiringSoon": "La prueba termina pronto"}
+}
+-->
