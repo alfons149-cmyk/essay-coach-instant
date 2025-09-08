@@ -1,0 +1,469 @@
+<!doctype html>
+<html data-theme="coral">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit (Unified EN/ES)</title>
+  <meta name="x-build" content="v2025-09-08-all-features-unified" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
+  <link rel="apple-touch-icon" href="/essay-coach-instant/icon-192.png">
+  <meta name="theme-color" content="#111111" />
+  <style>
+    :root{--bg:#0b0b0b;--card:#0f1115;--muted:#9ca3af;--line:#1f2937;--pill:#0b0d12}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;margin:0;background:var(--bg);color:#e5e7eb}
+    header,main{max-width:1100px;margin:0 auto;padding:16px}
+    nav.row{display:flex;gap:8px;padding:8px 0}
+    .grid{display:grid;gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+    .card h2{margin:0 0 8px;font-size:20px}
+    .muted{color:var(--muted);font-size:14px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+    .toolbar button,.toolbar .toggle{background:#111827;border:1px solid #374151;border-radius:10px;padding:8px 12px;color:#e5e7eb;cursor:pointer}
+    .toolbar .toggle{display:flex;align-items:center;gap:8px}
+    .row{display:flex;gap:10px;align-items:center}
+    .headerbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .pill{border:1px solid #374151;border-radius:999px;padding:4px 10px;font-size:12px;color:#cbd5e1;background:var(--pill)}
+    .btn-primary{background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid #374151;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
+    textarea{width:100%;min-height:160px;border-radius:12px;border:1px solid #374151;background:#0b0d12;color:#e5e7eb;padding:12px}
+    .hint{color:#94a3b8;font-size:12px;margin-top:6px}
+    .preview{background:#090b10;border:1px dashed #334155;border-radius:12px;padding:12px}
+    .hidden{display:none !important}
+    .center{text-align:center}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+    /* Tooltip popover (for analyzer legend/badges) provided by ec_sentences.js as well; leaving here if needed elsewhere */
+    .ec-tip{position:fixed;z-index:9999;pointer-events:none;background:#111827;border:1px solid #374151;color:#e5e7eb;padding:8px 10px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.35);max-width:320px;font-size:12px;line-height:1.3}
+    .legend-help{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:8px;border-radius:4px;border:1px solid #374151;background:#0f1115;color:#e5e7eb;font-weight:700;cursor:pointer}
+    .legend-help:focus{outline:2px solid #2563eb;outline-offset:2px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="headerbar">
+      <div>
+        <nav class="row" aria-label="Language switch">
+          <a href="/essay-coach-instant/" data-i18n="nav.english">English</a> |
+          <a href="/essay-coach-instant/es/" data-i18n="nav.spanish">Español</a>
+        </nav>
+        <h1 data-i18n="app.title">EssayCoach – Cambridge Toolkit</h1>
+        <p class="muted" data-i18n="app.subtitle">Unified build. Same features in English and Spanish.</p>
+      </div>
+      <div class="row" style="gap:8px">
+        <span id="quotaPill" class="pill">0/20</span>
+        <div id="accountMenu"></div>
+      </div>
+    </div>
+    <!-- Trial expiry banner -->
+    <div id="trialBanner" class="hidden" style="margin:8px 0;padding:10px 12px;border:1px solid #f59e0b;background:#111006;color:#fde68a;border-radius:10px">
+      <strong data-i18n="trial.expiringSoon">Trial ending soon</strong>
+      <span id="trialBannerMsg" style="margin-left:8px"></span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- PAYWALL (shown when user is not active/trial) -->
+    <section id="paywall" class="card hidden center">
+      <h2 data-i18n="paywall.title">Subscribe to use the corrector</h2>
+      <p class="muted" data-i18n="paywall.desc">Unlimited corrections, PDF export, and analyzer.</p>
+      <div class="row center" style="justify-content:center">
+        <button id="btnGoPricing" class="btn-primary" data-i18n="paywall.seePlans">See plans</button>
+        <button id="btnStartTrial" class="btn-ghost" data-i18n="paywall.startTrial">Start 2‑day trial</button>
+      </div>
+    </section>
+
+    <!-- PRICING (inline) -->
+    <section id="pricing" class="card hidden">
+      <h2 data-i18n="pricing.title">Plans</h2>
+      <ul>
+        <li><strong data-i18n="pricing.monthly.name">Monthly</strong> — <span data-i18n="pricing.monthly.price">€10</span> <span class="muted" data-i18n="pricing.monthly.note">per month, auto‑renews until cancelled</span></li>
+        <li><strong data-i18n="pricing.exam.name">Exam Pack (6 months)</strong> — <span data-i18n="pricing.exam.price">€50</span> <span class="muted" data-i18n="pricing.exam.note">one‑time, auto‑expires</span></li>
+      </ul>
+      <div class="row">
+        <button id="btnChooseMonthly" class="btn-primary" data-i18n="pricing.chooseMonthly">Choose Monthly</button>
+        <button id="btnChooseExam" class="btn-ghost" data-i18n="pricing.chooseExam">Choose Exam Pack</button>
+      </div>
+    </section>
+
+    <!-- SCAFFOLDS -->
+    <section id="scaffolds" class="card">
+      <h2 data-i18n="scaffolds.title">Task setup</h2>
+      <div class="row">
+        <label>
+          <span data-i18n="scaffolds.level">Level</span>
+          <select id="scLevel">
+            <option value="B2">B2</option>
+            <option value="C1">C1</option>
+            <option value="C2">C2</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="scaffolds.type">Type</span>
+          <select id="scType">
+            <option value="essay" data-i18n="types.essay">Essay</option>
+            <option value="review" data-i18n="types.review">Review</option>
+            <option value="report" data-i18n="types.report">Report</option>
+            <option value="proposal" data-i18n="types.proposal">Proposal</option>
+            <option value="letter" data-i18n="types.letter">Letter/Email</option>
+          </select>
+        </label>
+        <button id="btnCopyScaffold" class="btn-ghost" data-i18n="buttons.copyScaffold">Copy scaffold</button>
+      </div>
+      <div class="two-col">
+        <div>
+          <h3 data-i18n="scaffolds.moves">Moves</h3>
+          <ul id="scMoves"></ul>
+        </div>
+        <div>
+          <h3 data-i18n="scaffolds.opener">Opener</h3>
+          <div id="scOpener" class="preview"></div>
+          <h3 data-i18n="scaffolds.tips">Tips</h3>
+          <ul id="scTips"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- CORRECTOR (gated) -->
+    <section id="corrector" class="card">
+      <h2 data-i18n="corrector.title">AI Essay Corrector</h2>
+      <div class="toolbar">
+        <button id="btnCorrect" class="btn-primary" data-i18n="buttons.correct">Correct</button>
+        <button id="btnExportPDF" class="btn-ghost" data-i18n="buttons.exportPdf">Export PDF</button>
+        <button id="btnClear" class="btn-ghost" data-i18n="buttons.clear">Clear</button>
+        <button id="btnPaste" class="btn-ghost" data-i18n="buttons.paste">Paste</button>
+        <button id="btnTimer" class="btn-ghost" data-i18n="buttons.startTimer">Start timer</button>
+      </div>
+      <div class="row">
+        <label class="toggle"><input type="checkbox" id="tgFormal" checked> <span data-i18n="toggles.formalTone">Formal tone</span></label>
+        <label class="toggle"><input type="checkbox" id="tgCoachNotes" checked> <span data-i18n="toggles.coachNotes">Coach notes</span></label>
+        <label class="toggle"><input type="checkbox" id="tgRubric" checked> <span data-i18n="toggles.rubricPoints">Rubric points</span></label>
+      </div>
+      <textarea id="essayIn" placeholder="Paste your essay here…"></textarea>
+      <div id="essayOut" class="preview" aria-live="polite"></div>
+      <div class="hint" data-i18n="corrector.hint">The output mirrors Cambridge descriptors. Toggle options above to customise.</div>
+    </section>
+
+    <!-- SENTENCE TYPES (Analyzer) -->
+    <section id="sentences" class="card">
+      <h2 data-i18n="sentences.title">Sentence-Type Analysis (simple / compound / complex / compound–complex)</h2>
+      <div id="sentenceAnalysis" class="preview"></div>
+      <div class="hint" data-i18n="sentences.hint">Hover a sentence to see why it was classified and any issues spotted.</div>
+    </section>
+
+    <!-- PUNCTUATION RULES -->
+    <section id="punct" class="card">
+      <h2 data-i18n="punct.header">Core Punctuation Rules (Exam-Safe)</h2>
+      <div class="toolbar">
+        <button id="btnCopyRules" class="btn-ghost" data-i18n="buttons.copyRules">Copy rules</button>
+        <button id="btnExportRules" class="btn-ghost" data-i18n="buttons.exportRules">Export rules as PDF</button>
+      </div>
+      <div id="punctList" class="preview"></div>
+    </section>
+
+    <!-- PART 2 QUICK RUBRIC -->
+    <section id="part2" class="card">
+      <h2 data-i18n="part2.title">Part 2 quick rubric – genre checks</h2>
+      <div id="part2Rubric" class="preview"></div>
+    </section>
+  </main>
+
+  <!-- External analyzer (color-coded, tooltips, keyboard, legend help) -->
+  <script src="/essay-coach-instant/js/ec_sentences.js"></script>
+  <!-- Optional PDF lib
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  -->
+
+  <script>
+  // ===== Config & Session =====
+  window.EC_CONFIG = {
+    API_BASE: '/api',                // backend base path (proxy to OpenAI)
+    REQUIRE_SUBSCRIPTION: true,      // gate corrector
+    SHOW_TRIAL: true,                // show trial button
+    QUOTA_CAP: 20,                   // UI counter only; enforce in backend later
+    TRIAL_DAYS: 2                    // 2‑day trial
+  };
+  window.SESSION = { status: 'inactive', email: null, token: null, trialStart: null, trialEnd: null };
+  window.QUOTA   = { used: 0, cap: window.EC_CONFIG.QUOTA_CAP };
+
+  const BASE = "/essay-coach-instant";
+  const LOCALE = location.pathname.includes("/es/") ? "es" : "en";
+  document.documentElement.lang = LOCALE;
+
+  // Restore session (trial persistence) & auto-expire if past end
+  try {
+    const raw = localStorage.getItem('ec_session');
+    if(raw){ const s = JSON.parse(raw); if(s && typeof s === 'object') window.SESSION = { ...window.SESSION, ...s }; }
+    if(window.SESSION.status==='trial' && window.SESSION.trialEnd && Date.now() > Number(window.SESSION.trialEnd)){
+      window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
+      localStorage.removeItem('ec_session');
+    }
+  } catch(_) {}
+
+  // ===== i18n =====
+  async function loadDict(lang){
+    try { const r = await fetch(`${BASE}/i18n/${lang}.json`); return r.ok ? r.json() : {}; } catch(e){ return {}; }
+  }
+  function applyI18n(dict){
+    window._i18nDict = dict || {};
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.getAttribute('data-i18n');
+      const val = key.split('.').reduce((o,k)=>o && o[k], dict);
+      if(typeof val === 'string') el.textContent = val;
+    });
+  }
+  function t(path, fallback){
+    try{ const d = window._i18nDict || {}; const v = path.split('.').reduce((o,k)=>o&&o[k], d); if(typeof v === 'string' && v) return v; }catch(e){}
+    return fallback || path;
+  }
+
+  // ===== UI helpers =====
+  const $ = sel => document.querySelector(sel);
+  function escapeHtml(s){return (s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}
+
+  function canUseCorrector(){ return window.SESSION.status==='active' || window.SESSION.status==='trial'; }
+  function refreshGates(){
+    const paywall = $('#paywall');
+    const appCards = ['#corrector','#sentences','#punct','#part2','#scaffolds'];
+    if(!window.EC_CONFIG.REQUIRE_SUBSCRIPTION || canUseCorrector()){
+      paywall.classList.add('hidden');
+      appCards.forEach(sel=>$(sel)?.classList.remove('hidden'));
+    } else {
+      paywall.classList.remove('hidden');
+      appCards.forEach(sel=>$(sel)?.classList.add('hidden'));
+    }
+    renderAccountMenu();
+  }
+  function renderAccountMenu(){
+    const el = $('#accountMenu'); if(!el) return;
+    const s = window.SESSION.status;
+    if(s === 'active'){
+      el.innerHTML = `<span class="pill">${escapeHtml(window.SESSION.email||'Account')}</span>
+        <button id="btnManagePlan" class="btn-ghost" data-i18n="account.manage">Manage plan</button>
+        <button id="btnSignOut" class="btn-ghost" data-i18n="account.signOut">Sign out</button>`;
+    } else if(s === 'trial'){
+      el.innerHTML = `<span class="pill" data-i18n="account.trialActive">Trial active</span>
+        <button id="btnSubscribe" class="btn-primary" data-i18n="account.subscribe">Subscribe</button>
+        <button id="btnSignOut" class="btn-ghost" data-i18n="account.signOut">Sign out</button>`;
+    } else {
+      el.innerHTML = `<button id="btnLogin" class="btn-primary" data-i18n="account.login">Log in</button>
+        <button id="btnSignUp" class="btn-ghost" data-i18n="account.signUp">Sign up</button>`;
+    }
+  }
+
+  // Trial countdown & banner
+  function msLeftTrial(){
+    return (window.SESSION && window.SESSION.status==='trial' && window.SESSION.trialEnd)
+      ? Math.max(0, Number(window.SESSION.trialEnd) - Date.now())
+      : null;
+  }
+  function showQuota(){
+    const qp = document.getElementById('quotaPill'); if(!qp) return;
+    const msLeft = msLeftTrial();
+    if(msLeft !== null){
+      const oneDay = 24*60*60*1000;
+      if(msLeft < oneDay){
+        const hoursLeft = Math.ceil(msLeft / (60*60*1000));
+        const label = (LOCALE==='es') ? 'Prueba' : 'Trial';
+        const unit  = (LOCALE==='es') ? (hoursLeft===1?'hora':'horas') : (hoursLeft===1?'hour':'hours');
+        qp.textContent = `${label}: ${hoursLeft} ${unit} left`;
+      } else {
+        const daysLeft = Math.ceil(msLeft / oneDay);
+        const label = (LOCALE==='es') ? 'Prueba' : 'Trial';
+        const unit  = (LOCALE==='es') ? (daysLeft===1?'día':'días') : (daysLeft===1?'day':'days');
+        qp.textContent = `${label}: ${daysLeft} ${unit} left`;
+      }
+      return;
+    }
+    qp.textContent = `${window.QUOTA.used}/${window.QUOTA.cap}`;
+  }
+  function updateTrialBanner(){
+    const box = document.getElementById('trialBanner');
+    const msg = document.getElementById('trialBannerMsg');
+    if(!box||!msg) return;
+    const msLeft = msLeftTrial();
+    const oneDay = 24*60*60*1000;
+    if(msLeft!==null && msLeft>0 && msLeft <= oneDay){
+      const hoursLeft = Math.ceil(msLeft / (60*60*1000));
+      const unit  = (LOCALE==='es') ? (hoursLeft===1?'hora':'horas') : (hoursLeft===1?'hour':'hours');
+      const text = (LOCALE==='es')
+        ? `Tu prueba termina en ${hoursLeft} ${unit}.`
+        : `Your trial ends in ${hoursLeft} ${unit}.`;
+      msg.textContent = text;
+      box.classList.remove('hidden');
+    } else {
+      box.classList.add('hidden');
+      msg.textContent = '';
+    }
+  }
+
+  // ===== Data =====
+  const SCAFFOLDS = {
+    B2:{
+      essay:{moves:["Intro: paraphrase topic","Body: 2–3 key points with examples","Conclusion: restate stance"],
+            opener:"It is often argued that…",
+            tips:["Keep it within the word limit","Link ideas with clear connectors"]},
+      review:{moves:["Identify the work","Evaluate key aspects","Recommendation"],
+              opener:"From the very first scene…",
+              tips:["Balance summary with opinion","Avoid spoilers if possible"]}
+    },
+    C1:{
+      essay:{moves:["Context + thesis","Develop contrasting arguments","Weigh and conclude"],
+            opener:"While some claim that… others argue…",
+            tips:["Use a consistent formal register","Synthesize, don’t list"]}
+    },
+    C2:{
+      essay:{moves:["Synthesis of sources","Evaluation of arguments","Position + implications"],
+            opener:"The texts jointly suggest that…",
+            tips:["Prioritise precision and nuance","Control paragraph rhythm"]}
+    }
+  };
+  const PUNCT_GUIDE = `Why should you learn about punctuation?\nMost native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.\n— Full stop (.)\n— Comma (,)\n— Semicolon (;)\n— Colon (:)\n— Dash (—)\n— Apostrophe (’)`;
+
+  // ===== Renderers =====
+  function renderScaffold(){
+    const lvl = $('#scLevel').value;
+    const typ = $('#scType').value;
+    const d = (SCAFFOLDS[lvl]||{})[typ];
+    $('#scMoves').innerHTML = (d?.moves||[]).map(m=>`<li>${escapeHtml(m)}</li>`).join('');
+    $('#scOpener').textContent = d?.opener||'';
+    $('#scTips').innerHTML = (d?.tips||[]).map(t=>`<li>${escapeHtml(t)}</li>`).join('');
+  }
+  function renderPunctRules(){ $('#punctList').textContent = PUNCT_GUIDE; }
+  function renderPart2(){
+    const box = $('#part2Rubric'); if(!box) return;
+    box.innerHTML = `<ul>
+      <li>Review: purpose, audience, tone, evaluation, recommendation</li>
+      <li>Report: clear sections, findings, recommendations, formal register</li>
+      <li>Proposal: aim, options, benefits, practical next steps</li>
+      <li>Letter/Email: task completion, appropriate salutation/close, cohesion</li>
+    </ul>`;
+  }
+
+  // ===== Corrector (backend-only) =====
+  async function runCorrection(src){
+    if(!canUseCorrector()){
+      const m = t('errors.subscriptionRequired','You need an active subscription to use the corrector.');
+      throw new Error(m);
+    }
+    const opts = {
+      formal: $('#tgFormal')?.checked !== false,
+      coachNotes: $('#tgCoachNotes')?.checked !== false,
+      rubric: $('#tgRubric')?.checked !== false,
+      level: $('#scLevel')?.value || 'C1',
+      type: $('#scType')?.value || 'essay',
+      locale: LOCALE
+    };
+    const endpoint = (window.EC_CONFIG.API_BASE||'') + '/correct';
+    const token = window.SESSION?.token; // from real auth later
+    const res = await fetch(endpoint, {
+      method:'POST', headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
+      body: JSON.stringify({ text: src, options: opts })
+    });
+    if(!res.ok){ throw new Error('Correction failed'); }
+    const data = await res.json();
+    return data.output || '';
+  }
+
+  // ===== Events =====
+  document.addEventListener('click', async (e)=>{
+    // Paywall / Pricing / Account
+    if(e.target.id === 'btnGoPricing') { $('#pricing').classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); }
+    if(e.target.id === 'btnStartTrial' && window.EC_CONFIG.SHOW_TRIAL){
+      const days = Number(window.EC_CONFIG.TRIAL_DAYS||2);
+      const now = Date.now();
+      window.SESSION.status='trial';
+      window.SESSION.trialStart=new Date(now).toISOString();
+      window.SESSION.trialEnd = now + days*24*60*60*1000;
+      try { localStorage.setItem('ec_session', JSON.stringify(window.SESSION)); } catch(_e){}
+      refreshGates(); showQuota(); updateTrialBanner();
+    }
+    if(e.target.id === 'btnChooseMonthly'){ alert('Checkout coming soon'); }
+    if(e.target.id === 'btnChooseExam'){ alert('Checkout coming soon'); }
+
+    if(e.target.id === 'btnLogin'){ alert('Login coming soon'); }
+    if(e.target.id === 'btnSignUp'){ alert('Sign up coming soon'); }
+    if(e.target.id === 'btnSubscribe'){ $('#pricing').classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); }
+    if(e.target.id === 'btnManagePlan'){ alert('Manage portal coming soon'); }
+    if(e.target.id === 'btnSignOut'){
+      window.SESSION={ status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
+      try { localStorage.removeItem('ec_session'); } catch(_e){}
+      refreshGates(); showQuota(); updateTrialBanner();
+    }
+
+    // Corrector actions
+    if(e.target.id === 'btnCopyScaffold'){
+      const txt = $('#scMoves').innerText + "\n\n" + $('#scOpener').innerText;
+      try{ await navigator.clipboard.writeText(txt); }catch(err){ console.warn('Clipboard failed', err); }
+    }
+    if(e.target.id === 'btnCopyRules'){
+      try{ await navigator.clipboard.writeText($('#punctList').innerText); }catch(err){ console.warn('Clipboard failed', err); }
+    }
+    if(e.target.id === 'btnExportRules') exportRulesPDF();
+
+    if(e.target.id === 'btnClear'){
+      $('#essayIn').value = '';
+      $('#essayOut').innerHTML = '';
+      updateSentenceAnalysis('');
+    }
+    if(e.target.id === 'btnPaste'){
+      try{ const t = await navigator.clipboard.readText(); $('#essayIn').value = t; }catch(err){ console.warn('Paste failed', err); }
+    }
+    if(e.target.id === 'btnCorrect'){
+      const src = ($('#essayIn').value||'').trim();
+      if(!src) { $('#essayOut').innerHTML = ''; updateSentenceAnalysis(''); return; }
+      $('#essayOut').innerHTML = LOCALE==='es' ? 'Procesando…' : 'Processing…';
+      try{
+        const html = await runCorrection(src);
+        $('#essayOut').innerHTML = html;
+        updateSentenceAnalysis(src);
+        window.QUOTA.used = Math.min(window.QUOTA.used+1, window.QUOTA.cap); showQuota();
+      }catch(err){
+        $('#essayOut').innerHTML = `<div class="hint">${escapeHtml(err.message)}</div>`;
+      }
+    }
+  });
+
+  document.addEventListener('change', (e)=>{
+    if(e.target.id==='scLevel' || e.target.id==='scType') renderScaffold();
+  });
+  document.addEventListener('input', (e)=>{
+    if(e.target && e.target.id === 'essayIn') updateSentenceAnalysis(e.target.value);
+  });
+
+  // ===== jsPDF (optional) =====
+  function exportRulesPDF(){
+    const jspdf = window.jspdf; if(!jspdf?.jsPDF){ alert(LOCALE==='es'? 'jsPDF no está cargado' : 'jsPDF not loaded'); return; }
+    const doc = new jspdf.jsPDF({unit:'pt', format:'a4'});
+    const margin = 56; let y = margin;
+    const title = LOCALE==='es' ? 'Reglas de puntuación' : 'Punctuation Rules';
+    doc.setFont('Times','Bold'); doc.setFontSize(16); doc.text(title, margin, y); y+=24;
+    doc.setFont('Times','Normal'); doc.setFontSize(12);
+    const text = $('#punctList').innerText || '';
+    const lines = doc.splitTextToSize(text, 523);
+    lines.forEach(line=>{ if(y>780){ doc.addPage(); y=margin; } doc.text(line, margin, y); y+=16; });
+    doc.save(`punct-${Date.now()}.pdf`);
+  }
+
+  // ===== Analyzer hook =====
+  function updateSentenceAnalysis(text){
+    const box = document.getElementById('sentenceAnalysis');
+    if(!box) return;
+    box.innerHTML = EC_Sentences.analyzeToHTML(text||'', { locale: LOCALE });
+  }
+
+  // ===== Init =====
+  async function init(){
+    const dict = await loadDict(LOCALE); applyI18n(dict);
+    renderScaffold(); renderPunctRules(); renderPart2();
+    refreshGates(); showQuota(); updateTrialBanner();
+    if(location.hash === '#pricing') { document.getElementById('pricing').classList.remove('hidden'); }
+  }
+  init();
+
+  // Refresh countdown/banner every 10 minutes
+  setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+  </script>
+</body>
+</html>
+
