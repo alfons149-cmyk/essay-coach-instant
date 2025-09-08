@@ -52,8 +52,10 @@
     }
   },
   "punct": {
-    "header": "Core Punctuation Rules (Exam-Safe)"
-  },
+  "header": "Core Punctuation Rules (Exam-Safe)",
+  "guide": "Why should you learn about punctuation?\nMost native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.\n— Full stop (.)\n— Comma (,)\n— Semicolon (;)\n— Colon (:)\n— Dash (—)\n— Apostrophe (’)"
+}
+
   "part2": {
     "title": "Part 2 quick rubric – genre checks"
   },
