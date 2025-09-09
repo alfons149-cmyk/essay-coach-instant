@@ -109,3 +109,47 @@ textarea{
 .preview{ background:#fff; border:1px dashed var(--line); border-radius:12px; padding:12px }
 .hidden{ display:none !important }
 .center{ text-align:center }
+/* Dark mode (auto if user’s OS is in dark mode) */
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b1220;     /* dark background */
+    --card:#0f172a;   /* darker cards */
+    --line:#22304a;   /* borders */
+    --fg:#e5e7eb;     /* base text (light gray) */
+    --muted:#9aa4b2;  /* muted text */
+    --pill:#1e293b;   /* pill bg */
+    --btn:#1e293b;    /* default button bg */
+    --btn-line:#334155; /* default button border */
+    --accent:#fb7185; /* pink accent for primary */
+    --accent-2:#f97316; /* orange accent for gradient */
+  }
+
+  body{ background:var(--bg); color:var(--fg) }
+
+  .card{ background:var(--card); border-color:var(--line) }
+  .preview{ background:var(--card); border-color:var(--line) }
+  .pill{ background:var(--pill); border-color:var(--btn-line); color:var(--fg) }
+
+  /* Toolbar buttons */
+  .toolbar button,
+  .toolbar .toggle{
+    background:var(--btn);
+    border:1px solid var(--btn-line);
+    color:var(--fg);
+  }
+  .toolbar .btn-primary{
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color:#fff;
+  }
+  .toolbar .btn-ghost{
+    background:transparent;
+    color:var(--fg);
+    border:1px solid var(--btn-line);
+  }
+
+  /* Ghost buttons in dark mode */
+  .btn-ghost:hover{ background:#334155 }
+
+  /* Hints + muted */
+  .muted, .hint{ color:var(--muted) }
+}
