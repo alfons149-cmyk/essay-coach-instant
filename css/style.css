@@ -153,3 +153,60 @@ textarea{
   /* Hints + muted */
   .muted, .hint{ color:var(--muted) }
 }
+/* ========== Mobile/responsive polish ========== */
+
+/* 1) Prevent overflow in previews and headings */
+.preview{ overflow:auto; word-break:break-word; overflow-wrap:anywhere; }
+h1, h2 { word-break:break-word; }
+
+/* 2) Tighter card padding on small screens */
+@media (max-width: 860px){
+  header, main { padding: 12px; }
+  .card { padding: 12px; border-radius: 14px; }
+  .headerbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .headerbar .row { justify-content: space-between; flex-wrap: wrap; }
+}
+
+/* 3) One-column app layout on tablets/phones */
+@media (max-width: 860px){
+  .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* 4) Language switch wraps nicely */
+@media (max-width: 600px){
+  nav.row { flex-wrap: wrap; gap: 6px; }
+}
+
+/* 5) Toolbar: wrap buttons, make them easy to tap */
+.toolbar{ display:flex; flex-wrap:wrap; gap:8px; }
+.toolbar button{ min-height: 44px; }
+/* Two-per-row on small phones, then full-width on very small */
+@media (max-width: 600px){
+  .toolbar button { flex: 1 1 calc(50% - 8px); }
+}
+@media (max-width: 400px){
+  .toolbar button { flex: 1 1 100%; }
+}
+
+/* 6) Toggles (checkbox labels) stack if needed */
+@media (max-width: 600px){
+  .row { flex-wrap: wrap; }
+  .toggle { flex: 1 1 48%; min-width: 220px; }
+}
+
+/* 7) Textarea comfortable sizing on mobile */
+textarea{
+  min-height: 180px;
+}
+@media (max-width: 600px){
+  textarea{ min-height: 220px; }
+}
+
+/* 8) KPI pills & account buttons wrap gracefully */
+.kpi, #accountMenu { flex-wrap: wrap; }
+#accountMenu .btn-primary, #accountMenu .btn-ghost { min-width: 130px; }
+
+/* 9) Reduce shadows and borders in dark mode on tiny screens (less clutter) */
+@media (prefers-color-scheme: dark) and (max-width:600px){
+  .card, .preview { box-shadow: none; }
+}
