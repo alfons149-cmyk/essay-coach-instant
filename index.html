@@ -263,16 +263,26 @@
   document.addEventListener('input', (e)=>{ if(e.target && e.target.id==='essayIn') updateSentenceAnalysis(e.target.value); });
 
   // ===== Init =====
-  async function init(){
-    const dict = await loadDict(LOCALE); applyI18n(dict);
-    document.getElementById('punctList').textContent =
-  (window._i18nDict && window._i18nDict.punct && window._i18nDict.punct.guide)
-    ? window._i18nDict.punct.guide
-    : PUNCT_GUIDE; // fallback
-
-    refreshGates(); showQuota(); updateTrialBanner();
+async function init(){
+  const dict = await loadDict(LOCALE);
+  try { 
+    applyI18n(dict); 
+  } catch(e){ 
+    console.warn('i18n apply failed', e); 
   }
-  init();
+
+  // Punctuation guide: prefer ES/EN json, fallback to English constant
+  document.getElementById('punctList').textContent =
+    (window._i18nDict && window._i18nDict.punct && window._i18nDict.punct.guide)
+      ? window._i18nDict.punct.guide
+      : PUNCT_GUIDE; // fallback
+
+  refreshGates();
+  showQuota();
+  updateTrialBanner();
+}
+init();
+
 
   setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
   </script>
