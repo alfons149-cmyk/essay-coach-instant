@@ -4,94 +4,94 @@
     "spanish": "Español"
   },
   "app": {
-    "title": "EssayCoach – Cambridge Toolkit",
-    "subtitle": "Unified build. Same features in English and Spanish."
+    "title": "EssayCoach – Kit de Cambridge",
+    "subtitle": "Compilación unificada. Las mismas funciones en inglés y en español."
   },
   "scaffolds": {
-    "title": "Task setup",
-    "level": "Level",
-    "type": "Type",
-    "moves": "Moves",
-    "opener": "Opener",
-    "tips": "Tips"
+    "title": "Preparación de la tarea",
+    "level": "Nivel",
+    "type": "Tipo",
+    "moves": "Movimientos",
+    "opener": "Apertura",
+    "tips": "Consejos"
   },
   "types": {
-    "essay": "Essay",
-    "review": "Review",
-    "report": "Report",
-    "proposal": "Proposal",
-    "letter": "Letter/Email"
+    "essay": "Ensayo",
+    "review": "Reseña",
+    "report": "Informe",
+    "proposal": "Propuesta",
+    "letter": "Carta/Correo"
   },
   "buttons": {
-    "copyScaffold": "Copy scaffold",
-    "correct": "Correct",
-    "exportPdf": "Export PDF",
-    "clear": "Clear",
-    "paste": "Paste",
-    "startTimer": "Start timer",
-    "copyRules": "Copy rules",
-    "exportRules": "Export rules as PDF"
+    "copyScaffold": "Copiar andamiaje",
+    "correct": "Corregir",
+    "exportPdf": "Exportar PDF",
+    "clear": "Limpiar",
+    "paste": "Pegar",
+    "startTimer": "Iniciar temporizador",
+    "copyRules": "Copiar reglas",
+    "exportRules": "Exportar reglas en PDF"
   },
   "toggles": {
-    "formalTone": "Formal tone",
-    "coachNotes": "Coach notes",
-    "rubricPoints": "Rubric points"
+    "formalTone": "Registro formal",
+    "coachNotes": "Notas del coach",
+    "rubricPoints": "Puntos de la rúbrica"
   },
   "corrector": {
-    "title": "AI Essay Corrector",
-    "hint": "The output mirrors Cambridge descriptors. Toggle options above to customise."
+    "title": "Corrector de ensayos con IA",
+    "hint": "La salida refleja los descriptores de Cambridge. Ajusta las opciones arriba."
   },
   "sentences": {
-    "title": "Sentence-Type Analysis (simple / compound / complex / compound–complex)",
-    "hint": "Hover a sentence to see why it was classified and any issues spotted.",
+    "title": "Análisis de tipos de oraciones (simple / compuesta / compleja / compuesta–compleja)",
+    "hint": "Pasa el ratón por una oración para ver la explicación y posibles problemas.",
     "legend": {
-      "title": "Legend:",
-      "good": "Green = correct sentence types (simple, compound, complex, compound–complex)",
-      "warn": "Orange = possible fragments",
-      "error": "Red = errors (run-ons, comma splices)"
+      "title": "Leyenda:",
+      "good": "Verde = tipos correctos de oración (simple, compuesta, compleja, compuesta–compleja)",
+      "warn": "Naranja = posibles fragmentos",
+      "error": "Rojo = errores (run-ons, coma mal usada)"
     }
   },
   "punct": {
-    "header": "Core Punctuation Rules (Exam-Safe)",
-    "guide": "Why should you learn about punctuation?\nMost native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.\n— Full stop (.)\n— Comma (,)\n— Semicolon (;)\n— Colon (:)\n— Dash (—)\n— Apostrophe (’)"
+    "header": "Reglas básicas de puntuación (seguras para el examen)",
+    "guide": "¿Por qué aprender puntuación?\nMuchos hablantes nativos no la usan correctamente. Entonces, ¿cuál es el sentido? La respuesta es simple: esto es Cambridge. Usar la puntuación correctamente y de forma eficaz demuestra tu nivel y añade valor a tu composición.\n— Punto (.)\n— Coma (,)\n— Punto y coma (;)\n— Dos puntos (:)\n— Raya (—)\n— Apóstrofo (’)"
   },
   "part2": {
-    "title": "Part 2 quick rubric – genre checks"
+    "title": "Parte 2 – comprobaciones rápidas por género"
   },
   "account": {
-    "login": "Log in",
-    "signUp": "Sign up",
-    "subscribe": "Subscribe",
-    "manage": "Manage plan",
-    "signOut": "Sign out",
-    "trialActive": "Trial active"
+    "login": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "subscribe": "Suscribirse",
+    "manage": "Gestionar plan",
+    "signOut": "Cerrar sesión",
+    "trialActive": "Prueba activa"
   },
   "paywall": {
-    "title": "Subscribe to use the corrector",
-    "desc": "Unlimited corrections, PDF export, and analyzer.",
-    "seePlans": "See plans",
-    "startTrial": "Start 2-day trial"
+    "title": "Suscríbete para usar el corrector",
+    "desc": "Correcciones ilimitadas, exportación a PDF y analizador.",
+    "seePlans": "Ver planes",
+    "startTrial": "Empezar prueba de 2 días"
   },
   "pricing": {
-    "title": "Plans",
+    "title": "Planes",
     "monthly": {
-      "name": "Monthly",
-      "price": "€10",
-      "note": "per month, auto-renews until cancelled"
+      "name": "Mensual",
+      "price": "10 €",
+      "note": "por mes, se renueva automáticamente hasta cancelación"
     },
     "exam": {
-      "name": "Exam Pack (6 months)",
-      "price": "€50",
-      "note": "one-time, auto-expires"
+      "name": "Pack Examen (6 meses)",
+      "price": "50 €",
+      "note": "pago único, caduca automáticamente"
     },
-    "chooseMonthly": "Choose Monthly",
-    "chooseExam": "Choose Exam Pack"
+    "chooseMonthly": "Elegir Mensual",
+    "chooseExam": "Elegir Pack Examen"
   },
   "errors": {
-    "subscriptionRequired": "You need an active subscription to use the corrector."
+    "subscriptionRequired": "Necesitas una suscripción activa para usar el corrector."
   },
   "trial": {
-    "pill": "Trial",
-    "expiringSoon": "Trial ending soon"
+    "pill": "Prueba",
+    "expiringSoon": "La prueba termina pronto"
   }
 }
