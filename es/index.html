@@ -127,16 +127,42 @@
   }catch(_){}
 
   // ===== i18n (minimal loader) =====
-  const BASE = '/essay-coach-instant';
-  async function loadDict(lang){
-    const url = `${BASE}/i18n/${lang}.json?v=${Date.now()}`;
-    try {
-      const r = await fetch(url, { cache: 'no-store' });
-      return r.ok ? r.json() : {};
-    } catch(e) {
-      return {};
+  const BASE_APP = '/essay-coach-instant';
+
+async function loadDict(lang){
+  const stamp = Date.now();
+  const candidates = [
+    `${BASE_APP}/i18n/${lang}.json`,        // expected (root/i18n/)
+    `/i18n/${lang}.json`,                   // site root
+    `i18n/${lang}.json`,                    // relative to page
+    `${BASE_APP}/assets/i18n/${lang}.json`  // in case files still under /assets
+  ];
+
+  for (const u of candidates){
+    const url = `${u}?v=${stamp}`;
+    try{
+      const r = await fetch(url, { cache:'no-store' });
+      console.log('[i18n] try', url, '→', r.status);
+      if (r.ok) {
+        const note = document.createElement('div');
+        note.style.cssText = 'position:fixed;bottom:8px;left:8px;padding:6px 8px;background:#111827;color:#fff;font-size:11px;border-radius:6px;opacity:.85;z-index:9999';
+        note.textContent = `i18n loaded: ${u}`;
+        document.body.appendChild(note);
+        setTimeout(()=>note.remove(), 2500);
+        return r.json();
+      }
+    }catch(e){
+      console.warn('[i18n] failed', url, e);
     }
   }
+  const warn = document.createElement('div');
+  warn.style.cssText = 'position:fixed;bottom:8px;left:8px;padding:6px 8px;background:#b91c1c;color:#fff;font-size:11px;border-radius:6px;opacity:.9;z-index:9999';
+  warn.textContent = `i18n NOT FOUND for ${lang}`;
+  document.body.appendChild(warn);
+  setTimeout(()=>warn.remove(), 4000);
+  return {};
+}
+
 
   function applyI18n(dict){
     window._i18nDict = dict||{};
