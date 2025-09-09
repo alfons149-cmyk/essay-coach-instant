@@ -217,20 +217,103 @@ async function loadDict(lang){
   const PUNCT_GUIDE = `Why should you learn about punctuation?\nMost native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.\n— Full stop (.)\n— Comma (,)\n— Semicolon (;)\n— Colon (:)\n— Dash (—)\n— Apostrophe (’)`;
 
   // ===== Corrector (backend-only) =====
-  async function runCorrection(src){
-    if(!canUseCorrector()) throw new Error(LOCALE==='es'?'Necesitas una suscripción activa para usar el corrector.':'You need an active subscription to use the corrector.');
-    const opts = {
-      formal: document.getElementById('tgFormal')?.checked !== false,
-      coachNotes: document.getElementById('tgCoachNotes')?.checked !== false,
-      rubric: document.getElementById('tgRubric')?.checked !== false,
-      level: 'C1', type: 'essay', locale: LOCALE
-    };
-    const endpoint = (window.EC_CONFIG.API_BASE||'') + '/correct';
-    const token = window.SESSION?.token;
-    const res = await fetch(endpoint, { method:'POST', headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) }, body: JSON.stringify({ text: src, options: opts }) });
-    if(!res.ok) throw new Error('Correction failed');
-    const data = await res.json(); return data.output || '';
+  <script>
+// ===== Config & session =====
+window.EC_CONFIG = { API_BASE:'/api', REQUIRE_SUBSCRIPTION:true, SHOW_TRIAL:true, QUOTA_CAP:20, TRIAL_DAYS:2 };
+window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
+window.QUOTA = { used:0, cap:window.EC_CONFIG.QUOTA_CAP };
+
+// Locale detection
+const path = location.pathname.toLowerCase();
+const LOCALE = /\/es(\/|$)/.test(path) ? 'es' : 'en';
+document.documentElement.lang = LOCALE;
+
+// ===== Dev Mode flag =====
+const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
+if (DEV_MODE) {
+  console.warn('⚠️ Dev Mode enabled — subscription checks bypassed');
+  window.SESSION.status = 'active'; // pretend subscribed
+  const dev = document.createElement('div');
+  dev.textContent = 'DEV MODE';
+  dev.style.cssText = 'position:fixed;top:8px;right:8px;background:#111827;color:#fff;font:12px/1.2 system-ui;padding:6px 8px;border-radius:6px;opacity:.85;z-index:9999';
+  document.addEventListener('DOMContentLoaded', ()=>document.body.appendChild(dev));
+}
+
+// Helpers
+function escapeHtml(s){return (s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;","&gt;"}[m]))}
+
+// ===== Gate check =====
+function canUseCorrector(){
+  return DEV_MODE || window.SESSION.status==='active' || window.SESSION.status==='trial';
+}
+
+// ===== Corrector =====
+async function runCorrection(src){
+  if(!canUseCorrector()) {
+    throw new Error(LOCALE==='es'
+      ? 'Necesitas una suscripción activa para usar el corrector.'
+      : 'You need an active subscription to use the corrector.');
   }
+
+  // --- DEV MOCK (no backend needed) ---
+  if (DEV_MODE) {
+    const original = src || '';
+    const sampleFix = original
+      .replace(/\bI think\b/gi, LOCALE==='es' ? 'Creo que' : 'In my view')
+      .replace(/\bvery\b/gi, LOCALE==='es' ? 'bastante' : 'quite');
+
+    const tips = LOCALE==='es'
+      ? [
+          'Usa conectores más variados (p. ej., moreover, however).',
+          'Evita repetición de “very”; prefiere adjetivos más precisos.',
+          'Comprueba comas antes de “which/that” y después de conectores iniciales.'
+        ]
+      : [
+          'Use a wider range of linkers (e.g., moreover, however).',
+          'Avoid repeating “very”; prefer more precise adjectives.',
+          'Check commas before “which/that” and after initial discourse markers.'
+        ];
+
+    const mockHTML = `
+      <div class="kpi">
+        <span class="pill ok">${LOCALE==='es'?'Tono formal':'Formal tone'} ✓</span>
+        <span class="pill">${LOCALE==='es'?'Cohesión':'Cohesion'} B2→C1</span>
+        <span class="pill warn">${LOCALE==='es'?'Puntuación':'Punctuation'} ~</span>
+      </div>
+      <div class="notes" style="margin-top:10px">
+        <strong>${LOCALE==='es'?'Sugerencias del coach':'Coach notes'}</strong>
+        <ul style="margin:8px 0 0 16px">
+          <li>${tips[0]}</li>
+          <li>${tips[1]}</li>
+          <li>${tips[2]}</li>
+        </ul>
+      </div>
+      <h4 style="margin:14px 0 8px">${LOCALE==='es'?'Versión mejorada (simulada)':'Improved version (simulated)'}</h4>
+      <div class="preview">${escapeHtml(sampleFix).replace(/\n/g,'<br>')}</div>
+    `;
+    return mockHTML;
+  }
+
+  // --- Normal API call when not in Dev Mode ---
+  const opts = {
+    formal: document.getElementById('tgFormal')?.checked !== false,
+    coachNotes: document.getElementById('tgCoachNotes')?.checked !== false,
+    rubric: document.getElementById('tgRubric')?.checked !== false,
+    level: 'C1', type: 'essay', locale: LOCALE
+  };
+  const endpoint = (window.EC_CONFIG.API_BASE||'') + '/correct';
+  const token = window.SESSION?.token;
+  const res = await fetch(endpoint, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
+    body: JSON.stringify({ text: src, options: opts })
+  });
+  if(!res.ok) throw new Error('Correction failed');
+  const data = await res.json();
+  return data.output || '';
+}
+</script>
+
 
   // ===== Analyzer hook =====
   function updateSentenceAnalysis(text){ const box=document.getElementById('sentenceAnalysis'); if(!box) return; box.innerHTML = EC_Sentences.analyzeToHTML(text||'', { locale: LOCALE }); }
