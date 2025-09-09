@@ -1,0 +1,111 @@
+:root{
+  /* Core palette (coral theme by default) */
+  --bg:#fff1f2;          /* page background */
+  --fg:#111827;          /* base text */
+  --card:#ffffff;        /* cards */
+  --line:#ffd4d4;        /* coral border */
+  --muted:#6b7280;       /* muted text */
+  --pill:#ffe4e6;        /* pill bg */
+  --btn:#ffe4e6;         /* generic toolbar button bg */
+  --btn-line:#ffb4c2;    /* generic toolbar button border */
+
+  /* Accents for primary button gradient */
+  --accent:#f97316;      /* orange/coral */
+  --accent-2:#fb7185;    /* pink/coral */
+}
+
+*{ box-sizing:border-box }
+body{
+  font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.5; margin:0; background:var(--bg); color:var(--fg);
+}
+header,main{ max-width:1100px; margin:0 auto; padding:16px }
+nav.row{ display:flex; gap:8px; padding:8px 0 }
+a{ color:#0ea5e9; text-decoration:none }
+a:hover{ text-decoration:underline }
+
+.grid{ display:grid; gap:14px }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:0 1px 4px rgba(255,127,80,.15) }
+.card h2{ margin:0 0 8px; font-size:20px }
+.muted{ color:var(--muted); font-size:14px }
+.row{ display:flex; gap:10px; align-items:center }
+.headerbar{ display:flex; align-items:center; justify-content:space-between; gap:12px }
+
+/* Pills */
+.pill{
+  border:1px solid var(--btn-line);
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:12px;
+  color:var(--fg);
+  background:var(--pill);
+  display:inline-flex; align-items:center; gap:6px;
+}
+
+/* Toolbar container + generic buttons/toggles */
+.toolbar{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 }
+.toolbar button,
+.toolbar .toggle{
+  background:var(--btn);
+  border:1px solid var(--btn-line);
+  border-radius:10px;
+  padding:8px 12px;
+  color:var(--fg);
+  cursor:pointer;
+  transition: box-shadow .18s ease, background .18s ease, transform .03s ease;
+}
+.toolbar button:hover{ box-shadow:0 2px 10px rgba(2,6,23,.06) }
+.toolbar .toggle{ display:flex; align-items:center; gap:8px }
+
+/* Global button styles (outside toolbars, e.g., header account menu) */
+.btn-primary{
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color:#fff; border:0; border-radius:10px;
+  padding:8px 12px; cursor:pointer;
+  box-shadow:0 6px 18px rgba(2,6,23,.12);
+  transition: transform .03s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+}
+.btn-primary:hover{ transform:translateY(-1px); box-shadow:0 10px 28px rgba(2,6,23,.16) }
+.btn-primary:disabled{ opacity:.7; filter:saturate(.85); cursor:not-allowed }
+
+.btn-ghost{
+  background:transparent; color:var(--fg);
+  border:1px solid var(--btn-line); border-radius:10px;
+  padding:8px 12px; cursor:pointer;
+  transition: box-shadow .18s ease, background .18s ease;
+}
+.btn-ghost:hover{ background:#fff; box-shadow:0 2px 10px rgba(2,6,23,.06) }
+
+/* ✅ Toolbar-specific overrides so primary/ghost win over `.toolbar button` */
+.toolbar .btn-primary{
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color:#fff; border:0;
+  box-shadow:0 6px 18px rgba(2,6,23,.12);
+}
+.toolbar .btn-ghost{
+  background:transparent;
+  color:var(--fg);
+  border:1px solid var(--btn-line);
+}
+
+/* Accessible focus outline for all buttons */
+button:focus-visible,
+.btn-primary:focus-visible,
+.btn-ghost:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+
+/* Inputs */
+textarea{
+  width:100%;
+  min-height:160px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#fff; color:var(--fg);
+  padding:12px; resize:vertical;
+}
+.hint{ color:#64748b; font-size:12px; margin-top:6px }
+.preview{ background:#fff; border:1px dashed var(--line); border-radius:12px; padding:12px }
+.hidden{ display:none !important }
+.center{ text-align:center }
