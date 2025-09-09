@@ -270,6 +270,8 @@ async function init(){
   } catch(e){ 
     console.warn('i18n apply failed', e); 
   }
+console.log('LOCALE detected =', LOCALE, 'path =', location.pathname);
+console.log('Loaded dict keys:', Object.keys(window._i18nDict||{}));
 
   // Punctuation guide: prefer ES/EN json, fallback to English constant
   document.getElementById('punctList').textContent =
