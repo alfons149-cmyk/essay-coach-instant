@@ -1,0 +1,30 @@
+},
+  "paywall": {
+    "title": "Suscríbete para usar el corrector",
+    "desc": "Correcciones ilimitadas, exportación a PDF y analizador.",
+    "seePlans": "Ver planes",
+    "startTrial": "Empezar prueba de 2 días"
+  },
+  "pricing": {
+    "title": "Planes",
+    "monthly": {
+      "name": "Mensual",
+      "price": "10 €",
+      "note": "por mes, se renueva automáticamente hasta cancelación"
+    },
+    "exam": {
+      "name": "Pack Examen (6 meses)",
+      "price": "50 €",
+      "note": "pago único, caduca automáticamente"
+    },
+    "chooseMonthly": "Elegir Mensual",
+    "chooseExam": "Elegir Pack Examen"
+  },
+  "errors": {
+    "subscriptionRequired": "Necesitas una suscripción activa para usar el corrector."
+  },
+  "trial": {
+    "pill": "Prueba",
+    "expiringSoon": "La prueba termina pronto"
+  }
+}
