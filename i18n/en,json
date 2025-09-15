@@ -19,12 +19,12 @@
     "title": "Plans",
     "monthly": {
       "name": "Monthly",
-      "price": "€10",
+      "price": "€12.5",
       "note": "per month, auto-renews until cancelled"
     },
     "exam": {
       "name": "Exam Pack (6 months)",
-      "price": "€50",
+      "price": "€65",
       "note": "one-time, auto-expires"
     },
     "chooseMonthly": "Choose Monthly",
