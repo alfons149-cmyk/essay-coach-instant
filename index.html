@@ -266,16 +266,16 @@
       pg.innerHTML=html;
     }
 
-    // ===== DEV MODE banner / bypass =====
-    const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
-    if (DEV_MODE) {
-      console.warn('⚠️ Dev Mode enabled — subscription checks bypassed');
-      window.SESSION.status = 'active';
-      const dev = document.createElement('div');
-      dev.textContent = 'DEV MODE';
-      dev.style.cssText = 'position:fixed;top:8px;right:8px;background:#111827;color:#fff;font:12px/1.2 system-ui;padding:6px 8px;border-radius:6px;opacity:.85;z-index:9999';
-      document.addEventListener('DOMContentLoaded', ()=>document.body.appendChild(dev));
-    }
+   // ===== DEV MODE banner / bypass =====
+if (DEV_MODE) {
+  console.warn('⚠️ Dev Mode enabled — subscription checks bypassed');
+  window.SESSION.status = 'active';
+  const dev = document.createElement('div');
+  dev.textContent = 'DEV MODE';
+  dev.style.cssText = 'position:fixed;top:8px;right:8px;background:#111827;color:#fff;font:12px/1.2 system-ui;padding:6px 8px;border-radius:6px;opacity:.85;z-index:9999';
+  document.addEventListener('DOMContentLoaded', ()=>document.body.appendChild(dev));
+}
+
 
     // ===== Corrector =====
     async function runCorrection(src){
