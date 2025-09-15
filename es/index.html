@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EssayCoach – Cambridge Toolkit (Unified EN/ES)</title>
-  <meta name="x-build" content="v2025-09-15-unified-coral-full-punctfix-LvType" />
+  <meta name="x-build" content="v2025-09-15-unified-coral-full-punctfix" />
   <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
 
   <!-- Fonts -->
@@ -98,7 +98,7 @@
           <label class="toggle"><input type="checkbox" id="tgRubric" checked> <span data-i18n="toggles.rubricPoints">Rubric points</span></label>
         </div>
 
-        <!-- NEW: Level & Task type selectors -->
+        <!-- NEW: Level & Task type selectors (minimal addition) -->
         <div class="row">
           <label class="toggle">
             <span style="margin-right:6px">Level</span>
@@ -184,35 +184,14 @@
         return {};
       }
     }
-    <script>
-// Replace your existing applyI18n with this:
-function applyI18n(dict){
-  window._i18nDict = dict || {};
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const val = key.split('.').reduce((o,k)=>o && o[k], dict);
-
-    if (typeof val !== 'string') return;
-
-    // Only overwrite text on safe/leaf elements
-    const safeTags = /^(BUTTON|A|SPAN|LABEL|STRONG|EM|H1|H2|H3|H4|H5|H6)$/;
-
-    if (el.childElementCount === 0 || safeTags.test(el.tagName)) {
-      // Simple element: just set text
-      el.textContent = val;
-    } else {
-      // Container: try to replace only the first text node, keep children intact
-      let replaced = false;
-      for (const node of el.childNodes) {
-        if (node.nodeType === Node.TEXT_NODE) { node.nodeValue = val; replaced = true; break; }
-      }
-      // If no text node, append a text node rather than wiping children
-      if (!replaced) el.insertBefore(document.createTextNode(val), el.firstChild);
+    function applyI18n(dict){
+      window._i18nDict = dict||{};
+      document.querySelectorAll('[data-i18n]').forEach(el=>{
+        const key=el.getAttribute('data-i18n');
+        const val=key.split('.').reduce((o,k)=>o&&o[k], dict);
+        if(typeof val==='string') el.textContent = val;
+      });
     }
-  });
-}
-</script>
-
     function t(path, fallback){
       try{
         const d = window._i18nDict || {};
@@ -276,8 +255,7 @@ function applyI18n(dict){
     }
 
     // ===== Content (HTML fallback for punctuation guide) =====
-    const PUNCT_GUIDE = "<p><strong>Why should you learn about punctuation?</strong><br> Most native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.</p><ul><li><strong>Full stop (.)</strong> — Use at the end of sentences.</li><li><strong>
-Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</li><li><strong>Semicolon (;)</strong> — Link closely related independent clauses.</li><li><strong>Colon (:)</strong> — Introduce a list, explanation, or example.</li><li><strong>Dash (—)</strong> — Add emphasis or mark off extra information.</li><li><strong>Apostrophe (’)</strong> — Show possession or form contractions.</li></ul>";
+    const PUNCT_GUIDE = "<p><strong>Why should you learn about punctuation?</strong><br> Most native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.</p><ul><li><strong>Full stop (.)</strong> — Use at the end of sentences.</li><li><strong>Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</li><li><strong>Semicolon (;)</strong> — Link closely related independent clauses.</li><li><strong>Colon (:)</strong> — Introduce a list, explanation, or example.</li><li><strong>Dash (—)</strong> — Add emphasis or mark off extra information.</li><li><strong>Apostrophe (’)</strong> — Show possession or form contractions.</li></ul>";
 
     function renderPunctGuide(){
       const pg=document.getElementById('punctList'); if(!pg) return;
@@ -289,6 +267,7 @@ Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</
     }
 
     // ===== DEV MODE banner / bypass =====
+    const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
     if (DEV_MODE) {
       console.warn('⚠️ Dev Mode enabled — subscription checks bypassed');
       window.SESSION.status = 'active';
@@ -305,50 +284,29 @@ Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</
           ? 'Necesitas una suscripción activa para usar el corrector.'
           : 'You need an active subscription to use the corrector.');
       }
-
-      // --- DEV mock reflects chosen level/type ---
-      const lvl  = document.getElementById('levelSelect')?.value || 'C1';
-      const typ  = document.getElementById('typeSelect')?.value  || 'essay';
-
+      // DEV mock
       if (DEV_MODE) {
         const original = src || '';
         const sampleFix = original
           .replace(/\bI think\b/gi, LOCALE==='es' ? 'Creo que' : 'In my view')
           .replace(/\bvery\b/gi, LOCALE==='es' ? 'bastante' : 'quite');
 
-        const tipsByLevel = {
-          B2: [
-            LOCALE==='es' ? 'Usa conectores sencillos pero variados (however, moreover).' :
-                            'Use simple but varied linkers (however, moreover).',
-            LOCALE==='es' ? 'Evita “very”; elige adjetivos más precisos.' :
-                            'Avoid “very”; choose more precise adjectives.',
-            LOCALE==='es' ? 'Comprueba la puntuación en oraciones compuestas.' :
-                            'Check punctuation in compound sentences.'
-          ],
-          C1: [
-            LOCALE==='es' ? 'Mejora la síntesis de ideas clave.' :
-                            'Strengthen synthesis of key ideas.',
-            LOCALE==='es' ? 'Usa estructuras complejas con control.' :
-                            'Use complex structures with control.',
-            LOCALE==='es' ? 'Mantén claridad al variar el registro.' :
-                            'Vary register while keeping clarity.'
-          ],
-          C2: [
-            LOCALE==='es' ? 'Integra fuentes con evaluación crítica.' :
-                            'Integrate sources with critical evaluation.',
-            LOCALE==='es' ? 'Refina el matiz léxico y la precisión.' :
-                            'Refine lexical nuance and precision.',
-            LOCALE==='es' ? 'Controla la cohesión a nivel global.' :
-                            'Control macro-level cohesion.'
-          ]
-        };
-        const tips = tipsByLevel[lvl] || tipsByLevel.C1;
+        const tips = LOCALE==='es'
+          ? [
+              'Usa conectores más variados (p. ej., moreover, however).',
+              'Evita repetición de “very”; prefiere adjetivos más precisos.',
+              'Comprueba comas antes de “which/that” y después de conectores iniciales.'
+            ]
+          : [
+              'Use a wider range of linkers (e.g., moreover, however).',
+              'Avoid repeating “very”; prefer more precise adjectives.',
+              'Check commas before “which/that” and after initial discourse markers.'
+            ];
 
         const mockHTML = `
           <div class="kpi">
             <span class="pill ok">${LOCALE==='es'?'Tono formal':'Formal tone'} ✓</span>
-            <span class="pill">${LOCALE==='es'?'Nivel':'Level'}: ${lvl}</span>
-            <span class="pill">${LOCALE==='es'?'Tipo':'Type'}: ${typ}</span>
+            <span class="pill">${LOCALE==='es'?'Cohesión':'Cohesion'} B2→C1</span>
             <span class="pill warn">${LOCALE==='es'?'Puntuación':'Punctuation'} ~</span>
           </div>
           <div class="notes" style="margin-top:10px">
@@ -370,13 +328,13 @@ Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</
         return mockHTML;
       }
 
-      // --- Real API call with chosen level/type ---
+      // Real API call — now uses selected level & type
       const opts = {
         formal: document.getElementById('tgFormal')?.checked !== false,
         coachNotes: document.getElementById('tgCoachNotes')?.checked !== false,
         rubric: document.getElementById('tgRubric')?.checked !== false,
-        level: lvl,
-        type:  typ,
+        level: (document.getElementById('levelSelect')?.value || 'C1'),
+        type:  (document.getElementById('typeSelect')?.value  || 'essay'),
         locale: LOCALE
       };
       const endpoint = (window.EC_CONFIG.API_BASE||'') + '/correct';
@@ -446,7 +404,8 @@ Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</
       console.log('LOCALE detected =', LOCALE, 'path =', location.pathname);
       console.log('Loaded dict keys:', Object.keys(window._i18nDict||{}));
 
-      renderPunctGuide();   // HTML rendering for Punctuation Guide
+      renderPunctGuide();   // <— key change for HTML rendering
+
       refreshGates();
       showQuota();
       updateTrialBanner();
