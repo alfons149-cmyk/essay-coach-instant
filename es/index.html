@@ -33,6 +33,24 @@
 
   /* General readability bump for other preview blocks, too */
   .preview { line-height: 1.6; }
+    #punctList {
+  line-height: 1.6;
+}
+
+#punctList p {
+  margin-bottom: 0.8em;
+}
+
+#punctList ul {
+  margin: 0.5em 0 0.5em 1.2em;
+  padding: 0;
+  list-style-type: disc;
+}
+
+#punctList li {
+  margin: 0.3em 0;
+}
+
 </style>
 
 </head>
@@ -234,16 +252,32 @@
       } else { box.classList.add('hidden'); msg.textContent=''; }
     }
 
-    // ===== Content =====
-    const PUNCT_GUIDE = `Why should you learn about punctuation?
-Most native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.
-— Full stop (.)
-— Comma (,)
-— Semicolon (;)
-— Colon (:)
-— Dash (—)
-— Apostrophe (’)
+   // ===== Content =====
+const PUNCT_GUIDE = `
+<p><strong>Why should you learn about punctuation?</strong><br>
+Most native speakers don't use punctuation correctly themselves. So, what's the point of learning this?
+The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level
+and adds value to your composition.</p>
+
+<ul>
+  <li><strong>Full stop (.)</strong> — Use at the end of sentences.</li>
+  <li><strong>Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</li>
+  <li><strong>Semicolon (;)</strong> — Link closely related independent clauses.</li>
+  <li><strong>Colon (:)</strong> — Introduce a list, explanation, or example.</li>
+  <li><strong>Dash (—)</strong> — Add emphasis or mark off extra information.</li>
+  <li><strong>Apostrophe (’)</strong> — Show possession or form contractions.</li>
+</ul>
 `;
+
+// … inside your init() function:
+const pg = document.getElementById('punctList');
+if (pg) {
+  pg.innerHTML =
+    (window._i18nDict && window._i18nDict.punct && window._i18nDict.punct.guide)
+      ? window._i18nDict.punct.guide
+      : PUNCT_GUIDE;
+}
+
 
     // ===== Dev Mode (single definition) =====
     const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
