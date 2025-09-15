@@ -184,14 +184,35 @@
         return {};
       }
     }
-    function applyI18n(dict){
-      window._i18nDict = dict||{};
-      document.querySelectorAll('[data-i18n]').forEach(el=>{
-        const key=el.getAttribute('data-i18n');
-        const val=key.split('.').reduce((o,k)=>o&&o[k], dict);
-        if(typeof val==='string') el.textContent = val;
-      });
+    <script>
+// Replace your existing applyI18n with this:
+function applyI18n(dict){
+  window._i18nDict = dict || {};
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = key.split('.').reduce((o,k)=>o && o[k], dict);
+
+    if (typeof val !== 'string') return;
+
+    // Only overwrite text on safe/leaf elements
+    const safeTags = /^(BUTTON|A|SPAN|LABEL|STRONG|EM|H1|H2|H3|H4|H5|H6)$/;
+
+    if (el.childElementCount === 0 || safeTags.test(el.tagName)) {
+      // Simple element: just set text
+      el.textContent = val;
+    } else {
+      // Container: try to replace only the first text node, keep children intact
+      let replaced = false;
+      for (const node of el.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) { node.nodeValue = val; replaced = true; break; }
+      }
+      // If no text node, append a text node rather than wiping children
+      if (!replaced) el.insertBefore(document.createTextNode(val), el.firstChild);
     }
+  });
+}
+</script>
+
     function t(path, fallback){
       try{
         const d = window._i18nDict || {};
