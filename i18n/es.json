@@ -19,12 +19,12 @@
     "title": "Planes",
     "monthly": {
       "name": "Mensual",
-      "price": "12.5 €",
+      "price": "15 €",
       "note": "por mes, se renueva automáticamente hasta que lo canceles"
     },
     "exam": {
       "name": "Pack Examen (6 meses)",
-      "price": "65 €",
+      "price": "75 €",
       "note": "pago único, expira automáticamente"
     },
     "chooseMonthly": "Elegir plan mensual",
