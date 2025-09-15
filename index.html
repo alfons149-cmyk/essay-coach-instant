@@ -33,6 +33,28 @@
     #punctList p { margin: 0 0 0.8em; }
     #punctList ul { margin: 0.5em 0 0.5em 1.2em; padding: 0; list-style: disc; }
     #punctList li { margin: 0.3em 0; }
+
+    /* --- Rubric / KPI tiles --- */
+.kpi { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 10px; }
+.tile { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; min-width:160px; flex:0 0 auto; }
+.tile h4 { margin:0 0 6px; font-size:14px; font-weight:600; }
+.score { font-weight:700; }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #e5e7eb; font-size:12px; }
+.badge.ok { background:#ecfdf5; border-color:#34d399; }
+.badge.warn { background:#fff7ed; border-color:#f59e0b; }
+.badge.err { background:#fef2f2; border-color:#ef4444; }
+
+/* --- Lists / issues --- */
+.list { margin:6px 0 0 18px; }
+.issue { border-left:3px solid #f59e0b; padding:6px 10px; margin:8px 0; background:#fffaf0; border-radius:6px; }
+.issue.major { border-color:#ef4444; background:#fef2f2; }
+.issue .cat { font-weight:600; }
+
+/* --- Checklist --- */
+.checklist { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0; }
+.check { border:1px dashed #e5e7eb; border-radius:999px; padding:4px 10px; font-size:12px; }
+.check.ok { border-style:solid; background:#ecfeff; border-color:#06b6d4; }
+
   </style>
 </head>
 <body>
