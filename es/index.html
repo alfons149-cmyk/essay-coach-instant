@@ -582,5 +582,169 @@ function renderCorrection(data, level){
     // Periodic UI updates
     setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
   </script>
+    <script>
+/* === EZ PATCH: btnCorrect override (no surgery needed) === */
+(function(){
+  const LOCALE = (window.LOCALE) || document.documentElement.lang || 'en';
+
+  function stripTags(html=""){ const d=document.createElement('div'); d.innerHTML=html; return d.textContent || d.innerText || ''; }
+  function wcOf(text){ return (stripTags(text).match(/\b[\w’'-]+\b/g)||[]).length; }
+  function wordBand(level){
+    if(level==='B2') return {min:140, max:190};
+    if(level==='C2') return {min:240, max:280};
+    return {min:220, max:260}; // C1
+  }
+  function ensureKPI(){
+    const host = document.querySelector('#corrector .kpi');
+    if (host) return host;
+    const k = document.createElement('div'); k.className = 'kpi';
+    // minimal style if your CSS doesn't have .kpi defined
+    k.style.display='flex'; k.style.flexWrap='wrap'; k.style.gap='8px'; k.style.margin='8px 0 10px';
+    document.getElementById('corrector').prepend(k);
+    return k;
+  }
+  function pill(txt, ok=true){
+    const s = document.createElement('span');
+    s.textContent = txt;
+    s.style.display='inline-block'; s.style.padding='2px 8px'; s.style.borderRadius='999px';
+    s.style.border='1px solid ' + (ok ? '#34d399' : '#f59e0b');
+    s.style.background = ok ? '#ecfdf5' : '#fff7ed';
+    s.style.fontSize='12px';
+    return s;
+  }
+  function showWordcountBadge(text, level){
+    const kpi = ensureKPI();
+    // remove previous wc pill
+    kpi.querySelectorAll('[data-wc]').forEach(n=>n.remove());
+    const {min,max} = wordBand(level);
+    const wc = wcOf(text);
+    const ok = wc>=min && wc<=max;
+    const p = pill(`Words: ${wc} (${min}–${max}${ok?' ✓': (wc<min?' ↓':' ↑')})`, ok);
+    p.setAttribute('data-wc','1');
+    kpi.prepend(p);
+  }
+  function safeUpdateSentenceAnalysis(text){
+    try{
+      if (typeof updateSentenceAnalysis === 'function') { updateSentenceAnalysis(text); return; }
+      if (window.EC_Sentences && typeof window.EC_Sentences.analyzeToHTML === 'function') {
+        const box=document.getElementById('sentenceAnalysis');
+        if (box) box.innerHTML = window.EC_Sentences.analyzeToHTML(text, { locale: LOCALE }) || '';
+      }
+    }catch(_){}
+  }
+  function escapeHtml(s){ return (s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])); }
+
+  // Minimal renderer for structured JSON (if/when backend sends it)
+  function renderCorrection(data, level){
+    const out = document.getElementById('essayOut');
+    const t = data?.improved_text || '';
+    // Tiny rubric readout (keep it compact)
+    let top = '';
+    if (data?.rubric){
+      const r = data.rubric;
+      const tile = (label, key)=> {
+        const sc = (r[key]?.score ?? 0) + '/5';
+        return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;min-width:140px">
+                  <div style="font-weight:600;font-size:13px">${label}</div>
+                  <div style="font-weight:700">${sc}</div>
+                </div>`;
+      };
+      top += `<div class="kpi" style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px">
+                ${tile('Content','content')}
+                ${tile('Communicative','communicative_achievement')}
+                ${tile('Organisation','organisation')}
+                ${tile('Language','language')}
+              </div>`;
+    }
+    // Register flags
+    const reg = data?.checks?.register;
+    const regHtml = (reg && Array.isArray(reg.violations) && reg.violations.length)
+      ? `<div style="margin:6px 0">
+           <div style="font-weight:600">Register: possible issues</div>
+           <ul style="margin:4px 0 0 18px">${reg.violations.map(v=>`<li>${escapeHtml(v)}</li>`).join('')}</ul>
+         </div>` : '';
+
+    out.innerHTML = `${top}${regHtml}
+      <h4 style="margin:12px 0 6px">${LOCALE==='es'?'Versión mejorada':'Improved version'}</h4>
+      <div class="preview">${t}</div>`;
+
+    // badges + analysis
+    showWordcountBadge(t, level);
+    safeUpdateSentenceAnalysis(stripTags(t));
+  }
+
+  function bind(){
+    const btn = document.getElementById('btnCorrect');
+    if (!btn) return;
+    btn.addEventListener('click', async function(e){
+      // Stop the old document-level handler from also firing
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+
+      const essayIn = document.getElementById('essayIn');
+      const essayOut = document.getElementById('essayOut');
+      const lvl = (document.getElementById('levelSelect')?.value || 'C1');
+      const src = (essayIn?.value||'').trim();
+
+      if(!src){ if(essayOut) essayOut.innerHTML=''; safeUpdateSentenceAnalysis(''); return; }
+      if(essayOut) essayOut.innerHTML = LOCALE==='es' ? 'Procesando…' : 'Processing…';
+
+      try{
+        let data = null;
+        if (typeof window.runCorrection === 'function') {
+          data = await window.runCorrection(src);
+        } else {
+          // Fallback call if runCorrection is absent (keeps your app working)
+          const opts = {
+            formal: document.getElementById('tgFormal')?.checked !== false,
+            coachNotes: document.getElementById('tgCoachNotes')?.checked !== false,
+            rubric: document.getElementById('tgRubric')?.checked !== false,
+            level: lvl, type: (document.getElementById('typeSelect')?.value || 'essay'),
+            locale: LOCALE
+          };
+          const res = await fetch((window.EC_CONFIG?.API_BASE||'') + '/correct', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ text: src, options: opts })
+          });
+          if(!res.ok) throw new Error('Correction failed');
+          data = await res.json();
+        }
+
+        // Case A: legacy string HTML
+        if (typeof data === 'string' || typeof data?.output === 'string') {
+          const html = (typeof data === 'string') ? data : data.output;
+          essayOut.innerHTML = html;
+          showWordcountBadge(html, lvl);
+          safeUpdateSentenceAnalysis(stripTags(html));
+        }
+        // Case B: structured JSON
+        else if (data && data.improved_text) {
+          renderCorrection(data, lvl);
+        }
+        // Unknown
+        else {
+          essayOut.innerHTML = `<div class="hint">${LOCALE==='es'?'Respuesta inesperada del servidor.':'Unexpected server response.'}</div>`;
+        }
+
+        // Update quota UI if present
+        try{
+          window.QUOTA = window.QUOTA || { used:0, cap:(window.EC_CONFIG?.QUOTA_CAP||20) };
+          window.QUOTA.used = Math.min((window.QUOTA.used||0)+1, (window.QUOTA.cap||20));
+          if (typeof showQuota === 'function') showQuota();
+        }catch(_){}
+      }catch(err){
+        essayOut.innerHTML = `<div class="hint">${escapeHtml(err.message||'Error')}</div>`;
+      }
+    }, { passive:false });
+  }
+
+  // run after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind);
+  } else {
+    bind();
+  }
+})();
+</script>
+
 </body>
 </html>
