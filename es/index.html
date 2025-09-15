@@ -322,55 +322,84 @@ if (DEV_MODE) {
 
 
     // ===== Corrector =====
-    async function runCorrection(src){
-      if(!canUseCorrector()) {
-        throw new Error(LOCALE==='es'
-          ? 'Necesitas una suscripción activa para usar el corrector.'
-          : 'You need an active subscription to use the corrector.');
-      }
-      // DEV mock
-      if (DEV_MODE) {
-        const original = src || '';
-        const sampleFix = original
-          .replace(/\bI think\b/gi, LOCALE==='es' ? 'Creo que' : 'In my view')
-          .replace(/\bvery\b/gi, LOCALE==='es' ? 'bastante' : 'quite');
+   <script>
+async function runCorrection(src){
+  if(!canUseCorrector()) {
+    throw new Error(LOCALE==='es'
+      ? 'Necesitas una suscripción activa para usar el corrector.'
+      : 'You need an active subscription to use the corrector.');
+  }
 
-        const tips = LOCALE==='es'
-          ? [
-              'Usa conectores más variados (p. ej., moreover, however).',
-              'Evita repetición de “very”; prefiere adjetivos más precisos.',
-              'Comprueba comas antes de “which/that” y después de conectores iniciales.'
-            ]
-          : [
-              'Use a wider range of linkers (e.g., moreover, however).',
-              'Avoid repeating “very”; prefer more precise adjectives.',
-              'Check commas before “which/that” and after initial discourse markers.'
-            ];
+  const opts = {
+    formal: document.getElementById('tgFormal')?.checked !== false,
+    coachNotes: document.getElementById('tgCoachNotes')?.checked !== false,
+    rubric: document.getElementById('tgRubric')?.checked !== false,
+    level: (document.getElementById('levelSelect')?.value || 'C1'),
+    type:  (document.getElementById('typeSelect')?.value  || 'essay'),
+    locale: LOCALE
+  };
 
-        const mockHTML = `
-          <div class="kpi">
-            <span class="pill ok">${LOCALE==='es'?'Tono formal':'Formal tone'} ✓</span>
-            <span class="pill">${LOCALE==='es'?'Cohesión':'Cohesion'} B2→C1</span>
-            <span class="pill warn">${LOCALE==='es'?'Puntuación':'Punctuation'} ~</span>
-          </div>
-          <div class="notes" style="margin-top:10px">
-            <strong>${LOCALE==='es'?'Sugerencias del coach':'Coach notes'}</strong>
-            <ul style="margin:8px 0 0 16px">
-              <li>${tips[0]}</li>
-              <li>${tips[1]}</li>
-              <li>${tips[2]}</li>
-            </ul>
-          </div>
-          <h4 style="margin:14px 0 8px">${LOCALE==='es'?'Versión mejorada (simulada)':'Improved version (simulated)'}</h4>
-          <div class="preview">${
-            escapeHtml(sampleFix)
-              .split(/\n{2,}/)
-              .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-              .join('')
-          }</div>
-        `;
-        return mockHTML;
-      }
+  // --- DEV MOCK: return structured JSON so UI behaves like production ---
+  if (DEV_MODE) {
+    const improved = (LOCALE==='es'
+      ? `<p>En mi opinión, las ciudades deberían invertir más en transporte público; además, reduciría la congestión y mejoraría la calidad del aire.</p><p>No obstante, es esencial evaluar el coste a largo plazo y la sostenibilidad del sistema.</p>`
+      : `<p>In my view, cities should invest more in public transport; moreover, it would reduce congestion and improve air quality.</p><p>However, it is essential to evaluate long-term costs and the sustainability of the system.</p>`);
+
+    const level = opts.level;
+    const {min,max} = wordBand(level);
+    const textWC = wcOf(improved);
+
+    return {
+      improved_text: improved,
+      rubric: {
+        content: { score: level==='C2'?5: (level==='C1'?4:3), evidence: [ LOCALE==='es'?'Responde a la tarea y aporta ejemplos':'Addresses the task with relevant examples' ] },
+        communicative_achievement: { score: level==='C2'?5:4, evidence: [ LOCALE==='es'?'Registro formal sostenido':'Sustained formal register' ] },
+        organisation: { score: level==='C2'?5:4, evidence: [ LOCALE==='es'?'Párrafos y conectores claros':'Clear paragraphing and discourse markers' ] },
+        language: { score: level==='C2'?5:4, evidence: [ LOCALE==='es'?'Buen rango con pocos errores':'Good range with few slips' ] }
+      },
+      checks: {
+        word_count: { actual: textWC, target_min: min, target_max: max, ok: textWC>=min && textWC<=max },
+        register: { level: 'formal', violations: [] },
+        linkers: { range: ['moreover','however'], variety_ok: true },
+        sentence_types: { simple: 1, compound: 1, complex: 2, compound_complex: 0 },
+        cohesion: { issues: [] },
+        c2_synthesis: (level==='C2'
+          ? { required: true, summary_ok: true, evaluation_ok: true }
+          : { required: false, summary_ok: null, evaluation_ok: null })
+      },
+      issues: [
+        { span:[0,0], category:'lexis', severity:'minor', msg: LOCALE==='es'?'Podrías matizar con hedging':'Consider hedging for nuance', suggestion: LOCALE==='es'?'It seems / arguably':'It seems / arguably' }
+      ],
+      coach_notes: (LOCALE==='es'
+        ? ['Añade una contraargumentación breve en el párrafo 2.', 'Sustituye intensificadores genéricos.']
+        : ['Add a brief counter-argument in paragraph 2.', 'Replace generic intensifiers.'])
+    };
+  }
+
+  // --- Production call ---
+  const endpoint = (window.EC_CONFIG.API_BASE||'') + '/correct';
+  const token = window.SESSION?.token;
+  const res = await fetch(endpoint, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
+    body: JSON.stringify({ text: src, options: opts })
+  });
+  if(!res.ok) throw new Error('Correction failed');
+  const data = await res.json();
+
+  // Backward compatibility: if backend still returns a string html
+  if (typeof data === 'string' || typeof data.output === 'string') {
+    return {
+      improved_text: data.output || data,
+      rubric: null,
+      checks: null,
+      issues: [],
+      coach_notes: []
+    };
+  }
+  return data;
+}
+</script>
 
       // Real API call — now uses selected level & type
       const opts = {
