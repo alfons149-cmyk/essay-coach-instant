@@ -393,13 +393,107 @@ async function runCorrection(src){
       improved_text: data.output || data,
       rubric: null,
       checks: null,
-      issues: [],
+      issues: [],<script>
+function renderCorrection(data, level){
+  const out = document.getElementById('essayOut');
+  const { improved_text, rubric, checks, issues, coach_notes } = data || {};
+  const { min, max } = wordBand(level);
+
+  // KPI row (wordcount + quick badges)
+  const wcActual = (checks?.word_count?.actual) ?? wcOf(improved_text || '');
+  const wcOk = (checks?.word_count?.ok) ?? (wcActual>=min && wcActual<=max);
+  const wcBadge = `<span class="${bandBadge(wcOk)}">Words: ${wcActual} (${min}–${max}${wcOk?' ✓': (wcActual<min?' ↓':' ↑')})</span>`;
+
+  const synth = checks?.c2_synthesis;
+  const synthBadge = (synth?.required)
+    ? `<span class="${(synth.summary_ok && synth.evaluation_ok)?'badge ok':'badge warn'}">C2 synthesis</span>`
+    : '';
+
+  const regViol = (checks?.register?.violations||[]);
+  const regBadge = `<span class="${regViol.length? 'badge warn':'badge ok'}">${LOCALE==='es'?'Registro':'Register'}${regViol.length? ' ⚠︎':''}</span>`;
+
+  const kpi = `<div class="kpi">${wcBadge} ${regBadge} ${synthBadge}</div>`;
+
+  // Rubric tiles
+  let rubricHTML = '';
+  if (rubric) {
+    const keys = [
+      ['content', LOCALE==='es'?'Contenido':'Content'],
+      ['communicative_achievement', LOCALE==='es'?'Logro comunicativo':'Communicative achievement'],
+      ['organisation', LOCALE==='es'?'Organización':'Organisation'],
+      ['language', LOCALE==='es'?'Lengua':'Language']
+    ];
+    rubricHTML = `<div class="kpi" style="margin-top:6px"></div><div class="tiles" style="display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 10px">` +
+      keys.map(([k,label])=>{
+        const r = rubric[k] || {};
+        const score = num(r.score, 0);
+        const ev = (r.evidence||[]).slice(0,2).map(e=>`<li>${escapeHtml(e)}</li>`).join('');
+        return `<div class="tile">
+                  <h4>${escapeHtml(label)}</h4>
+                  <div><span class="score">${score}/5</span></div>
+                  ${ev?`<ul class="list">${ev}</ul>`:''}
+                </div>`;
+      }).join('') + `</div>`;
+  }
+
+  // C2 checklist (only if required)
+  let c2List = '';
+  if (synth?.required) {
+    const items = [
+      [synth.summary_ok, LOCALE==='es'?'Resumen integrado de ambas fuentes':'Integrated summary of both sources'],
+      [synth.evaluation_ok, LOCALE==='es'?'Evaluación/juicio crítico':'Evaluation / critical stance']
+    ];
+    c2List = `<div><div style="font-weight:600;margin-top:6px">${LOCALE==='es'?'Síntesis C2':'C2 Synthesis'}</div>
+      <div class="checklist">` + items.map(([ok,label])=>`<span class="check ${ok?'ok':''}">${escapeHtml(label)}</span>`).join('') + `</div></div>`;
+  }
+
+  // Register violations list (if any)
+  const regList = regViol.length
+    ? `<div style="margin-top:8px">
+         <div style="font-weight:600">${LOCALE==='es'?'Registro: posibles problemas':'Register: possible issues'}</div>
+         <ul class="list">${regViol.map(v=>`<li>${escapeHtml(v)}</li>`).join('')}</ul>
+       </div>`
+    : '';
+
+  // Issues
+  const issuesHTML = (issues||[]).length
+    ? `<div style="margin-top:10px">
+         <div style="font-weight:600">${LOCALE==='es'?'Observaciones':'Issues'}</div>
+         ${(issues||[]).map(it=>`<div class="${sevClass(it.severity)}">
+            <div class="cat">${escapeHtml(it.category||'')}</div>
+            <div>${escapeHtml(it.msg||'')}</div>
+            ${it.suggestion? `<div><em>${LOCALE==='es'?'Sugerencia:':'Suggestion:'}</em> ${escapeHtml(it.suggestion)}</div>`:''}
+          </div>`).join('')}
+       </div>`
+    : '';
+
+  // Coach notes
+  const notes = (coach_notes||[]).length
+    ? `<div class="notes" style="margin-top:10px">
+         <strong>${LOCALE==='es'?'Sugerencias del coach':'Coach notes'}</strong>
+         <ul class="list">${coach_notes.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>
+       </div>`
+    : '';
+
+  // Improved text (safe to set as HTML; your backend should sanitize; we also only allow basic markup)
+  const improvedHTML = `<h4 style="margin:12px 0 6px">${LOCALE==='es'?'Versión mejorada':'Improved version'}</h4>
+                        <div class="preview">${improved_text||''}</div>`;
+
+  out.innerHTML = `${kpi}${rubricHTML}${c2List}${regList}${issuesHTML}${notes}${improvedHTML}`;
+
+  // Update sentence analysis for the **corrected** text
+  updateSentenceAnalysis(stripTags(improved_text||''));
+}
+</script>
+
       coach_notes: []
     };
   }
   return data;
 }
 </script>
+
+          
 
       // Real API call — now uses selected level & type
       const opts = {
