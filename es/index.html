@@ -4,55 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EssayCoach – Cambridge Toolkit (Unified EN/ES)</title>
-  <meta name="x-build" content="v2025-09-08-unified-coral-fix" />
+  <meta name="x-build" content="v2025-09-15-unified-coral-full-punctfix" />
   <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
-  <!-- Optional: swap to your original font if different -->
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/essay-coach-instant/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/essay-coach-instant/css/style.css">
+
   <style>
-  /* Textbox: comfortable, book-like writing feel */
-  #essayIn {
-    font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif;
-    font-size: 16px;
-    line-height: 1.7;
-    padding: 12px 14px;
-    letter-spacing: 0.005em;
-  }
+    /* Textbox: readable serif */
+    #essayIn {
+      font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 12px 14px;
+      letter-spacing: 0.005em;
+    }
 
-  /* Preview: make paragraphs breathe */
-  #essayOut.preview {
-    /* If backend sends plain text or <br>, this keeps line breaks visible */
-    white-space: pre-line;
-    line-height: 1.6;
-  }
+    /* Preview: make paragraphs breathe */
+    #essayOut.preview { white-space: pre-line; line-height: 1.6; }
+    #essayOut.preview p { margin: 0 0 0.9em; }
+    #essayOut.preview p:last-child { margin-bottom: 0; }
 
-  /* If backend uses <p>…</p>, give them spacing */
-  #essayOut.preview p { margin: 0 0 0.9em; }
-  #essayOut.preview p:last-child { margin-bottom: 0; }
-
-  /* General readability bump for other preview blocks, too */
-  .preview { line-height: 1.6; }
-    #punctList {
-  line-height: 1.6;
-}
-
-#punctList p {
-  margin-bottom: 0.8em;
-}
-
-#punctList ul {
-  margin: 0.5em 0 0.5em 1.2em;
-  padding: 0;
-  list-style-type: disc;
-}
-
-#punctList li {
-  margin: 0.3em 0;
-}
-
-</style>
-
+    /* Punctuation guide spacing */
+    #punctList { line-height: 1.6; }
+    #punctList p { margin: 0 0 0.8em; }
+    #punctList ul { margin: 0.5em 0 0.5em 1.2em; padding: 0; list-style: disc; }
+    #punctList li { margin: 0.3em 0; }
+  </style>
 </head>
 <body>
   <header>
@@ -149,12 +130,12 @@
   <!-- <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script> -->
 
   <script>
-    // ===== Config & session (single definition) =====
+    // ===== Config & session =====
     window.EC_CONFIG = { API_BASE:'/api', REQUIRE_SUBSCRIPTION:true, SHOW_TRIAL:true, QUOTA_CAP:20, TRIAL_DAYS:2 };
     window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
     window.QUOTA = { used:0, cap:window.EC_CONFIG.QUOTA_CAP };
 
-    // Robust locale detection: matches "/es" and "/es/"
+    // Locale detection
     const path = location.pathname.toLowerCase();
     const LOCALE = /\/es(\/|$)/.test(path) ? 'es' : 'en';
     document.documentElement.lang = LOCALE;
@@ -171,7 +152,6 @@
 
     // ===== i18n (minimal loader) =====
     const BASE_APP = '/essay-coach-instant';
-
     async function loadDict(lang){
       const url = `${BASE_APP}/i18n/${lang}.json?v=${Date.now()}`;
       try{
@@ -181,7 +161,6 @@
         return {};
       }
     }
-
     function applyI18n(dict){
       window._i18nDict = dict||{};
       document.querySelectorAll('[data-i18n]').forEach(el=>{
@@ -190,7 +169,6 @@
         if(typeof val==='string') el.textContent = val;
       });
     }
-
     function t(path, fallback){
       try{
         const d = window._i18nDict || {};
@@ -202,15 +180,10 @@
     // ===== Helpers =====
     const $ = s=>document.querySelector(s);
     function escapeHtml(s){return (s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}
+    const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
     function canUseCorrector(){ return DEV_MODE || window.SESSION.status==='active' || window.SESSION.status==='trial'; }
 
-    function refreshGates(){
-      const paywall = document.getElementById('paywall');
-      if(!window.EC_CONFIG.REQUIRE_SUBSCRIPTION || canUseCorrector()) paywall.classList.add('hidden');
-      else paywall.classList.remove('hidden');
-      renderAccountMenu();
-    }
-
+    // ===== Account UI =====
     function renderAccountMenu(){
       const el = document.getElementById('accountMenu'); if(!el) return;
       const s = window.SESSION.status;
@@ -227,6 +200,12 @@
         el.innerHTML = `<button id="btnLogin" class="btn-primary">${t('account.login','Log in')}</button>
           <button id="btnSignUp" class="btn-ghost">${t('account.signUp','Sign up')}</button>`;
       }
+    }
+    function refreshGates(){
+      const paywall = document.getElementById('paywall');
+      if(!window.EC_CONFIG.REQUIRE_SUBSCRIPTION || canUseCorrector()) paywall.classList.add('hidden');
+      else paywall.classList.remove('hidden');
+      renderAccountMenu();
     }
 
     // Trial countdown + banner
@@ -252,38 +231,22 @@
       } else { box.classList.add('hidden'); msg.textContent=''; }
     }
 
-   // ===== Content =====
-const PUNCT_GUIDE = `
-<p><strong>Why should you learn about punctuation?</strong><br>
-Most native speakers don't use punctuation correctly themselves. So, what's the point of learning this?
-The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level
-and adds value to your composition.</p>
+    // ===== Content (HTML fallback for punctuation guide) =====
+    const PUNCT_GUIDE = "<p><strong>Why should you learn about punctuation?</strong><br> Most native speakers don't use punctuation correctly themselves. So, what's the point of learning this? The answer is simple: this is Cambridge. Using punctuation correctly and effectively shows your level and adds value to your composition.</p><ul><li><strong>Full stop (.)</strong> — Use at the end of sentences.</li><li><strong>Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</li><li><strong>Semicolon (;)</strong> — Link closely related independent clauses.</li><li><strong>Colon (:)</strong> — Introduce a list, explanation, or example.</li><li><strong>Dash (—)</strong> — Add emphasis or mark off extra information.</li><li><strong>Apostrophe (’)</strong> — Show possession or form contractions.</li></ul>";
 
-<ul>
-  <li><strong>Full stop (.)</strong> — Use at the end of sentences.</li>
-  <li><strong>Comma (,)</strong> — Separate items in a list, clauses, or after connectors.</li>
-  <li><strong>Semicolon (;)</strong> — Link closely related independent clauses.</li>
-  <li><strong>Colon (:)</strong> — Introduce a list, explanation, or example.</li>
-  <li><strong>Dash (—)</strong> — Add emphasis or mark off extra information.</li>
-  <li><strong>Apostrophe (’)</strong> — Show possession or form contractions.</li>
-</ul>
-`;
+    function renderPunctGuide(){
+      const pg=document.getElementById('punctList'); if(!pg) return;
+      let html=(window._i18nDict&&window._i18nDict.punct&&window._i18nDict.punct.guide)
+        ? window._i18nDict.punct.guide : PUNCT_GUIDE;
+      // Decode if JSON contains &lt;…&gt; entities
+      if(/&lt;|&gt;|&amp;/.test(html)){ const ta=document.createElement('textarea'); ta.innerHTML=html; html=ta.value; }
+      pg.innerHTML=html;
+    }
 
-// … inside your init() function:
-const pg = document.getElementById('punctList');
-if (pg) {
-  pg.innerHTML =
-    (window._i18nDict && window._i18nDict.punct && window._i18nDict.punct.guide)
-      ? window._i18nDict.punct.guide
-      : PUNCT_GUIDE;
-}
-
-
-    // ===== Dev Mode (single definition) =====
-    const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
+    // ===== DEV MODE banner / bypass =====
     if (DEV_MODE) {
       console.warn('⚠️ Dev Mode enabled — subscription checks bypassed');
-      window.SESSION.status = 'active'; // pretend subscribed
+      window.SESSION.status = 'active';
       const dev = document.createElement('div');
       dev.textContent = 'DEV MODE';
       dev.style.cssText = 'position:fixed;top:8px;right:8px;background:#111827;color:#fff;font:12px/1.2 system-ui;padding:6px 8px;border-radius:6px;opacity:.85;z-index:9999';
@@ -297,7 +260,6 @@ if (pg) {
           ? 'Necesitas una suscripción activa para usar el corrector.'
           : 'You need an active subscription to use the corrector.');
       }
-
       // DEV mock
       if (DEV_MODE) {
         const original = src || '';
@@ -332,7 +294,12 @@ if (pg) {
             </ul>
           </div>
           <h4 style="margin:14px 0 8px">${LOCALE==='es'?'Versión mejorada (simulada)':'Improved version (simulated)'}</h4>
-          <div class="preview">${escapeHtml(sampleFix).replace(/\n/g,'<br>')}</div>
+          <div class="preview">${
+            escapeHtml(sampleFix)
+              .split(/\n{2,}/)
+              .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+              .join('')
+          }</div>
         `;
         return mockHTML;
       }
@@ -375,7 +342,7 @@ if (pg) {
       if(e.target.id==='btnCopyRules'){ try{ await navigator.clipboard.writeText(document.getElementById('punctList').innerText); }catch(_){}}
       if(e.target.id==='btnExportRules'){ alert('PDF export: enable jsPDF include to use'); }
       if(e.target.id==='btnClear'){ document.getElementById('essayIn').value=''; document.getElementById('essayOut').innerHTML=''; updateSentenceAnalysis(''); }
-      if(e.target.id==='btnPaste'){ try{ const t=await navigator.clipboard.readText(); document.getElementById('essayIn').value=t; }catch(_){ }}
+      if(e.target.id==='btnPaste'){ try{ const t=await navigator.clipboard.readText(); document.getElementById('essayIn').value=t; }catch(_){}}
       if(e.target.id==='btnCorrect'){
         const src=(document.getElementById('essayIn').value||'').trim();
         if(!src){ document.getElementById('essayOut').innerHTML=''; updateSentenceAnalysis(''); return; }
@@ -411,14 +378,7 @@ if (pg) {
       console.log('LOCALE detected =', LOCALE, 'path =', location.pathname);
       console.log('Loaded dict keys:', Object.keys(window._i18nDict||{}));
 
-      // Punctuation guide: prefer ES/EN json, fallback to English constant
-      const pg = document.getElementById('punctList');
-      if (pg) {
-        pg.textContent =
-          (window._i18nDict && window._i18nDict.punct && window._i18nDict.punct.guide)
-            ? window._i18nDict.punct.guide
-            : PUNCT_GUIDE;
-      }
+      renderPunctGuide();   // <— key change for HTML rendering
 
       refreshGates();
       showQuota();
