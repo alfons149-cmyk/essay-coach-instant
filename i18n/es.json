@@ -55,6 +55,23 @@
     "header": "Reglas básicas de puntuación (seguras para el examen)",
     "guide": "¿Por qué aprender puntuación?\nMuchos hablantes nativos no la usan correctamente. Entonces, ¿cuál es el sentido? La respuesta es simple: esto es Cambridge. Usar la puntuación correctamente y de forma eficaz demuestra tu nivel y añade valor a tu composición.\n— Punto (.)\n— Coma (,)\n— Punto y coma (;)\n— Dos puntos (:)\n— Raya (—)\n— Apóstrofo (’)"
   },
+  "punct": {
+  "header": "Reglas básicas de puntuación (seguras para el examen)",
+  "guide": "<p><strong>¿Por qué deberías aprender puntuación?</strong><br>
+  Muchos hablantes nativos no la usan correctamente. Entonces, ¿cuál es el sentido de aprenderla?
+  La respuesta es simple: esto es Cambridge. Usar la puntuación de manera correcta y eficaz muestra tu nivel
+  y añade valor a tu redacción.</p>
+
+  <ul>
+    <li><strong>Punto (.)</strong> — Se usa al final de las oraciones.</li>
+    <li><strong>Coma (,)</strong> — Para separar elementos en una lista, oraciones o después de conectores.</li>
+    <li><strong>Punto y coma (;)</strong> — Une oraciones independientes estrechamente relacionadas.</li>
+    <li><strong>Dos puntos (:)</strong> — Introducen una lista, explicación o ejemplo.</li>
+    <li><strong>Guion largo (—)</strong> — Aporta énfasis o marca información adicional.</li>
+    <li><strong>Apóstrofo (’)</strong> — Indica posesión o forma contracciones.</li>
+  </ul>"
+}
+
   "part2": {
     "title": "Parte 2 – comprobaciones rápidas por género"
   },
