@@ -228,6 +228,28 @@
     const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
     function canUseCorrector(){ return DEV_MODE || window.SESSION.status==='active' || window.SESSION.status==='trial'; }
 
+    <script>
+// ========== Rendering helpers ==========
+function stripTags(html=""){ const d=document.createElement('div'); d.innerHTML=html; return d.textContent || d.innerText || ''; }
+function num(v, d=0){ return typeof v==='number' ? v : d; }
+function el(tag, attrs={}, html){
+  const n=document.createElement(tag);
+  Object.entries(attrs||{}).forEach(([k,v])=>{ if(k==='class') n.className=v; else n.setAttribute(k,v); });
+  if(html!==undefined) n.innerHTML = html;
+  return n;
+}
+function wcOf(text){ return (stripTags(text).match(/\b[\w’'-]+\b/g)||[]).length; }
+
+function wordBand(level){
+  if(level==='B2') return {min:140, max:190};
+  if(level==='C2') return {min:240, max:280};       // CPE Part 1 guidance
+  return {min:220, max:260};                         // C1
+}
+
+function bandBadge(ok){ return ok ? 'badge ok' : 'badge warn'; }
+function sevClass(sev){ return sev==='major' ? 'issue major' : 'issue'; }
+</script>
+
     // ===== Account UI =====
     function renderAccountMenu(){
       const el = document.getElementById('accountMenu'); if(!el) return;
