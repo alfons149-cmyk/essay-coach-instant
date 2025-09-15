@@ -9,6 +9,32 @@
   <!-- Optional: swap to your original font if different -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/essay-coach-instant/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+  /* Textbox: comfortable, book-like writing feel */
+  #essayIn {
+    font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.7;
+    padding: 12px 14px;
+    letter-spacing: 0.005em;
+  }
+
+  /* Preview: make paragraphs breathe */
+  #essayOut.preview {
+    /* If backend sends plain text or <br>, this keeps line breaks visible */
+    white-space: pre-line;
+    line-height: 1.6;
+  }
+
+  /* If backend uses <p>…</p>, give them spacing */
+  #essayOut.preview p { margin: 0 0 0.9em; }
+  #essayOut.preview p:last-child { margin-bottom: 0; }
+
+  /* General readability bump for other preview blocks, too */
+  .preview { line-height: 1.6; }
+</style>
+
 </head>
 <body>
   <header>
