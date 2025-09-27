@@ -1,0 +1,744 @@
+<!doctype html>
+<html data-theme="coral">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit (with Dev Tools + Schema Guard)</title>
+  <meta name="x-build" content="v2025-09-27-wired-schema-devpanel" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
+
+  <!-- (Optional) fonts and minimal external CSS; page works fine without these files -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/essay-coach-instant/css/style.css">
+
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    /* Textbox: readable serif */
+    #essayIn {
+      font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 12px 14px;
+      letter-spacing: 0.005em;
+      width: 100%;
+      min-height: 180px;
+    }
+    /* Preview: make paragraphs breathe */
+    #essayOut.preview { white-space: pre-line; line-height: 1.6; }
+    #essayOut.preview p { margin: 0 0 0.9em; }
+    #essayOut.preview p:last-child { margin-bottom: 0; }
+
+    /* KPI / tiles */
+    .kpi { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 10px; align-items: center; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#eef2ff; border:1px solid #e5e7eb; font-size:12px; }
+    .tile { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; min-width:160px; flex:0 0 auto; background:#fff; }
+    .tile h4 { margin:0 0 6px; font-size:14px; font-weight:600; }
+    .score { font-weight:700; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #e5e7eb; font-size:12px; }
+    .badge.ok { background:#ecfdf5; border-color:#34d399; }
+    .badge.warn { background:#fff7ed; border-color:#f59e0b; }
+    .badge.err { background:#fef2f2; border-color:#ef4444; }
+    .list { margin:6px 0 0 18px; }
+    .issue { border-left:3px solid #f59e0b; padding:6px 10px; margin:8px 0; background:#fffaf0; border-radius:6px; }
+    .issue.major { border-color:#ef4444; background:#fef2f2; }
+    .issue .cat { font-weight:600; }
+    .checklist { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0; }
+    .check { border:1px dashed #e5e7eb; border-radius:999px; padding:4px 10px; font-size:12px; background:#fff; }
+    .check.ok { border-style:solid; background:#ecfeff; border-color:#06b6d4; }
+
+    /* Inline highlight styling + tooltip */
+    mark.hl { background:#fff0c2; border-bottom:2px dashed #f59e0b; padding:0 2px; border-radius:2px; cursor:help; }
+    mark.hl.major { background:#ffd6d6; border-bottom-color:#ef4444; }
+    .hltip { position:fixed; max-width:420px; background:#111827; color:#fff; font:12px/1.35 system-ui; padding:10px 12px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.22); z-index:99999; display:none; pointer-events:auto; opacity:.98; }
+    .hltip .tcat { font-weight:700; margin-bottom:4px; }
+    .hltip .tsug { margin-top:6px; opacity:.9; font-style:italic; }
+    .hltip .actions { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+    .hltip .btn { background:#f3f4f6; color:#111827; border:none; border-radius:8px; padding:6px 10px; font:12px/1 system-ui; cursor:pointer; }
+    .hltip .btn.primary { background:#06b6d4; color:#fff; }
+    .hltip .btn:disabled { opacity:.6; cursor:not-allowed; }
+
+    /* Simple stack */
+    .stack { display:flex; flex-direction:column; gap:6px; }
+    #taskBox textarea, #taskBox input { width:100%; }
+
+    /* Dev tools bar */
+    #devbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:8px 12px; border:1px dashed #e5e7eb; border-radius:10px; background:#fafafa; }
+    #devlog { margin-top:8px; font-size:12px; background:#0b1020; color:#c7d2fe; padding:8px 10px; border-radius:8px; white-space:pre-wrap; max-height:150px; overflow:auto; display:none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="headerbar" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0">
+      <h1>EssayCoach – Cambridge Toolkit</h1>
+      <span id="quotaPill" class="pill">0/20</span>
+    </div>
+  </header>
+
+  <!-- DEV TOOLS (Health + Fixture + Debug) -->
+  <section class="card" style="padding:12px;">
+    <div id="devbar">
+      <button id="btnHealth" class="btn-ghost">Health</button>
+      <label>Fixture:
+        <select id="fixtureSelect">
+          <option value="">Auto</option>
+          <option value="b2-essay">B2 (fixture)</option>
+          <option value="c1-essay">C1 (fixture)</option>
+          <option value="c2-essay">C2 (fixture)</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="dbgSchema"> Show schema debug</label>
+      <span class="pill">API: <code id="apiBaseShow"></code></span>
+    </div>
+    <pre id="devlog"></pre>
+  </section>
+
+  <main class="grid">
+    <section id="corrector" class="card">
+      <h2>AI Essay Corrector</h2>
+      <div class="toolbar" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="btnCorrect" class="btn-primary">Correct</button>
+        <button id="btnExportPDF" class="btn-ghost">Export PDF</button>
+        <button id="btnUndo" class="btn-ghost" disabled>Undo</button>
+        <button id="btnClear" class="btn-ghost">Clear</button>
+        <button id="btnPaste" class="btn-ghost">Paste</button>
+        <button id="btnTimer" class="btn-ghost">Start timer</button>
+      </div>
+
+      <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;margin:6px 0">
+        <label class="toggle"><input type="checkbox" id="tgFormal" checked> Formal tone</label>
+        <label class="toggle"><input type="checkbox" id="tgCoachNotes" checked> Coach notes</label>
+        <label class="toggle"><input type="checkbox" id="tgRubric" checked> Rubric points</label>
+      </div>
+
+      <!-- Level & Task selectors -->
+      <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;margin:6px 0">
+        <label class="toggle">
+          <span style="margin-right:6px">Level</span>
+          <select id="levelSelect">
+            <option value="B2">B2 (First)</option>
+            <option value="C1" selected>C1 (Advanced)</option>
+            <option value="C2">C2 (Proficiency)</option>
+          </select>
+        </label>
+        <label class="toggle" style="margin-left:12px">
+          <span style="margin-right:6px">Task type</span>
+          <select id="typeSelect">
+            <option value="essay" selected>Essay (Part 1)</option>
+            <option value="report">Report</option>
+            <option value="proposal">Proposal</option>
+            <option value="review">Review</option>
+            <option value="letter">Letter/Email</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Task & Sources -->
+      <details id="taskBox" style="margin:8px 0" open>
+        <summary style="cursor:pointer"><strong>Task & Sources</strong></summary>
+        <div class="row" style="margin-top:8px">
+          <label class="stack" style="flex:1">
+            <span>Task prompt (paste exact instructions)</span>
+            <textarea id="taskPrompt" rows="2" placeholder="Paste the task/question here…"></textarea>
+          </label>
+        </div>
+        <div id="taskBulletsArea" class="row" style="gap:8px; margin-top:8px; display:none">
+          <label class="stack" style="flex:1">
+            <span>Task bullet points (one per line)</span>
+            <textarea id="taskBullets" rows="2" placeholder="e.g. education&#10;transport&#10;healthcare"></textarea>
+          </label>
+          <label class="stack" style="flex:1">
+            <span>Bullet points you chose (comma-separated)</span>
+            <input id="taskSelected" placeholder="e.g. education, transport" />
+          </label>
+        </div>
+        <div id="taskSourcesArea" class="row" style="gap:8px; margin-top:8px; display:none">
+          <label class="stack" style="flex:1">
+            <span>Source text A (≈100 words)</span>
+            <textarea id="taskSourceA" rows="3" placeholder="Paste source A"></textarea>
+          </label>
+          <label class="stack" style="flex:1">
+            <span>Source text B (≈100 words)</span>
+            <textarea id="taskSourceB" rows="3" placeholder="Paste source B"></textarea>
+          </label>
+        </div>
+      </details>
+
+      <textarea id="essayIn" placeholder="Paste your essay here…"></textarea>
+      <div id="essayOut" class="preview" aria-live="polite"></div>
+      <div class="hint">The output mirrors Cambridge descriptors. Toggle options above to customise.</div>
+    </section>
+
+    <section id="sentences" class="card">
+      <h2>Sentence-Type Analysis (simple / compound / complex / compound–complex)</h2>
+      <div id="sentenceAnalysis" class="preview"></div>
+      <div class="hint">Hover a sentence to see why it was classified and any issues spotted.</div>
+    </section>
+
+    <section id="part2" class="card">
+      <h2>Part 2 quick rubric – genre checks</h2>
+      <div id="part2Rubric" class="preview"></div>
+    </section>
+
+    <section id="extras" class="card">
+      <h2>Extras (Band estimate, Alignment, Paragraph feedback, Lexis targets)</h2>
+      <div id="extrasContent" class="preview"></div>
+    </section>
+  </main>
+
+  <!-- Optional analyzer + PDF libs -->
+  <script src="/essay-coach-instant/js/ec_sentences.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <script>
+    // ========= Config (Option A: talk to local API) =========
+    window.EC_CONFIG = {
+      API_BASE: 'http://localhost:8787/api',
+      REQUIRE_SUBSCRIPTION: true,
+      SHOW_TRIAL: true,
+      QUOTA_CAP: 20,
+      TRIAL_DAYS: 2
+    };
+    document.getElementById('apiBaseShow').textContent = window.EC_CONFIG.API_BASE;
+
+    // ========= Helpers =========
+    const $ = s => document.querySelector(s);
+    const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
+    const LOCALE = 'en';
+
+    function escapeHtml(s){return (s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]) )}
+    function stripTags(html=""){ const d=document.createElement('div'); d.innerHTML=html; return d.textContent || d.innerText || ''; }
+    function wcOf(text){ return (stripTags(text).match(/\b[\w’'-]+\b/g)||[]).length; }
+    function wordBand(level){ if(level==='B2') return {min:140, max:190}; if(level==='C2') return {min:240, max:280}; return {min:220, max:260}; }
+    function bandBadge(ok){ return ok ? 'badge ok' : 'badge warn'; }
+    function sevClass(sev){ return sev==='major' ? 'issue major' : 'issue'; }
+
+    // UI helpers
+    function ensureKPI(){
+      let host = document.querySelector('#corrector .kpi');
+      if (host) return host;
+      host = document.createElement('div'); host.className='kpi';
+      document.getElementById('corrector').prepend(host);
+      return host;
+    }
+    function showWordcount(text, level){
+      const host = ensureKPI();
+      host.querySelectorAll('.pill[data-wc]').forEach(n=>n.remove());
+      const {min,max} = wordBand(level);
+      const wc = wcOf(text);
+      const pill = document.createElement('span');
+      pill.className = 'pill'; pill.setAttribute('data-wc','1');
+      pill.textContent = `Words: ${wc} (${min}–${max}${wc<min?' ↓':wc>max?' ↑':' ✓'})`;
+      host.prepend(pill);
+    }
+
+    // ========= Dev panel =========
+    async function pingHealth(){
+      try{
+        const r = await fetch(window.EC_CONFIG.API_BASE + '/health', { cache:'no-store' });
+        const j = await r.json();
+        logDev(JSON.stringify(j,null,2), true);
+      }catch(e){
+        logDev('Health error: ' + e.message, true);
+      }
+    }
+    function logDev(msg, show){
+      const box = $('#devlog');
+      box.style.display = ($('#dbgSchema').checked || show) ? 'block' : 'none';
+      box.textContent = (box.textContent ? box.textContent + '\n' : '') + msg;
+    }
+    $('#btnHealth').onclick = pingHealth;
+
+    // ========= Task fields show/hide =========
+    function renderTaskFields(){
+      const level = $('#levelSelect')?.value || 'C1';
+      const type  = $('#typeSelect')?.value || 'essay';
+      $('#taskBulletsArea').style.display = (type==='essay' && (level==='B2' || level==='C1')) ? '' : 'none';
+      $('#taskSourcesArea').style.display = (type==='essay' && level==='C2') ? '' : 'none';
+    }
+    function readTask(){
+      const level  = $('#levelSelect')?.value || 'C1';
+      const type   = $('#typeSelect')?.value || 'essay';
+      const prompt = $('#taskPrompt')?.value || '';
+      const bullets = ($('#taskBullets')?.value || '').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      const selectedBullets = ($('#taskSelected')?.value || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const sourceA = $('#taskSourceA')?.value || '';
+      const sourceB = $('#taskSourceB')?.value || '';
+      return { level, type, prompt, bullets, selectedBullets, sourceA, sourceB };
+    }
+
+    // ========= Genre / Part2 checklist =========
+    function keywordHit(text, kw){
+      const esc = s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const k = (kw||'').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ').trim();
+      if(!k) return false;
+      const parts = k.split(/\s+/).filter(Boolean).slice(0,3);
+      return parts.some(p => new RegExp(`\\b${esc(p)}\\b`, 'i').test(text));
+    }
+    function renderPart2Rubric(text, level, type, task){
+      const box = $('#part2Rubric'); if(!box) return;
+      const t = (text||'').trim();
+      const lines = t.split(/\n+/);
+      const hasHeadings = /^(introduction|background|findings|analysis|recommendations|conclusion)\b/i.test(t)
+                       || lines.some(l=>/^[A-Z][A-Z\s]{3,}$/.test(l.trim()));
+      const hasGreeting = /\b(dear (sir|madam|editor|mr|mrs|ms|[A-Z][a-z]+)[,])/.test(t);
+      const hasSignoff  = /\b(yours faithfully|yours sincerely|best regards|kind regards)[,]?\b/i.test(t);
+      const hasRecs     = /\b(recommend|should|ought to|we propose|i suggest)\b/i.test(t);
+      const hasProps    = /\b(aim|background|budget|timeline|benefits|resources|logistics)\b/i.test(t);
+      const hasReviewV  = /\b(i recommend|worth|lacked|enjoyed|compelling|well[- ]paced|poorly|overlong|performances?)\b/i.test(t);
+      const hasTitle    = /^[^\n]{3,100}\n/.test(text);
+      const items = [];
+      if (type==='report'){
+        items.push([hasHeadings, 'Sectioning (Introduction/Findings/Recommendations)']);
+        items.push([hasRecs, 'Clear, objective recommendations']);
+        items.push([!hasGreeting && !hasSignoff, 'No letter-like greeting/closing']);
+      } else if (type==='proposal'){
+        items.push([hasHeadings || hasProps, 'Sections (Aim/Benefits/Budget/Timeline)']);
+        items.push([hasRecs, 'Persuasive recommendations with rationale']);
+        items.push([!hasGreeting && !hasSignoff, 'Appropriate formal register (no letter closings)']);
+      } else if (type==='review'){
+        items.push([hasTitle || hasReviewV, 'Title or reviewer stance visible']);
+        items.push([hasReviewV, 'Evaluation language (what works/what doesn’t)']);
+        items.push([!hasGreeting, 'No letter greetings']);
+      } else if (type==='letter'){
+        items.push([hasGreeting, 'Correct salutation (Dear …)']);
+        items.push([hasSignoff, 'Appropriate sign-off (Yours sincerely/faithfully)']);
+        items.push([!hasHeadings,'No report-style headings']);
+      } else {
+        items.push([true, 'Discursive structure (intro–body–conclusion)']);
+        if (level==='B2' && (task?.bullets||[]).length>=2){
+          const hits = task.bullets.filter(b=>keywordHit(t,b)).length;
+          items.push([hits>=2, 'Covers the two given ideas']);
+          items.push([hits>=3, 'Includes one extra idea of your own']);
+        }
+        if (level==='C1' && (task?.bullets||[]).length>=3){
+          const cnt = task.bullets.map(b=>keywordHit(t,b)).filter(Boolean).length;
+          items.push([cnt>=2, 'Develops two of the three bullet points']);
+        }
+        if (level==='C2'){
+          const hasA = !!(task?.sourceA?.trim()); const hasB = !!(task?.sourceB?.trim());
+          items.push([hasA && hasB, 'Two source texts provided (needed for C2 Part 1)']);
+        }
+      }
+      box.innerHTML = `<div class="checklist">` +
+        items.map(([ok,label])=>`<span class="check ${ok?'ok':''}">${escapeHtml(label)}</span>`).join('') +
+      `</div>`;
+    }
+
+    // ========= Undo stack =========
+    const UNDO_LIMIT = 50; const _undo = [];
+    function pushUndoSnapshot(){
+      const box = $('#improvedBox'); if(!box) return;
+      _undo.push({ html: box.innerHTML, ts: Date.now() });
+      if(_undo.length>UNDO_LIMIT) _undo.shift();
+      updateUndoUI();
+    }
+    function clearUndoStack(){ _undo.length=0; updateUndoUI(); }
+    function updateUndoUI(){ const btn=$('#btnUndo'); if(btn) btn.disabled = _undo.length===0; }
+    function undoLastChange(){
+      const box=$('#improvedBox'); if(!box || !_undo.length) return;
+      const snap=_undo.pop(); box.innerHTML=snap.html;
+      const plain = box.textContent || '';
+      updateSentenceAnalysis(plain);
+      showWordcount(plain, ($('#levelSelect')?.value||'C1'));
+      const tip = $('#hlTip'); if(tip) tip.style.display='none';
+      updateUndoUI();
+    }
+
+    // ========= Schema guard / normalizer =========
+    function normalizeResponse(data){
+      const dbg = [];
+      const out = Object.create(null);
+      const type = (v)=>Object.prototype.toString.call(v).slice(8,-1);
+
+      if (!data || typeof data!=='object') { dbg.push('Response is not an object'); return { ok:false, dbg, data:null }; }
+
+      // Required core
+      out.improved_text = (typeof data.improved_text==='string') ? data.improved_text : '';
+      if(!out.improved_text) dbg.push('improved_text missing or empty');
+
+      // Optional, with defaults
+      out.rubric = (data.rubric && typeof data.rubric==='object') ? data.rubric : {};
+      out.checks = (data.checks && typeof data.checks==='object') ? data.checks : {};
+      out.issues = Array.isArray(data.issues) ? data.issues : [];
+      out.coach_notes = Array.isArray(data.coach_notes) ? data.coach_notes : [];
+
+      out.band_estimate = (data.band_estimate && typeof data.band_estimate==='object')
+        ? data.band_estimate : null;
+      out.examiner_comment = (typeof data.examiner_comment==='string') ? data.examiner_comment : '';
+
+      out.task_alignment = (data.task_alignment && typeof data.task_alignment==='object')
+        ? data.task_alignment : null;
+
+      out.paragraph_feedback = Array.isArray(data.paragraph_feedback) ? data.paragraph_feedback : [];
+      out.lexis_targets = Array.isArray(data.lexis_targets) ? data.lexis_targets : [];
+
+      // Light shape checks
+      if(out.band_estimate && (typeof out.band_estimate.band!=='number')) dbg.push('band_estimate.band missing/NaN');
+      if(out.task_alignment && !Array.isArray(out.task_alignment.bullets)) dbg.push('task_alignment.bullets missing');
+
+      return { ok:true, dbg, data: out };
+    }
+
+    // ========= Inline highlighter (overlap aware) =========
+    function ensureHLTip(){ let tip=$('#hlTip'); if(!tip){ tip=document.createElement('div'); tip.id='hlTip'; tip.className='hltip'; document.body.appendChild(tip);} return tip; }
+    let _HL_ACTIVE_MARK=null;
+    function buildTipHTML(mark){
+      const cat = mark.dataset.cat || 'Issue';
+      const msg = mark.dataset.msg || '';
+      const sug = mark.dataset.sug || '';
+      const rep = mark.dataset.rep || '';
+      let html = `<div class="tcat">${escapeHtml(cat)}</div>`;
+      if(msg) html += `<div class="tmsg">${escapeHtml(msg)}</div>`;
+      if(sug) html += `<div class="tsug"><em>Suggestion:</em> ${escapeHtml(sug)}</div>`;
+      html += `<div class="actions">
+        <button class="btn" data-hl-action="copy">Copy text</button>
+        <button class="btn" data-hl-action="dismiss">Dismiss</button>
+        <button class="btn" data-hl-action="undo" ${_undo.length? '':'disabled'}>Undo</button>
+        <button class="btn primary" data-hl-action="apply" ${rep ? '' : 'disabled'}>Apply fix</button>
+      </div>`;
+      return html;
+    }
+    function applyInlineHighlights(container, issues){
+      if(!container || !issues || !issues.length) return;
+      const plain = container.textContent || '';
+      const totalLen = plain.length;
+      const norm = issues
+        .filter(it => Array.isArray(it.span) && it.span.length===2)
+        .map(it => ({
+          start: Math.max(0, Math.min(totalLen, it.span[0]|0)),
+          end:   Math.max(0, Math.min(totalLen, it.span[1]|0)),
+          category: it.category || '',
+          severity: it.severity || 'minor',
+          msg: it.msg || '',
+          suggestion: it.suggestion || '',
+          replacement: it.replacement || ''
+        }))
+        .filter(it => it.end > it.start);
+      if(!norm.length) return;
+
+      const cutsSet = new Set([0, totalLen]);
+      norm.forEach(it => { cutsSet.add(it.start); cutsSet.add(it.end); });
+      const cuts = Array.from(cutsSet).sort((a,b)=>a-b);
+
+      function activeFor(a,b){ return norm.filter(it => it.start < b && it.end > a); }
+
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+      let plainIdx = 0, node, cutIdx = 1;
+      while(node = walker.nextNode()){
+        let offsetInNode = 0;
+        let nodeRemaining = node.nodeValue.length;
+        while(nodeRemaining > 0){
+          const nodeStartPlain = plainIdx;
+          const nodeEndPlain = plainIdx + nodeRemaining;
+          let segEndPlain = Math.min(nodeEndPlain, cuts[cutIdx] ?? nodeEndPlain);
+          if(segEndPlain <= plainIdx) segEndPlain = Math.min(nodeEndPlain, (cuts[++cutIdx] ?? nodeEndPlain));
+          const localStart = offsetInNode;
+          const localEnd = localStart + (segEndPlain - plainIdx);
+
+          let target = node;
+          if(localStart > 0) target = target.splitText(localStart);
+          if((localEnd - localStart) < target.nodeValue.length){
+            target.splitText(localEnd - localStart);
+          }
+
+          const active = activeFor(nodeStartPlain, segEndPlain);
+          if(active.length){
+            const hasMajor = active.some(a=>a.severity==='major');
+            const cats = Array.from(new Set(active.map(a=>a.category).filter(Boolean)));
+            const msgs = active.map(a=>a.msg).filter(Boolean).join(' • ');
+            const sugs = active.map(a=>a.suggestion).filter(Boolean).join(' • ');
+            const firstRep = (active.find(a=>a.replacement)?.replacement) || '';
+            const mark = document.createElement('mark');
+            mark.className = 'hl' + (hasMajor ? ' major' : '');
+            mark.dataset.cat = cats.length>1 ? 'Multiple categories' : (cats[0]||'');
+            if(msgs) mark.dataset.msg = msgs;
+            if(sugs) mark.dataset.sug = sugs;
+            if(firstRep) mark.dataset.rep = firstRep;
+            target.parentNode.replaceChild(mark, target);
+            mark.appendChild(target);
+          }
+
+          plainIdx = segEndPlain;
+          const segLen = (localEnd - localStart);
+          offsetInNode += segLen;
+          nodeRemaining -= segLen;
+          while(cutIdx < cuts.length && cuts[cutIdx] <= plainIdx) cutIdx++;
+        }
+      }
+    }
+    document.addEventListener('mouseover', (e)=>{
+      const m = e.target.closest && e.target.closest('mark.hl');
+      const tip = ensureHLTip();
+      if(m){ _HL_ACTIVE_MARK = m; tip.innerHTML = buildTipHTML(m); tip.style.display='block'; }
+    });
+    document.addEventListener('mousemove', (e)=>{
+      const tip = $('#hlTip'); if(tip && tip.style.display==='block'){
+        let x=e.clientX+12, y=e.clientY+12; const vw=document.documentElement.clientWidth, vh=document.documentElement.clientHeight;
+        const rect=tip.getBoundingClientRect(); if(x+rect.width>vw-8) x=vw-rect.width-8; if(y+rect.height>vh-8) y=vh-rect.height-8;
+        tip.style.left=x+'px'; tip.style.top=y+'px';
+      }
+    });
+    document.addEventListener('mouseout', (e)=>{
+      if(e.target.closest && e.target.closest('mark.hl')){ const tip=$('#hlTip'); if(tip) tip.style.display='none'; }
+    });
+    document.addEventListener('click', (e)=>{
+      const btn = e.target.closest && e.target.closest('[data-hl-action]');
+      if(btn){
+        const action=btn.getAttribute('data-hl-action'); const tip=$('#hlTip'); const mark=_HL_ACTIVE_MARK;
+        if(action==='dismiss'){ if(tip) tip.style.display='none'; }
+        if(action==='copy' && mark){ try{ navigator.clipboard.writeText(mark.textContent||''); }catch(_){ } }
+        if(action==='undo'){ undoLastChange(); if(tip) tip.style.display='none'; }
+        if(action==='apply' && mark){
+          const rep = mark.dataset.rep || mark.dataset.sug || '';
+          if(rep){ pushUndoSnapshot(); const textNode = document.createTextNode(rep); mark.replaceWith(textNode);
+            if(tip) tip.style.display='none'; const box=$('#improvedBox'); if(box){
+              const plain = box.textContent || ''; updateSentenceAnalysis(plain); showWordcount(plain, ($('#levelSelect')?.value||'C1'));
+            }}
+        }
+        return;
+      }
+      if(e.target && e.target.id==='btnUndo'){ undoLastChange(); return; }
+    });
+    document.addEventListener('keydown', (e)=>{
+      const isMac = navigator.platform.toUpperCase().includes('MAC');
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if(mod && !e.shiftKey && !e.altKey && e.key.toLowerCase()==='z'){ if(_undo.length){ e.preventDefault(); undoLastChange(); } }
+    });
+
+    // ========= Analyzer hook =========
+    function updateSentenceAnalysis(text){
+      const box=$('#sentenceAnalysis'); if(!box) return;
+      try{ box.innerHTML = text ? (window.EC_Sentences?.analyzeToHTML(text, { locale: LOCALE }) || "") : ""; }
+      catch(e){ box.innerHTML=""; }
+    }
+
+    // ========= Render correction =========
+    function renderExtras(data){
+      const host = $('#extrasContent'); if(!host) return;
+      const parts = [];
+      if (data.band_estimate){
+        parts.push(`<div class="tile"><h4>Band estimate</h4><div><span class="score">${data.band_estimate.band}</span> / level ${escapeHtml(data.band_estimate.level||'')}</div></div>`);
+      }
+      if (data.examiner_comment){
+        parts.push(`<div style="margin-top:8px"><strong>Examiner comment</strong><div>${escapeHtml(data.examiner_comment)}</div></div>`);
+      }
+      if (data.task_alignment){
+        const bullets = (data.task_alignment.bullets||[]).map(b=>`<li>${escapeHtml(b.text||'')} — ${b.covered?'✓':'✗'}</li>`).join('');
+        parts.push(`<div style="margin-top:8px"><strong>Task alignment</strong><ul class="list">${bullets}</ul></div>`);
+      }
+      if (data.paragraph_feedback && data.paragraph_feedback.length){
+        parts.push(`<div style="margin-top:8px"><strong>Paragraph feedback</strong><ul class="list">` +
+          data.paragraph_feedback.map(p=>`<li>Para ${p.index}: ${escapeHtml(p.summary||'')} ${p.actions&&p.actions.length? '— Actions: '+escapeHtml(p.actions.join('; ')) : ''}</li>`).join('') +
+        `</ul></div>`);
+      }
+      if (data.lexis_targets && data.lexis_targets.length){
+        parts.push(`<div style="margin-top:8px"><strong>Lexis targets</strong><ul class="list">` +
+          data.lexis_targets.map(x=>`<li>${escapeHtml(x.type||'')}: ${(x.examples||[]).map(escapeHtml).join(', ')}</li>`).join('') +
+        `</ul></div>`);
+      }
+      host.innerHTML = parts.join('') || '<div class="hint">No extra fields provided.</div>';
+    }
+
+    function renderCorrection(norm, level){
+      const out = $('#essayOut');
+      const { improved_text, rubric, checks, issues, coach_notes } = norm || {};
+      const { min, max } = wordBand(level);
+
+      clearUndoStack();
+
+      // KPI row
+      const wcActual = (checks?.word_count?.actual) ?? wcOf(improved_text || '');
+      const wcOk = (checks?.word_count?.ok) ?? (wcActual>=min && wcActual<=max);
+      const wcBadge = `<span class="${bandBadge(wcOk)}">Words: ${wcActual} (${min}–${max}${wcOk?' ✓': (wcActual<min?' ↓':' ↑')})</span>`;
+      const synth = checks?.c2_synthesis;
+      const synthBadge = (synth?.required) ? `<span class="${(synth.summary_ok && synth.evaluation_ok)?'badge ok':'badge warn'}">C2 synthesis</span>` : '';
+      const regViol = (checks?.register?.violations||[]);
+      const regBadge = `<span class="${regViol.length? 'badge warn':'badge ok'}">Register${regViol.length? ' ⚠︎':''}</span>`;
+      const kpi = `<div class="kpi">${wcBadge} ${regBadge} ${synthBadge}</div>`;
+
+      // Rubric tiles
+      let rubricHTML = '';
+      if (rubric) {
+        const keys = [
+          ['content','Content'], ['communicative_achievement','Communicative achievement'],
+          ['organisation','Organisation'], ['language','Language']
+        ];
+        rubricHTML = `<div class="tiles" style="display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 10px">` +
+          keys.map(([k,label])=>{
+            const r = rubric[k] || {};
+            const score = typeof r.score==='number' ? r.score : 0;
+            const ev = (r.evidence||[]).slice(0,2).map(e=>`<li>${escapeHtml(e)}</li>`).join('');
+            return `<div class="tile">
+                      <h4>${escapeHtml(label)}</h4>
+                      <div><span class="score">${score}/5</span></div>
+                      ${ev?`<ul class="list">${ev}</ul>`:''}
+                    </div>`;
+          }).join('') + `</div>`;
+      }
+
+      // Issues panel
+      const issuesHTML = (issues||[]).length
+        ? `<div style="margin-top:10px">
+             <div style="font-weight:600">Issues</div>
+             ${(issues||[]).map(it=>`<div class="${sevClass(it.severity)}">
+                <div class="cat">${escapeHtml(it.category||'')}</div>
+                <div>${escapeHtml(it.msg||'')}</div>
+                ${it.suggestion? `<div><em>Suggestion:</em> ${escapeHtml(it.suggestion)}</div>`:''}
+              </div>`).join('')}
+           </div>` : '';
+
+      // Coach notes
+      const notesHTML = (coach_notes && coach_notes.length)
+        ? `<div style="margin-top:10px">
+             <div style="font-weight:600">Coach notes</div>
+             <ul class="list">${coach_notes.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>
+           </div>` : '';
+
+      // Improved text container
+      const improvedHTML = `<h4 style="margin:12px 0 6px">Improved version</h4><div id="improvedBox" class="preview"></div>`;
+
+      out.innerHTML = `${kpi}${rubricHTML}${issuesHTML}${notesHTML}${improvedHTML}`;
+
+      // Inject improved text then apply highlights
+      const box = $('#improvedBox');
+      box.innerHTML = improved_text || '';
+      try { applyInlineHighlights(box, issues||[]); } catch(_) {}
+
+      // Analyzer + wordcount
+      const plain = box.textContent || '';
+      updateSentenceAnalysis(plain);
+      showWordcount(plain, level);
+    }
+
+    // ========= PDF export =========
+    async function exportAnnotatedPDF(){
+      const improvedBox = $('#improvedBox');
+      if(!improvedBox || !improvedBox.textContent.trim()){ alert('Nothing to export yet.'); return; }
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'font-family: Inter, system-ui, Arial, sans-serif; font-size:12pt; color:#111; padding:24px; width:595pt;';
+      const title = document.createElement('h2'); title.textContent='Corrected Essay (Annotated)'; title.style.margin='0 0 8px';
+      const meta = document.createElement('div');
+      const lvl = $('#levelSelect')?.value || 'C1'; const typ = $('#typeSelect')?.value || 'essay';
+      meta.textContent = `Level: ${lvl} • Task: ${typ.toUpperCase()} • ${new Date().toLocaleString('en')}`;
+      meta.style.cssText='font-size:10pt; opacity:.75; margin:0 0 12px';
+      const clone = improvedBox.cloneNode(true); clone.style.whiteSpace='normal';
+      wrapper.appendChild(title); wrapper.appendChild(meta); wrapper.appendChild(clone);
+      const { jsPDF } = window.jspdf || {}; if(!jsPDF){ alert('jsPDF not loaded'); return; }
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+      await doc.html(wrapper, { x:36, y:36, width:523, windowWidth:800, autoPaging:'text' });
+      const fname = `EssayCoach_${lvl}_${typ}_${new Date().toISOString().slice(0,10)}.pdf`;
+      doc.save(fname);
+    }
+
+    // ========= API call =========
+    async function runCorrection(src){
+      const opts = {
+        formal: $('#tgFormal')?.checked !== false,
+        coachNotes: $('#tgCoachNotes')?.checked !== false,
+        rubric: $('#tgRubric')?.checked !== false,
+        level: ($('#levelSelect')?.value || 'C1'),
+        type:  ($('#typeSelect')?.value  || 'essay'),
+        locale: LOCALE
+      };
+      const task = readTask();
+      const endpoint = window.EC_CONFIG.API_BASE + '/correct';
+      const headers = { 'Content-Type':'application/json' };
+      const fx = $('#fixtureSelect')?.value || '';
+      if (fx) headers['X-EC-Fixture'] = fx; // force fixture if chosen
+
+      const res = await fetch(endpoint, {
+        method:'POST',
+        headers,
+        body: JSON.stringify({ text: src, options: opts, task, client_version: 'v2025-09-27' })
+      });
+      if(!res.ok) throw new Error('Correction failed');
+      const data = await res.json();
+
+      // Legacy string or {output:string}
+      if (typeof data === 'string' || typeof data?.output === 'string') return data;
+
+      // Normalize + debug
+      const norm = normalizeResponse(data);
+      if($('#dbgSchema').checked && norm.dbg.length){ logDev('[schema] ' + norm.dbg.join('; ')); }
+      return norm.data;
+    }
+
+    // ========= Events =========
+    document.addEventListener('click', async (e)=>{
+      if(e.target.id==='btnExportPDF'){ try{ await exportAnnotatedPDF(); }catch(err){ alert('PDF export failed'); } }
+      if(e.target.id==='btnClear'){
+        $('#essayIn').value=''; $('#essayOut').innerHTML=''; updateSentenceAnalysis(''); clearUndoStack();
+        renderPart2Rubric('', ($('#levelSelect')?.value||'C1'), ($('#typeSelect')?.value||'essay'), readTask());
+        $('#extrasContent').innerHTML='';
+      }
+      if(e.target.id==='btnPaste'){ try{ const t=await navigator.clipboard.readText(); $('#essayIn').value=t; updateSentenceAnalysis(t); }catch(_){ } }
+
+      if(e.target.id==='btnCorrect'){
+        const src=($('#essayIn').value||'').trim();
+        const lvl = ($('#levelSelect')?.value || 'C1');
+        if(!src){ $('#essayOut').innerHTML=''; updateSentenceAnalysis(''); return; }
+        $('#essayOut').innerHTML = 'Processing…';
+        renderPart2Rubric(src, lvl, ($('#typeSelect')?.value||'essay'), readTask());
+        try{
+          const data = await runCorrection(src);
+
+          // Legacy HTML
+          if (typeof data === 'string' || typeof data?.output === 'string') {
+            const html = (typeof data === 'string') ? data : data.output;
+            clearUndoStack(); $('#essayOut').innerHTML = html;
+            const outText = stripTags(html); updateSentenceAnalysis(outText); showWordcount(outText, lvl);
+            $('#extrasContent').innerHTML='';
+          }
+          // Structured JSON (normalized)
+          else if (data && typeof data.improved_text === 'string') {
+            renderCorrection(data, lvl);
+            renderExtras(data);
+          }
+          else{
+            $('#essayOut').innerHTML = `<div class="hint">Unexpected server response.</div>`;
+            updateSentenceAnalysis(src); showWordcount(src, lvl);
+            $('#extrasContent').innerHTML='';
+          }
+
+          // quota pill (demo)
+          window._Q = (window._Q||0)+1; $('#quotaPill').textContent = `${window._Q}/20`;
+        }catch(err){
+          $('#essayOut').innerHTML = `<div class="hint">${escapeHtml(err.message)}</div>`;
+        }
+      }
+    });
+
+    document.addEventListener('input', (e)=>{
+      if(e.target && e.target.id==='essayIn'){
+        const t=e.target.value;
+        updateSentenceAnalysis(t);
+        renderPart2Rubric(t, ($('#levelSelect')?.value||'C1'), ($('#typeSelect')?.value||'essay'), readTask());
+      }
+    });
+
+    document.addEventListener('change', (e)=>{
+      if (e.target && (e.target.id==='levelSelect' || e.target.id==='typeSelect')){
+        renderTaskFields();
+        const txt = $('#essayIn')?.value || '';
+        renderPart2Rubric(txt, ($('#levelSelect')?.value||'C1'), ($('#typeSelect')?.value||'essay'), readTask());
+      }
+      if (e.target && e.target.id==='dbgSchema'){
+        $('#devlog').style.display = e.target.checked ? 'block' : 'none';
+        if(!e.target.checked) $('#devlog').textContent = '';
+      }
+    });
+
+    // ========= Init =========
+    function init(){
+      renderTaskFields();
+      $('#apiBaseShow').textContent = window.EC_CONFIG.API_BASE;
+      const txt = $('#essayIn')?.value || '';
+      renderPart2Rubric(txt, ($('#levelSelect')?.value||'C1'), ($('#typeSelect')?.value||'essay'), readTask());
+      updateUndoUI();
+    }
+    init();
+  </script>
+</body>
+</html>
