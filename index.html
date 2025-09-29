@@ -341,10 +341,15 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script>
-    // ===== Config & session =====
-    window.EC_CONFIG = { API_BASE:'/api', REQUIRE_SUBSCRIPTION:true, SHOW_TRIAL:true, QUOTA_CAP:20, TRIAL_DAYS:2 };
-    window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
-    window.QUOTA = { used:0, cap:window.EC_CONFIG.QUOTA_CAP };
+  const __isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  window.EC_CONFIG = {
+    API_BASE: __isLocal ? "http://localhost:8888/api" : "/api",
+    REQUIRE_SUBSCRIPTION: true,
+    SHOW_TRIAL: true,
+    QUOTA_CAP: 20,
+    TRIAL_DAYS: 2
+  };
+</script>
 
     // Locale detection
     const path = location.pathname.toLowerCase();
