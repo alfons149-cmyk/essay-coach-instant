@@ -351,7 +351,7 @@
     }catch(_){}
 
     // ===== i18n (minimal loader) =====
-    const BASE_APP = '/essay-coach-instant';
+    const BASE_APP = (window.EC && window.EC.BASE_PATH) ? window.EC.BASE_PATH : '';
     async function loadDict(lang){
       const url = `${BASE_APP}/i18n/${lang}.json?v=${Date.now()}`;
       try{
