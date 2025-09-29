@@ -16,22 +16,33 @@
   <!-- ===== EssayCoach config (paste in <head>, before other scripts) ===== -->
 <meta name="x-build" content="v2025-09-28-ec-config">
   <meta name="x-build" content="v2025-09-29-proxy">
+<!-- Single source of truth for client config -->
+<meta name="x-build" content="v2025-09-29-config-single">
 <script>
 (function () {
   const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   const qs = new URLSearchParams(location.search);
-  const apiOverride = qs.get("api"); // optional: ?api=https://your-api.example.com
+  const apiOverride = qs.get("api");
 
   window.EC = window.EC || {};
+  // used by assets/i18n when you run under GitHub Pages
+  window.EC.BASE_PATH   = isLocal ? "" : "/essay-coach-instant";
+  // your API: local during dev, HTTPS in production
   window.EC.BACKEND_URL = (apiOverride || (isLocal
-    ? "http://localhost:8888"             // your local API (you proved it works)
-    : "https://YOUR-LIVE-API.example.com" // replace after you deploy the API
+    ? "http://localhost:8888"             // ← your working server
+    : "https://YOUR-LIVE-API.example.com" // ← replace after you deploy
   )).replace(/\/+$/, "");
 
-  // Optional: debug logs
-  window.EC.DEBUG = true;
+  window.EC.DEV_MODE = /[?&]dev=1\b/.test(location.search);
+  window.EC.DEBUG    = true;
+
+  // optional: avoid stale service-worker in local dev
+  if (isLocal && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+  }
 })();
 </script>
+
 <script>
 (function () {
   const BASE = (window.EC && window.EC.BACKEND_URL) || "";
