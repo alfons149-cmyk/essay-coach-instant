@@ -15,6 +15,72 @@
 
   <!-- ===== EssayCoach config (paste in <head>, before other scripts) ===== -->
 <meta name="x-build" content="v2025-09-28-ec-config">
+  <meta name="x-build" content="v2025-09-29-proxy">
+<script>
+(function () {
+  const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const qs = new URLSearchParams(location.search);
+  const apiOverride = qs.get("api"); // optional: ?api=https://your-api.example.com
+
+  window.EC = window.EC || {};
+  window.EC.BACKEND_URL = (apiOverride || (isLocal
+    ? "http://localhost:8888"             // your local API (you proved it works)
+    : "https://YOUR-LIVE-API.example.com" // replace after you deploy the API
+  )).replace(/\/+$/, "");
+
+  // Optional: debug logs
+  window.EC.DEBUG = true;
+})();
+</script>
+<script>
+(function () {
+  const BASE = (window.EC && window.EC.BACKEND_URL) || "";
+  if (!BASE) return;
+
+  // --- fetch() proxy ---
+  const origFetch = window.fetch;
+  window.fetch = function (input, init) {
+    let url = typeof input === "string" ? input : input.url;
+    if (/^\/api\//.test(url)) {
+      const orig = url;
+      url = BASE + url;
+      if (window.EC && window.EC.DEBUG) console.log("[API proxy] fetch:", orig, "→", url);
+      if (typeof input === "string") input = url; else input = new Request(url, input);
+    }
+    return origFetch(input, init);
+  };
+
+  // --- XMLHttpRequest proxy (covers older code) ---
+  const OrigXHR = window.XMLHttpRequest;
+  function PatchedXHR() {
+    const xhr = new OrigXHR();
+    const origOpen = xhr.open;
+    xhr.open = function (method, url) {
+      if (typeof url === "string" && /^\/api\//.test(url)) {
+        const orig = url;
+        url = BASE + url;
+        if (window.EC && window.EC.DEBUG) console.log("[API proxy] XHR:", orig, "→", url);
+      }
+      return origOpen.apply(xhr, arguments);
+    };
+    return xhr;
+  }
+  window.XMLHttpRequest = PatchedXHR;
+
+  // --- Axios (if your page uses it) ---
+  if (window.axios && window.axios.interceptors) {
+    window.axios.interceptors.request.use(cfg => {
+      if (cfg && typeof cfg.url === "string" && /^\/api\//.test(cfg.url)) {
+        const orig = cfg.url;
+        cfg.url = BASE + cfg.url;
+        if (window.EC && window.EC.DEBUG) console.log("[API proxy] axios:", orig, "→", cfg.url);
+      }
+      return cfg;
+    });
+  }
+})();
+</script>
+
 <script>
 (function () {
   const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
