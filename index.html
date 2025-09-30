@@ -56,16 +56,6 @@
 })();
 </script>
 
-  window.EC.DEV_MODE = /[?&]dev=1\b/.test(location.search);
-  window.EC.DEBUG    = true;
-
-  // optional: avoid stale service-worker in local dev
-  if (isLocal && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
-  }
-})();
-</script>
-
 <script>
 (function () {
   const BASE = (window.EC && window.EC.BACKEND_URL) || "";
