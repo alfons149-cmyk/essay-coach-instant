@@ -24,12 +24,35 @@
   const qs = new URLSearchParams(location.search);
   const apiOverride = qs.get("api");
 
+  <!-- 1) Core EC config (one block only) -->
+<script>
+(function () {
+  const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const qs = new URLSearchParams(location.search);
+  const apiOverride = qs.get("api");
+
   window.EC = window.EC || {};
-  // used by assets/i18n when you run under GitHub Pages
-  window.EC.BASE_PATH   = isLocal ? "" : "/essay-coach-instant";
-  // your API: local during dev, HTTPS in production
+  // Used by assets/i18n on GitHub Pages
+  window.EC.BASE_PATH = isLocal ? "" : "/essay-coach-instant";
+
+  // Your API: local during dev, HTTPS in production
   window.EC.BACKEND_URL = (apiOverride || (isLocal
-   <script>
+    ? "http://localhost:8888"
+    : "https://YOUR-LIVE-API.example.com"
+  )).replace(/\/+$/, "");
+
+  window.EC.DEV_MODE = /[?&]dev=1\b/.test(location.search);
+  window.EC.DEBUG    = true;
+
+  // Optional: avoid stale service worker in local dev
+  if (isLocal && "serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+  }
+})();
+</script>
+
+<!-- 2) App config: force absolute API_BASE in local dev -->
+<script>
   const __isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   window.EC_CONFIG = {
     API_BASE: __isLocal ? "http://localhost:8888/api" : "/api",
@@ -39,7 +62,6 @@
     TRIAL_DAYS: 2
   };
 </script>
-
 
   window.EC.DEV_MODE = /[?&]dev=1\b/.test(location.search);
   window.EC.DEBUG    = true;
