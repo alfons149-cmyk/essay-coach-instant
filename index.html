@@ -64,12 +64,16 @@
   // --- fetch() proxy ---
   const origFetch = window.fetch;
   window.fetch = function (input, init) {
-    let url = typeof input === "string" ? input : input.url;
+    let url = typeof input === "string" ? input : (input && input.url) || "";
     if (/^\/api\//.test(url)) {
       const orig = url;
       url = BASE + url;
       if (window.EC && window.EC.DEBUG) console.log("[API proxy] fetch:", orig, "→", url);
-      if (typeof input === "string") input = url; else input = new Request(url, input);
+      if (typeof input === "string") {
+        input = url;
+      } else {
+        input = new Request(url, input);
+      }
     }
     return origFetch(input, init);
   };
@@ -79,19 +83,19 @@
   function PatchedXHR() {
     const xhr = new OrigXHR();
     const origOpen = xhr.open;
-    xhr.open = function (method, url) {
+    xhr.open = function (method, url, ...rest) {
       if (typeof url === "string" && /^\/api\//.test(url)) {
         const orig = url;
         url = BASE + url;
         if (window.EC && window.EC.DEBUG) console.log("[API proxy] XHR:", orig, "→", url);
       }
-      return origOpen.apply(xhr, arguments);
+      return origOpen.call(this, method, url, ...rest);
     };
     return xhr;
   }
   window.XMLHttpRequest = PatchedXHR;
 
-  // --- Axios (if your page uses it) ---
+  // --- Axios proxy (if used) ---
   if (window.axios && window.axios.interceptors) {
     window.axios.interceptors.request.use(cfg => {
       if (cfg && typeof cfg.url === "string" && /^\/api\//.test(cfg.url)) {
@@ -104,6 +108,7 @@
   }
 })();
 </script>
+
   <!-- DOMPurify for safe HTML -->
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 
