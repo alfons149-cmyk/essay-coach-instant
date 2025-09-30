@@ -29,9 +29,17 @@
   window.EC.BASE_PATH   = isLocal ? "" : "/essay-coach-instant";
   // your API: local during dev, HTTPS in production
   window.EC.BACKEND_URL = (apiOverride || (isLocal
-    ? "http://localhost:8888"             // ← your working server
-    : "https://YOUR-LIVE-API.example.com" // ← replace after you deploy
-  )).replace(/\/+$/, "");
+   <script>
+  const __isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  window.EC_CONFIG = {
+    API_BASE: __isLocal ? "http://localhost:8888/api" : "/api",
+    REQUIRE_SUBSCRIPTION: true,
+    SHOW_TRIAL: true,
+    QUOTA_CAP: 20,
+    TRIAL_DAYS: 2
+  };
+</script>
+
 
   window.EC.DEV_MODE = /[?&]dev=1\b/.test(location.search);
   window.EC.DEBUG    = true;
