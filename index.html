@@ -15,6 +15,28 @@
 
   <meta name="x-build" content="v2025-09-29-config-single">
 
+  <script>
+(function () {
+  const qs = new URLSearchParams(location.search);
+  const apiOverride = qs.get("api");  // optional
+  window.EC = window.EC || {};
+  // IMPORTANT: replace with your real HTTPS API origin:
+  const LIVE_API = "https://YOUR-HTTPS-API.example.com";
+  window.EC.BACKEND_URL = (apiOverride || LIVE_API).replace(/\/+$/, "");
+  // Proxy: rewrite "/api/..." to the real backend
+  const origFetch = window.fetch;
+  window.fetch = function (input, init) {
+    let url = typeof input === "string" ? input : input.url;
+    if (/^\/api\//.test(url)) {
+      url = window.EC.BACKEND_URL + url;
+      if (typeof input === "string") input = url; else input = new Request(url, input);
+    }
+    return origFetch(input, init);
+  };
+})();
+</script>
+
+
 <!-- 1) Core EC config (ONE block only) -->
 <script>
 (function () {
