@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>EssayCoach – API Smoke Test</title>
+  <style>
+    body { font: 14px/1.4 system-ui, Arial, sans-serif; margin: 24px; }
+    textarea { width: 100%; height: 120px; }
+    pre { background: #f6f8fa; padding: 12px; border-radius: 8px; overflow:auto; }
+    .row { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; }
+    code { background:#f0f0f0; padding:0 4px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <h1>EssayCoach – API Smoke Test</h1>
+  <p>Open with <code>?api=http://127.0.0.1:8888</code> (defaults to 127.0.0.1:8888).</p>
+
+  <div class="row">API_BASE: <code id="base">(detecting…)</code></div>
+  <div class="row">
+    <button id="btnHealth">GET /api/health</button>
+    <button id="btnCorrect">POST /api/correct</button>
+  </div>
+
+  <textarea id="essayIn">In my view, cities should invest more in public transport…</textarea>
+  <pre id="out">(response will appear here)</pre>
+
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const apiBase = (qs.get('api') || 'http://127.0.0.1:8888').replace(/\/+$/,'') + '/api';
+    document.getElementById('base').textContent = apiBase;
+
+    const $ = s => document.querySelector(s);
+    const show = v => $('#out').textContent = (typeof v === 'string') ? v : JSON.stringify(v,null,2);
+
+    async function req(url, opts){
+      const r = await fetch(url, opts);
+      const text = await r.text();
+      let body; try{ body = JSON.parse(text); } catch { body = text; }
+      return { ok:r.ok, status:r.status, url:r.url, body };
+    }
+
+    btnHealth.onclick = async ()=> show(await req(apiBase + '/health', { cache:'no-store' }));
+    btnCorrect.onclick = async ()=>{
+      const payload = { text: $('#essayIn').value, options:{ level:'C1', type:'essay', locale:'en', formal:true, coachNotes:true, rubric:true } };
+      show(await req(apiBase + '/correct', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }));
+    };
+  </script>
+</body>
+</html>
+
