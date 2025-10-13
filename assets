@@ -1,0 +1,25 @@
+# make target dirs
+mkdir -p js assets/i18n css
+
+# move scripts into js/
+git mv ec_sentences.js js/ec_sentences.js 2>/dev/null || mv ec_sentences.js js/ec_sentences.js
+# If you have app.js/config.js/i18n.js somewhere else, move them too:
+git mv client/js/app.js js/app.js        2>/dev/null || true
+git mv client/js/config.js js/config.js  2>/dev/null || true
+git mv client/js/i18n.js js/i18n.js      2>/dev/null || true
+
+# move styles into css/
+git mv client/css/style.css css/style.css 2>/dev/null || true
+
+# unify i18n (keep assets/i18n only)
+git mv i18n/en.json assets/i18n/en.json 2>/dev/null || true
+git mv i18n/es.json assets/i18n/es.json 2>/dev/null || true
+# if you had duplicates, keep the *best* pair in assets/i18n and delete the rest
+git rm -rf i18n es 2>/dev/null || rm -rf i18n es
+
+# keep PWA files at root (already correct)
+# icon-192.png, icon-512.png, manifest.webmanifest, offline.html, sw.js
+
+# commit
+git add -A
+git commit -m "Restructure to stable layout (Option A): js/, css/, assets/i18n/"
