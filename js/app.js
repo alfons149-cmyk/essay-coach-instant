@@ -1142,6 +1142,68 @@ window.addEventListener('DOMContentLoaded', init);
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
 
+// ---- Corrector wiring ----
+function getIn(id){ return document.getElementById(id); }
+function html(el, s){ el.innerHTML = s; }
+
+async function correctEssay() {
+  const essay = getIn('essayIn')?.value?.trim() || '';
+  const lvl   = getIn('levelSelect')?.value || 'C1';
+  const typ   = getIn('typeSelect')?.value || 'essay';
+
+  if (!essay) { alert('Paste your essay first.'); return; }
+
+  // DEV mock if (a) DEV=1 or (b) API is still placeholder
+  const isPlaceholder = !API || /YOUR-LIVE-API/i.test(API);
+
+  if (DEV || isPlaceholder) {
+    const mock = `
+      <h3>Mock correction (${lvl.toUpperCase()} – ${typ})</h3>
+      <ul>
+        <li><strong>Grammar:</strong> Mostly accurate; watch subject–verb agreement.</li>
+        <li><strong>Lexis:</strong> Good range; avoid repetition.</li>
+        <li><strong>Organisation:</strong> Clear paragraphing; improve transitions.</li>
+        <li><strong>Task fulfilment:</strong> Covers all points; tighten conclusion.</li>
+      </ul>
+      <p><em>(DEV mock. Set <code>?api=http://127.0.0.1:8888</code> or a live API to call the server.)</em></p>
+    `;
+    html(getIn('essayOut'), mock);
+    return;
+  }
+
+  // Real API call
+  try {
+    const res = await fetch(`${API}/correct`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        level: lvl,
+        type: typ,
+        options: {
+          formal: getIn('tgFormal')?.checked,
+          coachNotes: getIn('tgCoachNotes')?.checked,
+          rubric: getIn('tgRubric')?.checked
+        },
+        text: essay
+      })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Expect { html: "<safe html>" } from backend; DOMPurify optional
+    const safe = (window.DOMPurify ? window.DOMPurify.sanitize(data.html) : data.html);
+    html(getIn('essayOut'), safe || '<p>(No response)</p>');
+  } catch (e) {
+    console.error(e);
+    html(getIn('essayOut'), `<p style="color:#b91c1c">Error: ${String(e.message||e)}</p>`);
+  }
+}
+
+// Button hookup
+document.addEventListener('click', (ev)=>{
+  if (ev.target && ev.target.id === 'btnCorrect') { correctEssay(); }
+});
+
 
 
 
