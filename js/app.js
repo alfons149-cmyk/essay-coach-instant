@@ -1093,6 +1093,157 @@ document.addEventListener('click', async (e)=>{
   if(e.target && e.target.id==='btnUndo'){ undoLastChange(); return; }
 });
 
+// ---------- helpers ----------
+function $(id){ return document.getElementById(id); }
+function ready(fn){ document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', fn, {once:true}) : fn(); }
+
+// ---------- UNDO stack for #essayIn ----------
+const Undo = (() => {
+  const stack = [];
+  const MAX = 50;
+  return {
+    push(value){
+      if (stack.length === 0 || stack[stack.length-1] !== value) {
+        stack.push(value);
+        if (stack.length > MAX) stack.shift();
+      }
+    },
+    pop(){
+      if (stack.length > 1) { stack.pop(); return stack[stack.length-1]; }
+      return stack[0] || '';
+    },
+    peek(){ return stack[stack.length-1] || ''; },
+    size(){ return stack.length; }
+  };
+})();
+
+// ---------- wire once ----------
+function wireUI(){
+  if (window.__EC_WIRED) return; window.__EC_WIRED = true;
+
+  // Track textarea changes for Undo
+  const ta = $('essayIn');
+  if (ta){
+    Undo.push(ta.value || '');
+    ta.addEventListener('input', () => Undo.push(ta.value || ''));
+  }
+
+  // Global click delegation (all buttons)
+  document.addEventListener('click', async (ev) => {
+    const el = ev.target.closest('button, a');
+    if (!el) return;
+
+    switch (el.id) {
+      case 'btnCorrect':
+        ev.preventDefault();
+        await correctEssay();
+        break;
+
+      case 'btnUndo':
+        ev.preventDefault();
+        if (ta){
+          ta.value = Undo.pop();
+          ta.dispatchEvent(new Event('input'));
+        }
+        break;
+
+      case 'btnClear':
+        ev.preventDefault();
+        if (ta) { ta.value = ''; Undo.push(''); }
+        const out = $('essayOut'); if (out) out.innerHTML = '';
+        break;
+
+      case 'btnPaste':
+        ev.preventDefault();
+        try {
+          const clip = await navigator.clipboard.readText();
+          if (ta){ ta.value = clip; Undo.push(ta.value); ta.focus(); }
+        } catch (e) {
+          alert('Clipboard permission needed. Paste with Ctrl+V instead.');
+        }
+        break;
+
+      case 'btnTimer': {
+        ev.preventDefault();
+        // Simple toggle timer in the button text
+        const running = el.dataset.running === '1';
+        if (!running){
+          el.dataset.running = '1';
+          el._start = Date.now();
+          el._tick = setInterval(()=>{
+            const s = Math.floor((Date.now() - el._start)/1000);
+            const m = String(Math.floor(s/60)).padStart(2,'0');
+            const ss = String(s%60).padStart(2,'0');
+            el.textContent = `⏱ ${m}:${ss}`;
+          }, 500);
+        } else {
+          el.dataset.running = '0';
+          clearInterval(el._tick);
+          el.textContent = 'Start timer';
+        }
+        break;
+      }
+
+      case 'btnExportPDF':
+        ev.preventDefault();
+        exportPDF();
+        break;
+
+      case 'btnCopyRules': {
+        ev.preventDefault();
+        const rules = document.getElementById('punctList')?.innerText || '';
+        if (!rules.trim()) { alert('No rules loaded to copy.'); return; }
+        await navigator.clipboard.writeText(rules);
+        el.textContent = 'Copied ✓'; setTimeout(()=> el.textContent='Copy rules', 1200);
+        break;
+      }
+
+      case 'btnExportRules':
+        ev.preventDefault();
+        exportRulesPDF();
+        break;
+    }
+  });
+}
+
+// ---------- PDF helpers (optional, uses window.jspdf & html2canvas if present) ----------
+async function exportPDF(){
+  const out = $('essayOut');
+  if (!out || !out.innerText.trim()) { alert('Nothing to export yet. Click Correct first.'); return; }
+  if (!window.jspdf || !window.html2canvas) { alert('PDF libraries not loaded.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const canvas = await window.html2canvas(out);
+  const img = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const ratio = Math.min(pageW / canvas.width, pageH / canvas.height);
+  const w = canvas.width * ratio, h = canvas.height * ratio;
+  pdf.addImage(img, 'PNG', (pageW - w)/2, 40, w, h);
+  pdf.save('correction.pdf');
+}
+
+async function exportRulesPDF(){
+  const box = document.getElementById('punctList');
+  if (!box || !box.innerText.trim()) { alert('No rules to export.'); return; }
+  if (!window.jspdf || !window.html2canvas) { alert('PDF libraries not loaded.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const canvas = await window.html2canvas(box);
+  const img = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const ratio = Math.min(pageW / canvas.width, pageH / canvas.height);
+  const w = canvas.width * ratio, h = canvas.height * ratio;
+  pdf.addImage(img, 'PNG', (pageW - w)/2, 40, w, h);
+  pdf.save('punctuation_rules.pdf');
+}
+
+// ---------- kick things off ----------
+ready(wireUI);
+
 // Tooltip events (mouse)
 document.addEventListener('mouseover', (e)=>{
   const m = e.target.closest && e.target.closest('mark.hl');
@@ -1272,6 +1423,7 @@ async function correctEssay() {
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') { correctEssay(); }
 });
+
 
 
 
