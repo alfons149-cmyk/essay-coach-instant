@@ -1,25 +1,22 @@
 // i18n.js
-
 (window.__LOAD_ORDER ||= []).push('i18n');
 
-(function(){
+(function () {
   // --- Locale detection (query param first, then path) ---
   const qs   = new URLSearchParams(location.search);
   const qp   = (qs.get('lang') || '').toLowerCase();
   const path = (location.pathname || '').toLowerCase();
 
-  // Normalize query param like "en-US" -> "en", "es-ES" -> "es"
   const qpBase = qp.split('-')[0];
   const qpLang = (qpBase === 'es' || qpBase === 'en') ? qpBase : '';
 
-  // Strict path check: path segment boundary for "/es" only
   const pathLang = /(^|\/)es(\/|$)/.test(path) ? 'es' : 'en';
 
   window.LOCALE = qpLang || pathLang;
   document.documentElement.lang = window.LOCALE;
 
   // Restore session (and auto-expire trials)
-  try{
+  try {
     const raw = localStorage.getItem('ec_session');
     if (raw) {
       const s = JSON.parse(raw);
@@ -29,18 +26,18 @@
       window.SESSION = { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
       localStorage.removeItem('ec_session');
     }
-  }catch(_){}
+  } catch (_) {}
 
   // i18n apply helper
-  window.applyI18n = function(dict){
-  window._i18nDict = dict || {};
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const key = el.getAttribute('data-i18n');
-    const val = key.split('.').reduce((o,k)=>o && o[k], dict);
-    if (typeof val === 'string') el.textContent = val;
-  });
-};
-})(); // ← close the IIFE
+  window.applyI18n = function (dict) {
+    window._i18nDict = dict || {};
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const val = key.split('.').reduce((o, k) => o && o[k], dict);
+      if (typeof val === 'string') el.textContent = val;
+    });
+  };
+})(); // ← make sure these two characters are present
 
 
   // i18n translate helper
@@ -73,5 +70,6 @@
     return dict || {};
   };
 })();
+
 
 
