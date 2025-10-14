@@ -1,4 +1,6 @@
 // js/config.js
+(window.__LOAD_ORDER ||= []).push('config');
+
 (function () {
   const host = location.hostname || "";
   const isLocal = host === "" || /^(localhost|127\.0\.0\.1|::1|0\.0\.0\.0|.+\.local)$/i.test(host);
@@ -24,3 +26,4 @@
   window.SESSION = window.SESSION || { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
   window.QUOTA   = window.QUOTA   || { used: 0, cap: window.EC_CONFIG.QUOTA_CAP || 20 };
 })();
+
