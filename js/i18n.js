@@ -1,4 +1,7 @@
 // i18n.js
+
+(window.__LOAD_ORDER ||= []).push('i18n');
+
 (function(){
   // --- Locale detection (query param first, then path) ---
   const qs   = new URLSearchParams(location.search);
@@ -68,3 +71,4 @@
     return dict || {};
   };
 })();
+
