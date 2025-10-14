@@ -3,7 +3,8 @@
 
 (function () {
   const host = location.hostname || "";
-  const isLocal = host === "" || /^(localhost|127\.0\.0\.1|::1|0\.0\.0\.0|.+\.local)$/i.test(host);
+  const isLocal =
+    host === "" || /^(localhost|127\.0\.0\.1|::1|0\.0\.0\.0|.+\.local)$/i.test(host);
 
   const qs = new URLSearchParams(location.search);
   const apiRoot = (qs.get("api") || (isLocal ? "http://127.0.0.1:8888"
@@ -23,7 +24,10 @@
 
   window.EC.DEV_MODE = /[?&]dev=1\b/.test(location.search);
 
-  window.SESSION = window.SESSION || { status:'inactive', email:null, token:null, trialStart:null, trialEnd:null };
-  window.QUOTA   = window.QUOTA   || { used: 0, cap: window.EC_CONFIG.QUOTA_CAP || 20 };
+  window.SESSION = window.SESSION || {
+    status:'inactive', email:null, token:null, trialStart:null, trialEnd:null
+  };
+  window.QUOTA = window.QUOTA || {
+    used: 0, cap: window.EC_CONFIG.QUOTA_CAP || 20
+  };
 })();
-
