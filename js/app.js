@@ -2,6 +2,12 @@
 // app.js (final, matched to index.html)
 // ==============================
 
+if (!window.LOCALE)    console.error('i18n.js not loaded before app.js');
+if (!window.EC_CONFIG) console.error('config.js not loaded before app.js');
+if (!window.EC?.Sentences && !window.EC_SENTENCES) {
+  console.error('ec_sentences.js not loaded before app.js');
+}
+
 // --- Safe globals (in case config.js didn't load) ---
 window.EC_CONFIG = window.EC_CONFIG || {
   REQUIRE_SUBSCRIPTION: false,
@@ -1099,3 +1105,4 @@ window.addEventListener('DOMContentLoaded', init);
 
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+
