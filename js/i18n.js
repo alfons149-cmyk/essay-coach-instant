@@ -33,13 +33,15 @@
 
   // i18n apply helper
   window.applyI18n = function(dict){
-    window._i18nDict = dict || {};
-    document.querySelectorAll('[data-i18n]').forEach(el=>{
-      const key = el.getAttribute('data-i18n');
-      const val = key.split('.').reduce((o,k)=>o && o[k], dict);
-      if (typeof val === 'string') el.textContent = val;
-    });
-  };
+  window._i18nDict = dict || {};
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    const val = key.split('.').reduce((o,k)=>o && o[k], dict);
+    if (typeof val === 'string') el.textContent = val;
+  });
+};
+})(); // ← close the IIFE
+
 
   // i18n translate helper
   window.t = function(path, fallback){
@@ -71,4 +73,5 @@
     return dict || {};
   };
 })();
+
 
