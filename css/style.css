@@ -1,4 +1,4 @@
-/* ===== EssayCoach – client/css/style.css ===== */
+/* ===== EssayCoach â€“ client/css/style.css ===== */
 
 :root{
   --fg:#111827;
@@ -175,4 +175,5 @@ nav a:hover{ text-decoration:underline; }
   .preview{ background:#0f172a; border-color:#1f2937; }
   .btn-ghost{ background:#374151; color:#e5e7eb; }
   .hltip{ background:#0b1220; }
+
 }
