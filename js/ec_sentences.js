@@ -2,6 +2,8 @@
 // Lightweight sentence-type analyzer with EN/ES heuristics.
 // Exposes: window.EC_Sentences.analyze(text, opts) and analyzeToHTML(text, opts)
 
+(window.__LOAD_ORDER ||= []).push('ec_sentences');
+
 (function () {
   const DICT = {
     en: {
@@ -59,3 +61,4 @@
          ${pill(d.compound_complex, counts.compound_complex)}
          ${pill(d.total, counts.total)}            <!-- ← use d.total here -->
        </div>` + /* legend follows */ "";
+
