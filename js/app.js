@@ -3,8 +3,6 @@ import './i18n.js';         // sets window.LOCALE + helpers
 import './config.js';       // sets window.EC_CONFIG, window.DEV_MODE
 import './ec_sentences.js'; // sets window.EC or helpers
 
-// ...rest of your app code that uses those globals
-
 // ==============================
 // app.js (final, matched to index.html)
 // ==============================
@@ -1115,6 +1113,7 @@ window.addEventListener('DOMContentLoaded', init);
 
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+
 
 
 
