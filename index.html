@@ -12,22 +12,6 @@
 <!-- inside <head> -->
 <!-- inside <head> -->
 <link rel="stylesheet" href="./01-css/style.css">
-<script>
-(async () => {
-  const files = ['js/i18n.js','js/config.js','js/ec_sentences.js','js/app.js'];
-  for (const src of files) {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = './' + src;       // stays repo-root-agnostic
-      s.defer = true;
-      s.onload = resolve;
-      s.onerror = () => reject(new Error('Failed to load ' + src));
-      document.head.appendChild(s);
-    });
-  }
-})();
-</script>
-
   
 <!-- Head scripts (externalized) -->
 <script defer src="./03-js/i18n.js"></script>
@@ -209,6 +193,7 @@
 
 </body>
 </html>
+
 
 
 
