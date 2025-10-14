@@ -15,7 +15,7 @@ const ECX = (globalThis.__ECX ||= (() => {
 console.log('[ECX]', ECX);  // e.g., {DEV:true, API:"https://…/api", …}
 
 // ---------- Corrector wiring ----------
-function $(id){ return document.getElementById(id); }
+Vfunction $(id){ return document.getElementById(id); }
 function putHTML(el, s){ if (el) el.innerHTML = s; }
 
 async function correctEssay() {
@@ -23,10 +23,9 @@ async function correctEssay() {
   const essay = $('essayIn')?.value?.trim() || '';
   const lvl   = $('levelSelect')?.value || 'C1';
   const typ   = $('typeSelect')?.value || 'essay';
-
   if (!essay) { alert('Paste your essay first.'); return; }
 
-  if (FORCE_MOCK) {
+  if (ECX.FORCE_MOCK) {
     console.log('[EC] Showing DEV mock');
     const mock = `
       <h3>Mock correction (${lvl.toUpperCase()} – ${typ})</h3>
@@ -42,10 +41,9 @@ async function correctEssay() {
     return;
   }
 
-  // ---- Real API call ----
   try {
-    console.log('[EC] POST to', `${API}/correct`);
-    const res = await fetch(`${API}/correct`, {
+    console.log('[EC] POST to', `${ECX.API}/correct`);
+    const res = await fetch(`${ECX.API}/correct`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -68,6 +66,11 @@ async function correctEssay() {
     putHTML($('essayOut'), `<p style="color:#b91c1c">Error: ${String(e.message||e)}</p>`);
   }
 }
+
+document.addEventListener('click', (ev)=>{
+  if (ev.target && ev.target.id === 'btnCorrect') correctEssay();
+});
+
 
 // Global click handler (works even if DOM not fully ready)
 document.addEventListener('click', (ev)=>{
@@ -1276,6 +1279,7 @@ async function correctEssay() {
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') { correctEssay(); }
 });
+
 
 
 
