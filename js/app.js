@@ -4,23 +4,23 @@ import './ec_sentences.js';
 
 // --- load dictionary based on LOCALE ---
 (async () => {
-const lang = (window.LOCALE || 'en').toLowerCase();
-const url  = `/essay-coach-instant/assets/i18n/${lang}.json?v=dev1`;
-const res  = await fetch(url, { cache: 'no-store' });
- 
+  const lang = (window.LOCALE || 'en').toLowerCase();
+  const url  = `/essay-coach-instant/assets/i18n/${lang}.json?v=dev1`;
+
   try {
-    const res = await fetch(url, { cache: 'no-store' }); // or 'force-cache' later
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const dict = await res.json();
     window.applyI18n(dict);
   } catch (err) {
     console.error('i18n load failed:', err);
-    // Fallback: try English
+    // Fallback to English (root-relative so it works under /es/)
     if (lang !== 'en') {
       try {
-        const res = await fetch('./assets/i18n/en.json');
-        const dict = await res.json();
-        window.applyI18n(dict);
+        const res2 = await fetch('/essay-coach-instant/assets/i18n/en.json?v=dev1', { cache: 'no-store' });
+        if (!res2.ok) throw new Error(`HTTP ${res2.status}`);
+        const dict2 = await res2.json();
+        window.applyI18n(dict2);
       } catch (e2) {
         console.error('Fallback i18n load failed:', e2);
       }
@@ -1138,6 +1138,7 @@ window.addEventListener('DOMContentLoaded', init);
 
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+
 
 
 
