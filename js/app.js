@@ -1,6 +1,9 @@
 // ==============================
 // app.js (final, matched to index.html)
 // ==============================
+(window.__LOAD_ORDER ||= []).push('app');
+console.log('LOAD_ORDER →', window.__LOAD_ORDER);
+
 
 if (!window.LOCALE)    console.error('i18n.js not loaded before app.js');
 if (!window.EC_CONFIG) console.error('config.js not loaded before app.js');
@@ -1105,4 +1108,5 @@ window.addEventListener('DOMContentLoaded', init);
 
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+
 
