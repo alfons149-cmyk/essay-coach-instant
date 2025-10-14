@@ -60,6 +60,9 @@ window.QUOTA = window.QUOTA || {
   used: 0, cap: (window.EC_CONFIG.QUOTA_CAP || 20)
 };
 window.EC = window.EC || {}; // if you rely on EC.BASE_PATH elsewhere
+// --- config shortcuts ---
+const DEV = !!(window.EC && window.EC.DEV_MODE);
+const API = (window.EC_CONFIG && window.EC_CONFIG.API_BASE) || '';
 
 // --- Persistence helpers for session/quota ---
 function persistSession(){ try{ localStorage.setItem('ec_session', JSON.stringify(window.SESSION)); }catch(_){} }
@@ -1138,6 +1141,7 @@ window.addEventListener('DOMContentLoaded', init);
 
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+
 
 
 
