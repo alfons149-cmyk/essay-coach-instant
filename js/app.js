@@ -5,8 +5,7 @@ import './ec_sentences.js';
 // --- load dictionary based on LOCALE ---
 (async () => {
   const lang = (window.LOCALE || 'en').toLowerCase();
-  // Use a relative path so it works on GitHub Pages subpaths too
-  const url = `./assets/i18n/${lang}.json`;
+const url  = `/essay-coach-instant/assets/i18n/${lang}.json`;
 
   try {
     const res = await fetch(url, { cache: 'no-store' }); // or 'force-cache' later
@@ -1138,6 +1137,7 @@ window.addEventListener('DOMContentLoaded', init);
 
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+
 
 
 
