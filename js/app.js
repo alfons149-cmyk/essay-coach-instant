@@ -4,9 +4,10 @@ import './ec_sentences.js';
 
 // --- load dictionary based on LOCALE ---
 (async () => {
-  const lang = (window.LOCALE || 'en').toLowerCase();
-const url  = `/essay-coach-instant/assets/i18n/${lang}.json`;
-
+const lang = (window.LOCALE || 'en').toLowerCase();
+const url  = `/essay-coach-instant/assets/i18n/${lang}.json?v=dev1`;
+const res  = await fetch(url, { cache: 'no-store' });
+ 
   try {
     const res = await fetch(url, { cache: 'no-store' }); // or 'force-cache' later
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1137,6 +1138,7 @@ window.addEventListener('DOMContentLoaded', init);
 
 // Periodic UI updates
 setInterval(()=>{ showQuota(); updateTrialBanner(); }, 10*60*1000);
+
 
 
 
