@@ -5,19 +5,20 @@ import './ec_sentences.js';
 // ---- Singleton context (won’t redeclare if run twice) ----
 const ECX = (globalThis.__ECX ||= (() => {
   const qs = new URLSearchParams(location.search);
-  const DEV = !!(window.EC && window.EC.DEV_MODE);                  // set by config.js via ?dev=1
+  const DEV = !!(window.EC && window.EC.DEV_MODE);            // set by config.js via ?dev=1
   const API = (window.EC_CONFIG && window.EC_CONFIG.API_BASE) || '';
-  const PLACEHOLDER = /YOUR-LIVE-API/i.test(API);                    // still the sample URL?
-  const FORCE_MOCK = DEV || PLACEHOLDER || qs.has('mock');           // allow &mock=1
+  const PLACEHOLDER = /YOUR-LIVE-API/i.test(API);              // still the sample URL?
+  const FORCE_MOCK = DEV || PLACEHOLDER || qs.has('mock');     // allow &mock=1
   return { DEV, API, PLACEHOLDER, FORCE_MOCK };
 })());
 
-console.log('[ECX]', ECX);  // e.g., {DEV:true, API:"https://…/api", …}
+console.log('[ECX]', ECX);
 
-// ---------- Corrector wiring ----------
-Vfunction $(id){ return document.getElementById(id); }
+// ---------- helpers ----------
+function $(id){ return document.getElementById(id); }
 function putHTML(el, s){ if (el) el.innerHTML = s; }
 
+// ---------- Corrector ----------
 async function correctEssay() {
   console.log('[EC] Correct clicked');
   const essay = $('essayIn')?.value?.trim() || '';
@@ -66,7 +67,8 @@ async function correctEssay() {
     putHTML($('essayOut'), `<p style="color:#b91c1c">Error: ${String(e.message||e)}</p>`);
   }
 }
-// Global click handler (works even if DOM not fully ready)
+
+// Global click handler
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') correctEssay();
 });
@@ -83,7 +85,6 @@ document.addEventListener('click', (ev)=>{
     window.applyI18n(dict);
   } catch (err) {
     console.error('i18n load failed:', err);
-    // Fallback to English (root-relative so it works under /es/)
     if (lang !== 'en') {
       try {
         const res2 = await fetch('/essay-coach-instant/assets/i18n/en.json?v=dev1', { cache: 'no-store' });
@@ -1423,6 +1424,7 @@ async function correctEssay() {
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') { correctEssay(); }
 });
+
 
 
 
