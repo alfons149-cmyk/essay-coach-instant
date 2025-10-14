@@ -8,15 +8,40 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/style.css?v=dev1">
+  <!-- inside <head> -->
+<!-- inside <head> -->
+<!-- inside <head> -->
+<link rel="stylesheet" href="./01-css/style.css">
+<script>
+(async () => {
+  const files = ['js/i18n.js','js/config.js','js/ec_sentences.js','js/app.js'];
+  for (const src of files) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = './' + src;       // stays repo-root-agnostic
+      s.defer = true;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
+  }
+})();
+</script>
 
-  <!-- Head scripts (externalized) -->
-  <script defer src="./js/i18n.js"></script>
-  <script defer src="./js/config.js"></script>
+  
+<!-- Head scripts (externalized) -->
+<script defer src="./03-js/i18n.js"></script>
+<script defer src="./03-js/config.js"></script>
 
-  <!-- Libraries loaded in head -->
-  <script defer src="./js/ec_sentences.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<!-- Libraries loaded in head -->
+<script defer src="./03-js/ec_sentences.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
+
+<!-- Libraries loaded in head -->
+<script defer src="./03-js/ec_sentences.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
 </head>
 
 <body>
@@ -174,8 +199,17 @@
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
-  <!-- App (all logic moved out of inline) -->
-  <script defer src="./js/app.js"></script>
+<!-- App (all logic moved out of inline) -->
+<script defer src="./03-js/app.js"></script>
+
+  <script defer src="./js/i18n.js"></script>
+<script defer src="./js/config.js"></script>
+<script defer src="./js/ec_sentences.js"></script>
+<script defer src="./js/app.js"></script>
+
 </body>
 </html>
+
+
+
 
