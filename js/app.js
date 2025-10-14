@@ -2,14 +2,17 @@ import './i18n.js';
 import './config.js';
 import './ec_sentences.js';
 
-// ---------- DEV/Mock detection (robust) ----------
-const QS = new URLSearchParams(location.search);
-const DEV = !!(window.EC && window.EC.DEV_MODE);                  // ?dev=1 sets this in config.js
-const API = (window.EC_CONFIG && window.EC_CONFIG.API_BASE) || '';
-const PLACEHOLDER = /YOUR-LIVE-API/i.test(API);                    // true if still the placeholder
-const FORCE_MOCK = DEV || PLACEHOLDER || QS.has('mock');           // allow &mock=1 too
+// ---- Singleton context (won’t redeclare if run twice) ----
+const ECX = (globalThis.__ECX ||= (() => {
+  const qs = new URLSearchParams(location.search);
+  const DEV = !!(window.EC && window.EC.DEV_MODE);                  // set by config.js via ?dev=1
+  const API = (window.EC_CONFIG && window.EC_CONFIG.API_BASE) || '';
+  const PLACEHOLDER = /YOUR-LIVE-API/i.test(API);                    // still the sample URL?
+  const FORCE_MOCK = DEV || PLACEHOLDER || qs.has('mock');           // allow &mock=1
+  return { DEV, API, PLACEHOLDER, FORCE_MOCK };
+})());
 
-console.log('[EC] DEV:', DEV, 'API:', API, 'PLACEHOLDER:', PLACEHOLDER, 'FORCE_MOCK:', FORCE_MOCK);
+console.log('[ECX]', ECX);  // e.g., {DEV:true, API:"https://…/api", …}
 
 // ---------- Corrector wiring ----------
 function $(id){ return document.getElementById(id); }
@@ -1273,6 +1276,7 @@ async function correctEssay() {
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') { correctEssay(); }
 });
+
 
 
 
