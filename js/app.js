@@ -2,6 +2,76 @@ import './i18n.js';
 import './config.js';
 import './ec_sentences.js';
 
+// ---------- DEV/Mock detection (robust) ----------
+const QS = new URLSearchParams(location.search);
+const DEV = !!(window.EC && window.EC.DEV_MODE);                  // ?dev=1 sets this in config.js
+const API = (window.EC_CONFIG && window.EC_CONFIG.API_BASE) || '';
+const PLACEHOLDER = /YOUR-LIVE-API/i.test(API);                    // true if still the placeholder
+const FORCE_MOCK = DEV || PLACEHOLDER || QS.has('mock');           // allow &mock=1 too
+
+console.log('[EC] DEV:', DEV, 'API:', API, 'PLACEHOLDER:', PLACEHOLDER, 'FORCE_MOCK:', FORCE_MOCK);
+
+// ---------- Corrector wiring ----------
+function $(id){ return document.getElementById(id); }
+function putHTML(el, s){ if (el) el.innerHTML = s; }
+
+async function correctEssay() {
+  console.log('[EC] Correct clicked');
+  const essay = $('essayIn')?.value?.trim() || '';
+  const lvl   = $('levelSelect')?.value || 'C1';
+  const typ   = $('typeSelect')?.value || 'essay';
+
+  if (!essay) { alert('Paste your essay first.'); return; }
+
+  if (FORCE_MOCK) {
+    console.log('[EC] Showing DEV mock');
+    const mock = `
+      <h3>Mock correction (${lvl.toUpperCase()} – ${typ})</h3>
+      <ul>
+        <li><strong>Grammar:</strong> Mostly accurate; watch subject–verb agreement.</li>
+        <li><strong>Lexis:</strong> Good range; avoid repetition.</li>
+        <li><strong>Organisation:</strong> Clear paragraphing; improve transitions.</li>
+        <li><strong>Task fulfilment:</strong> Covers all points; tighten conclusion.</li>
+      </ul>
+      <p><em>(DEV mock. Set <code>?api=http://127.0.0.1:8888</code> or your live API to call the server.)</em></p>
+    `;
+    putHTML($('essayOut'), mock);
+    return;
+  }
+
+  // ---- Real API call ----
+  try {
+    console.log('[EC] POST to', `${API}/correct`);
+    const res = await fetch(`${API}/correct`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        level: lvl,
+        type: typ,
+        options: {
+          formal: $('tgFormal')?.checked,
+          coachNotes: $('tgCoachNotes')?.checked,
+          rubric: $('tgRubric')?.checked
+        },
+        text: essay
+      })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const safe = (window.DOMPurify ? window.DOMPurify.sanitize(data.html) : data.html);
+    putHTML($('essayOut'), safe || '<p>(No response)</p>');
+  } catch (e) {
+    console.error('[EC] Correct error:', e);
+    putHTML($('essayOut'), `<p style="color:#b91c1c">Error: ${String(e.message||e)}</p>`);
+  }
+}
+
+// Global click handler (works even if DOM not fully ready)
+document.addEventListener('click', (ev)=>{
+  if (ev.target && ev.target.id === 'btnCorrect') correctEssay();
+});
+
+
 // --- load dictionary based on LOCALE ---
 (async () => {
   const lang = (window.LOCALE || 'en').toLowerCase();
@@ -1203,6 +1273,7 @@ async function correctEssay() {
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') { correctEssay(); }
 });
+
 
 
 
