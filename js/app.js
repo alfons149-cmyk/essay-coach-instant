@@ -66,17 +66,10 @@ async function correctEssay() {
     putHTML($('essayOut'), `<p style="color:#b91c1c">Error: ${String(e.message||e)}</p>`);
   }
 }
-
-document.addEventListener('click', (ev)=>{
-  if (ev.target && ev.target.id === 'btnCorrect') correctEssay();
-});
-
-
 // Global click handler (works even if DOM not fully ready)
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') correctEssay();
 });
-
 
 // --- load dictionary based on LOCALE ---
 (async () => {
@@ -1279,6 +1272,7 @@ async function correctEssay() {
 document.addEventListener('click', (ev)=>{
   if (ev.target && ev.target.id === 'btnCorrect') { correctEssay(); }
 });
+
 
 
 
