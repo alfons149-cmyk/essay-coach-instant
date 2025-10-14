@@ -166,21 +166,15 @@
     </section>
   </main>
 
-   <!-- PDF libs (defer; used on demand by app.js) -->
+    <!-- PDF + Sanitizer (keep if you use them from the window/UMD build) -->
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-  <!-- Safe HTML sanitizer (load before app if app uses it) -->
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 
-  <!-- App scripts — strict order -->
-  <script defer src="./03-js/i18n.js"></script>
-  <script defer src="./03-js/config.js"></script>
-  <script defer src="./03-js/ec_sentences.js"></script>
-  <script defer src="./03-js/app.js"></script>
+  <!-- Single module entry: app coordinates the rest -->
+  <script type="module" src="./03-js/app.js"></script>
 </body>
 </html>
-
 
 
 
