@@ -107,6 +107,19 @@ button:focus-visible, select:focus-visible, textarea:focus-visible{
 }
 .hint{ color:var(--muted); font-size:13px; margin-top:6px; }
 
+/* Output box styling */
+#essayOut {
+  min-height: 160px;           /* shows a real box even when empty */
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  margin-top: 8px;
+  white-space: normal;         /* or pre-wrap if you want to preserve line breaks */
+}
+
+
 /* Tiles (rubric) */
 .tiles{ display:flex; flex-wrap:wrap; gap:10px; }
 .tile{
@@ -177,3 +190,4 @@ nav a:hover{ text-decoration:underline; }
   .hltip{ background:#0b1220; }
 
 }
+
