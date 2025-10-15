@@ -1,5 +1,16 @@
 // ========= RESCUE app.js =========
 
+// Force override from ?api= in case a stale config leaks through
+{
+  const qs = new URLSearchParams(location.search);
+  const api = qs.get('api');
+  if (api) {
+    const base = String(api).replace(/\/+$/, '');
+    window.EC_CONFIG = Object.assign({}, window.EC_CONFIG, { API_BASE: base + '/api' });
+    console.log('[APP] API override →', window.EC_CONFIG.API_BASE);
+  }
+}
+
 // Basic helpers
 function $(id){ return document.getElementById(id); }
 function ready(fn){ document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', fn, {once:true}) : fn(); }
@@ -145,3 +156,4 @@ window.addEventListener('unhandledrejection', (e)=>{
     console.log('[BOOT] UI wired');
   });
 })();
+
