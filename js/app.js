@@ -1,3 +1,10 @@
+if (window.__EC_APP_LOADED) {
+  console.warn('app.js loaded twice; skipping duplicate');
+  // Avoid running the rest twice
+  throw new Error('Duplicate app.js load blocked');
+}
+window.__EC_APP_LOADED = true;
+
 // ========= RESCUE app.js =========
 
 // Force override from ?api= in case a stale config leaks through
@@ -156,4 +163,5 @@ window.addEventListener('unhandledrejection', (e)=>{
     console.log('[BOOT] UI wired');
   });
 })();
+
 
