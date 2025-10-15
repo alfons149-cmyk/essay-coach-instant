@@ -27,6 +27,13 @@ if (existsSync(PUBLIC_DIR)) {
 } else {
   console.warn('[static] No /public folder at', PUBLIC_DIR);
 }
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' https:;
+               script-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.net/npm;
+               style-src  'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src   https://fonts.gstatic.com;
+               img-src    'self' data: https:;
+               connect-src 'self' https:;">
 
 // ── Config ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8888;
@@ -235,3 +242,4 @@ app.listen(PORT, () => {
   console.log(`GET  http://localhost:${PORT}/api/health`);
   console.log(`POST http://localhost:${PORT}/api/correct`);
 });
+
