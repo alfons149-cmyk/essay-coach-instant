@@ -1,9 +1,6 @@
-if (window.__EC_APP_LOADED) {
-  console.warn('app.js loaded twice; skipping duplicate');
-  // Avoid running the rest twice
-  throw new Error('Duplicate app.js load blocked');
-}
+if (window.__EC_APP_LOADED) { console.warn('app.js loaded twice; skipping duplicate'); throw new Error('Duplicate app.js'); }
 window.__EC_APP_LOADED = true;
+
 
 // ========= RESCUE app.js =========
 
@@ -163,5 +160,6 @@ window.addEventListener('unhandledrejection', (e)=>{
     console.log('[BOOT] UI wired');
   });
 })();
+
 
 
