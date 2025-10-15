@@ -17,6 +17,19 @@
   window.EC = window.EC || {};
   window.EC.BASE_PATH = ""; // keep empty on GitHub Pages
 
+  // AFTER: await import('./config.js')
+{
+  const qs  = new URLSearchParams(location.search);
+  const api = qs.get('api');
+  if (api) {
+    const base = String(api).replace(/\/+$/, '');
+    // replace the frozen object with a new one
+    window.EC_CONFIG = { ...(window.EC_CONFIG || {}), API_BASE: base + '/api' };
+    console.log('[APP] API override →', window.EC_CONFIG.API_BASE);
+  }
+}
+
+
   window.EC_CONFIG = Object.freeze({
     API_BASE: apiRoot + "/api",
     REQUIRE_SUBSCRIPTION: false,
@@ -32,3 +45,4 @@
   // Helpful debug line: you'll see what API_BASE is **right now**
   console.log('[CFG] API_BASE =', window.EC_CONFIG.API_BASE);
 })();
+
