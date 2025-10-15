@@ -56,13 +56,16 @@ window.addEventListener('unhandledrejection', (e)=>{
   }
 
   // Context (decide mock vs real)
-  const qs = new URLSearchParams(location.search);
-  const DEV = !!(window.EC && window.EC.DEV_MODE);
-  const API = (window.EC_CONFIG && window.EC_CONFIG.API_BASE) || '';
-  const PLACEHOLDER = /YOUR-LIVE-API/i.test(API);
-  const FORCE_MOCK = DEV || PLACEHOLDER || qs.has('mock');
+  const qs  = new URLSearchParams(location.search);
+const DEV = !!(window.EC && window.EC.DEV_MODE);
+let   API = (window.EC_CONFIG && window.EC_CONFIG.API_BASE) || '';
 
-  console.log('[BOOT] DEV:', DEV, 'API:', API, 'PLACEHOLDER:', PLACEHOLDER, 'FORCE_MOCK:', FORCE_MOCK);
+const PLACEHOLDER = /YOUR-LIVE-API/i.test(API) || !API;  // treat missing as placeholder
+let   FORCE_MOCK  = qs.has('mock') || PLACEHOLDER;       // DEV no longer auto-mocks
+if (qs.has('nomock')) FORCE_MOCK = false;                // manual override
+
+console.log('[BOOT] DEV:', DEV, 'API:', API, 'PLACEHOLDER:', PLACEHOLDER, 'FORCE_MOCK:', FORCE_MOCK);
+
 
   // Load i18n dict (root-relative so /es/ works)
   ready(async () => {
@@ -160,6 +163,7 @@ window.addEventListener('unhandledrejection', (e)=>{
     console.log('[BOOT] UI wired');
   });
 })();
+
 
 
 
