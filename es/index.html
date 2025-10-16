@@ -1,4 +1,214 @@
-<script>
+<!doctype html>
+<html lang="en" data-theme="coral">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit (Unified EN/ES)</title>
+
+  <!-- Icons / Manifest (adjust paths as needed) -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
+  <link rel="apple-touch-icon" href="/essay-coach-instant/icon-192.png">
+  <link rel="manifest" href="/essay-coach-instant/manifest.webmanifest">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root { --bg:#111; --fg:#eee; --muted:#aaa; --pill:#2b2b2b; --ok:#1e7f4f; --warn:#9a4b00; --card:#191919; --border:#2a2a2a; }
+    html[data-theme="coral"] body { background:#0f0f10; color:var(--fg); font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+    a { color:#8ecbff; text-decoration:none; }
+    .container { max-width:1100px; margin:0 auto; padding:16px; }
+    nav.tabs { display:flex; gap:8px; border-bottom:1px solid var(--border); margin-bottom:16px; }
+    nav.tabs button { background:transparent; color:var(--fg); border:0; padding:10px 14px; cursor:pointer; border-bottom:3px solid transparent; }
+    nav.tabs button.active { border-color:#ff8c69; }
+    .row { display:flex; gap:16px; }
+    .col { flex:1; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; }
+    textarea, select, input[type="text"], input[type="number"], input[type="checkbox"]{ width:100%; background:#101010; color:var(--fg); border:1px solid var(--border); border-radius:8px; padding:10px; }
+    textarea { min-height:180px; font-family: "IBM Plex Serif", ui-serif, Georgia, serif; }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+    .btn { padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:#1a1a1a; color:var(--fg); cursor:pointer; }
+    .btn-primary { background:#ff8c69; border-color:#ff8c69; color:#111; }
+    .btn-ghost { background:transparent; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:var(--pill); color:var(--fg); border:1px solid var(--border); font-size:12px; }
+    .pill.ok { background: var(--ok); color:#fff; }
+    .pill.warn { background: var(--warn); color:#fff; }
+    .hint { color:var(--muted); }
+    .hl { background:#444b; border-bottom:2px solid #888; padding:0 2px; }
+    #part2Preview { line-height:1.5; background:#0e0e0e; padding:10px; border-radius:8px; border:1px solid var(--border); min-height:120px; }
+    .chip { padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:#141414; color:var(--fg); cursor:pointer; margin:4px 6px 0 0; }
+    .alt-section { margin-bottom:10px; }
+    .grid { display:grid; gap:12px; }
+    @media (min-width: 900px){
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .muted { color:var(--muted); }
+    .section-title { margin:0 0 8px; font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:#ffb29c; }
+  </style>
+
+  <!-- Optional: basic i18n stub (replace with your real window.t implementation) -->
+  <script>
+    window.t = window.t || (k => {
+      // Return falsy to allow the JS to fall back to built-in English strings.
+      return null;
+    });
+    // Set this to your Worker endpoint to enable AI mode
+    // window.AI_ENDPOINT = "https://your-worker.example.com/correct";
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header class="row" style="align-items:center; justify-content:space-between; gap:8px;">
+      <h1 style="margin:8px 0;">EssayCoach – Cambridge Toolkit</h1>
+      <div id="timer" class="pill">Timer: 00:00</div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button id="tab-scaffolds" class="active">Scaffolds</button>
+      <button id="tab-corrector">Corrector (Part 1)</button>
+      <button id="tab-punct">Punctuation</button>
+      <button id="tab-part2">Part 2 (Letters/Reports…)</button>
+    </nav>
+
+    <!-- Views -->
+    <main>
+      <!-- Scaffolds view -->
+      <section id="view-scaffolds" class="card">
+        <h3 class="section-title">Scaffolds</h3>
+        <p class="muted">Scaffold content goes here. (Your app bundle can render these; this placeholder exists so routing never crashes.)</p>
+        <div class="toolbar">
+          <button class="btn btn-ghost" onclick="startTimer(45)">Start 45′ Timer</button>
+          <button class="btn btn-ghost" onclick="startTimer(30)">Start 30′ Timer</button>
+        </div>
+      </section>
+
+      <!-- Corrector (Part 1) view -->
+      <section id="view-corrector" class="card" style="display:none;">
+        <h3 class="section-title">Corrector (Part 1)</h3>
+        <div class="toolbar">
+          <label class="pill" title="Uses your Worker (AI); falls back to local rules.">
+            <input type="checkbox" id="aiToggle" /> Use AI
+          </label>
+          <span id="p1InWC" class="pill">Input: 0 words</span>
+          <span id="p1OutWC" class="pill">Output: 0 words</span>
+        </div>
+        <div class="grid grid-2">
+          <div class="col">
+            <label>Input</label>
+            <textarea id="input" placeholder="Paste your text…"></textarea>
+          </div>
+          <div class="col">
+            <label>Output</label>
+            <textarea id="output" placeholder="Corrected text will appear here…" readonly></textarea>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="btnCorrect">Correct</button>
+          <button class="btn btn-ghost" id="btnExportPDF">Export PDF</button>
+          <button class="btn btn-ghost" id="btnClear">Clear</button>
+          <button class="btn btn-ghost" id="btnPaste">Paste</button>
+          <button class="btn btn-ghost" id="btnTimer" onclick="startTimer(45)">Start timer</button>
+        </div>
+        <div id="preview" class="muted">Preview area…</div>
+      </section>
+
+      <!-- Punctuation view -->
+      <section id="view-punct" class="card" style="display:none;">
+        <h3 class="section-title">Core Punctuation Rules</h3>
+        <div id="punctRules" class="muted">Your app bundle can populate the rules. Placeholder present for stability.</div>
+      </section>
+
+      <!-- Part 2 view -->
+      <section id="view-part2" class="card" style="display:none;">
+        <h3 class="section-title">Part 2 – Genre Corrector</h3>
+
+        <!-- Controls -->
+        <div class="grid grid-3">
+          <div class="col">
+            <label for="p2Level">Level</label>
+            <select id="p2Level">
+              <option value="B2">B2</option>
+              <option value="C1" selected>C1</option>
+              <option value="C2">C2</option>
+            </select>
+          </div>
+          <div class="col">
+            <label for="p2Type">Genre</label>
+            <select id="p2Type">
+              <option value="essay">Essay</option>
+              <option value="letter">Letter</option>
+              <option value="proposal">Proposal</option>
+              <option value="report">Report</option>
+              <option value="review">Review</option>
+            </select>
+          </div>
+          <div class="col">
+            <label><input type="checkbox" id="p2Formal" checked> Formal register</label><br>
+            <label title="Uses your Worker (AI); falls back to local rules." class="pill" style="display:inline-flex;align-items:center;gap:6px; margin-top:8px;">
+              <input type="checkbox" id="p2UseAI"> Use AI
+            </label>
+          </div>
+        </div>
+
+        <!-- Wordcount pills -->
+        <div class="toolbar">
+          <span id="p2InWC" class="pill">Input: 0 words</span>
+          <span id="p2OutWC" class="pill">Output: 0 words</span>
+          <span id="p2TargetWC" class="pill">Target …</span>
+          <span id="p2Timer" class="pill">Timer: 00:00</span>
+          <label class="pill"><input type="checkbox" id="p2CoachNotes" checked> Coach notes</label>
+        </div>
+
+        <!-- IO -->
+        <div class="grid grid-2">
+          <div class="col">
+            <label for="p2Input">Input</label>
+            <textarea id="p2Input" placeholder="Paste your Part 2 draft…"></textarea>
+            <div class="toolbar">
+              <button class="btn btn-primary" onclick="runPart2Correction()">Correct Part 2</button>
+              <button class="btn btn-ghost" onclick="downloadPart2PDF()">Export PDF</button>
+              <button class="btn btn-ghost" onclick="clearPart2()">Clear</button>
+              <button class="btn btn-ghost" onclick="pastePart2()">Paste</button>
+              <button class="btn btn-ghost" onclick="startTimer(45)">Start timer</button>
+            </div>
+          </div>
+          <div class="col">
+            <label for="p2Output">Output</label>
+            <textarea id="p2Output" placeholder="Corrected Part 2 will appear here…"></textarea>
+          </div>
+        </div>
+
+        <!-- Preview + meta -->
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="col">
+            <h4 class="section-title">Preview (highlighted)</h4>
+            <div id="part2Preview"></div>
+            <div id="p2Positions" class="muted" style="margin-top:8px;"></div>
+          </div>
+          <div class="col">
+            <h4 class="section-title">Changes</h4>
+            <div id="part2Changes" class="card" style="min-height:120px;">(No changes yet)</div>
+            <h4 class="section-title" style="margin-top:12px;">Vocabulary upgrades</h4>
+            <div id="part2Vocab" class="card">(Suggestions will appear here)</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h4 class="section-title">Genre rubric</h4>
+          <div id="part2Rubric" class="muted">(Rubric checks will appear here)</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Your external bundle (keep this, as in your original) -->
+  <script src="/essay-coach-instant/assets/app.bundle.js" defer></script>
+
+  <!-- ===== Core app script you asked me to rewrite (dropped in verbatim) ===== -->
+  <script>
 "use strict";
 
 /* ========== Small utilities ========== */
@@ -431,3 +641,9 @@ window.addEventListener("load", () => {
   tP2?.addEventListener("click", () => safeShow("part2"));
 })();
 </script>
+
+
+  <!-- Optional: jsPDF for PDF export (if not provided elsewhere) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+</body>
+</html>
