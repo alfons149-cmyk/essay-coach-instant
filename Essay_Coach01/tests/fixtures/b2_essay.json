@@ -1,0 +1,15 @@
+{
+  "level": "B2",
+  "taskType": "essay",
+  "taskPrompt": "Your class has discussed how people should travel in large cities. Your teacher has asked you to write an essay on the topic. Write an essay discussing whether public transport is better than using cars for daily commuting. Give reasons for your answer.",
+  "studentText": "In many big cities travelling every day is stressful, but choosing public transport can improve the situation. Firstly, buses and underground trains carry a lot of people at once, which reduces traffic jams on the roads. If more commuters left their cars at home, journeys would be faster and the air would be cleaner. Secondly, public transport is usually cheaper than owning a car. You do not need to pay for petrol, parking or repairs, so students and workers can save money. However, there are some disadvantages. At busy times vehicles are crowded and sometimes delayed. This can make people late for school or work and it is uncomfortable to stand for a long time. Even so, these problems can be solved by running services more often and keeping them clean. In my opinion the advantages are stronger, because public transport helps the whole city, not only individual drivers.",
+  "targetWordCount": 180,
+  "language": "en",
+  "options": {
+    "strictCambridge": true,
+    "minChangeEdits": true,
+    "highlightPunctuationJoins": true,
+    "returnInlineDiff": true
+  },
+  "client": { "appVersion": "fixtures.v1", "dev": true }
+}
