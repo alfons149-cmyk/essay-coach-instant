@@ -1,8 +1,10 @@
+// apps/server/src/schema.ts
 import { z } from "zod";
 
 export const LevelEnum = z.enum(["B2", "C1", "C2"]);
 export const TaskTypeEnum = z.enum(["essay", "letter", "report", "review", "proposal"]);
 
+/** ---------- REQUEST ---------- */
 export const correctionRequestSchema = z.object({
   level: LevelEnum,
   taskType: TaskTypeEnum,
@@ -26,28 +28,66 @@ export const correctionRequestSchema = z.object({
     .optional()
 });
 
-export type CorrectionRequest = z.infer<typeof correctionRequestSchema>;
+/** ---------- RESPONSE ---------- */
+const scoreBlock = z.object({
+  band: z.number().int(),
+  explanation: z.string()
+});
 
-// Response types (loose for now; tighten later)
-export type CorrectionResponse = {
-  meta: { level: string; taskType: string; processingMs: number; model: string; version: string };
-  counts: { words: number; sentences: number; paragraphs: number };
-  wordCountCheck: { min: number; max: number; status: "ok" | "low" | "high" };
-  scores: {
-    content: { band: number; explanation: string };
-    communicativeAchievement: { band: number; explanation: string };
-    organisation: { band: number; explanation: string };
-    language: { band: number; explanation: string };
-  };
-  overall: { band: number; label: string };
-  edits: Array<{
-    span: { start: number; end: number; text: string };
-    type: string;
-    suggestion: string;
-    explanation: string;
-  }>;
-  inlineDiff: string;
-  cohesion: { linkers: string[]; gaps?: string[] };
-  register: { issues: string[]; tone: string };
-  nextDraft: { priorities: string[]; modelRewrite?: string };
-};
+export const correctionResponseSchema = z.object({
+  meta: z.object({
+    level: LevelEnum,
+    taskType: TaskTypeEnum,
+    processingMs: z.number().int(),
+    model: z.string(),
+    version: z.string()
+  }),
+  counts: z.object({
+    words: z.number().int(),
+    sentences: z.number().int(),
+    paragraphs: z.number().int()
+  }),
+  wordCountCheck: z.object({
+    min: z.number().int(),
+    max: z.number().int(),
+    status: z.enum(["ok", "low", "high"])
+  }),
+  scores: z.object({
+    content: scoreBlock,
+    communicativeAchievement: scoreBlock,
+    organisation: scoreBlock,
+    language: scoreBlock
+  }),
+  overall: z.object({
+    band: z.number().int(),
+    label: z.string()
+  }),
+  edits: z.array(
+    z.object({
+      span: z.object({
+        start: z.number().int(),
+        end: z.number().int(),
+        text: z.string()
+      }),
+      type: z.string(),
+      suggestion: z.string(),
+      explanation: z.string()
+    })
+  ),
+  inlineDiff: z.string(),
+  cohesion: z.object({
+    linkers: z.array(z.string()),
+    gaps: z.array(z.string()).optional()
+  }),
+  register: z.object({
+    issues: z.array(z.string()),
+    tone: z.string()
+  }),
+  nextDraft: z.object({
+    priorities: z.array(z.string()),
+    modelRewrite: z.string().optional()
+  })
+});
+
+export type CorrectionRequest = z.infer<typeof correctionRequestSchema>;
+export type CorrectionResponse = z.infer<typeof correctionResponseSchema>;
