@@ -1,0 +1,211 @@
+/* ==========================================================================
+   EssayCoach – Base styles
+   File: apps/web/css/style.css
+   ========================================================================== */
+
+/* ---------- CSS variables (themeable) ---------- */
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #666666;
+  --border: #dddddd;
+
+  --primary: #111111;
+  --primary-fg: #ffffff;
+
+  --ghost-bg: #ffffff;
+  --ghost-fg: #111111;
+  --ghost-border: #aaaaaa;
+
+  --ok-bg: #e7f7ea;
+  --ok-border: #58a869;
+
+  --warn-bg: #fff6e6;
+  --warn-border: #d08b39;
+
+  --card-bg: #ffffff;
+  --shadow: 0 8px 24px rgba(0,0,0,0.06);
+  --radius: 12px;
+}
+
+/* Optional dark preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --fg: #e9e9ee;
+    --muted: #a0a3aa;
+    --border: #2a2f3a;
+
+    --primary: #e9e9ee;
+    --primary-fg: #0f1115;
+
+    --ghost-bg: #151922;
+    --ghost-fg: #e9e9ee;
+    --ghost-border: #3a4050;
+
+    --card-bg: #141821;
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+/* Typography */
+h1, h2, h3, h4 { margin: 0 0 .5rem; line-height: 1.2; }
+p { margin: 0 0 1rem; }
+small { color: var(--muted); }
+
+/* Links */
+a { color: inherit; }
+
+/* Containers & layout */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Grid that collapses on mobile */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* Header/Footer */
+header, footer {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+footer {
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+}
+
+/* Panels / cards */
+.panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+
+/* Inputs */
+textarea, input, select, button {
+  font: inherit;
+}
+textarea, input, select {
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+}
+textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+}
+textarea:focus, input:focus, select:focus {
+  border-color: #7a9cff;
+  box-shadow: 0 0 0 3px rgba(122,156,255,0.25);
+}
+
+/* Buttons */
+.btn {
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-fg);
+  padding: 9px 14px;
+  transition: transform .02s ease-in-out, box-shadow .15s ease;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+.btn.ghost {
+  background: var(--ghost-bg);
+  color: var(--ghost-fg);
+  border-color: var(--ghost-border);
+}
+
+/* Pills */
+.pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.pill.ok   { background: var(--ok-bg);   border-color: var(--ok-border); }
+.pill.warn { background: var(--warn-bg); border-color: var(--warn-border); }
+
+/* Muted text */
+.muted { color: var(--muted); }
+
+/* Lists for edits/next */
+#edits, #next {
+  margin: .25rem 0 0;
+  padding-left: 1.25rem;
+}
+#edits li, #next li { margin: .25rem 0; }
+#edits code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  padding: 0 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* DEV banner */
+#devBanner {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffe8a3;
+  color: #573e00;
+  border: 1px solid #e3c36c;
+  font-size: 12px;
+}
+
+/* Utility */
+.hidden { display: none !important; }
+
+/* ---------- Print (for PDF exports) ---------- */
+@media print {
+  header, footer, .btn, select { display: none !important; }
+  .container { max-width: 100%; padding: 0; }
+  .panel { box-shadow: none; border-color: #999; }
+  body { background: #fff; color: #000; }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "essaycoach-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "schema": "tsx ./src/generate-schema.ts"
+  },
+  "devDependencies": {
+    "wrangler": "^3.80.0",
+    "typescript": "^5.6.3",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.5",
+    "tsx": "^4.19.0"
+  }
+}
