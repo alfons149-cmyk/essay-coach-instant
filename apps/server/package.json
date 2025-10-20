@@ -1,1 +1,9 @@
-
+{
+  "scripts": {
+    "test:update-goldens": "tsx ./src/test/update-goldens.ts",
+    "test:verify-goldens": "tsx ./src/test/verify-goldens.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}
