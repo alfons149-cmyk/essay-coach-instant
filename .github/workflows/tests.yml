@@ -17,3 +17,7 @@ jobs:
         run: npm -C apps/server ci
       - name: Run golden verification
         run: npm -C apps/server run test:verify-goldens
+git mv .github/workflow/tests.yml .github/workflows/tests.yml
+git commit -m "Fix workflows path"
+git push
+
