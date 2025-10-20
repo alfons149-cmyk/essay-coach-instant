@@ -1,0 +1,23 @@
+name: Deploy API (Cloudflare Worker)
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/server/**'
+      - '.github/workflows/server.yml'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Install deps
+        run: npm -C apps/server ci
+      - name: Build schemas (optional)
+        run: npm -C apps/server run schema || true
+      - name: Publish Worker
+        run: npx -C apps/server wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
