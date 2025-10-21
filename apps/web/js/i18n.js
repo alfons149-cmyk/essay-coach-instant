@@ -1,3 +1,4 @@
+// apps/web/js/i18n.js
 async function loadI18n(lang) {
   const url = `./assets/i18n/${lang}.json`;
   console.log('[i18n] fetching', url);
@@ -8,6 +9,7 @@ async function loadI18n(lang) {
   window.__i18n[lang] = dict;
   return dict;
 }
+
 function applyI18n(dict) {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
