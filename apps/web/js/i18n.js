@@ -11,8 +11,15 @@ async function loadI18n(lang) {
 }
 
 function applyI18n(dict) {
+  // text nodes
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (dict && dict[key]) el.textContent = dict[key];
+  });
+
+  // placeholders (e.g., <textarea data-i18n-placeholder="placeholders.task">…</textarea>)
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (dict && dict[key]) el.setAttribute('placeholder', dict[key]);
   });
 }
