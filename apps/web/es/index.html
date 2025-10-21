@@ -1,18 +1,23 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Redirigiendo…</title>
-  <meta name="robots" content="noindex">
-  <!-- instant meta refresh -->
-  <meta http-equiv="refresh" content="0;url=../index.html?lang=es">
-  <!-- JS redirect (if meta refresh were blocked) -->
-  <script>location.replace("../index.html?lang=es");</script>
+  <meta name="robots" content="noindex" />
+  <script>
+    (function () {
+      // Current path is .../<repo>/es/ or .../<repo>/es
+      var base = location.pathname.replace(/\/es\/?$/, "/");  // -> .../<repo>/
+      var target = base + "index.html?lang=es";
+      // JS redirect
+      location.replace(target);
+    })();
+  </script>
+  <!-- Meta refresh as a fallback -->
+  <meta http-equiv="refresh" content="0; url=../index.html?lang=es">
 </head>
 <body>
   Redirigiendo a la versión en español…
-  <noscript>
-    <p><a href="../index.html?lang=es">Haz clic aquí si no eres redirigido</a></p>
-  </noscript>
+  <noscript><a href="../index.html?lang=es">Ir a la versión en español</a></noscript>
 </body>
 </html>
