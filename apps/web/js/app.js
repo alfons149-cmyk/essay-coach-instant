@@ -1,3 +1,7 @@
+const lang = window.__EC_LANG || 'en';
+loadI18n(lang)
+  .then(dict => { console.log('[i18n] loaded', lang); applyI18n(dict); })
+  .catch(err => console.error(err));
 if (window.__EC_APP_LOADED) { throw new Error('app.js loaded twice'); }
 window.__EC_APP_LOADED = true;
 
@@ -12,11 +16,6 @@ window.EC_CONFIG.API_BASE = base;
 }
 document.getElementById('apiInfo').textContent = (dev? 'DEV (mock)' : EC_CONFIG.API_BASE);
 if(dev){ const b=document.getElementById('devBanner'); if(b) b.style.display='inline-block'; }
-
-
-const lang = window.__EC_LANG||'en';
-loadI18n(lang).then(applyI18n).catch(console.error);
-
 
 const lvlEl = document.getElementById('level');
 const taskEl = document.getElementById('task');
