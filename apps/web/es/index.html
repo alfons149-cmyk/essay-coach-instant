@@ -1,7 +1,18 @@
 <!doctype html>
-<html lang="es"><head>
-<meta charset="utf-8">
-<title>Redirigiendo…</title>
-<meta http-equiv="refresh" content="0; url=../index.html?lang=es">
-<script>location.replace("../index.html?lang=es");</script>
-</head><body>Redirigiendo…</body></html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Redirigiendo…</title>
+  <meta name="robots" content="noindex">
+  <!-- instant meta refresh -->
+  <meta http-equiv="refresh" content="0;url=../index.html?lang=es">
+  <!-- JS redirect (if meta refresh were blocked) -->
+  <script>location.replace("../index.html?lang=es");</script>
+</head>
+<body>
+  Redirigiendo a la versión en español…
+  <noscript>
+    <p><a href="../index.html?lang=es">Haz clic aquí si no eres redirigido</a></p>
+  </noscript>
+</body>
+</html>
