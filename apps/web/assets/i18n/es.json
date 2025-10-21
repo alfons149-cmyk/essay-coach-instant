@@ -1,12 +1,14 @@
-
 {
-"labels.prompt": "Consigna",
-"labels.essay": "Tu redacción",
-"labels.feedback": "Retroalimentación",
-"buttons.correct": "Corregir",
-"buttons.clear": "Borrar",
-"io.input_words": "Entrada: {n} palabras",
-"io.output_words": "Salida: {n} palabras"
+  "labels.prompt": "Consigna",
+  "labels.essay": "Tu redacción",
+  "labels.feedback": "Retroalimentación",
+  "buttons.correct": "Corregir",
+  "buttons.clear": "Borrar",
+  "io.input_words": "Entrada: {n} palabras",
+  "io.output_words": "Salida: {n} palabras",
+  "placeholders.task": "Pega aquí la consigna del examen…",
+  "placeholders.essay": "Pega o escribe tu redacción aquí…"
 }
+
 
 
