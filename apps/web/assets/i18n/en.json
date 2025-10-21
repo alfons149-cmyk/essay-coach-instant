@@ -1,1 +1,12 @@
 
+{
+"labels.prompt": "Task prompt",
+"labels.essay": "Your essay",
+"labels.feedback": "Feedback",
+"buttons.correct": "Correct",
+"buttons.clear": "Clear",
+"io.input_words": "Input: {n} words",
+"io.output_words": "Output: {n} words"
+}
+
+
