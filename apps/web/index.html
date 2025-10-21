@@ -1,25 +1,48 @@
 <!doctype html>
-</script>
-<script defer src="./js/i18n.js"></script>
-<script defer src="./js/config.js"></script>
-<script defer src="./js/ec_sentences.js"></script>
-<script defer src="./js/app.js"></script>
-<style>
-body{font-family:Inter,system-ui,Arial,sans-serif; margin:0;}
-header,footer{padding:12px 16px}
-.container{max-width:1000px;margin:0 auto;padding:16px}
-textarea{width:100%;min-height:220px;padding:12px;font-size:16px}
-.row{display:flex;gap:12px;flex-wrap:wrap}
-.pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid #bbb}
-.pill.ok{background:#e7f7ea;border-color:#58a869}
-.pill.warn{background:#fff6e6;border-color:#d08b39}
-.btn{padding:8px 12px;border:1px solid #222;border-radius:10px;background:#111;color:#fff;cursor:pointer}
-.btn.ghost{background:#fff;color:#111;border-color:#aaa}
-.panel{border:1px solid #ddd;border-radius:12px;padding:12px}
-.muted{color:#666}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
-</style>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./css/style.css" />
+
+  <!-- Detect ?lang=es or /es/ and expose to JS -->
+  <script>
+    (function () {
+      const qs = new URLSearchParams(location.search);
+      const qp = qs.get('lang');
+      const pathIsEs = location.pathname.replace(/\/+$/, '').endsWith('/es') || location.pathname.includes('/es/');
+      const lang = /^(en|es)$/.test(qp || '') ? qp : (pathIsEs ? 'es' : 'en');
+      document.documentElement.setAttribute('lang', lang);
+      window.__EC_LANG = lang;
+    })();
+  </script>
+
+  <!-- App scripts (order matters: i18n before app) -->
+  <script defer src="./js/i18n.js"></script>
+  <script defer src="./js/config.js"></script>
+  <script defer src="./js/ec_sentences.js"></script>
+  <script defer src="./js/app.js"></script>
+
+  <!-- Inline styles (keep or move to style.css) -->
+  <style>
+    body{font-family:Inter,system-ui,Arial,sans-serif; margin:0;}
+    header,footer{padding:12px 16px}
+    .container{max-width:1000px;margin:0 auto;padding:16px}
+    textarea{width:100%;min-height:220px;padding:12px;font-size:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid #bbb}
+    .pill.ok{background:#e7f7ea;border-color:#58a869}
+    .pill.warn{background:#fff6e6;border-color:#d08b39}
+    .btn{padding:8px 12px;border:1px solid #222;border-radius:10px;background:#111;color:#fff;cursor:pointer}
+    .btn.ghost{background:#fff;color:#111;border-color:#aaa}
+    .panel{border:1px solid #ddd;border-radius:12px;padding:12px}
+    .muted{color:#666}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
 <header class="row">
