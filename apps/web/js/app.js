@@ -1,71 +1,9 @@
-const lang = window.__EC_LANG || 'en';
-loadI18n(lang)
-  .then(dict => { console.log('[i18n] loaded', lang); applyI18n(dict); })
-  .catch(err => console.error(err));
-if (window.__EC_APP_LOADED) { throw new Error('app.js loaded twice'); }
-window.__EC_APP_LOADED = true;
-
-// Language switching (no reload)
-(function () {
-  const toggle = document.getElementById('langToggle');
-  if (!toggle) return;
-
-  // Set active state based on current language
-  function setActive(lang) {
-    toggle.querySelectorAll('.lang-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.lang === lang);
-    });
-  }
-
-  async function setLang(lang) {
-    // Keep URL in sync (…?lang=xx), no page reload
-    const url = new URL(location.href);
-    url.searchParams.set('lang', lang);
-    history.replaceState({}, '', url);
-
-    // Update global + <html lang="…">
-    window.__EC_LANG = lang;
-    document.documentElement.setAttribute('lang', lang);
-
-    // Load + apply translations
-    const dict = await loadI18n(lang);
-    applyI18n(dict);
-
-    document.addEventListener("DOMContentLoaded", () => {
-  const btnEn = document.getElementById("btnLangEn");
-  const btnEs = document.getElementById("btnLangEs");
-  const btnNl = document.getElementById("btnLangNl");  // <— nieuw
-  if (btnEn) btnEn.addEventListener("click", () => i18nSetLang("en"));
-  if (btnEs) btnEs.addEventListener("click", () => i18nSetLang("es"));
-  if (btnNl) btnNl.addEventListener("click", () => i18nSetLang("nl")); // <—
-});
-
-    // Refresh any dynamic labels that use i18n text
-    if (typeof updateCounts === 'function') updateCounts();
-
-    setActive(lang);
-  }
-
-  // Click handlers
-  toggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('.lang-btn');
-    if (!btn) return;
-    const lang = btn.dataset.lang;
-    if (!lang) return;
-    setLang(lang);
-  });
-
-  // Initialize active state on first load
-  setActive(window.__EC_LANG || 'en');
-})();
-(function(){
 // js/app.js
 (() => {
   // ---------- Config / DEV mode ----------
   const qs = new URLSearchParams(location.search);
   const DEV = qs.get('dev') === '1';
 
-  // window.EC.API_BASE can be set in js/config.js for production.
   window.EC = window.EC || {};
   const API_BASE = EC.API_BASE || null;
 
@@ -99,7 +37,7 @@ window.__EC_APP_LOADED = true;
   // ---------- State ----------
   const state = {
     level: localStorage.getItem('ec.level') || 'C1',
-    lang: localStorage.getItem('ec.lang') || (document.documentElement.lang || 'en'),
+    lang:  localStorage.getItem('ec.lang')  || (document.documentElement.lang || 'en'),
   };
 
   // ---------- DOM helpers ----------
@@ -107,64 +45,74 @@ window.__EC_APP_LOADED = true;
   const $$ = s => Array.from(document.querySelectorAll(s));
 
   const el = {
-    task:      $('#task'),
-    essay:     $('#essay'),
-    nextDraft: $('#nextDraft'),
-    feedback:  $('#feedback'),
-    edits:     $('#edits'),
+    task:       $('#task'),
+    essay:      $('#essay'),
+    nextDraft:  $('#nextDraft'),
+    feedback:   $('#feedback'),
+    edits:      $('#edits'),
     btnCorrect: $('#btnCorrect'),
     btnClear:   $('#btnClear'),
-    inWC:      $('#inWC'),
-    outWC:     $('#outWC'),
+    inWC:       $('#inWC'),
+    outWC:      $('#outWC'),
   };
 
-  // Ensure required elements exist (helps catch broken IDs in HTML)
+  // Warn if expected elements are missing (helps catch HTML typos)
   for (const [k, v] of Object.entries(el)) {
     if (!v) console.warn(`[app] Missing element for ${k}`);
   }
 
-  // ---------- Init UI ----------
+  // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', () => {
     reflectActiveLanguage();
     reflectActiveLevel();
     updateCounters();
   });
 
+  // Live word count
+  if (el.essay) {
+    ['input', 'change'].forEach(ev => el.essay.addEventListener(ev, updateCounters));
+  }
+
   // ---------- Event delegation ----------
   document.addEventListener('click', async (e) => {
+    // Language buttons
     const langBtn = e.target.closest('[data-lang]');
     if (langBtn) {
       const lang = langBtn.getAttribute('data-lang');
       try {
-        await I18N.load(lang);
+        await I18N.load(lang);                 // translate DOM
         state.lang = lang;
         localStorage.setItem('ec.lang', lang);
+        document.documentElement.lang = lang;
         reflectActiveLanguage();
+        updateCounters();                      // update localized counters text
       } catch (err) {
         console.error('[lang] failed to load', err);
       }
+      return;
     }
 
+    // Level buttons
     const levelBtn = e.target.closest('[data-level]');
     if (levelBtn) {
       state.level = levelBtn.getAttribute('data-level');
       localStorage.setItem('ec.level', state.level);
       reflectActiveLevel();
+      return;
     }
 
+    // Clear
     if (e.target === el.btnClear) {
       handleClear();
+      return;
     }
 
+    // Correct
     if (e.target === el.btnCorrect) {
       handleCorrect();
+      return;
     }
   });
-
-  // Live word count
-  if (el.essay) {
-    ['input', 'change'].forEach(ev => el.essay.addEventListener(ev, updateCounters));
-  }
 
   // ---------- Handlers ----------
   function handleClear() {
@@ -178,6 +126,7 @@ window.__EC_APP_LOADED = true;
 
   async function handleCorrect() {
     if (!el.btnCorrect || !el.essay) return;
+
     const payload = {
       level: state.level,
       task:  (el.task?.value || ''),
@@ -185,7 +134,6 @@ window.__EC_APP_LOADED = true;
     };
 
     if (!payload.essay.trim()) {
-      // tiny UX nudge
       if (el.feedback) el.feedback.textContent = 'Please write or paste your essay first.';
       return;
     }
@@ -195,14 +143,16 @@ window.__EC_APP_LOADED = true;
       if (el.feedback) el.feedback.textContent = '…';
       const res = await EC.correct(payload);
 
-      // Render results
-      if (el.feedback) el.feedback.textContent = res.feedback || '—';
+      // Render
+      if (el.feedback)  el.feedback.textContent = res.feedback || '—';
       if (el.nextDraft) el.nextDraft.value = res.nextDraft || '';
-      if (el.edits) el.edits.innerHTML = (res.edits || [])
-        .map(e => `<li><strong>${escapeHTML(e.from)}</strong> → <em>${escapeHTML(e.to)}</em> — ${escapeHTML(e.reason)}</li>`)
-        .join('');
+      if (el.edits) {
+        el.edits.innerHTML = (res.edits || [])
+          .map(e => `<li><strong>${escapeHTML(e.from)}</strong> → <em>${escapeHTML(e.to)}</em> — ${escapeHTML(e.reason)}</li>`)
+          .join('');
+      }
 
-      // Counters
+      // Counters (use localized strings currently in DOM if present)
       setCounter(el.inWC,  res.inputWords,  'Input: {n} words');
       setCounter(el.outWC, res.outputWords, 'Output: {n} words');
     } catch (err) {
@@ -240,6 +190,7 @@ window.__EC_APP_LOADED = true;
 
   function setCounter(node, n, fallback) {
     if (!node) return;
+    // If node has translated content with "{n}", reuse it; else use fallback
     const s = node.getAttribute('data-i18n') ? node.textContent : fallback;
     node.textContent = (s || fallback).replace(/\{n\}/, n ?? 0);
   }
@@ -248,7 +199,7 @@ window.__EC_APP_LOADED = true;
   function countWords(text) {
     const t = String(text || '').trim();
     return t ? t.split(/\s+/).length : 0;
-    }
+  }
 
   function buildMockEdits(level, text) {
     const edits = [];
