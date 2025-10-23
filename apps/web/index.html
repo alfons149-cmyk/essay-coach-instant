@@ -8,6 +8,43 @@
   <!-- Styles -->
   <link rel="stylesheet" href="./css/style.css" />
 
+  <script>
+window.I18N = (function(){
+  const FALLBACK_LANG = 'en';
+  const SUPPORTED = ['en','es','nl'];
+
+  let current = localStorage.getItem('ec.lang') || FALLBACK_LANG;
+  if (!SUPPORTED.includes(current)) current = FALLBACK_LANG;
+
+  async function load(lang){
+    const url = `./i18n/${lang}.json`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`i18n load failed: ${lang}`);
+    const dict = await res.json();
+    current = lang;
+    localStorage.setItem('ec.lang', lang);
+    translateDOM(dict);
+  }
+
+  function t(key, dict){
+    return (dict && dict[key]) || key;
+  }
+
+  function translateDOM(dict){
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.getAttribute('data-i18n');
+      el.textContent = t(key, dict);
+    });
+    // placeholders
+    document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+      const key = el.getAttribute('data-i18n-ph');
+      el.setAttribute('placeholder', t(key, dict));
+    });
+  }
+
+  return { load, get lang(){ return current; } };
+})();
+</script>
   <!-- Detect ?lang=es or /es/ and expose to JS -->
   <script>
     (function () {
