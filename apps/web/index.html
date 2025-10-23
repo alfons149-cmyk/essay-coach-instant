@@ -149,23 +149,28 @@ document.addEventListener('click', (e)=>{
 </span>
 </header>
 
-<main class="container">
-<div class="grid">
-<section class="panel">
-<h3 data-i18n="labels.prompt">Task prompt</h3>
-<textarea id="task" placeholder="Paste the exam task here..."></textarea>
-<h3 data-i18n="labels.essay">Your essay</h3>
-<textarea id="essay" placeholder="Paste or write your essay here..."></textarea>
-<div class="row" style="align-items:center;justify-content:space-between">
-<div class="row">
-<span class="pill" id="inWC">Input: 0 words</span>
-<span class="pill" id="outWC">Output: 0 words</span>
-<span class="pill" id="p2TargetWC">—</span>
-</div>
-<div class="row">
-<button class="btn" id="btnCorrect" data-i18n="buttons.correct">Correct</button>
-<button class="btn ghost" id="btnClear" data-i18n="buttons.clear">Clear</button>
-</div>
+<textarea id="task" data-i18n-ph="placeholders.task"></textarea>
+<textarea id="essay" data-i18n-ph="placeholders.essay"></textarea>
+
+<div id="inWC" data-i18n="io.input_words">Input: {n} words</div>
+<div id="outWC" data-i18n="io.output_words">Output: {n} words</div>
+
+<button id="btnCorrect" data-i18n="buttons.correct">Correct</button>
+<button id="btnClear"   data-i18n="buttons.clear">Clear</button>
+
+<div id="feedbackTitle" data-i18n="labels.feedback">Feedback</div>
+<div id="feedback"></div>
+
+<div id="editsTitle" data-i18n="labels.edits">Edits</div>
+<ul id="edits"></ul>
+
+<div id="nextTitle" data-i18n="labels.next_draft">Next draft</div>
+<textarea id="nextDraft"></textarea>
+
+<!-- Level toggles -->
+<button data-level="B2">B2</button>
+<button data-level="C1">C1</button>
+<button data-level="C2">C2</button>
 </div>
 </section>
 
