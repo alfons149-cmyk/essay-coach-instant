@@ -5,6 +5,7 @@
   const stored = localStorage.getItem("ec_lang");
   const pathIsEs = location.pathname.replace(/\/+$/,"").endsWith("/es") || location.pathname.includes("/es/");
   const initial = qp || stored || (pathIsEs ? "es" : "en");
+  const SUPPORTED = ["en", "es", "nl"]; // <— nl toegevoegd
   window.__EC_LANG = initial;
   document.documentElement.setAttribute("lang", initial);
 })();
