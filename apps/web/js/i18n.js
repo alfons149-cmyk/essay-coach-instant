@@ -1,89 +1,137 @@
-// Determine initial lang: ?lang → localStorage → /es path → default
-(function initLangBoot() {
-  const qs = new URLSearchParams(location.search);
-  const qp = qs.get("lang");
-  const stored = localStorage.getItem("ec_lang");
-  const pathIsEs = location.pathname.replace(/\/+$/,"").endsWith("/es") || location.pathname.includes("/es/");
-  const initial = qp || stored || (pathIsEs ? "es" : "en");
-  const SUPPORTED = ["en", "es", "nl"]; // <— nl toegevoegd
-  window.__EC_LANG = initial;
-  document.documentElement.setAttribute("lang", initial);
-})();
-
 // js/i18n.js
 (() => {
   const FALLBACK = 'en';
   const SUPPORTED = ['en', 'es', 'nl'];
+  const STORAGE_KEY = 'ec.lang';
+  let CURRENT = FALLBACK;
+  let DICT = {};
 
+  // -------- Lang resolution on first load --------
+  function resolveInitialLang() {
+    const qs = new URLSearchParams(location.search);
+    const qp = qs.get('lang');
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+
+    // path-based hint (/es/ or /nl/)
+    const path = location.pathname.replace(/\/+$/, '');
+    const pathHint =
+      path.endsWith('/es') || path.includes('/es/') ? 'es' :
+      path.endsWith('/nl') || path.includes('/nl/') ? 'nl' :
+      null;
+
+    const htmlLang = document.documentElement.lang;
+
+    const cand = qp || stored || pathHint || htmlLang || FALLBACK;
+    return SUPPORTED.includes(cand) ? cand : FALLBACK;
+  }
+
+  // -------- Fetch + apply --------
   async function load(lang) {
     const use = SUPPORTED.includes(lang) ? lang : FALLBACK;
     const res = await fetch(`i18n/${use}.json`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`i18n load failed: ${use}`);
-    const dict = await res.json();
-    localStorage.setItem('ec.lang', use);
-    translate(dict);
+    DICT = await res.json();
+
+    CURRENT = use;
+    localStorage.setItem(STORAGE_KEY, use);
+    document.documentElement.lang = use;
+
+    translateDOM();
+    // Notify listeners (counters etc.)
+    window.dispatchEvent(new CustomEvent('ec:lang-changed', { detail: { lang: use } }));
+    return DICT;
   }
 
-  function t(key, dict) {
-    return (dict && dict[key]) || key;
+  // -------- Translate helpers --------
+  function format(str, params) {
+    if (!params) return str;
+    return String(str).replace(/\{(\w+)\}/g, (_, k) =>
+      Object.prototype.hasOwnProperty.call(params, k) ? String(params[k]) : `{${k}}`
+    );
   }
 
-  function translate(dict) {
+  function t(key, params) {
+    const s = (DICT && DICT[key]) || key;
+    return format(s, params);
+  }
+
+  function translateDOM() {
+    // text content
     document.querySelectorAll('[data-i18n]').forEach(el => {
-      el.textContent = t(el.getAttribute('data-i18n'), dict);
+      const key = el.getAttribute('data-i18n');
+      el.textContent = t(key);
     });
+    // placeholders
     document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'), dict));
+      const key = el.getAttribute('data-i18n-ph');
+      el.setAttribute('placeholder', t(key));
     });
   }
 
-  window.I18N = { load };
-  // auto-boot once DOM is ready (page decides default language)
+  // -------- Public API --------
+  window.I18N = {
+    load,
+    t,
+    get lang() { return CURRENT; },
+    translateDOM
+  };
+
+  // -------- Auto boot on DOM ready --------
   document.addEventListener('DOMContentLoaded', () => {
-    const init = localStorage.getItem('ec.lang') || document.documentElement.lang || FALLBACK;
-    I18N.load(init).catch(e => console.warn(e));
+    const init = resolveInitialLang();
+    load(init).catch(e => console.warn('[i18n] boot failed', e));
   });
-})();
 
-// Wire language buttons
-document.addEventListener("DOMContentLoaded", () => {
-  const btnEn = document.getElementById("btnLangEn");
-  const btnEs = document.getElementById("btnLangEs");
-  if (btnEn) btnEn.addEventListener("click", () => i18nSetLang("en"));
-  if (btnEs) btnEs.addEventListener("click", () => i18nSetLang("es"));
-});
-
-// Example: use t() for dynamic labels (word-count pills etc.)
-(function setupDynamicLabels(){
-  const essayEl = document.getElementById("essay");
-  const inEl = document.getElementById("inWC");
-  const outEl = document.getElementById("outWC");
-  const lvlEl = document.getElementById("level");
-  const targetEl = document.getElementById("p2TargetWC");
-
-  function wordCount(s){ return (s||"").trim().split(/\s+/).filter(Boolean).length; }
-  function p2TargetForLevel(lvl){
-    const map={B2:{min:140,max:190,label:"B2: 140–190"}, C1:{min:220,max:260,label:"C1: 220–260"}, C2:{min:240,max:280,label:"C2: 240–280"}};
-    return map[lvl]||map.C1;
-  }
-
-  function refreshCounts(){
-    const wc = wordCount(essayEl.value);
-    inEl.textContent = t("io.input_words", { n: wc });
-    targetEl.textContent = p2TargetForLevel(lvlEl.value).label;
-  }
-  essayEl.addEventListener("input", refreshCounts);
-  lvlEl.addEventListener("change", refreshCounts);
-  window.addEventListener("ec:lang-changed", refreshCounts);
-  refreshCounts();
-
-  // If you set outEl dynamically after correction, use:
-  // outEl.textContent = t("io.output_words", { n: someNumber });
-})();
-
-  // placeholders (e.g., <textarea data-i18n-placeholder="placeholders.task">…</textarea>)
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
-    if (dict && dict[key]) el.setAttribute('placeholder', dict[key]);
+  // -------- Language buttons (delegated) --------
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-lang]');
+    if (!btn) return;
+    const lang = btn.getAttribute('data-lang');
+    if (!lang || lang === CURRENT) return;
+    load(lang).catch(err => console.error('[i18n] load failed', err));
   });
-}
+
+  // -------- Optional: dynamic labels helper (safe) --------
+  (function dynamicLabels() {
+    const essayEl = document.getElementById('essay');
+    const inEl    = document.getElementById('inWC');
+    const outEl   = document.getElementById('outWC');
+    const levelEl = document.getElementById('level');       // optional
+    const targetEl= document.getElementById('p2TargetWC');  // optional
+
+    if (!essayEl || !inEl) return; // not present on some pages
+
+    function wordCount(s) {
+      const t = String(s || '').trim();
+      return t ? t.split(/\s+/).length : 0;
+    }
+
+    function p2TargetForLevel(lvl) {
+      const map = {
+        B2: { min: 140, max: 190, label: 'B2: 140–190' },
+        C1: { min: 220, max: 260, label: 'C1: 220–260' },
+        C2: { min: 240, max: 280, label: 'C2: 240–280' }
+      };
+      return map[lvl] || map.C1;
+    }
+
+    function refreshCounts() {
+      const wc = wordCount(essayEl.value);
+      inEl.textContent  = I18N.t('io.input_words',  { n: wc });
+      if (outEl && outEl.textContent.includes('{n}')) {
+        // if someone prefilled with a template string; keep it sane
+        outEl.textContent = I18N.t('io.output_words', { n: wc });
+      }
+      if (levelEl && targetEl) {
+        targetEl.textContent = p2TargetForLevel(levelEl.value).label;
+      }
+    }
+
+    essayEl.addEventListener('input', refreshCounts);
+    if (levelEl) levelEl.addEventListener('change', refreshCounts);
+    window.addEventListener('ec:lang-changed', refreshCounts);
+
+    refreshCounts();
+  })();
+})();
