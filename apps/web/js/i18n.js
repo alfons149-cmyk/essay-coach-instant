@@ -10,9 +10,40 @@
   document.documentElement.setAttribute("lang", initial);
 })();
 
-// Load & apply on boot
-const lang = window.__EC_LANG || "en";
-loadI18n(lang).then(applyI18n).catch(console.error);
+// js/i18n.js
+(() => {
+  const FALLBACK = 'en';
+  const SUPPORTED = ['en', 'es', 'nl'];
+
+  async function load(lang) {
+    const use = SUPPORTED.includes(lang) ? lang : FALLBACK;
+    const res = await fetch(`i18n/${use}.json`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`i18n load failed: ${use}`);
+    const dict = await res.json();
+    localStorage.setItem('ec.lang', use);
+    translate(dict);
+  }
+
+  function t(key, dict) {
+    return (dict && dict[key]) || key;
+  }
+
+  function translate(dict) {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.getAttribute('data-i18n'), dict);
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'), dict));
+    });
+  }
+
+  window.I18N = { load };
+  // auto-boot once DOM is ready (page decides default language)
+  document.addEventListener('DOMContentLoaded', () => {
+    const init = localStorage.getItem('ec.lang') || document.documentElement.lang || FALLBACK;
+    I18N.load(init).catch(e => console.warn(e));
+  });
+})();
 
 // Wire language buttons
 document.addEventListener("DOMContentLoaded", () => {
