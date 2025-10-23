@@ -1,23 +1,147 @@
 <!doctype html>
-<html lang="es" data-theme="coral">  
+<html lang="es" data-theme="coral">
 <head>
-  <meta charset="utf-8" />
-  <title>Redirigiendo…</title>
-  <meta name="robots" content="noindex" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit (ES)</title>
+
+  <!-- Make all relative paths point to your GitHub Pages repo root -->
+  <base href="/essay-coach-instant/">
+
+  <!-- Icons & PWA -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#111111" />
+
+  <!-- Fonts (optional) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Scripts: load in this exact order -->
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/config.js"></script>
+  <script defer src="js/app.js"></script>
+
+  <!-- Force ES on first load if no saved language, then boot i18n -->
   <script>
-    (function () {
-      // Current path is .../<repo>/es/ or .../<repo>/es
-      var base = location.pathname.replace(/\/es\/?$/, "/");  // -> .../<repo>/
-      var target = base + "index.html?lang=es";
-      // JS redirect
-      location.replace(target);
-    })();
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      if (!localStorage.getItem('ec.lang')) {
+        localStorage.setItem('ec.lang', 'es');
+      }
+      if (window.I18N && typeof I18N.load === 'function') {
+        await I18N.load(localStorage.getItem('ec.lang') || 'es');
+      }
+    } catch (e) { console.warn('[ES boot] i18n load fallback', e); }
+  });
   </script>
-  <!-- Meta refresh as a fallback -->
-  <meta http-equiv="refresh" content="0; url=../index.html?lang=es">
 </head>
 <body>
-  Redirigiendo a la versión en español…
-  <noscript><a href="../index.html?lang=es">Ir a la versión en español</a></noscript>
+  <noscript>Esta aplicación necesita JavaScript para funcionar.</noscript>
+
+  <!-- Top bar: language switcher & API indicator -->
+  <header class="topbar">
+    <nav class="row" style="gap:8px; padding:10px 14px">
+      <button class="btn-ghost"  data-lang="en">EN</button>
+      <button class="btn-primary" data-lang="es">ES</button>
+      <button class="btn-ghost"  data-lang="nl">nl</button>
+      <span style="margin-left:auto"></span>
+      <small id="apiBadge" title="API status">API: <span id="apiMode">auto</span></small>
+      <small id="devBadge" style="margin-left:8px">DEV MODE</small>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1 class="app-title">EssayCoach – Cambridge Toolkit</h1>
+
+    <!-- Level toggles -->
+    <section class="panel">
+      <div class="row" style="gap:8px;">
+        <strong>Nivel:</strong>
+        <button class="pill" data-level="B2">B2</button>
+        <button class="pill" data-level="C1">C1</button>
+        <button class="pill" data-level="C2">C2</button>
+      </div>
+    </section>
+
+    <!-- Inputs -->
+    <section class="grid-2">
+      <div class="card">
+        <div class="card-title" data-i18n="labels.prompt">Instrucción de la tarea</div>
+        <textarea id="task" rows="6" data-i18n-ph="placeholders.task"> </textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-title" data-i18n="labels.essay">Tu redacción</div>
+        <textarea id="essay" rows="12" data-i18n-ph="placeholders.essay"> </textarea>
+      </div>
+    </section>
+
+    <!-- Toolbar -->
+    <section class="toolbar row" style="gap:8px; align-items:center;">
+      <button id="btnCorrect" class="btn-primary" data-i18n="buttons.correct">Corregir</button>
+      <button id="btnClear"   class="btn-ghost"  data-i18n="buttons.clear">Borrar</button>
+
+      <span class="spacer"></span>
+
+      <!-- Word counters -->
+      <div id="inWC"  class="pill" data-i18n="io.input_words">Entrada: {n} palabras</div>
+      <div id="outWC" class="pill" data-i18n="io.output_words">Salida: {n} palabras</div>
+    </section>
+
+    <!-- Results -->
+    <section class="grid-2">
+      <div class="card">
+        <div class="card-title" data-i18n="labels.feedback">Retroalimentación</div>
+        <div id="feedback" class="prose">—</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" data-i18n="labels.edits">Cambios</div>
+        <ul id="edits" class="list"> </ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title" data-i18n="labels.next_draft">Versión siguiente</div>
+      <textarea id="nextDraft" rows="10" placeholder=""></textarea>
+    </section>
+  </main>
+
+  <!-- Language switch handler -->
+  <script>
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-lang]');
+    if (!btn) return;
+    const lang = btn.getAttribute('data-lang');
+    try {
+      localStorage.setItem('ec.lang', lang);
+      if (window.I18N && typeof I18N.load === 'function') {
+        I18N.load(lang);
+      } else {
+        location.reload();
+      }
+    } catch (err) {
+      console.error('[lang switch]', err);
+    }
+  });
+  </script>
+
+  <!-- API/dev badges -->
+  <script>
+  (function(){
+    const qs  = new URLSearchParams(location.search);
+    const dev = qs.get('dev') === '1';
+    const api = (window.EC && EC.API_BASE) ? 'live' : (dev ? 'mock' : 'auto');
+    const el  = document.getElementById('apiMode');
+    const devEl = document.getElementById('devBadge');
+    if (el) el.textContent = api;
+    if (devEl) devEl.style.display = dev ? 'inline' : 'none';
+  })();
+  </script>
 </body>
 </html>
