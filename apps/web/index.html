@@ -97,6 +97,74 @@ document.addEventListener('click', (e)=>{
   window.I18N.load(lang).catch(err=>console.error(err));
 });
 </script>
+
+  <script>
+(function(){
+  const $ = (sel)=>document.querySelector(sel);
+
+  // Persist level
+  let level = localStorage.getItem('ec.level') || 'C1';
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-level]');
+    if (!btn) return;
+    level = btn.getAttribute('data-level');
+    localStorage.setItem('ec.level', level);
+  });
+
+  // Word counters
+  const essayEl = $('#essay');
+  const inWCEl  = $('#inWC');
+  const outWCEl = $('#outWC');
+
+  function updateCounters(){
+    const txt = (essayEl.value||'').trim();
+    const wc = txt ? txt.split(/\s+/).length : 0;
+    inWCEl.textContent  = (inWCEl.textContent||'Input: {n} words').replace(/\{n\}/, wc);
+    outWCEl.textContent = (outWCEl.textContent||'Output: {n} words').replace(/\{n\}/, wc);
+  }
+  ['input','change'].forEach(ev=>essayEl.addEventListener(ev, updateCounters));
+  updateCounters();
+
+  // Clear
+  $('#btnClear').addEventListener('click', ()=>{
+    $('#task').value = '';
+    essayEl.value = '';
+    $('#feedback').textContent = '—';
+    $('#edits').innerHTML = '';
+    $('#nextDraft').value = '';
+    updateCounters();
+  });
+
+  // Correct
+  $('#btnCorrect').addEventListener('click', async ()=>{
+    const payload = {
+      level,
+      task: $('#task').value || '',
+      essay: essayEl.value || ''
+    };
+    try{
+      $('#btnCorrect').disabled = true;
+      $('#feedback').textContent = '…';
+      const res = await EC.correct(payload);
+
+      // render
+      $('#feedback').textContent = res.feedback || '—';
+      $('#nextDraft').value = res.nextDraft || '';
+      $('#edits').innerHTML = (res.edits||[])
+        .map(e => `<li><strong>${e.from}</strong> → <em>${e.to}</em> — ${e.reason}</li>`).join('');
+
+      // counters
+      inWCEl.textContent  = (inWCEl.textContent||'Input: {n} words').replace(/\{n\}/, res.inputWords ?? 0);
+      outWCEl.textContent = (outWCEl.textContent||'Output: {n} words').replace(/\{n\}/, res.outputWords ?? 0);
+    } catch(err){
+      console.error(err);
+      $('#feedback').textContent = '⚠️ Correction failed. Check API or dev mode.';
+    } finally {
+      $('#btnCorrect').disabled = false;
+    }
+  });
+})();
+</script>
   
   <!-- App scripts (order matters: i18n before app) -->
   <script defer src="./js/i18n.js"></script>
