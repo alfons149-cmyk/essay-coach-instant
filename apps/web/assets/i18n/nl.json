@@ -1,1 +1,11 @@
-
+{
+  "labels.prompt": "Opdracht",
+  "labels.essay": "Je essay",
+  "labels.feedback": "Feedback",
+  "buttons.correct": "Verbeteren",
+  "buttons.clear": "Wissen",
+  "io.input_words": "Invoer: {n} woorden",
+  "io.output_words": "Uitvoer: {n} woorden",
+  "placeholders.task": "Plak de examenopdracht hier...",
+  "placeholders.essay": "Plak of schrijf je essay hier..."
+}
