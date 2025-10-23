@@ -1,260 +1,147 @@
 <!doctype html>
 <html lang="en" data-theme="coral">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EssayCoach – Cambridge Toolkit</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EssayCoach – Cambridge Toolkit (EN)</title>
+
+  <!-- Make all relative paths point to your GitHub Pages repo root -->
+  <base href="/essay-coach-instant/">
+
+  <!-- Icons & PWA -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#111111" />
+
+  <!-- Fonts (optional) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="css/style.css">
 
+  <!-- Scripts: load in this exact order -->
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/config.js"></script>
+  <script defer src="js/app.js"></script>
+
+  <!-- Force EN on first load if no saved language, then boot i18n -->
   <script>
-window.I18N = (function(){
-  const FALLBACK_LANG = 'en';
-  const SUPPORTED = ['en','es','nl'];
-
-  let current = localStorage.getItem('ec.lang') || FALLBACK_LANG;
-  if (!SUPPORTED.includes(current)) current = FALLBACK_LANG;
-
-  async function load(lang){
-    const url = `./i18n/${lang}.json`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`i18n load failed: ${lang}`);
-    const dict = await res.json();
-    current = lang;
-    localStorage.setItem('ec.lang', lang);
-    translateDOM(dict);
-  }
-
-  function t(key, dict){
-    return (dict && dict[key]) || key;
-  }
-
-  function translateDOM(dict){
-    document.querySelectorAll('[data-i18n]').forEach(el=>{
-      const key = el.getAttribute('data-i18n');
-      el.textContent = t(key, dict);
-    });
-    // placeholders
-    document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
-      const key = el.getAttribute('data-i18n-ph');
-      el.setAttribute('placeholder', t(key, dict));
-    });
-  }
-
-  return { load, get lang(){ return current; } };
-})();
-</script>
-
-  <script>
-(async ()=>{
-  const saved = localStorage.getItem('ec.lang') || 'en';
-  try { await I18N.load(saved); } catch(e){ console.warn(e); await I18N.load('en'); }
-})();
-</script>
-  
-  <!-- Detect ?lang=es or /es/ and expose to JS -->
- <script>
-(function(){
-  const qs = new URLSearchParams(location.search);
-  const DEV = qs.get('dev') === '1';
-  window.EC = window.EC || {};
-  EC.API_BASE = DEV ? null : (window.EC?.API_BASE || null); // null ⇒ use mock in dev
-
-  EC.correct = async function(payload){
-    if (!DEV && EC.API_BASE){
-      const res = await fetch(`${EC.API_BASE}/correct`, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('API error');
-      return res.json();
-    }
-    // --- DEV MOCK ---
-    await new Promise(r=>setTimeout(r, 600));
-    const txt = payload.essay || '';
-    const wc = txt.trim() ? txt.trim().split(/\s+/).length : 0;
-    return {
-      level: payload.level,
-      inputWords: wc,
-      outputWords: wc,
-      feedback: `✅ Mock feedback for ${payload.level}. Focus on clarity and cohesion.`,
-      edits: [
-        {from: "is", to: "appears to be", reason: "More formal register"},
-        {from: "a lot", to: "substantially", reason: "C2 register"}
-      ],
-      nextDraft: txt.replace(/\bis\b/g, 'appears to be'),
-    };
-  };
-})();
-</script>
-
-  <script>
-document.addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-lang]');
-  if (!btn) return;
-  const lang = btn.getAttribute('data-lang');
-  window.I18N.load(lang).catch(err=>console.error(err));
-});
-</script>
-
-  <script>
-(function(){
-  const $ = (sel)=>document.querySelector(sel);
-
-  // Persist level
-  let level = localStorage.getItem('ec.level') || 'C1';
-  document.addEventListener('click', (e)=>{
-    const btn = e.target.closest('[data-level]');
-    if (!btn) return;
-    level = btn.getAttribute('data-level');
-    localStorage.setItem('ec.level', level);
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      if (!localStorage.getItem('ec.lang')) {
+        localStorage.setItem('ec.lang', 'en');
+      }
+      if (window.I18N && typeof I18N.load === 'function') {
+        await I18N.load(localStorage.getItem('ec.lang') || 'en');
+      }
+    } catch (e) { console.warn('[EN boot] i18n load fallback', e); }
   });
-
-  // Word counters
-  const essayEl = $('#essay');
-  const inWCEl  = $('#inWC');
-  const outWCEl = $('#outWC');
-
-  function updateCounters(){
-    const txt = (essayEl.value||'').trim();
-    const wc = txt ? txt.split(/\s+/).length : 0;
-    inWCEl.textContent  = (inWCEl.textContent||'Input: {n} words').replace(/\{n\}/, wc);
-    outWCEl.textContent = (outWCEl.textContent||'Output: {n} words').replace(/\{n\}/, wc);
-  }
-  ['input','change'].forEach(ev=>essayEl.addEventListener(ev, updateCounters));
-  updateCounters();
-
-  // Clear
-  $('#btnClear').addEventListener('click', ()=>{
-    $('#task').value = '';
-    essayEl.value = '';
-    $('#feedback').textContent = '—';
-    $('#edits').innerHTML = '';
-    $('#nextDraft').value = '';
-    updateCounters();
-  });
-
-  // Correct
-  $('#btnCorrect').addEventListener('click', async ()=>{
-    const payload = {
-      level,
-      task: $('#task').value || '',
-      essay: essayEl.value || ''
-    };
-    try{
-      $('#btnCorrect').disabled = true;
-      $('#feedback').textContent = '…';
-      const res = await EC.correct(payload);
-
-      // render
-      $('#feedback').textContent = res.feedback || '—';
-      $('#nextDraft').value = res.nextDraft || '';
-      $('#edits').innerHTML = (res.edits||[])
-        .map(e => `<li><strong>${e.from}</strong> → <em>${e.to}</em> — ${e.reason}</li>`).join('');
-
-      // counters
-      inWCEl.textContent  = (inWCEl.textContent||'Input: {n} words').replace(/\{n\}/, res.inputWords ?? 0);
-      outWCEl.textContent = (outWCEl.textContent||'Output: {n} words').replace(/\{n\}/, res.outputWords ?? 0);
-    } catch(err){
-      console.error(err);
-      $('#feedback').textContent = '⚠️ Correction failed. Check API or dev mode.';
-    } finally {
-      $('#btnCorrect').disabled = false;
-    }
-  });
-})();
-</script>
-  
-  <!-- App scripts (order matters: i18n before app) -->
-  <link rel="stylesheet" href="./css/style.css">
-<script defer src="./js/i18n.js"></script>        <!-- or the inline i18n block above -->
-<script defer src="./js/config.js"></script>       <!-- defines window.EC.API_BASE in PROD -->
-<script defer src="./js/app.js"></script>     
-  
-  <!-- Inline styles (keep or move to style.css) -->
-  <style>
-    body{font-family:Inter,system-ui,Arial,sans-serif; margin:0;}
-    header,footer{padding:12px 16px}
-    .container{max-width:1000px;margin:0 auto;padding:16px}
-    textarea{width:100%;min-height:220px;padding:12px;font-size:16px}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid #bbb}
-    .pill.ok{background:#e7f7ea;border-color:#58a869}
-    .pill.warn{background:#fff6e6;border-color:#d08b39}
-    .btn{padding:8px 12px;border:1px solid #222;border-radius:10px;background:#111;color:#fff;cursor:pointer}
-    .btn.ghost{background:#fff;color:#111;border-color:#aaa}
-    .panel{border:1px solid #ddd;border-radius:12px;padding:12px}
-    .muted{color:#666}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}}
-  </style>
+  </script>
 </head>
 <body>
-<header class="row">
-<strong>EssayCoach</strong>
-<span class="muted" id="devBanner" style="display:none">DEV MODE</span>
-<span style="margin-left:auto">
-<select id="level">
-<option value="B2">B2</option>
-<option value="C1" selected>C1</option>
-<option value="C2">C2</option>
-</select>
-</span>
-  <span style="margin-left:auto" class="row">
-  <select id="level">
-    <option value="B2">B2</option>
-    <option value="C1" selected>C1</option>
-    <option value="C2">C2</option>
-  </select>
+  <noscript>This app requires JavaScript to run.</noscript>
 
-  <!-- Language toggle -->
-  <div id="langToggle" class="lang-toggle">
-    <button type="button" data-lang="en" class="lang-btn">EN</button>
-    <button type="button" data-lang="es" class="lang-btn">ES</button>
-    <button type="button" data-lang="nl" class="lang-btn">nl</button>
-  </div>
-</span>
-</header>
+  <!-- Top bar: language switcher & API indicator -->
+  <header class="topbar">
+    <nav class="row" style="gap:8px; padding:10px 14px">
+      <button class="btn-primary" data-lang="en">EN</button>
+      <button class="btn-ghost"  data-lang="es">ES</button>
+      <button class="btn-ghost"  data-lang="nl">nl</button>
+      <span style="margin-left:auto"></span>
+      <small id="apiBadge" title="API status">API: <span id="apiMode">auto</span></small>
+      <small id="devBadge" style="margin-left:8px">DEV MODE</small>
+    </nav>
+  </header>
 
-<textarea id="task" data-i18n-ph="placeholders.task"></textarea>
-<textarea id="essay" data-i18n-ph="placeholders.essay"></textarea>
+  <main class="container">
+    <h1 class="app-title">EssayCoach – Cambridge Toolkit</h1>
 
-<div id="inWC" data-i18n="io.input_words">Input: {n} words</div>
-<div id="outWC" data-i18n="io.output_words">Output: {n} words</div>
+    <!-- Level toggles -->
+    <section class="panel">
+      <div class="row" style="gap:8px;">
+        <strong>Level:</strong>
+        <button class="pill" data-level="B2">B2</button>
+        <button class="pill" data-level="C1">C1</button>
+        <button class="pill" data-level="C2">C2</button>
+      </div>
+    </section>
 
-<button id="btnCorrect" data-i18n="buttons.correct">Correct</button>
-<button id="btnClear"   data-i18n="buttons.clear">Clear</button>
+    <!-- Inputs -->
+    <section class="grid-2">
+      <div class="card">
+        <div class="card-title" data-i18n="labels.prompt">Task prompt</div>
+        <textarea id="task" rows="6" data-i18n-ph="placeholders.task"> </textarea>
+      </div>
 
-<div id="feedbackTitle" data-i18n="labels.feedback">Feedback</div>
-<div id="feedback"></div>
+      <div class="card">
+        <div class="card-title" data-i18n="labels.essay">Your essay</div>
+        <textarea id="essay" rows="12" data-i18n-ph="placeholders.essay"> </textarea>
+      </div>
+    </section>
 
-<div id="editsTitle" data-i18n="labels.edits">Edits</div>
-<ul id="edits"></ul>
+    <!-- Toolbar -->
+    <section class="toolbar row" style="gap:8px; align-items:center;">
+      <button id="btnCorrect" class="btn-primary" data-i18n="buttons.correct">Correct</button>
+      <button id="btnClear"   class="btn-ghost"  data-i18n="buttons.clear">Clear</button>
 
-<div id="nextTitle" data-i18n="labels.next_draft">Next draft</div>
-<textarea id="nextDraft"></textarea>
+      <span class="spacer"></span>
 
-<!-- Level toggles -->
-<button data-level="B2">B2</button>
-<button data-level="C1">C1</button>
-<button data-level="C2">C2</button>
-</div>
-</section>
+      <!-- Word counters -->
+      <div id="inWC"  class="pill" data-i18n="io.input_words">Input: {n} words</div>
+      <div id="outWC" class="pill" data-i18n="io.output_words">Output: {n} words</div>
+    </section>
 
-<section class="panel">
-<h3 data-i18n="labels.feedback">Feedback</h3>
-<div id="scores" class="muted">—</div>
-<h4>Edits</h4>
-<ol id="edits"></ol>
-<h4>Next draft</h4>
-<ul id="next"></ul>
-</section>
-</div>
-</main>
+    <!-- Results -->
+    <section class="grid-2">
+      <div class="card">
+        <div class="card-title" data-i18n="labels.feedback">Feedback</div>
+        <div id="feedback" class="prose">—</div>
+      </div>
 
-<footer class="container muted">
-<small>API: <span id="apiInfo">(auto)</span></small>
-</footer>
+      <div class="card">
+        <div class="card-title" data-i18n="labels.edits">Edits</div>
+        <ul id="edits" class="list"> </ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title" data-i18n="labels.next_draft">Next draft</div>
+      <textarea id="nextDraft" rows="10" placeholder=""></textarea>
+    </section>
+  </main>
+
+  <!-- Language switch handler -->
+  <script>
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-lang]');
+    if (!btn) return;
+    const lang = btn.getAttribute('data-lang');
+    try {
+      localStorage.setItem('ec.lang', lang);
+      if (window.I18N && typeof I18N.load === 'function') {
+        I18N.load(lang);
+      } else {
+        location.reload();
+      }
+    } catch (err) {
+      console.error('[lang switch]', err);
+    }
+  });
+  </script>
+
+  <!-- API/dev badges -->
+  <script>
+  (function(){
+    const qs  = new URLSearchParams(location.search);
+    const dev = qs.get('dev') === '1';
+    const api = (window.EC && EC.API_BASE) ? 'live' : (dev ? 'mock' : 'auto');
+    const el  = document.getElementById('apiMode');
+    const devEl = document.getElementById('devBadge');
+    if (el) el.textContent = api;
+    if (devEl) devEl.style.display = dev ? 'inline' : 'none';
+  })();
+  </script>
 </body>
 </html>
