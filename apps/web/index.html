@@ -57,6 +57,15 @@ window.I18N = (function(){
     })();
   </script>
 
+  <script>
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-lang]');
+  if (!btn) return;
+  const lang = btn.getAttribute('data-lang');
+  window.I18N.load(lang).catch(err=>console.error(err));
+});
+</script>
+  
   <!-- App scripts (order matters: i18n before app) -->
   <script defer src="./js/i18n.js"></script>
   <script defer src="./js/config.js"></script>
