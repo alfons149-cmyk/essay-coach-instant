@@ -45,6 +45,14 @@ window.I18N = (function(){
   return { load, get lang(){ return current; } };
 })();
 </script>
+
+  <script>
+(async ()=>{
+  const saved = localStorage.getItem('ec.lang') || 'en';
+  try { await I18N.load(saved); } catch(e){ console.warn(e); await I18N.load('en'); }
+})();
+</script>
+  
   <!-- Detect ?lang=es or /es/ and expose to JS -->
   <script>
     (function () {
