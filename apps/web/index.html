@@ -45,14 +45,30 @@
 
   <!-- Top bar: language switcher & API indicator -->
   <header class="topbar">
-    <nav class="row" style="gap:8px; padding:10px 14px">
-      <button class="btn-primary" data-lang="en">EN</button>
-      <button class="btn-ghost"  data-lang="es">ES</button>
-      <button class="btn-ghost"  data-lang="nl">nl</button>
-      <span style="margin-left:auto"></span>
-      <small id="apiBadge" title="API status">API: <span id="apiMode">auto</span></small>
-      <small id="devBadge" style="margin-left:8px">DEV MODE</small>
-    </nav>
+    <!-- Language buttons -->
+<button class="btn-ghost"  data-lang="en">EN</button>
+<button class="btn-ghost"  data-lang="es">ES</button>
+<button class="btn-ghost"  data-lang="nl">nl</button>
+
+<!-- Level buttons -->
+<button class="pill" data-level="B2">B2</button>
+<button class="pill" data-level="C1">C1</button>
+<button class="pill" data-level="C2">C2</button>
+
+<!-- Inputs -->
+<textarea id="task"  data-i18n-ph="placeholders.task"></textarea>
+<textarea id="essay" data-i18n-ph="placeholders.essay"></textarea>
+
+<!-- Action buttons -->
+<button id="btnCorrect" data-i18n="buttons.correct">Correct</button>
+<button id="btnClear"   data-i18n="buttons.clear">Clear</button>
+
+<!-- Outputs -->
+<div id="inWC"  class="pill" data-i18n="io.input_words">Input: {n} words</div>
+<div id="outWC" class="pill" data-i18n="io.output_words">Output: {n} words</div>
+<div id="feedback"></div>
+<ul  id="edits"></ul>
+<textarea id="nextDraft"></textarea>
   </header>
 
   <main class="container">
