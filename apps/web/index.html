@@ -167,11 +167,11 @@ document.addEventListener('click', (e)=>{
 </script>
   
   <!-- App scripts (order matters: i18n before app) -->
-  <script defer src="./js/i18n.js"></script>
-  <script defer src="./js/config.js"></script>
-  <script defer src="./js/ec_sentences.js"></script>
-  <script defer src="./js/app.js"></script>
-
+  <link rel="stylesheet" href="./css/style.css">
+<script defer src="./js/i18n.js"></script>        <!-- or the inline i18n block above -->
+<script defer src="./js/config.js"></script>       <!-- defines window.EC.API_BASE in PROD -->
+<script defer src="./js/app.js"></script>     
+  
   <!-- Inline styles (keep or move to style.css) -->
   <style>
     body{font-family:Inter,system-ui,Arial,sans-serif; margin:0;}
