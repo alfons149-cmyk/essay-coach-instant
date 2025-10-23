@@ -31,6 +31,15 @@ window.__EC_APP_LOADED = true;
     const dict = await loadI18n(lang);
     applyI18n(dict);
 
+    document.addEventListener("DOMContentLoaded", () => {
+  const btnEn = document.getElementById("btnLangEn");
+  const btnEs = document.getElementById("btnLangEs");
+  const btnNl = document.getElementById("btnLangNl");  // <— nieuw
+  if (btnEn) btnEn.addEventListener("click", () => i18nSetLang("en"));
+  if (btnEs) btnEs.addEventListener("click", () => i18nSetLang("es"));
+  if (btnNl) btnNl.addEventListener("click", () => i18nSetLang("nl")); // <—
+});
+
     // Refresh any dynamic labels that use i18n text
     if (typeof updateCounts === 'function') updateCounts();
 
