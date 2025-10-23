@@ -5,7 +5,50 @@ loadI18n(lang)
 if (window.__EC_APP_LOADED) { throw new Error('app.js loaded twice'); }
 window.__EC_APP_LOADED = true;
 
+// Language switching (no reload)
+(function () {
+  const toggle = document.getElementById('langToggle');
+  if (!toggle) return;
 
+  // Set active state based on current language
+  function setActive(lang) {
+    toggle.querySelectorAll('.lang-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+  }
+
+  async function setLang(lang) {
+    // Keep URL in sync (…?lang=xx), no page reload
+    const url = new URL(location.href);
+    url.searchParams.set('lang', lang);
+    history.replaceState({}, '', url);
+
+    // Update global + <html lang="…">
+    window.__EC_LANG = lang;
+    document.documentElement.setAttribute('lang', lang);
+
+    // Load + apply translations
+    const dict = await loadI18n(lang);
+    applyI18n(dict);
+
+    // Refresh any dynamic labels that use i18n text
+    if (typeof updateCounts === 'function') updateCounts();
+
+    setActive(lang);
+  }
+
+  // Click handlers
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.lang-btn');
+    if (!btn) return;
+    const lang = btn.dataset.lang;
+    if (!lang) return;
+    setLang(lang);
+  });
+
+  // Initialize active state on first load
+  setActive(window.__EC_LANG || 'en');
+})();
 (function(){
 const qs = new URLSearchParams(location.search);
 const apiOverride = qs.get('api');
