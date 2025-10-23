@@ -1,11 +1,13 @@
 {
-  "labels.prompt": "Opdracht",
-  "labels.essay": "Je essay",
+  "labels.prompt": "Taakopdracht",
+  "labels.essay": "Jouw essay",
   "labels.feedback": "Feedback",
-  "buttons.correct": "Verbeteren",
+  "labels.edits": "Wijzigingen",
+  "labels.next_draft": "Volgende versie",
+  "buttons.correct": "Corrigeer",
   "buttons.clear": "Wissen",
   "io.input_words": "Invoer: {n} woorden",
   "io.output_words": "Uitvoer: {n} woorden",
-  "placeholders.task": "Plak de examenopdracht hier...",
-  "placeholders.essay": "Plak of schrijf je essay hier..."
+  "placeholders.task": "Plak hier de examenvraag/opdracht...",
+  "placeholders.essay": "Plak of schrijf hier je essay..."
 }
