@@ -45,26 +45,16 @@
 
   <!-- Top bar: language switcher & API indicator -->
   <header class="topbar">
-    <!-- Language buttons -->
-<button class="btn-ghost"  data-lang="en">EN</button>
-<button class="btn-ghost"  data-lang="es">ES</button>
-<button class="btn-ghost"  data-lang="nl">nl</button>
+  <nav class="row" style="gap:8px; padding:10px 14px">
+    <button class="btn-primary" data-lang="en">EN</button>
+    <button class="btn-ghost"  data-lang="es">ES</button>
+    <button class="btn-ghost"  data-lang="nl">nl</button>
 
-<!-- Inputs -->
-<textarea id="task"  data-i18n-ph="placeholders.task"></textarea>
-<textarea id="essay" data-i18n-ph="placeholders.essay"></textarea>
-
-<!-- Action buttons -->
-<button id="btnCorrect" data-i18n="buttons.correct">Correct</button>
-<button id="btnClear"   data-i18n="buttons.clear">Clear</button>
-
-<!-- Outputs -->
-<div id="inWC"  class="pill" data-i18n="io.input_words">Input: {n} words</div>
-<div id="outWC" class="pill" data-i18n="io.output_words">Output: {n} words</div>
-<div id="feedback"></div>
-<ul  id="edits"></ul>
-<textarea id="nextDraft"></textarea>
-  </header>
+    <span style="margin-left:auto"></span>
+    <small id="apiBadge" title="API status">API: <span id="apiMode">auto</span></small>
+    <small id="devBadge" style="margin-left:8px; display:none">DEV MODE</small>
+  </nav>
+</header>
 
   <main class="container">
     <h1 class="app-title">EssayCoach – Cambridge Toolkit</h1>
