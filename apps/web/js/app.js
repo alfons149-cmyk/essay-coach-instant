@@ -1,27 +1,46 @@
 // keep just ONE IIFE like this
 (() => {
-  const qs = new URLSearchParams(location.search);
-  const DEV = qs.get('dev') === '1';
-  window.EC = window.EC || {};
-  const API_BASE = EC.API_BASE || null;
+  const qs  = new URLSearchParams(location.search);
+  const DEV = (window.EC && typeof window.EC.DEV === 'boolean')
+    ? window.EC.DEV
+    : (qs.get('dev') === '1');
 
+  window.EC = window.EC || {};
+  const API_BASE = window.EC.API_BASE || null; // set in js/config.js (must be your Worker, not Pages)
+
+  // Unified corrector: live API when not DEV and API_BASE is set; otherwise mock
   EC.correct = async (payload) => {
     if (!DEV && API_BASE) {
-      const r = await fetch(`${API_BASE}/correct`, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
+      const res = await fetch(`${API_BASE}/correct`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'omit'
       });
-      if (!r.ok) throw new Error(`API ${r.status}`);
-      return r.json();
+      if (!res.ok) {
+        const text = await res.text().catch(()=> '');
+        throw new Error(`API ${res.status}: ${text}`);
+      }
+      return res.json();
     }
-    // DEV mock
+
+    // ---- DEV MOCK (when ?dev=1 or no API_BASE) ----
     await new Promise(r => setTimeout(r, 400));
     const txt = payload.essay || '';
     const wc  = txt.trim() ? txt.trim().split(/\s+/).length : 0;
-    const edits = txt.includes('a lot') ? [{from:'a lot', to: payload.level==='B2' ? 'much' : 'substantially', reason:'Register'}] : [];
-    return { level: payload.level, inputWords: wc, outputWords: wc, feedback:`✅ Mock feedback for ${payload.level}.`, edits, nextDraft: txt.replace(/\ba lot\b/i, edits[0]?.to || 'a lot') };
+    const edits = txt.includes('a lot')
+      ? [{ from: 'a lot', to: payload.level === 'B2' ? 'much' : 'substantially', reason: 'Register' }]
+      : [];
+    return {
+      level: payload.level,
+      inputWords: wc,
+      outputWords: wc,
+      feedback: `✅ Mock feedback for ${payload.level}.`,
+      edits,
+      nextDraft: txt.replace(/\ba lot\b/i, edits[0]?.to || 'a lot')
+    };
   };
-
+})();
   const $ = s => document.querySelector(s);
   const el = { task:$('#task'), essay:$('#essay'), nextDraft:$('#nextDraft'), feedback:$('#feedback'), edits:$('#edits'), inWC:$('#inWC'), outWC:$('#outWC'), btnCorrect:$('#btnCorrect'), btnClear:$('#btnClear') };
 
