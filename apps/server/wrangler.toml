@@ -1,7 +1,12 @@
 name = "essaycoach-api"
-main = "src/worker.js"
-compatibility_date = "2024-10-01"
-
+main = "src/index.js"
+compatibility_date = "2025-01-01"
 
 [vars]
-CORS_ORIGIN = "*" # tighten later to your Pages origin
+APP_URL = "https://alfons149-cmyk.github.io/essay-coach-instant"
+STRIPE_PRICE_MONTH = "price_xxx"     # €15/month (create in Stripe, paste ID)
+STRIPE_PRICE_SEMESTER = "price_yyy"  # €75/6 months (create in Stripe, paste ID)
+
+[[kv_namespaces]]
+binding = "KV_ENTITLEMENTS"
+id = "kv_entitlements_prod"          # create via: wrangler kv namespace create KV_ENTITLEMENTS
