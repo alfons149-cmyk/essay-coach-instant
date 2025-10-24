@@ -173,15 +173,34 @@ textarea:focus, input:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(122,156,255,.25);
 }
 
-/* Pills */
+/* Base pill */
 .pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: transparent;
-  font-size: 14px;
-  white-space: nowrap;
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid var(--pill-border, #bbb);
+  background: var(--pill-bg, #fff);
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  cursor: pointer;
+}
+
+/* Hover */
+.pill:hover {
+  background: var(--pill-hover-bg, #f2f5ff);
+  border-color: var(--pill-hover-border, #6b8cff);
+  box-shadow: 0 0 0 2px color-mix(in srgb, #6b8cff 20%, transparent);
+}
+
+/* Active (selected level) */
+.pill--active {
+  background: var(--pill-active-bg, #1a56db);
+  color: #fff;
+  border-color: var(--pill-active-border, #1a56db);
+}
+
+.pill--active:hover {
+  background: var(--pill-active-hover-bg, #194bbf);
+  border-color: var(--pill-active-hover-border, #194bbf);
 }
 .pill.ok   { background: var(--ok-bg);   border-color: var(--ok-border); }
 .pill.warn { background: var(--warn-bg); border-color: var(--warn-border); }
