@@ -1,10 +1,12 @@
 // js/config.js
 (() => {
   const qs = new URLSearchParams(location.search);
-
-  // Optional query flags
-  const DEV  = qs.get('dev') === '1';                      // use mock in app.js if true
-  const API_Q = qs.get('api');                             // allow runtime override: ?api=https://x.y/api
+  const API_Q = qs.get('api'); // optional runtime override
+  const DEFAULT_API = 'https://essaycoach.alfons149.workers.dev/api';
+  const API_BASE = (API_Q || DEFAULT_API).replace(/\/+$/,'');
+  window.EC = Object.assign(window.EC || {}, { API_BASE });
+  console.log('[EC] API_BASE =', window.EC.API_BASE);
+})();
 
   // --- DEFAULT: set this to your real Worker once deployed ---
   // Example: https://essaycoach-api.youraccount.workers.dev/api
