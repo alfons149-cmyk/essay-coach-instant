@@ -1,16 +1,12 @@
 {
   "level": "C2",
-  "taskType": "essay",
-  "taskPrompt": "Write an essay discussing the claim: 'Governments should prioritise funding for scientific research over immediate social care programmes.' Evaluate arguments on both sides and state your position.",
-  "studentText": "Arguing that scientific research deserves priority over social care is tempting in an age defined by innovation. Breakthroughs in renewable energy, medical diagnostics and materials science can transform entire economies and, ultimately, improve millions of lives. Investment at scale also attracts talent, stimulates high-value industries and yields tools that make social provision more efficient: data systems predict needs earlier; assistive technologies extend independence; and new drugs reduce the burden on hospitals. Yet the appeal of progress can conceal a moral hazard. Research is intrinsically long-term and uncertain, while social care addresses present suffering with measurable outcomes. When budgets are tight, postponing support for the elderly, people with disabilities or families in crisis may entrench inequality and erode trust. Ethical governance requires a dual focus: fund research strategically, but never at the expense of basic dignity. In practice, a ring-fenced baseline for social care, coupled with competitive research grants aligned to public needs, offers a defensible compromise. Societies flourish when innovation is nurtured and vulnerability is not ignored.",
-  "targetWordCount": 260,
-  "language": "en",
-  "options": {
-    "strictCambridge": true,
-    "minChangeEdits": true,
-    "highlightPunctuationJoins": true,
-    "returnInlineDiff": true
-  },
-  "client": { "appVersion": "fixtures.v1", "dev": true }
+  "task": "To what extent should governments subsidise renewable energy?",
+  "essay": "It is very important to support renewables. A lot of politicians are truly convinced but the policy is extremely inconsistent.",
+  "assert": {
+    "minEdits": 4,
+    "mustContain": ["paramount", "policymakers", "inconsistent policy"],
+    "mustNotContain": ["very", "a lot", "truly", "extremely"],
+    "feedbackIncludes": ["register", "precision", "intensifier"],
+    "minOutputWords": 50
+  }
 }
-
