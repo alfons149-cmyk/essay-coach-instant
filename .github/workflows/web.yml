@@ -4,8 +4,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'apps/web/**'
-      - '.github/workflows/web.yml'
+      - "apps/web/**"
+      - ".github/workflows/web.yml"
   workflow_dispatch: {}
 
 permissions:
@@ -14,41 +14,17 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Optional: if you ever add a build step (vite/parcel/etc.), do it here.
-      # - name: Setup Node
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
-      #     cache: 'npm'
-      #     cache-dependency-path: apps/web/package-lock.json
-      # - name: Install deps
-      #   working-directory: apps/web
-      #   run: npm ci
-      # - name: Build
-      #   working-directory: apps/web
-      #   run: npm run build
-      # - name: Upload artifact (built dist)
-      #   uses: actions/upload-pages-artifact@v3
-      #   with:
-      #     path: apps/web/dist
-
-      # Current setup: publish the raw folder (static)
-      - name: Ensure SPA fallback (copy index.html to 404.html)
-        run: |
-          cp apps/web/index.html apps/web/404.html
-      - name: Disable Jekyll processing
-        run: |
-          touch apps/web/.nojekyll
+      # If you have a build step (e.g., Vite), add it here and
+      # set the artifact path to the build output directory instead.
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
