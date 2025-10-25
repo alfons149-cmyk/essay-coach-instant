@@ -1,136 +1,157 @@
 export interface Env {
-  // Secrets (set with `wrangler secret put ...`)
   OPENAI_API_KEY: string;
   STRIPE_SECRET: string;
   STRIPE_WEBHOOK_SECRET: string;
-  TRIAL_SECRET: string; // create your own (do not reuse Stripe secret)
-
-  // Vars (in wrangler.toml)
-  APP_URL: string;                // https://alfons149-cmyk.github.io/essay-coach-instant
-  STRIPE_PRICE_MONTH: string;     // €15 monthly price id
-  STRIPE_PRICE_SEMESTER: string;  // €75 every 6 months price id
-
-  // KV binding (in wrangler.toml)
+  APP_URL: string;
+  STRIPE_PRICE_MONTH: string;
+  STRIPE_PRICE_SEMESTER: string;
   KV_ENTITLEMENTS: KVNamespace;
 }
 
-/* ------------------------- CORS ------------------------- */
 const ALLOW_ORIGINS = [
   "https://alfons149-cmyk.github.io",
   "http://localhost:8080",
-  "http://127.0.0.1:8080",
+  "http://127.0.0.1:8080"
 ];
 
-function withCORS(req: Request, init: ResponseInit = {}): ResponseInit {
+function cors(req: Request, resInit: ResponseInit = {}): ResponseInit {
   const origin = req.headers.get("Origin") || "";
   const ok = ALLOW_ORIGINS.some(o => origin.startsWith(o));
   return {
-    ...init,
+    ...resInit,
     headers: {
       "Access-Control-Allow-Origin": ok ? origin : "",
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type,Authorization,Stripe-Signature",
-      ...(init.headers || {})
+      ...(resInit.headers || {})
     }
   };
 }
+
 function json(req: Request, data: unknown, init: ResponseInit = {}) {
-  return new Response(JSON.stringify(data), withCORS(req, { status: init.status || 200, headers: { "Content-Type": "application/json", ...(init.headers||{}) } }));
+  return new Response(JSON.stringify(data), cors(req, {
+    status: init.status || 200,
+    headers: { "Content-Type": "application/json", ...(init.headers || {}) }
+  }));
 }
-function okOptions(req: Request) { return new Response(null, withCORS(req, { status: 204 })); }
-function bad(req: Request, msg = "Bad request", code = 400) { return json(req, { error: msg }, { status: code }); }
 
-/* -------------------- Time & small helpers -------------------- */
-const nowISO = () => new Date().toISOString();
-const isFuture = (iso: string) => new Date(iso).getTime() > Date.now();
+function bad(req: Request, msg = "Bad request", code = 400) {
+  return json(req, { error: msg }, { status: code });
+}
+
+function nowISO() { return new Date().toISOString(); }
+function isFuture(iso: string) { return new Date(iso).getTime() > Date.now(); }
 function addMonths(baseISO: string, months: number) {
-  const d = new Date(baseISO); d.setMonth(d.getMonth() + months); return d.toISOString();
+  const d = new Date(baseISO);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString();
 }
-const wc = (t: string) => (t.trim().match(/\S+/g) || []).length;
 
-/* ---------------- Trial token (HMAC, Worker-friendly) ---------------- */
-async function signTrial(sub: string, hours: number, secret: string) {
-  const exp = Math.floor(Date.now()/1000) + hours*3600;
+// --- JWT-like trial token (HMAC SHA-256, compact & Worker-friendly) ---
+async function signTrial(sub: string, hours = 48, secret: string) {
+  const exp = Math.floor(Date.now() / 1000) + hours * 3600;
   const payload = btoa(JSON.stringify({ sub, typ: "trial", exp }));
-  const sig = await hmacBase64(payload, secret);
+  const sig = await hmac(payload, secret);
   return `${payload}.${sig}`;
 }
-async function verifyTrial(token: string, secret: string): Promise<null | { sub: string; typ: "trial"; exp: number }> {
+async function verifyTrial(token: string, secret: string) {
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
-  if (await hmacBase64(payload, secret) !== sig) return null;
+  const good = await hmac(payload, secret);
+  if (good !== sig) return null;
   const data = JSON.parse(atob(payload));
-  if (data.exp*1000 <= Date.now()) return null;
-  return data;
+  if (data.exp * 1000 <= Date.now()) return null;
+  return data as { sub: string; typ: "trial"; exp: number };
 }
-async function hmacBase64(data: string, secret: string) {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+async function hmac(data: string, secret: string) {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
-  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+  const bytes = new Uint8Array(sig);
+  return btoa(String.fromCharCode(...bytes));
 }
 
-/* ------------------------- Stripe helpers ------------------------- */
-function formBody(params: Record<string,string>) { return new URLSearchParams(params).toString(); }
+// --- Stripe helpers with fetch ---
 async function stripeFetch(env: Env, path: string, init?: RequestInit) {
-  return fetch(`https://api.stripe.com${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET}`,
-      ...(init?.headers || {})
-    }
-  });
+  const url = `https://api.stripe.com${path}`;
+  const headers = {
+    Authorization: `Bearer ${env.STRIPE_SECRET}`,
+    "Content-Type": "application/x-www-form-urlencoded",
+    ...(init?.headers || {})
+  };
+  return fetch(url, { ...init, headers });
 }
 
-/* Webhook verify: compare HMAC SHA-256 (v1) over `${t}.${rawBody}` */
-async function verifyStripeWebhook(env: Env, req: Request, raw: ArrayBuffer) {
+function formBody(params: Record<string, string>) {
+  return new URLSearchParams(params).toString();
+}
+
+// Verify webhook signature (Stripe docs → HMAC SHA256 with signing secret)
+async function verifyStripeSignature(env: Env, req: Request, rawBody: ArrayBuffer) {
   const sig = req.headers.get("Stripe-Signature") || "";
-  const parts = Object.fromEntries(sig.split(",").map(s => s.split("=") as [string,string]));
+  // We keep it simple: rely on Stripe’s recommended library normally.
+  // On Workers, do your own check: t=..., v1=...
+  const parts = Object.fromEntries(sig.split(",").map(kv => kv.split("=") as [string,string]));
   if (!parts.t || !parts.v1) return false;
-  const signed = `${parts.t}.${new TextDecoder().decode(raw)}`;
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.STRIPE_WEBHOOK_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signed));
+
+  const signedPayload = `${parts.t}.${new TextDecoder().decode(rawBody)}`;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(env.STRIPE_WEBHOOK_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
   const hex = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2,"0")).join("");
+  // constant-time-ish compare
   if (hex.length !== parts.v1.length) return false;
-  let diff = 0; for (let i=0;i<hex.length;i++) diff |= hex.charCodeAt(i) ^ parts.v1.charCodeAt(i);
+  let diff = 0;
+  for (let i=0;i<hex.length;i++) diff |= hex.charCodeAt(i) ^ parts.v1.charCodeAt(i);
   return diff === 0;
 }
 
-/* ------------------------ OpenAI call ------------------------ */
+// --- OpenAI call (server-side) ---
 async function callOpenAI(env: Env, level: string, task: string, essay: string) {
-  const system = `You are an experienced Cambridge examiner. Return strict JSON with keys:
-- "feedback": short paragraph (<= 120 words)
-- "edits": array of 2–8 objects { "from": "...", "to": "...", "reason": "..." }
-- "nextDraft": the revised essay
-Be concise and student-friendly. Level: ${level}.`;
-  const user = `Task: ${task || "(none)"}\n\nEssay:\n${essay}`;
+  const system = `You are an experienced Cambridge examiner. Provide concise feedback, list 2–6 targeted edits, and produce a revised next draft. Keep student-friendly tone. Level: ${level}.`;
+  const user = `Task: ${task}\n\nEssay:\n${essay}`;
 
   const r = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
-    headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      temperature: 0.3,
+      model: "gpt-4o-mini",           // pick your model
       messages: [
         { role: "system", content: system },
         { role: "user", content: user }
-      ]
+      ],
+      temperature: 0.3
     })
   });
-  if (!r.ok) throw new Error(`OpenAI ${r.status} – ${await r.text()}`);
+
+  if (!r.ok) {
+    const err = await r.text();
+    throw new Error(`OpenAI error ${r.status}: ${err}`);
+  }
 
   const data = await r.json();
-  const raw = data.choices?.[0]?.message?.content || "{}";
-  const parsed = JSON.parse(raw);
+  const text = data.choices?.[0]?.message?.content || "";
+
+  // Very light parsing: expect sections separated by lines; keep it robust.
+  // (Swap to structured tool-calling later if you want strict JSON.)
+  const feedback = text.slice(0, 600);
   return {
-    feedback: String(parsed.feedback || ""),
-    edits: Array.isArray(parsed.edits) ? parsed.edits : [],
-    nextDraft: String(parsed.nextDraft || essay),
+    feedback,
+    edits: [],
+    nextDraft: essay // keep original if you don't parse; or add your quick transforms here
   };
 }
 
-/* ============================= Worker ============================= */
+function okOptions(req: Request) {
+  return new Response(null, cors(req, { status: 204 }));
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     if (req.method === "OPTIONS") return okOptions(req);
@@ -138,29 +159,35 @@ export default {
     const url = new URL(req.url);
     const { pathname, searchParams } = url;
 
-    // -------- Health
+    // ---- CORS precheck for non-OPTIONS too
+    if (pathname.startsWith("/api/")) {
+      // fall through to handlers
+    }
+
+    // Health
     if (pathname === "/api/health") {
       return json(req, { ok: true, now: nowISO() });
     }
 
-    // -------- Trial start (48h, no card)
+    // Trial start
     if (pathname === "/api/trial/start" && req.method === "POST") {
       const { email } = await req.json().catch(() => ({}));
-      const subject = email || crypto.randomUUID();
-      const token = await signTrial(subject, 48, env.TRIAL_SECRET);
+      const id = email || crypto.randomUUID();
+      const token = await signTrial(id, 48, env.STRIPE_WEBHOOK_SECRET /* reuse a secret or add TRIAL_SECRET */);
       return json(req, { ok: true, token });
     }
 
-    // -------- Entitlement check (trial token or KV by email)
+    // Entitlement check
     if (pathname === "/api/me" && req.method === "GET") {
       const auth = req.headers.get("Authorization") || "";
       const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-      const claim = token ? await verifyTrial(token, env.TRIAL_SECRET) : null;
+      const claim = token ? await verifyTrial(token, env.STRIPE_WEBHOOK_SECRET) : null;
       const email = searchParams.get("email") || "";
 
       if (claim?.typ === "trial") {
-        return json(req, { entitled: true, source: "trial", until: new Date(claim.exp*1000).toISOString() });
+        return json(req, { entitled: true, source: "trial", until: new Date(claim.exp * 1000).toISOString() });
       }
+
       if (email) {
         const rec = await env.KV_ENTITLEMENTS.get(email, { type: "json" }) as { access_until: string } | null;
         if (rec && isFuture(rec.access_until)) {
@@ -170,37 +197,52 @@ export default {
       return json(req, { entitled: false });
     }
 
-    // -------- Stripe Checkout (subscriptions)
+    // Stripe Checkout
     if (pathname === "/api/checkout" && req.method === "POST") {
       const { plan, email } = await req.json().catch(() => ({}));
       if (!["month","semester"].includes(plan)) return bad(req, "plan must be month|semester");
-      if (!email) return bad(req, "email required");
-      const price = plan === "month" ? env.STRIPE_PRICE_MONTH : env.STRIPE_PRICE_SEMESTER;
+      if (!email) return bad(req, "email required for checkout");
 
+      const price = plan === "month" ? env.STRIPE_PRICE_MONTH : env.STRIPE_PRICE_SEMESTER;
       const body = formBody({
-        mode: "subscription",
-        success_url: `${env.APP_URL}/?purchased=1`,
-        cancel_url:  `${env.APP_URL}/?canceled=1`,
-        customer_email: email,
-        allow_promotion_codes: "true",
+        "mode": "subscription",
+        "success_url": `${env.APP_URL}/?purchased=1`,
+        "cancel_url": `${env.APP_URL}/?canceled=1`,
+        "customer_email": email,
+        "allow_promotion_codes": "true",
         "line_items[0][price]": price,
         "line_items[0][quantity]": "1"
       });
 
-      const r = await stripeFetch(env, "/v1/checkout/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body
-      });
+      const r = await stripeFetch(env, "/v1/checkout/sessions", { method: "POST", body });
       const js = await r.json();
       if (!r.ok) return json(req, js, { status: 500 });
       return json(req, { url: js.url });
     }
 
-    // -------- Stripe Webhook
+    // Billing Portal (optional)
+    if (pathname === "/api/portal" && req.method === "POST") {
+      const { email } = await req.json().catch(() => ({}));
+      if (!email) return bad(req, "email required");
+      // Find customer by email
+      const search = await stripeFetch(env, `/v1/customers/search?query=email:'${encodeURIComponent(email)}'`, { method: "GET", headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` }});
+      const sc = await search.json();
+      if (!sc.data?.length) return bad(req, "Customer not found", 404);
+
+      const body = formBody({
+        customer: sc.data[0].id,
+        return_url: env.APP_URL
+      });
+      const r = await stripeFetch(env, "/v1/billing_portal/sessions", { method: "POST", body });
+      const js = await r.json();
+      if (!r.ok) return json(req, js, { status: 500 });
+      return json(req, { url: js.url });
+    }
+
+    // Stripe webhook (grant/revoke access)
     if (pathname === "/api/stripe/webhook" && req.method === "POST") {
       const raw = await req.arrayBuffer();
-      const ok = await verifyStripeWebhook(env, req, raw);
+      const ok = await verifyStripeSignature(env, req, raw);
       if (!ok) return new Response("Bad signature", { status: 400 });
 
       const event = JSON.parse(new TextDecoder().decode(raw));
@@ -208,10 +250,12 @@ export default {
         if (event.type === "checkout.session.completed") {
           const s = event.data.object;
           if (s.mode === "subscription") {
+            // fetch subscription to know which price
             const subId = s.subscription;
+            const sub = await fetch(`https://api.stripe.com/v1/subscriptions/${subId}`, {
+              headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` }
+            }).then(r=>r.json());
             const email = s.customer_details?.email as string;
-            // Fetch subscription to get price id
-            const sub = await stripeFetch(env, `/v1/subscriptions/${subId}`, { method: "GET" }).then(r=>r.json());
             const priceId = sub.items?.data?.[0]?.price?.id as string;
             const months = (priceId === env.STRIPE_PRICE_MONTH) ? 1 : 6;
             const current = (await env.KV_ENTITLEMENTS.get(email, { type: "json" })) || { access_until: nowISO() };
@@ -219,15 +263,15 @@ export default {
             await env.KV_ENTITLEMENTS.put(email, JSON.stringify({ access_until: addMonths(base, months) }));
           }
         }
-
         if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.created") {
           const sub = event.data.object;
           // get customer email
-          const cust = await stripeFetch(env, `/v1/customers/${sub.customer}`, { method: "GET" }).then(r=>r.json());
+          const cust = await fetch(`https://api.stripe.com/v1/customers/${sub.customer}`, {
+            headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` }
+          }).then(r=>r.json());
           const email = cust.email as string;
           const priceId = sub.items?.data?.[0]?.price?.id as string;
           const months = (priceId === env.STRIPE_PRICE_MONTH) ? 1 : 6;
-
           if (["active","trialing","past_due","unpaid"].includes(sub.status)) {
             const current = (await env.KV_ENTITLEMENTS.get(email, { type: "json" })) || { access_until: nowISO() };
             const base = isFuture(current.access_until) ? current.access_until : nowISO();
@@ -236,10 +280,11 @@ export default {
             await env.KV_ENTITLEMENTS.delete(email);
           }
         }
-
         if (event.type === "customer.subscription.deleted") {
           const sub = event.data.object;
-          const cust = await stripeFetch(env, `/v1/customers/${sub.customer}`, { method: "GET" }).then(r=>r.json());
+          const cust = await fetch(`https://api.stripe.com/v1/customers/${sub.customer}`, {
+            headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` }
+          }).then(r=>r.json());
           await env.KV_ENTITLEMENTS.delete(cust.email);
         }
       } catch (e) {
@@ -248,28 +293,30 @@ export default {
       return new Response("ok", { status: 200 });
     }
 
-    // -------- OpenAI-backed corrector
+    // Correct (OpenAI)
     if (pathname === "/api/correct" && req.method === "POST") {
       const { level, task, essay } = await req.json().catch(() => ({}));
       if (!["B2","C1","C2"].includes(level)) return bad(req, "Invalid level");
-      if (!essay || typeof essay !== "string") return bad(req, "Missing essay");
+      if (!essay) return bad(req, "Missing essay");
+      const wc = (essay.trim().match(/\S+/g) || []).length;
 
       try {
-        const result = await callOpenAI(env, level, String(task || ""), essay);
+        const { feedback, edits, nextDraft } = await callOpenAI(env, level, task || "", essay);
         return json(req, {
           level,
-          inputWords: wc(essay),
-          outputWords: wc(result.nextDraft || ""),
-          feedback: result.feedback || "",
-          edits: result.edits || [],
-          nextDraft: result.nextDraft || essay
+          inputWords: wc,
+          outputWords: (nextDraft.trim().match(/\S+/g) || []).length,
+          feedback,
+          edits,
+          nextDraft
         });
       } catch (e: any) {
         return json(req, { error: e?.message || "OpenAI error" }, { status: 500 });
       }
     }
 
-    // Fallback
-    return new Response("Not found", withCORS(req, { status: 404 }));
+    // CORS preflight fall-through
+    if (req.method === "OPTIONS") return okOptions(req);
+    return new Response("Not found", { status: 404 });
   }
 };
