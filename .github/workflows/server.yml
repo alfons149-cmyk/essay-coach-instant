@@ -4,15 +4,9 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'apps/server/**'
-      - '.github/workflows/server.yml'
-
-permissions:
-  contents: read
-
-concurrency:
-  group: deploy-worker
-  cancel-in-progress: true
+      - "apps/server/**"
+      - ".github/workflows/server.yml"
+  workflow_dispatch: {}
 
 jobs:
   deploy:
@@ -20,31 +14,21 @@ jobs:
     defaults:
       run:
         working-directory: apps/server
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: apps/server/package-lock.json
+          node-version: "20"
 
-      - name: Install dependencies
+      - name: Install deps
         run: npm ci
 
-      # Optional: if you actually have a script called "schema"
-      - name: Build schemas (optional)
-        run: npm run schema || true
+      # optional: typecheck/build step if you add one
+      # - run: npm run build
 
-      # Optional: ensure wrangler is present if not in devDependencies
-      # - name: Install wrangler
-      #   run: npm i -D wrangler
-
-      - name: Publish Worker
+      - name: Publish Worker with Wrangler
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler deploy
