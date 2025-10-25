@@ -1,1 +1,13 @@
-
+{
+  "labels.prompt": "Instrucción de la tarea",
+  "labels.essay": "Tu redacción",
+  "labels.feedback": "Retroalimentación",
+  "labels.edits": "Cambios",
+  "labels.next_draft": "Versión siguiente",
+  "buttons.correct": "Corregir",
+  "buttons.clear": "Borrar",
+  "io.input_words": "Entrada: {n} palabras",
+  "io.output_words": "Salida: {n} palabras",
+  "placeholders.task": "Pega aquí el enunciado del examen...",
+  "placeholders.essay": "Pega o escribe aquí tu redacción..."
+}
