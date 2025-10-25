@@ -2,9 +2,51 @@
 (() => {
   const FALLBACK = 'en';
   const SUPPORTED = ['en', 'es', 'nl'];
-  const STORAGE_KEY = 'ec.lang';
-  let CURRENT = FALLBACK;
-  let DICT = {};
+
+  // --- Determine initial language ---
+  const qs = new URLSearchParams(location.search);
+  const queryLang = qs.get('lang');
+  const storedLang = localStorage.getItem('ec.lang');
+  const browserLang = navigator.language.slice(0, 2).toLowerCase();
+
+  // pick the first available option in this priority
+  let initial = queryLang || storedLang || (SUPPORTED.includes(browserLang) ? browserLang : FALLBACK);
+
+  // store for next visit
+  localStorage.setItem('ec.lang', initial);
+  document.documentElement.setAttribute('lang', initial);
+
+  // --- Core loader ---
+  async function load(lang) {
+    const use = SUPPORTED.includes(lang) ? lang : FALLBACK;
+    const res = await fetch(`i18n/${use}.json`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`i18n load failed: ${use}`);
+    const dict = await res.json();
+    apply(dict);
+  }
+
+  function apply(dict) {
+    // texts
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key]) el.textContent = dict[key];
+    });
+    // placeholders
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      const key = el.getAttribute('data-i18n-ph');
+      if (dict[key]) el.setAttribute('placeholder', dict[key]);
+    });
+  }
+
+  // expose globally
+  window.I18N = { load };
+
+  // boot automatically
+  document.addEventListener('DOMContentLoaded', () => {
+    load(initial).catch(e => console.warn(e));
+  });
+})();
+
 
   // -------- Lang resolution on first load --------
   function resolveInitialLang() {
