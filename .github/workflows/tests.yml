@@ -1,59 +1,29 @@
-name: Verify pipeline goldens
+name: Verify API tests
 
 on:
   pull_request:
     branches: [ main ]
     paths:
-      - 'apps/server/**'
-      - 'tests/**'
-      - '.github/workflows/tests.yml'
-
-permissions:
-  contents: read
-
-concurrency:
-  group: pr-tests-${{ github.ref }}
-  cancel-in-progress: true
+      - "apps/server/**"
+      - "tests/**"
+      - ".github/workflows/tests.yml"
+  workflow_dispatch: {}
 
 jobs:
-  verify-goldens:
+  verify:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: apps/server
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: apps/server/package-lock.json
+          node-version: "20"
 
-      - name: Install dependencies
+      - name: Install deps
         run: npm ci
-
-      # Optional: lint / typecheck if you have these scripts
-      # - name: Lint
-      #   run: npm run lint --if-present
-      # - name: Type check
-      #   run: npm run typecheck --if-present
 
       - name: Run golden verification
         run: npm run test:verify-goldens
-
-      # If your test runner writes diffs (e.g., snapshots, reports),
-      # upload them even when the job fails so you can inspect them.
-      - name: Upload test artifacts (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: golden-diffs
-          path: |
-            apps/server/**/test-results/**
-            apps/server/**/snapshots/**
-            apps/server/**/reports/**
-          if-no-files-found: ignore
