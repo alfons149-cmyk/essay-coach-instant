@@ -1,1 +1,13 @@
-
+{
+  "labels.prompt": "Task prompt",
+  "labels.essay": "Your essay",
+  "labels.feedback": "Feedback",
+  "labels.edits": "Edits",
+  "labels.next_draft": "Next draft",
+  "buttons.correct": "Correct",
+  "buttons.clear": "Clear",
+  "io.input_words": "Input: {n} words",
+  "io.output_words": "Output: {n} words",
+  "placeholders.task": "Paste the exam task here...",
+  "placeholders.essay": "Paste or write your essay here..."
+}
