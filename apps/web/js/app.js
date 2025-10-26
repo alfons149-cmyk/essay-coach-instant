@@ -21,35 +21,33 @@
   
   // Unified corrector: live API when not DEV and API_BASE is set; otherwise mock
   EC.correct = async (payload) => {
-    if (!DEV && API_BASE) {
-      const res = await fetch(`${API_BASE}/correct`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        credentials: 'omit'
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(()=> '');
-        throw new Error(`API ${res.status}: ${text}`);
-      }
-      return res.json();
-    }
+  const qs = new URLSearchParams(location.search);
+  const DEV = (window.EC && typeof window.EC.DEV === 'boolean') ? window.EC.DEV : (qs.get('dev') === '1');
+  const API_BASE = window.EC && window.EC.API_BASE;
 
-    // ---- DEV MOCK (when ?dev=1 or no API_BASE) ----
-    await new Promise(r => setTimeout(r, 400));
-    const txt = payload.essay || '';
-    const wc  = txt.trim() ? txt.trim().split(/\s+/).length : 0;
-    const edits = txt.includes('a lot')
-      ? [{ from: 'a lot', to: payload.level === 'B2' ? 'much' : 'substantially', reason: 'Register' }]
-      : [];
-    return {
-      level: payload.level,
-      inputWords: wc,
-      outputWords: wc,
-      feedback: `✅ Mock feedback for ${payload.level}.`,
-      edits,
-      nextDraft: txt.replace(/\ba lot\b/i, edits[0]?.to || 'a lot')
-    };
+  if (!DEV && API_BASE) {
+    const url = `${API_BASE.replace(/\/+$/,'')}/correct`;
+    console.log('[EC] POST', url, payload);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+      credentials: 'omit'
+    });
+    const txt = await res.text();
+    console.log('[EC] /correct status', res.status, 'body:', txt);
+    if (!res.ok) throw new Error(`API ${res.status}: ${txt}`);
+    return JSON.parse(txt);
+  }
+
+  // Mock (only when ?dev=1 or API_BASE missing)
+  await new Promise(r => setTimeout(r, 300));
+  const txt = payload.essay || '';
+  const wc  = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+  const edits = txt.includes('a lot') ? [{from:'a lot', to: payload.level==='B2' ? 'much' : 'substantially', reason:'Register'}] : [];
+  return { level: payload.level, inputWords: wc, outputWords: wc, feedback:`✅ Mock feedback for ${payload.level}.`, edits, nextDraft: txt.replace(/\ba lot\b/i, edits[0]?.to || 'a lot') };
+};
+
   };
 })();
   const $ = s => document.querySelector(s);
