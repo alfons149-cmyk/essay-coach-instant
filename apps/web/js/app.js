@@ -178,6 +178,30 @@
   el.outWC.textContent = outTpl.replace(/\{n\}/g, wc);
 }
 
+function setCounter(node, i18nKey, n) {
+  if (!node) return;
+  const ATTR = 'data-i18n-template';
+
+  // Use cached template if present, else seed it from i18n (or current text/fallback)
+  let tpl = node.getAttribute(ATTR);
+  if (!tpl) {
+    // try to get the translated template with a literal {n}
+    tpl = (window.I18N && I18N.t) ? I18N.t(i18nKey, { n: '{n}' }) : '';
+    if (!tpl || !/\{n\}/.test(tpl)) {
+      // fallback to current content if it contains {n}, else hardcoded default
+      tpl = node.textContent && /\{n\}/.test(node.textContent)
+        ? node.textContent
+        : (i18nKey === 'io.input_words' ? 'Input: {n} words' : 'Output: {n} words');
+    }
+    node.setAttribute(ATTR, tpl);
+  }
+  node.textContent = tpl.replace(/\{n\}/g, n ?? 0);
+}
+
+function clearCounterTemplates() {
+  el.inWC && el.inWC.removeAttribute('data-i18n-template');
+  el.outWC && el.outWC.removeAttribute('data-i18n-template');
+}
 
   function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
     $$('[data-lang]').forEach(b => {
