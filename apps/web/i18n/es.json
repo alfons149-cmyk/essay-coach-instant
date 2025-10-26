@@ -11,3 +11,8 @@
   "placeholders.task": "Pega aquí el enunciado del examen...",
   "placeholders.essay": "Pega o escribe aquí tu redacción..."
 }
+{
+  "labels.vocabulary_options": "Opciones de vocabulario",
+  "vocab.none": "Sin sugerencias."
+}
+
