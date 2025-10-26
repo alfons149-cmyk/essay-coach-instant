@@ -57,6 +57,8 @@
       nextDraft: txt.replace(/\ba lot\b/gi, edits[0]?.to || 'a lot')
     };
   };
+  // Render vocabulary suggestions
+renderVocabSuggestions(res.vocabularySuggestions || {});
 
   // ---- Init on load ----
   document.addEventListener('DOMContentLoaded', () => {
