@@ -193,6 +193,12 @@ function clearCounterTemplates() {
   el.inWC && el.inWC.removeAttribute('data-i18n-template');
   el.outWC && el.outWC.removeAttribute('data-i18n-template');
 }
+  function updateCounters() {
+  if (!el.essay || !el.inWC || !el.outWC) return;
+  const wc = wcCount(el.essay.value);
+  setCounter(el.inWC,  'io.input_words',  wc);
+  setCounter(el.outWC, 'io.output_words', wc);
+}
 
   function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
     $$('[data-lang]').forEach(b => {
