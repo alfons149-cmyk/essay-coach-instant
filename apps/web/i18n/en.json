@@ -11,3 +11,8 @@
   "placeholders.task": "Paste the exam task here...",
   "placeholders.essay": "Paste or write your essay here..."
 }
+{
+  "labels.vocabulary_options": "Vocabulary options",
+  "vocab.none": "No suggestions."
+}
+
