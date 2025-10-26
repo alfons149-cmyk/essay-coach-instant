@@ -162,14 +162,22 @@
   window.addEventListener('ec:lang-changed', updateCounters);
 
   // ---- UI helpers ----
-  function updateCounters() {
-    if (!el.essay || !el.inWC || !el.outWC) return;
-    const wc = wcCount(el.essay.value);
-    el.inWC.textContent  = I18N.t('io.input_words',  { n: wc });
-    if (el.outWC.textContent.includes('{n}')) {
-      el.outWC.textContent = I18N.t('io.output_words', { n: wc });
-    }
-  }
+ function updateCounters() {
+  if (!el.essay || !el.inWC || !el.outWC) return;
+  const wc = wcCount(el.essay.value);
+
+  // Always re-format the template, even after translation
+  const inTpl  = el.inWC.getAttribute('data-i18n-template')  || el.inWC.textContent || 'Input: {n} words';
+  const outTpl = el.outWC.getAttribute('data-i18n-template') || el.outWC.textContent || 'Output: {n} words';
+
+  // Store the base template once (so it doesn’t accumulate numbers)
+  if (!el.inWC.hasAttribute('data-i18n-template'))  el.inWC.setAttribute('data-i18n-template',  inTpl);
+  if (!el.outWC.hasAttribute('data-i18n-template')) el.outWC.setAttribute('data-i18n-template', outTpl);
+
+  el.inWC.textContent  = inTpl.replace(/\{n\}/g, wc);
+  el.outWC.textContent = outTpl.replace(/\{n\}/g, wc);
+}
+
 
   function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
     $$('[data-lang]').forEach(b => {
