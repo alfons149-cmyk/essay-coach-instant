@@ -1,14 +1,14 @@
-// js/app.js — single IIFE, clean wiring, live API or mock in dev
+// js/app.js — EssayCoach UI (live API + vocab suggestions with one-click replace)
 (() => {
-  // ---- Config / mode ----
+  // ---- Mode / API ----
   window.EC = window.EC || {};
   const qs  = new URLSearchParams(location.search);
   const DEV = (typeof EC.DEV === 'boolean') ? EC.DEV : (qs.get('dev') === '1');
   const API_BASE = (EC.API_BASE || '').replace(/\/+$/,''); // expect .../api
 
   // ---- Diagnostics (optional) ----
-  const onReady = () => console.log('[EC] API_BASE =', API_BASE || '(mock)', 'DEV?', DEV);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady); else onReady();
+  const ready = () => console.log('[EC] API_BASE =', API_BASE || '(mock)', 'DEV?', DEV);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
 
   // ---- DOM refs ----
   const $  = s => document.querySelector(s);
@@ -42,11 +42,11 @@
       return JSON.parse(text);
     }
     // --- DEV mock ---
-    await new Promise(r => setTimeout(r, 300));
+    await sleep(300);
     const txt = payload.essay || '';
-    const wc  = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+    const wc  = wcCount(txt);
     const edits = /\ba lot\b/i.test(txt)
-      ? [{ from: 'a lot', to: payload.level === 'B2' ? 'much' : 'substantially', reason: 'Register' }]
+      ? [{ from: 'a lot', to: payload.level === 'B2' ? 'much' : 'numerous', reason: 'Register' }]
       : [];
     return {
       level: payload.level,
@@ -54,11 +54,10 @@
       outputWords: wc,
       feedback: `✅ Mock feedback for ${payload.level}.`,
       edits,
-      nextDraft: txt.replace(/\ba lot\b/gi, edits[0]?.to || 'a lot')
+      nextDraft: txt.replace(/\ba lot\b/gi, edits[0]?.to || 'a lot'),
+      vocabularySuggestions: { 'a lot': ['many','numerous','substantially'] }
     };
   };
-  // Render vocabulary suggestions
-renderVocabSuggestions(res.vocabularySuggestions || {});
 
   // ---- Init on load ----
   document.addEventListener('DOMContentLoaded', () => {
@@ -71,23 +70,6 @@ renderVocabSuggestions(res.vocabularySuggestions || {});
   document.addEventListener('click', async (e) => {
     const langBtn  = e.target.closest('[data-lang]');
     const levelBtn = e.target.closest('[data-level]');
-    // Click-to-replace from vocabulary suggestions
-const altBtn = e.target.closest('.vocab-alt');
-if (altBtn) {
-  const key = altBtn.getAttribute('data-key') || '';
-  const to  = altBtn.getAttribute('data-to')  || '';
-  const targetTA = document.getElementById('nextDraft') || document.getElementById('essay');
-  if (!targetTA) return;
-
-  const ok = replaceNearest(targetTA, key, to);
-  if (!ok && el.feedback) {
-    el.feedback.textContent = `Could not find "${key}" to replace.`;
-  } else if (el.feedback) {
-    el.feedback.textContent = `Replaced “${key}” → “${to}”.`;
-  }
-  return;
-}
-
 
     if (langBtn) {
       const lang = langBtn.getAttribute('data-lang');
@@ -115,64 +97,75 @@ if (altBtn) {
       if (el.nextDraft) el.nextDraft.value = '';
       if (el.feedback)  el.feedback.textContent = '—';
       if (el.edits)     el.edits.innerHTML = '';
+      renderVocabSuggestions({}); // hide card
       updateCounters();
       return;
     }
 
-   if (e.target === el.btnCorrect) {
-  const level = localStorage.getItem('ec.level') || 'C1';
-  const payload = {
-    level,
-    task:  (el.task?.value || ''),
-    essay: (el.essay?.value || '')
-  };
+    if (e.target === el.btnCorrect) {
+      const level = localStorage.getItem('ec.level') || 'C1';
+      const payload = {
+        level,
+        task:  (el.task?.value || ''),
+        essay: (el.essay?.value || '')
+      };
+      if (!payload.essay.trim()) {
+        if (el.feedback) el.feedback.textContent = 'Please write or paste your essay first.';
+        return;
+      }
+      try {
+        e.target.disabled = true;
+        if (el.feedback) el.feedback.textContent = '…';
+        const res = await EC.correct(payload);
 
-  if (!payload.essay.trim()) {
-    if (el.feedback) el.feedback.textContent = 'Please write or paste your essay first.';
-    return;
-  }
+        // Render results
+        if (el.feedback)  el.feedback.textContent = res.feedback || '—';
+        if (el.nextDraft) el.nextDraft.value = res.nextDraft || '';
+        if (el.edits)     el.edits.innerHTML = (res.edits || [])
+          .map(x => `<li><strong>${escapeHTML(x.from)}</strong> → <em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`)
+          .join('');
 
-  try {
-    e.target.disabled = true;
-    if (el.feedback) el.feedback.textContent = '…';
+        // Counters
+        if (el.inWC)  el.inWC.textContent  = I18N.t('io.input_words',  { n: res.inputWords  ?? 0 });
+        if (el.outWC) el.outWC.textContent = I18N.t('io.output_words', { n: res.outputWords ?? 0 });
 
-    const res = await EC.correct(payload);
+        // Vocabulary suggestions
+        renderVocabSuggestions(res.vocabularySuggestions || {});
 
-    // ----- Render the AI results -----
-    if (el.feedback) el.feedback.textContent = res.feedback || '—';
-    if (el.nextDraft) el.nextDraft.value = res.nextDraft || '';
-    if (el.edits)
-      el.edits.innerHTML = (res.edits || [])
-        .map(e => `<li><strong>${e.from}</strong> → <em>${e.to}</em> — ${e.reason}</li>`)
-        .join('');
+      } catch (err) {
+        console.error(err);
+        if (el.feedback) el.feedback.textContent = '⚠️ Correction failed. Check API, CORS, or dev mode.';
+      } finally {
+        e.target.disabled = false;
+      }
+    }
 
-    // Word counters
-    if (el.inWC)
-      el.inWC.textContent  = I18N.t('io.input_words',  { n: res.inputWords  ?? 0 });
-    if (el.outWC)
-      el.outWC.textContent = I18N.t('io.output_words', { n: res.outputWords ?? 0 });
+    // --- One-click replace from vocabulary suggestions ---
+    const altBtn = e.target.closest('.vocab-alt');
+    if (altBtn) {
+      const key = altBtn.getAttribute('data-key') || '';
+      const to  = altBtn.getAttribute('data-to')  || '';
+      const targetTA = document.getElementById('nextDraft') || document.getElementById('essay');
+      if (!targetTA) return;
 
-    // ✅ NEW: render the vocabulary suggestion buttons
-    renderVocabSuggestions(res.vocabularySuggestions || {});
-
-  } catch (err) {
-    console.error(err);
-    if (el.feedback) el.feedback.textContent = '⚠️ Correction failed. Check API or dev mode.';
-  } finally {
-    e.target.disabled = false;
-  }
-}
-  
+      const ok = replaceNearest(targetTA, key, to);
+      if (!ok && el.feedback) {
+        el.feedback.textContent = `Could not find "${key}" to replace.`;
+      } else if (el.feedback) {
+        el.feedback.textContent = `Replaced “${key}” → “${to}”.`;
+      }
+      return;
+    }
   });
 
   if (el.essay) el.essay.addEventListener('input', updateCounters);
+  window.addEventListener('ec:lang-changed', updateCounters);
 
   // ---- UI helpers ----
   function updateCounters() {
     if (!el.essay || !el.inWC || !el.outWC) return;
-    const wc = el.essay.value.trim() ? el.essay.value.trim().split(/\s+/).length : 0;
+    const wc = wcCount(el.essay.value);
     el.inWC.textContent  = I18N.t('io.input_words',  { n: wc });
-    // keep output in sync until API responds
     if (el.outWC.textContent.includes('{n}')) {
       el.outWC.textContent = I18N.t('io.output_words', { n: wc });
     }
@@ -195,73 +188,76 @@ if (altBtn) {
     });
   }
 
+  // ---- Vocabulary suggestions renderer + helpers ----
+  function renderVocabSuggestions(vs) {
+    const card = document.getElementById('vocabCard');
+    const list = document.getElementById('vocab');
+    if (!card || !list) return;
+
+    const entries = Object.entries(vs || {});
+    if (!entries.length) {
+      card.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+
+    const items = entries.map(([key, arr]) => {
+      const alts = (Array.isArray(arr) ? arr : [String(arr)])
+        .filter(Boolean)
+        .map(a => `<button type="button" class="vocab-alt btn-ghost" data-key="${escapeHTML(key)}" data-to="${escapeHTML(a)}">${escapeHTML(a)}</button>`)
+        .join(' ');
+      return `<li><strong>${escapeHTML(key)}</strong><div class="alt-row">${alts}</div></li>`;
+    });
+
+    list.innerHTML = items.join('');
+    card.hidden = false;
+  }
+
+  // Replace the occurrence of `needle` nearest to the caret in `textarea`.
+  // If caret isn’t inside a match, replace the nearest by distance; else first.
+  function replaceNearest(textarea, needle, replacement) {
+    const value = textarea.value;
+    const n = String(needle);
+    if (!n) return false;
+
+    const re = new RegExp(escapeForRegExp(n), 'gi');
+    let match;
+    const matches = [];
+    while ((match = re.exec(value)) !== null) {
+      matches.push({ start: match.index, end: match.index + match[0].length });
+      if (re.lastIndex === match.index) re.lastIndex++; // safety
+    }
+    if (!matches.length) return false;
+
+    const caret = textarea.selectionStart ?? 0;
+    let target = matches.find(m => caret >= m.start && caret <= m.end);
+    if (!target) {
+      target = matches
+        .map(m => ({ m, d: Math.min(Math.abs(caret - m.start), Math.abs(caret - m.end)) }))
+        .sort((a,b) => a.d - b.d)[0].m;
+    }
+
+    const before = value.slice(0, target.start);
+    const after  = value.slice(target.end);
+    const next   = before + replacement + after;
+
+    textarea.value = next;
+    const newCaret = before.length + replacement.length;
+    textarea.setSelectionRange(newCaret, newCaret);
+    textarea.dispatchEvent(new Event('input', { bubbles: true })); // refresh counters
+    return true;
+  }
+
+  // ---- utils ----
+  function wcCount(s) {
+    const m = String(s || '').trim().match(/\S+/g);
+    return m ? m.length : 0;
+  }
+  function escapeForRegExp(x) {
+    return String(x).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
   function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
-  // --- Vocabulary suggestions renderer + helpers ---
-function renderVocabSuggestions(vs) {
-  const card = document.getElementById('vocabCard');
-  const list = document.getElementById('vocab');
-  if (!card || !list) return;
-
-  const entries = Object.entries(vs);
-  if (!entries.length) {
-    card.hidden = true;
-    list.innerHTML = '';
-    return;
-  }
-
-  const items = entries.map(([key, arr]) => {
-    const alts = (Array.isArray(arr) ? arr : [String(arr)])
-      .filter(Boolean)
-      .map(a => `<button type="button" class="vocab-alt btn-ghost" data-key="${escapeHTML(key)}" data-to="${escapeHTML(a)}">${escapeHTML(a)}</button>`)
-      .join(' ');
-    return `<li><strong>${escapeHTML(key)}</strong><div class="alt-row">${alts}</div></li>`;
-  });
-
-  list.innerHTML = items.join('');
-  card.hidden = false;
-}
-
-// Replace the occurrence of `needle` nearest to the caret in `textarea`.
-// If caret isn’t inside a match, replace the first match. Case-insensitive.
-function replaceNearest(textarea, needle, replacement) {
-  const value = textarea.value;
-  const n = String(needle);
-  if (!n) return false;
-
-  // Case-insensitive search of all matches
-  const re = new RegExp(escapeForRegExp(n), 'gi');
-  let match;
-  const matches = [];
-  while ((match = re.exec(value)) !== null) {
-    matches.push({ start: match.index, end: match.index + match[0].length });
-    if (re.lastIndex === match.index) re.lastIndex++; // avoid infinite loop
-  }
-  if (!matches.length) return false;
-
-  const caret = textarea.selectionStart ?? 0;
-  // Find match that contains caret, else nearest by distance
-  let target = matches.find(m => caret >= m.start && caret <= m.end);
-  if (!target) {
-    target = matches
-      .map(m => ({ m, d: Math.min(Math.abs(caret - m.start), Math.abs(caret - m.end)) }))
-      .sort((a,b) => a.d - b.d)[0].m;
-  }
-
-  const before = value.slice(0, target.start);
-  const after  = value.slice(target.end);
-  const next   = before + replacement + after;
-
-  // Commit change and move caret
-  textarea.value = next;
-  const newCaret = before.length + replacement.length;
-  textarea.setSelectionRange(newCaret, newCaret);
-  textarea.dispatchEvent(new Event('input', { bubbles: true })); // refresh counters
-  return true;
-}
-
-function escapeForRegExp(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 })();
