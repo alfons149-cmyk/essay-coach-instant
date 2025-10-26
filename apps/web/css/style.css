@@ -156,6 +156,19 @@ textarea:focus {
   margin-bottom: 8px;
   color: var(--ec-accent-active);
 }
+:root[data-theme="coral"] {
+  /* existing vars … */
+  --ec-accent: #ff7f50;
+  --ec-accent-hover: #ff9770;
+  --ec-accent-active: #e66a3b;
+
+  /* NEW: gradient tokens */
+  --ec-grad-1: #fff6f2;   /* very light coral */
+  --ec-grad-2: #ffe8e0;   /* light coral */
+  --ec-grad-3: #ffd3c4;   /* warmer coral */
+  --ec-grad-shadow: rgba(230, 106, 59, 0.14); /* shadow tint */
+}
+
 
 /* ---------- CSS variables (themeable) ---------- */
 :root {
