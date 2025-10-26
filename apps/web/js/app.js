@@ -126,8 +126,8 @@
           .join('');
 
         // Counters
-        if (el.inWC)  el.inWC.textContent  = I18N.t('io.input_words',  { n: res.inputWords  ?? 0 });
-        if (el.outWC) el.outWC.textContent = I18N.t('io.output_words', { n: res.outputWords ?? 0 });
+        setCounter(el.inWC,  'io.input_words',  res.inputWords  ?? 0);
+        setCounter(el.outWC, 'io.output_words', res.outputWords ?? 0);
 
         // Vocabulary suggestions
         renderVocabSuggestions(res.vocabularySuggestions || {});
