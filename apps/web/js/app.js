@@ -168,4 +168,70 @@ renderVocabSuggestions(res.vocabularySuggestions || {});
   function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
+  // --- Vocabulary suggestions renderer + helpers ---
+function renderVocabSuggestions(vs) {
+  const card = document.getElementById('vocabCard');
+  const list = document.getElementById('vocab');
+  if (!card || !list) return;
+
+  const entries = Object.entries(vs);
+  if (!entries.length) {
+    card.hidden = true;
+    list.innerHTML = '';
+    return;
+  }
+
+  const items = entries.map(([key, arr]) => {
+    const alts = (Array.isArray(arr) ? arr : [String(arr)])
+      .filter(Boolean)
+      .map(a => `<button type="button" class="vocab-alt btn-ghost" data-key="${escapeHTML(key)}" data-to="${escapeHTML(a)}">${escapeHTML(a)}</button>`)
+      .join(' ');
+    return `<li><strong>${escapeHTML(key)}</strong><div class="alt-row">${alts}</div></li>`;
+  });
+
+  list.innerHTML = items.join('');
+  card.hidden = false;
+}
+
+// Replace the occurrence of `needle` nearest to the caret in `textarea`.
+// If caret isn’t inside a match, replace the first match. Case-insensitive.
+function replaceNearest(textarea, needle, replacement) {
+  const value = textarea.value;
+  const n = String(needle);
+  if (!n) return false;
+
+  // Case-insensitive search of all matches
+  const re = new RegExp(escapeForRegExp(n), 'gi');
+  let match;
+  const matches = [];
+  while ((match = re.exec(value)) !== null) {
+    matches.push({ start: match.index, end: match.index + match[0].length });
+    if (re.lastIndex === match.index) re.lastIndex++; // avoid infinite loop
+  }
+  if (!matches.length) return false;
+
+  const caret = textarea.selectionStart ?? 0;
+  // Find match that contains caret, else nearest by distance
+  let target = matches.find(m => caret >= m.start && caret <= m.end);
+  if (!target) {
+    target = matches
+      .map(m => ({ m, d: Math.min(Math.abs(caret - m.start), Math.abs(caret - m.end)) }))
+      .sort((a,b) => a.d - b.d)[0].m;
+  }
+
+  const before = value.slice(0, target.start);
+  const after  = value.slice(target.end);
+  const next   = before + replacement + after;
+
+  // Commit change and move caret
+  textarea.value = next;
+  const newCaret = before.length + replacement.length;
+  textarea.setSelectionRange(newCaret, newCaret);
+  textarea.dispatchEvent(new Event('input', { bubbles: true })); // refresh counters
+  return true;
+}
+
+function escapeForRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 })();
