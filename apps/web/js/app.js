@@ -119,37 +119,50 @@ if (altBtn) {
       return;
     }
 
-    if (e.target === el.btnCorrect) {
-      const level = localStorage.getItem('ec.level') || 'C1';
-      const payload = {
-        level,
-        task:  (el.task?.value || ''),
-        essay: (el.essay?.value || '')
-      };
-      if (!payload.essay.trim()) {
-        if (el.feedback) el.feedback.textContent = 'Please write or paste your essay first.';
-        return;
-      }
-      try {
-        e.target.disabled = true;
-        if (el.feedback) el.feedback.textContent = '…';
-        const res = await EC.correct(payload);
+   if (e.target === el.btnCorrect) {
+  const level = localStorage.getItem('ec.level') || 'C1';
+  const payload = {
+    level,
+    task:  (el.task?.value || ''),
+    essay: (el.essay?.value || '')
+  };
 
-        if (el.feedback)  el.feedback.textContent = res.feedback || '—';
-        if (el.nextDraft) el.nextDraft.value = res.nextDraft || '';
-        if (el.edits)     el.edits.innerHTML = (res.edits || [])
-          .map(x => `<li><strong>${escapeHTML(x.from)}</strong> → <em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`)
-          .join('');
+  if (!payload.essay.trim()) {
+    if (el.feedback) el.feedback.textContent = 'Please write or paste your essay first.';
+    return;
+  }
 
-        if (el.inWC)  el.inWC.textContent  = I18N.t('io.input_words',  { n: res.inputWords  ?? 0 });
-        if (el.outWC) el.outWC.textContent = I18N.t('io.output_words', { n: res.outputWords ?? 0 });
-      } catch (err) {
-        console.error(err);
-        if (el.feedback) el.feedback.textContent = '⚠️ Correction failed. Check API, CORS, or dev mode.';
-      } finally {
-        e.target.disabled = false;
-      }
-    }
+  try {
+    e.target.disabled = true;
+    if (el.feedback) el.feedback.textContent = '…';
+
+    const res = await EC.correct(payload);
+
+    // ----- Render the AI results -----
+    if (el.feedback) el.feedback.textContent = res.feedback || '—';
+    if (el.nextDraft) el.nextDraft.value = res.nextDraft || '';
+    if (el.edits)
+      el.edits.innerHTML = (res.edits || [])
+        .map(e => `<li><strong>${e.from}</strong> → <em>${e.to}</em> — ${e.reason}</li>`)
+        .join('');
+
+    // Word counters
+    if (el.inWC)
+      el.inWC.textContent  = I18N.t('io.input_words',  { n: res.inputWords  ?? 0 });
+    if (el.outWC)
+      el.outWC.textContent = I18N.t('io.output_words', { n: res.outputWords ?? 0 });
+
+    // ✅ NEW: render the vocabulary suggestion buttons
+    renderVocabSuggestions(res.vocabularySuggestions || {});
+
+  } catch (err) {
+    console.error(err);
+    if (el.feedback) el.feedback.textContent = '⚠️ Correction failed. Check API or dev mode.';
+  } finally {
+    e.target.disabled = false;
+  }
+}
+  
   });
 
   if (el.essay) el.essay.addEventListener('input', updateCounters);
