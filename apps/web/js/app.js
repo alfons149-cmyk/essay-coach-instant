@@ -7,7 +7,18 @@
 
   window.EC = window.EC || {};
   const API_BASE = window.EC.API_BASE || null; // set in js/config.js (must be your Worker, not Pages)
-
+// Diagnostics – remove later if you want
+(() => {
+  const ready = () => {
+    console.log('[EC] API_BASE =', window?.EC?.API_BASE, ' DEV?', window?.EC?.DEV);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready);
+  } else {
+    ready();
+  }
+})();
+  
   // Unified corrector: live API when not DEV and API_BASE is set; otherwise mock
   EC.correct = async (payload) => {
     if (!DEV && API_BASE) {
