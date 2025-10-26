@@ -71,6 +71,23 @@ renderVocabSuggestions(res.vocabularySuggestions || {});
   document.addEventListener('click', async (e) => {
     const langBtn  = e.target.closest('[data-lang]');
     const levelBtn = e.target.closest('[data-level]');
+    // Click-to-replace from vocabulary suggestions
+const altBtn = e.target.closest('.vocab-alt');
+if (altBtn) {
+  const key = altBtn.getAttribute('data-key') || '';
+  const to  = altBtn.getAttribute('data-to')  || '';
+  const targetTA = document.getElementById('nextDraft') || document.getElementById('essay');
+  if (!targetTA) return;
+
+  const ok = replaceNearest(targetTA, key, to);
+  if (!ok && el.feedback) {
+    el.feedback.textContent = `Could not find "${key}" to replace.`;
+  } else if (el.feedback) {
+    el.feedback.textContent = `Replaced “${key}” → “${to}”.`;
+  }
+  return;
+}
+
 
     if (langBtn) {
       const lang = langBtn.getAttribute('data-lang');
