@@ -1,7 +1,161 @@
+
 /* ==========================================================================
    EssayCoach – Base styles
    File: apps/web/css/style.css
    ========================================================================== */
+/* =====================================
+   EssayCoach Coral Theme
+   ===================================== */
+:root[data-theme="coral"] {
+  --ec-bg: #fffdfc;
+  --ec-surface: #ffffff;
+  --ec-border: #f2c7b0;
+  --ec-text: #1a1a1a;
+  --ec-muted: #666;
+  --ec-accent: #ff7f50;         /* Coral base */
+  --ec-accent-hover: #ff9770;   /* Lighter coral for hover */
+  --ec-accent-active: #e66a3b;  /* Darker coral for active press */
+  --ec-accent-bg: #fff3ee;      /* Subtle coral tint background */
+  --ec-pill-bg: #ffe9e2;
+  --ec-pill-active-bg: #ffb199;
+}
+
+/* Body + typography */
+body {
+  background: var(--ec-bg);
+  color: var(--ec-text);
+  font-family: Inter, system-ui, Arial, sans-serif;
+  margin: 0;
+  line-height: 1.5;
+}
+
+header, footer {
+  padding: 12px 16px;
+  background: var(--ec-accent-bg);
+  border-bottom: 1px solid var(--ec-border);
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* =====================================
+   Buttons
+   ===================================== */
+.btn,
+button {
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+/* Primary (used for “Correct”) */
+.btn-primary {
+  background: var(--ec-accent);
+  border: 1px solid var(--ec-accent-active);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--ec-accent-hover);
+  border-color: var(--ec-accent-hover);
+}
+.btn-primary:active {
+  background: var(--ec-accent-active);
+}
+
+/* Ghost (used for Clear, language toggles, alt vocab buttons) */
+.btn-ghost {
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  color: var(--ec-text);
+}
+.btn-ghost:hover {
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+  background: var(--ec-accent-bg);
+}
+
+/* Pill level buttons */
+.pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ec-border);
+  background: var(--ec-pill-bg);
+  transition: all 0.15s ease;
+}
+.pill:hover {
+  background: var(--ec-accent-hover);
+  color: #fff;
+  border-color: var(--ec-accent-active);
+}
+.pill--active {
+  background: var(--ec-accent);
+  color: #fff;
+  border-color: var(--ec-accent-active);
+}
+
+/* Inputs */
+textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ec-border);
+  font-size: 16px;
+  background: #fff;
+  color: var(--ec-text);
+  transition: border-color 0.15s ease;
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--ec-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent) 30%, transparent);
+}
+
+/* Word counters */
+.pill[data-i18n] {
+  background: var(--ec-pill-bg);
+  border: 1px solid var(--ec-border);
+  color: var(--ec-muted);
+}
+.pill[data-i18n]:hover {
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* Vocab suggestion buttons */
+.vocab-alt {
+  margin: 4px 6px 0 0;
+  font-size: 0.9rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--ec-accent-bg);
+  border: 1px solid var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+.vocab-alt:hover {
+  background: var(--ec-accent-hover);
+  color: #fff;
+}
+
+/* Panels, cards */
+.card {
+  border: 1px solid var(--ec-border);
+  border-radius: 12px;
+  background: var(--ec-surface);
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.card-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--ec-accent-active);
+}
 
 /* ---------- CSS variables (themeable) ---------- */
 :root {
