@@ -24,6 +24,18 @@
   <!-- Scripts: load in this exact order -->
   <script defer src="js/i18n.js"></script>
   <script defer src="js/config.js"></script>
+  <script>
+  window.EC = window.EC || {};
+  if (!window.EC.API_BASE) {
+    window.EC.API_BASE = 'https://essaycoach.alfons149.workers.dev/api';
+  }
+  // Also surface DEV flag from ?dev=1
+  if (typeof window.EC.DEV !== 'boolean') {
+    const qs = new URLSearchParams(location.search);
+    window.EC.DEV = (qs.get('dev') === '1');
+  }
+  console.log('[EC hotfix] API_BASE =', window.EC.API_BASE, 'DEV?', window.EC.DEV);
+</script>
   <script defer src="js/app.js"></script>
 
   <!-- Force EN on first load if no saved language, then boot i18n -->
