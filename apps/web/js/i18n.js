@@ -70,4 +70,5 @@
     const saved = localStorage.getItem('ec.lang') || 'en';
     I18N.load(saved);
   });
+  window.I18N = I18N;
 })();
