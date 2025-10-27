@@ -1,11 +1,73 @@
-
-/* ==========================================================================
-   EssayCoach – Base styles
-   File: apps/web/css/style.css
-   ========================================================================== */
 /* =====================================
    EssayCoach Coral Theme
    ===================================== */
+
+/* Gradient coral topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 14px 16px;
+  backdrop-filter: saturate(110%) blur(2px);
+  background:
+    linear-gradient(180deg, var(--ec-grad-1) 0%, var(--ec-grad-2) 60%, var(--ec-grad-1) 100%);
+  border-bottom: 1px solid var(--ec-border);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.02),
+    0 6px 18px -10px var(--ec-grad-shadow);
+}
+
+/* Layout inside topbar */
+.topbar .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.topbar .spacer {
+  margin-left: auto;
+}
+
+/* Title */
+.app-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.2px;
+  color: var(--ec-accent-active);
+  margin: 0;
+}
+
+/* Optional badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 10px;
+  border: 1px solid var(--ec-border);
+  background: var(--ec-accent-bg);
+  color: var(--ec-accent-active);
+  font-size: 12px;
+}
+.badge::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--ec-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ec-accent) 20%, transparent);
+}
+
+/* Hover tweak for ghost buttons in topbar */
+.topbar .btn-ghost:hover {
+  background: color-mix(in srgb, var(--ec-accent) 10%, #fff);
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .topbar { backdrop-filter: none; }
+}
+
 :root[data-theme="coral"] {
   --ec-bg: #fffdfc;
   --ec-surface: #ffffff;
