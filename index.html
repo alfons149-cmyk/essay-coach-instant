@@ -9,6 +9,17 @@
   <script defer src="js/i18n.js"></script>
   <script defer src="js/config.js"></script>
   <script defer src="js/app.js"></script>
+  <script>
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-lang]');
+  if (!btn) return;
+  const lang = btn.getAttribute('data-lang');
+  localStorage.setItem('ec.lang', lang);
+  document.documentElement.lang = lang;
+  await I18N.load(lang);   // important
+});
+</script>
+
 </head>
 <body>
   <h1 data-i18n="app.name">EssayCoach</h1>
