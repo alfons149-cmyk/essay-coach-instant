@@ -1,74 +1,64 @@
 // js/i18n.js
 (function () {
-  const url = `assets/i18n/${I18N.lang}.json`;
+  const I18N = {
+    lang: 'en',
+    dict: {},
 
     t(key, vars) {
       let s = I18N.dict[key] ?? '';
       if (vars && typeof s === 'string') {
         s = s.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? vars[k] : `{${k}}`));
       }
-      return s || key; // fall back to the key so missing strings are obvious
+      return s || key; // fall back to key to spot missing strings
     },
 
-    // Apply translations to textContent and attributes in one pass
     applyAll() {
-      // Text nodes
+      // textContent
       document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        el.textContent = I18N.t(key);
+        el.textContent = I18N.t(el.getAttribute('data-i18n'));
       });
-
-      // Placeholder attributes
+      // placeholders
       document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-        const key = el.getAttribute('data-i18n-ph');
-        el.setAttribute('placeholder', I18N.t(key));
+        el.setAttribute('placeholder', I18N.t(el.getAttribute('data-i18n-ph')));
       });
-
-      // Title (hover tooltip) attributes
+      // titles / tooltips
       document.querySelectorAll('[data-i18n-title]').forEach(el => {
-        const key = el.getAttribute('data-i18n-title');
-        el.setAttribute('title', I18N.t(key));
+        el.setAttribute('title', I18N.t(el.getAttribute('data-i18n-title')));
       });
-
-      // Optional: document title
+      // document title
       const titleEl = document.querySelector('title[data-i18n]');
       if (titleEl) document.title = I18N.t(titleEl.getAttribute('data-i18n'));
-
-      // Keep <html lang> correct (helps screen readers & grammar tools)
+      // keep <html lang> correct
       document.documentElement.lang = I18N.lang;
     },
 
     async load(lang) {
-  I18N.lang = lang || 'en';
-  const base = 'assets/i18n';
-  const bust = `v=${Date.now()}`; // defeat GH Pages caching during dev
+      I18N.lang = lang || 'en';
+      const url = `assets/i18n/${I18N.lang}.json`;   // ← build URL *here*, after lang is known
+      console.log('[i18n] loading', I18N.lang, '→', url);
 
-  async function get(url) {
-    const res = await fetch(`${url}?${bust}`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    return res.json();
-  }
+      try {
+        const res = await fetch(`${url}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+        I18N.dict = await res.json();
+      } catch (e) {
+        console.warn('[i18n] load failed, falling back to EN:', e);
+        const res = await fetch(`assets/i18n/en.json?v=${Date.now()}`, { cache: 'no-store' });
+        I18N.lang = 'en';
+        I18N.dict = await res.json();
+      }
 
-  try {
-    I18N.dict = await get(`${base}/${I18N.lang}.json`);
-  } catch (e) {
-    console.warn('[i18n] falling back to EN because:', e);
-    I18N.lang = 'en';
-    I18N.dict = await get(`${base}/en.json`);
-  }
-
-  I18N.applyAll();
-}
-
+      I18N.applyAll();
+      return I18N.dict;
+    }
   };
 
-  // Expose globally
+  // expose globally
   window.I18N = I18N;
 
-  // Auto-boot when DOM is ready, honoring localStorage
+  // auto-boot
   document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('ec.lang') || 'en';
     I18N.load(saved);
   });
-  window.I18N = I18N;
 })();
