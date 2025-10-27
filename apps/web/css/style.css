@@ -471,3 +471,109 @@ textarea:focus, input:focus, select:focus {
   .panel { box-shadow: none; border-color: #999; }
   body { background: #fff; color: #000; }
 }
+/* =====================================
+   Coral Button + Pill System
+   ===================================== */
+
+/* Generic button baseline */
+button,
+.btn {
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 8px 14px;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+/* Primary button (used for Correct) */
+.btn-primary {
+  background: var(--ec-accent);
+  border: 1px solid var(--ec-accent-active);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--ec-accent-hover);
+  border-color: var(--ec-accent-hover);
+}
+.btn-primary:active {
+  background: var(--ec-accent-active);
+}
+
+/* Ghost button (used for Clear + language toggles) */
+.btn-ghost {
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  color: var(--ec-text);
+}
+.btn-ghost:hover {
+  background: var(--ec-accent-bg);
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* --- Pill buttons (used for levels B2/C1/C2) --- */
+.pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ec-border);
+  background: var(--ec-pill-bg, #ffe9e2);
+  color: var(--ec-text);
+  transition: all 0.15s ease;
+}
+.pill:hover {
+  background: var(--ec-accent-hover);
+  color: #fff;
+  border-color: var(--ec-accent-active);
+}
+.pill--active,
+.pill[aria-pressed="true"] {
+  background: var(--ec-accent);
+  color: #fff;
+  border-color: var(--ec-accent-active);
+}
+
+/* --- Inputs + counters --- */
+textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ec-border);
+  font-size: 16px;
+  background: #fff;
+  color: var(--ec-text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--ec-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent) 30%, transparent);
+}
+
+/* Word counters */
+.pill[data-i18n] {
+  background: var(--ec-pill-bg, #ffe9e2);
+  border: 1px solid var(--ec-border);
+  color: var(--ec-muted);
+}
+.pill[data-i18n]:hover {
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* --- Card + title --- */
+.card {
+  border: 1px solid var(--ec-border);
+  border-radius: 12px;
+  background: var(--ec-surface, #fff);
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.card-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--ec-accent-active);
+}
