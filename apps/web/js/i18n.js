@@ -41,24 +41,27 @@
     },
 
     async load(lang) {
-      I18N.lang = lang || 'en';
+  I18N.lang = lang || 'en';
+  const base = 'assets/i18n';
+  const bust = `v=${Date.now()}`; // defeat GH Pages caching during dev
 
-      // Fetch from /essay-coach-instant/i18n/<lang>.json on GitHub Pages
-      // The <base href="/essay-coach-instant/"> you set makes this relative path correct.
-      const url = `i18n/${I18N.lang}.json`;
+  async function get(url) {
+    const res = await fetch(`${url}?${bust}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return res.json();
+  }
 
-      try {
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-        I18N.dict = await res.json();
-      } catch (err) {
-        console.error('[i18n] load failed:', err);
-        I18N.dict = {}; // keep going with empty dict
-      }
+  try {
+    I18N.dict = await get(`${base}/${I18N.lang}.json`);
+  } catch (e) {
+    console.warn('[i18n] falling back to EN because:', e);
+    I18N.lang = 'en';
+    I18N.dict = await get(`${base}/en.json`);
+  }
 
-      I18N.applyAll();
-      return I18N.dict;
-    }
+  I18N.applyAll();
+}
+
   };
 
   // Expose globally
