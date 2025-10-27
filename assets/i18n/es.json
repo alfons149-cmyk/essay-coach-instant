@@ -1,17 +1,31 @@
 {
-  "labels.prompt": "Instrucción de la tarea",
+  "meta.title": "EssayCoach – Kit de Cambridge (ES)",
+  "app.name": "EssayCoach",
+  "app.subtitle": "EssayCoach – Kit de Cambridge",
+
+  "labels.level": "Nivel:",
+  "labels.prompt": "Enunciado de la tarea",
   "labels.essay": "Tu redacción",
-  "labels.feedback": "Retroalimentación",
-  "labels.edits": "Cambios",
-  "labels.next_draft": "Versión siguiente",
+  "labels.feedback": "Comentarios",
+  "labels.edits": "Correcciones",
+  "labels.next_draft": "Siguiente versión",
+  "labels.vocab_options": "Opciones de vocabulario",
+
   "buttons.correct": "Corregir",
-  "buttons.clear": "Borrar",
+  "buttons.clear": "Limpiar",
+
   "io.input_words": "Entrada: {n} palabras",
   "io.output_words": "Salida: {n} palabras",
+
   "placeholders.task": "Pega aquí el enunciado del examen...",
-  "placeholders.essay": "Pega o escribe aquí tu redacción..."
-}
-{
-  "labels.vocabulary_options": "Opciones de vocabulario",
+  "placeholders.essay": "Escribe o pega aquí tu redacción...",
+  "placeholders.next_draft": "Empieza aquí tu siguiente versión...",
+
+  "tooltips.lang_en": "Cambiar a inglés",
+  "tooltips.lang_es": "Cambiar a español",
+  "tooltips.lang_nl": "Cambiar a neerlandés",
+  "tooltips.correct": "Corregir la redacción",
+  "tooltips.clear": "Vaciar todos los campos",
+
   "vocab.none": "Sin sugerencias."
 }
