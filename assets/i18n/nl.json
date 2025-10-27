@@ -1,1 +1,17 @@
-
+{
+  "labels.prompt": "Taakopdracht",
+  "labels.essay": "Jouw essay",
+  "labels.feedback": "Feedback",
+  "labels.edits": "Wijzigingen",
+  "labels.next_draft": "Volgende versie",
+  "buttons.correct": "Corrigeer",
+  "buttons.clear": "Wissen",
+  "io.input_words": "Invoer: {n} woorden",
+  "io.output_words": "Uitvoer: {n} woorden",
+  "placeholders.task": "Plak hier de examenvraag of opdracht...",
+  "placeholders.essay": "Plak of schrijf hier je essay..."
+}
+{
+  "labels.vocabulary_options": "Woordkeuzes",
+  "vocab.none": "Geen suggesties."
+}
