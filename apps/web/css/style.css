@@ -1,6 +1,8 @@
 /* =====================================
-   EssayCoach Coral Theme Tokens
+   EssayCoach Coral Theme — CLEAN FINAL
    ===================================== */
+
+/* Theme tokens */
 :root[data-theme="coral"]{
   --ec-bg: #fffdfc;
   --ec-surface: #ffffff;
@@ -8,19 +10,22 @@
   --ec-text: #1a1a1a;
   --ec-muted: #666;
 
-  /* Coral accent family */
   --ec-accent: #ff7f50;
   --ec-accent-hover: #ff9770;
   --ec-accent-active: #e66a3b;
   --ec-accent-bg: #fff3ee;
+
   --ec-pill-bg: #ffe9e2;
 
-  /* Gradient banner tokens */
   --ec-grad-1: #fff6f2;
   --ec-grad-2: #ffe8e0;
   --ec-grad-shadow: rgba(230, 106, 59, 0.14);
 }
+
+/* Base reset for buttons so browser blue doesn't bleed through */
 button {
+  appearance: none;
+  -webkit-appearance: none;
   all: unset;
   display: inline-block;
   cursor: pointer;
@@ -28,75 +33,150 @@ button {
   border-radius: 10px;
   padding: 8px 14px;
   border: 1px solid transparent;
+  line-height: 1;
 }
 
 /* Base layout & typography */
-body{ background:var(--ec-bg); color:var(--ec-text); font-family:Inter,system-ui,Arial,sans-serif; margin:0; line-height:1.5; }
+body{
+  background: var(--ec-bg);
+  color: var(--ec-text);
+  font-family: Inter, system-ui, Arial, sans-serif;
+  margin: 0;
+  line-height: 1.5;
+}
 .container{ max-width:1000px; margin:0 auto; padding:16px; }
-.card{ border:1px solid var(--ec-border); border-radius:12px; background:var(--ec-surface); padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+
+.card{
+  border:1px solid var(--ec-border);
+  border-radius:12px;
+  background:var(--ec-surface);
+  padding:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
 .card-title{ font-weight:600; margin-bottom:8px; color:var(--ec-accent-active); }
 
 /* =====================================
-   Buttons & Pills (coral)
+   Coral buttons & pills
    ===================================== */
+
+/* Generic baseline (applies to all buttons) */
 button, .btn{
-  cursor:pointer; font-family:inherit; font-weight:600;
-  border-radius:10px; padding:8px 14px;
-  transition:all .15s ease; border:1px solid transparent; background:#fff; color:var(--ec-text);
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 8px 14px;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .08s ease;
+  border: 1px solid transparent;
+  background: #fff;
+  color: var(--ec-text);
 }
 
 /* Primary action (Correct) */
 .btn-primary{
-  background:var(--ec-accent);
-  border:1px solid var(--ec-accent-active);
-  color:#fff;
+  background: var(--ec-accent);
+  border: 1px solid var(--ec-accent-active);
+  color: #fff;
 }
-.btn-primary:hover{ background:var(--ec-accent-hover); border-color:var(--ec-accent-hover); }
-.btn-primary:active{ background:var(--ec-accent-active); }
+.btn-primary:hover{
+  background: var(--ec-accent-hover);
+  border-color: var(--ec-accent-hover);
+}
+.btn-primary:active{ background: var(--ec-accent-active); }
 
-/* Ghost buttons (Clear, Language toggles, vocab alt) */
+/* Ghost buttons (Clear, language toggles, vocab alt) */
 .btn-ghost{
-  background:#fff;
-  border:1px solid var(--ec-border);
-  color:var(--ec-text);
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  color: var(--ec-text);
+}
+.btn-ghost:hover{
+  background: var(--ec-accent-bg);
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
 }
 
-/* Level pills (B2/C1/C2) */
-.pill{
-  display:inline-block; padding:4px 10px; border-radius:999px;
-  border:1px solid var(--ec-border);
-  background:var(--ec-pill-bg);
-  color:var(--ec-text);
-  transition:all .15s ease;
+/* Safety: if any old HTML still uses .lang-btn, make it behave like ghost */
+.lang-btn{
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  color: var(--ec-text);
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
-.pill:hover{ background:var(--ec-accent-hover); color:#fff; border-color:var(--ec-accent-active); }
-.pill--active, .pill[aria-pressed="true"]{ background:var(--ec-accent); color:#fff; border-color:var(--ec-accent-active); }
+.lang-btn:hover{
+  background: var(--ec-accent-bg);
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* Level pills */
+.pill{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid var(--ec-border);
+  background: var(--ec-pill-bg);
+  color: var(--ec-text);
+  transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.pill:hover{
+  background: var(--ec-accent-hover);
+  color:#fff;
+  border-color: var(--ec-accent-active);
+}
+.pill--active,
+.pill[aria-pressed="true"]{
+  background: var(--ec-accent);
+  color: #fff;
+  border-color: var(--ec-accent-active);
+}
 
 /* Textareas & focus ring */
 textarea{
-  width:100%; min-height:180px; padding:12px; border-radius:10px;
-  border:1px solid var(--ec-border); background:#fff; color:var(--ec-text);
-  font-size:16px; transition:border-color .15s ease, box-shadow .15s ease;
+  width:100%;
+  min-height:180px;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--ec-border);
+  background:#fff;
+  color:var(--ec-text);
+  font-size:16px;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
 textarea:focus{
-  outline:none; border-color:var(--ec-accent);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--ec-accent) 30%, transparent);
+  outline:none;
+  border-color: var(--ec-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent) 30%, transparent);
 }
 
-/* Word counters (pills with data-i18n) */
-.pill[data-i18n]{ background:var(--ec-pill-bg); border:1px solid var(--ec-border); color:var(--ec-muted); }
-.pill[data-i18n]:hover{ border-color:var(--ec-accent); color:var(--ec-accent-active); }
+/* Word counters (as pills) */
+.pill[data-i18n]{
+  background: var(--ec-pill-bg);
+  border: 1px solid var(--ec-border);
+  color: var(--ec-muted);
+}
+.pill[data-i18n]:hover{
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
 
-/* Vocab alt buttons */
+/* Vocab suggestion buttons */
 .vocab-alt{
-  margin:4px 6px 0 0; font-size:.9rem; padding:3px 10px;
-  border-radius:6px; background:var(--ec-accent-bg); border:1px solid var(--ec-accent); color:var(--ec-accent-active);
+  margin:4px 6px 0 0;
+  font-size:.9rem;
+  padding:3px 10px;
+  border-radius:6px;
+  background: var(--ec-accent-bg);
+  border: 1px solid var(--ec-accent);
+  color: var(--ec-accent-active);
 }
-.vocab-alt:hover{ background:var(--ec-accent-hover); color:#fff; }
+.vocab-alt:hover{ background: var(--ec-accent-hover); color:#fff; }
 
-
-/* Gradient coral topbar */
-.topbar {
+/* =====================================
+   Gradient topbar
+   ===================================== */
+.topbar{
   position: sticky;
   top: 0;
   z-index: 50;
@@ -111,634 +191,48 @@ textarea:focus{
 }
 
 /* Layout inside topbar */
-.topbar .row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+.topbar .row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
 }
-.topbar .spacer {
-  margin-left: auto;
-}
+.topbar .spacer{ margin-left:auto; }
 
-/* Title */
-.app-title {
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: 0.2px;
+/* Title in banner */
+.app-title{
+  font-weight:700;
+  font-size:1.15rem;
+  letter-spacing:.2px;
   color: var(--ec-accent-active);
-  margin: 0;
+  margin:0;
 }
 
-/* Optional badge */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 3px 10px;
-  border: 1px solid var(--ec-border);
+/* Optional badge (DEV / API mode) */
+.badge{
+  display:inline-flex; align-items:center; gap:6px;
+  border-radius:999px; padding:3px 10px;
+  border:1px solid var(--ec-border);
   background: var(--ec-accent-bg);
   color: var(--ec-accent-active);
-  font-size: 12px;
+  font-size:12px;
 }
-.badge::before {
-  content: "";
-  width: 6px; height: 6px; border-radius: 999px;
+.badge::before{
+  content:""; width:6px; height:6px; border-radius:999px;
   background: var(--ec-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ec-accent) 20%, transparent);
 }
 
-/* Hover tweak for ghost buttons in topbar */
-.topbar .btn-ghost:hover {
-  background: color-mix(in srgb, var(--ec-accent) 10%, #fff);
-  border-color: var(--ec-accent);
-  color: var(--ec-accent-active);
-}
-
-/* Accessibility: reduce motion */
-@media (prefers-reduced-motion: reduce) {
-  .topbar { backdrop-filter: none; }
-}
-
-:root[data-theme="coral"] {
-  --ec-bg: #fffdfc;
-  --ec-surface: #ffffff;
-  --ec-border: #f2c7b0;
-  --ec-text: #1a1a1a;
-  --ec-muted: #666;
-  --ec-accent: #ff7f50;         /* Coral base */
-  --ec-accent-hover: #ff9770;   /* Lighter coral for hover */
-  --ec-accent-active: #e66a3b;  /* Darker coral for active press */
-  --ec-accent-bg: #fff3ee;      /* Subtle coral tint background */
-  --ec-pill-bg: #ffe9e2;
-  --ec-pill-active-bg: #ffb199;
-}
-
-/* Body + typography */
-body {
-  background: var(--ec-bg);
-  color: var(--ec-text);
-  font-family: Inter, system-ui, Arial, sans-serif;
-  margin: 0;
-  line-height: 1.5;
-}
-
-header, footer {
-  padding: 12px 16px;
-  background: var(--ec-accent-bg);
-  border-bottom: 1px solid var(--ec-border);
-}
-
-.container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-/* =====================================
-   Buttons
-   ===================================== */
-.btn,
-button {
-  cursor: pointer;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-weight: 600;
-  transition: all 0.15s ease;
-}
-
-/* Primary (used for “Correct”) */
-.btn-primary {
-  background: var(--ec-accent);
-  border: 1px solid var(--ec-accent-active);
-  color: #fff;
-}
-.btn-primary:hover {
-  background: var(--ec-accent-hover);
-  border-color: var(--ec-accent-hover);
-}
-.btn-primary:active {
-  background: var(--ec-accent-active);
-}
-
-/* Ghost (used for Clear, language toggles, alt vocab buttons) */
-.btn-ghost {
-  background: #fff;
-  border: 1px solid var(--ec-border);
-  color: var(--ec-text);
-}
-.btn-ghost:hover {
-  border-color: var(--ec-accent);
-  color: var(--ec-accent-active);
-  background: var(--ec-accent-bg);
-}
-
-/* Pill level buttons */
-.pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--ec-border);
-  background: var(--ec-pill-bg);
-  transition: all 0.15s ease;
-}
-.pill:hover {
-  background: var(--ec-accent-hover);
-  color: #fff;
-  border-color: var(--ec-accent-active);
-}
-.pill--active {
-  background: var(--ec-accent);
-  color: #fff;
-  border-color: var(--ec-accent-active);
-}
-
-/* Inputs */
-textarea {
-  width: 100%;
-  min-height: 180px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--ec-border);
-  font-size: 16px;
-  background: #fff;
-  color: var(--ec-text);
-  transition: border-color 0.15s ease;
-}
-textarea:focus {
-  outline: none;
-  border-color: var(--ec-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent) 30%, transparent);
-}
-
-/* Word counters */
-.pill[data-i18n] {
-  background: var(--ec-pill-bg);
-  border: 1px solid var(--ec-border);
-  color: var(--ec-muted);
-}
-.pill[data-i18n]:hover {
-  border-color: var(--ec-accent);
-  color: var(--ec-accent-active);
-}
-
-/* Vocab suggestion buttons */
-.vocab-alt {
-  margin: 4px 6px 0 0;
-  font-size: 0.9rem;
-  padding: 3px 10px;
-  border-radius: 6px;
-  background: var(--ec-accent-bg);
-  border: 1px solid var(--ec-accent);
-  color: var(--ec-accent-active);
-}
-.vocab-alt:hover {
-  background: var(--ec-accent-hover);
-  color: #fff;
-}
-
-/* Panels, cards */
-.card {
-  border: 1px solid var(--ec-border);
-  border-radius: 12px;
-  background: var(--ec-surface);
-  padding: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-.card-title {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--ec-accent-active);
-}
-:root[data-theme="coral"] {
-  /* existing vars … */
-  --ec-accent: #ff7f50;
-  --ec-accent-hover: #ff9770;
-  --ec-accent-active: #e66a3b;
-
-  /* NEW: gradient tokens */
-  --ec-grad-1: #fff6f2;   /* very light coral */
-  --ec-grad-2: #ffe8e0;   /* light coral */
-  --ec-grad-3: #ffd3c4;   /* warmer coral */
-  --ec-grad-shadow: rgba(230, 106, 59, 0.14); /* shadow tint */
-}
-
-
-/* ---------- CSS variables (themeable) ---------- */
-:root {
-  --bg: #ffffff;
-  --fg: #111111;
-  --muted: #666666;
-  --border: #dddddd;
-
-  --primary: #111111;
-  --primary-fg: #ffffff;
-
-  --ghost-bg: #ffffff;
-  --ghost-fg: #111111;
-  --ghost-border: #aaaaaa;
-
-  --ok-bg: #e7f7ea;
-  --ok-border: #58a869;
-
-  --warn-bg: #fff6e6;
-  --warn-border: #d08b39;
-
-  --card-bg: #ffffff;
-  --shadow: 0 8px 24px rgba(0,0,0,0.06);
-  --radius: 12px;
-}
-
-/* Optional dark preference */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1115;
-    --fg: #e9e9ee;
-    --muted: #a0a3aa;
-    --border: #2a2f3a;
-
-    --primary: #e9e9ee;
-    --primary-fg: #0f1115;
-
-    --ghost-bg: #151922;
-    --ghost-fg: #e9e9ee;
-    --ghost-border: #3a4050;
-
-    --card-bg: #141821;
-    --shadow: 0 10px 30px rgba(0,0,0,0.35);
-  }
-}
-
-/* ---------- Base ---------- */
-*,
-*::before,
-*::after { box-sizing: border-box; }
-
-html, body {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--fg);
-  background: var(--bg);
-}
-
-/* Typography */
-h1, h2, h3, h4 { margin: 0 0 .5rem; line-height: 1.2; }
-p { margin: 0 0 1rem; }
-small { color: var(--muted); }
-
-/* Links */
-a { color: inherit; }
-
-/* Containers & layout */
-.container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-.row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-/* Grid that collapses on mobile */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
-}
-
-/* Header/Footer */
-header, footer {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-}
-footer {
-  border-top: 1px solid var(--border);
-  border-bottom: 0;
-}
-
-/* Panels / cards */
-.panel {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card-bg);
-  padding: 14px;
-  box-shadow: var(--shadow);
-}
-
-/* Inputs */
-textarea, input, select, button {
-  font: inherit;
-}
-textarea, input, select {
-  color: var(--fg);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  outline: none;
-}
-textarea {
-  width: 100%;
-  min-height: 220px;
-  resize: vertical;
-}
-textarea:focus, input:focus, select:focus {
-  border-color: #7a9cff;
-  box-shadow: 0 0 0 3px rgba(122,156,255,0.25);
-}
-
-/* Buttons */
-.btn {
-  cursor: pointer;
-  border-radius: 10px;
-  border: 1px solid var(--primary);
-  background: var(--primary);
-  color: var(--primary-fg);
-  padding: 9px 14px;
-  transition: transform .02s ease-in-out, box-shadow .15s ease;
-  box-shadow: 0 2px 0 rgba(0,0,0,0.08);
-}
-.btn:hover { transform: translateY(-1px); }
-.btn:active { transform: translateY(0); }
-
-.btn.ghost {
-  background: var(--ghost-bg);
-  color: var(--ghost-fg);
-  border-color: var(--ghost-border);
-}
-.lang-toggle { display: inline-flex; gap: 6px; margin-left: 8px; }
-.lang-btn {
-  border: 1px solid var(--border);
-  background: var(--ghost-bg);
-  color: var(--ghost-fg);
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 14px;
-  cursor: pointer;
-}
-.lang-btn.active {
-  border-color: #7a9cff;
-  box-shadow: 0 0 0 3px rgba(122,156,255,.25);
-}
-
-/* Base pill */
-.pill {
-  display:inline-block;
-  padding:6px 12px;
-  border-radius:999px;
-  border:1px solid var(--pill-border, #bbb);
-  background: var(--pill-bg, #fff);
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
-  cursor: pointer;
-}
-
-/* Hover */
-.pill:hover {
-  background: var(--pill-hover-bg, #f2f5ff);
-  border-color: var(--pill-hover-border, #6b8cff);
-  box-shadow: 0 0 0 2px color-mix(in srgb, #6b8cff 20%, transparent);
-}
-
-/* Active (selected level) */
-.pill--active {
-  background: var(--pill-active-bg, #1a56db);
-  color: #fff;
-  border-color: var(--pill-active-border, #1a56db);
-}
-
-.pill--active:hover {
-  background: var(--pill-active-hover-bg, #194bbf);
-  border-color: var(--pill-active-hover-border, #194bbf);
-}
-.pill.ok   { background: var(--ok-bg);   border-color: var(--ok-border); }
-.pill.warn { background: var(--warn-bg); border-color: var(--warn-border); }
-
-/* Muted text */
-.muted { color: var(--muted); }
-
-/* Lists for edits/next */
-#edits, #next {
-  margin: .25rem 0 0;
-  padding-left: 1.25rem;
-}
-#edits li, #next li { margin: .25rem 0; }
-#edits code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  padding: 0 4px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-}
-
-/* DEV banner */
-#devBanner {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #ffe8a3;
-  color: #573e00;
-  border: 1px solid #e3c36c;
-  font-size: 12px;
-}
-
-/* Utility */
-.hidden { display: none !important; }
-
-/* ---------- Print (for PDF exports) ---------- */
-@media print {
-  header, footer, .btn, select { display: none !important; }
-  .container { max-width: 100%; padding: 0; }
-  .panel { box-shadow: none; border-color: #999; }
-  body { background: #fff; color: #000; }
-}
-/* =====================================
-   Coral Button + Pill System
-   ===================================== */
-
-/* Generic button baseline */
-button,
-.btn {
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 600;
-  border-radius: 10px;
-  padding: 8px 14px;
-  transition: all 0.15s ease;
-  border: 1px solid transparent;
-}
-
-/* Primary button (used for Correct) */
-.btn-primary {
-  background: var(--ec-accent);
-  border: 1px solid var(--ec-accent-active);
-  color: #fff;
-}
-.btn-primary:hover {
-  background: var(--ec-accent-hover);
-  border-color: var(--ec-accent-hover);
-}
-.btn-primary:active {
-  background: var(--ec-accent-active);
-}
-
-/* Ghost button (used for Clear + language toggles) */
-.btn-ghost {
-  background: #fff;
-  border: 1px solid var(--ec-border);
-  color: var(--ec-text);
-}
-.btn-ghost:hover {
-  background: var(--ec-accent-bg);
-  border-color: var(--ec-accent);
-  color: var(--ec-accent-active);
-}
-
-/* --- Pill buttons (used for levels B2/C1/C2) --- */
-.pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--ec-border);
-  background: var(--ec-pill-bg, #ffe9e2);
-  color: var(--ec-text);
-  transition: all 0.15s ease;
-}
-.pill:hover {
-  background: var(--ec-accent-hover);
-  color: #fff;
-  border-color: var(--ec-accent-active);
-}
-.pill--active,
-.pill[aria-pressed="true"] {
-  background: var(--ec-accent);
-  color: #fff;
-  border-color: var(--ec-accent-active);
-}
-
-/* --- Inputs + counters --- */
-textarea {
-  width: 100%;
-  min-height: 180px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--ec-border);
-  font-size: 16px;
-  background: #fff;
-  color: var(--ec-text);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-textarea:focus {
-  outline: none;
-  border-color: var(--ec-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent) 30%, transparent);
-}
-
-/* Word counters */
-.pill[data-i18n] {
-  background: var(--ec-pill-bg, #ffe9e2);
-  border: 1px solid var(--ec-border);
-  color: var(--ec-muted);
-}
-.pill[data-i18n]:hover {
-  border-color: var(--ec-accent);
-  color: var(--ec-accent-active);
-}
-
-/* --- Card + title --- */
-.card {
-  border: 1px solid var(--ec-border);
-  border-radius: 12px;
-  background: var(--ec-surface, #fff);
-  padding: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-.card-title {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--ec-accent-active);
-}
-.btn-ghost:hover{
-  background:var(--ec-accent-bg);
-  border-color:var(--ec-accent);
-  color:var(--ec-accent-active);
-}
-/* --- Ensure topbar hover always wins --- */
-.topbar .btn-ghost:hover {
+/* Ensure hover in the topbar wins any cascade */
+.topbar .btn-ghost:hover{
   background: color-mix(in srgb, var(--ec-accent) 15%, #fff);
   border-color: var(--ec-accent-active);
   color: var(--ec-accent-active);
   transform: translateY(-1px);
   box-shadow: 0 2px 4px color-mix(in srgb, var(--ec-accent) 20%, transparent);
 }
-/* ===== HOVER-FIX: language buttons in the topbar ===== */
 
-/* 0) Ensure coral tokens exist (with safe fallbacks) */
-:root[data-theme="coral"]{
-  --ec-accent: #ff7f50;
-  --ec-accent-hover: #ff9770;
-  --ec-accent-active: #e66a3b;
-  --ec-accent-bg: #fff3ee;
-  --ec-border: #f2c7b0;
-  --ec-text: #1a1a1a;
+/* Accessibility */
+@media (prefers-reduced-motion: reduce){
+  .topbar{ backdrop-filter: none; }
 }
-
-/* 1) Minimal reset so browser blue styles don't leak through */
-.topbar button,
-.topbar .btn,
-.topbar .btn-ghost {
-  appearance: none;
-  -webkit-appearance: none;
-  background: #fff;
-  color: var(--ec-text, #111);
-  font: inherit;
-  border-radius: 10px;
-  border: 1px solid var(--ec-border, #ddd);
-  padding: 8px 14px;
-  line-height: 1;
-  cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .08s ease;
-  text-decoration: none;
-}
-
-/* 2) Base ghost style (applies outside topbar too) */
-.btn-ghost {
-  background: #fff;
-  border: 1px solid var(--ec-border, #ddd);
-  color: var(--ec-text, #111);
-}
-
-/* 3) HIGH-SPECIFICITY HOVER inside the topbar (wins cascade) */
-.topbar button.btn-ghost:hover,
-.topbar .btn-ghost:hover {
-  background: var(--ec-accent-bg, #fff3ee) !important;
-  border-color: var(--ec-accent, #ff7f50) !important;
-  color: var(--ec-accent-active, #e66a3b) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--ec-accent, #ff7f50) 25%, transparent);
-}
-
-/* 4) Focus/active for good measure */
-.topbar .btn-ghost:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent, #ff7f50) 35%, transparent);
-}
-.topbar .btn-ghost:active {
-  transform: translateY(0);
-  background: var(--ec-accent-hover, #ff9770) !important;
-  color: #fff !important;
-  border-color: var(--ec-accent-active, #e66a3b) !important;
-}
-
