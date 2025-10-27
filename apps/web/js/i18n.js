@@ -1,8 +1,6 @@
 // js/i18n.js
 (function () {
-  const I18N = {
-    lang: 'en',
-    dict: {},
+  const url = `assets/i18n/${I18N.lang}.json`;
 
     t(key, vars) {
       let s = I18N.dict[key] ?? '';
