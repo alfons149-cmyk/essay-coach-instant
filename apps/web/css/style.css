@@ -51,11 +51,6 @@ button, .btn{
   border:1px solid var(--ec-border);
   color:var(--ec-text);
 }
-.btn-ghost:hover{
-  background:var(--ec-accent-bg);
-  border-color:var(--ec-accent);
-  color:var(--ec-accent-active);
-}
 
 /* Level pills (B2/C1/C2) */
 .pill{
@@ -666,3 +661,17 @@ textarea:focus {
   margin-bottom: 8px;
   color: var(--ec-accent-active);
 }
+.btn-ghost:hover{
+  background:var(--ec-accent-bg);
+  border-color:var(--ec-accent);
+  color:var(--ec-accent-active);
+}
+/* --- Ensure topbar hover always wins --- */
+.topbar .btn-ghost:hover {
+  background: color-mix(in srgb, var(--ec-accent) 15%, #fff);
+  border-color: var(--ec-accent-active);
+  color: var(--ec-accent-active);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--ec-accent) 20%, transparent);
+}
+
