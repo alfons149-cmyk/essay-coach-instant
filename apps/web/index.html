@@ -1,86 +1,29 @@
 <!doctype html>
 <html lang="en" data-theme="coral">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title data-i18n="meta.title">EssayCoach – Cambridge Toolkit (EN)</title>
-
-  <!-- Make all relative paths point to your GitHub Pages repo root -->
   <base href="/essay-coach-instant/">
-
-  <!-- Icons & PWA -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#111111" />
-
-  <!-- Fonts (optional) -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css">
-
-  <!-- Scripts: load in this exact order -->
   <script defer src="js/i18n.js"></script>
   <script defer src="js/config.js"></script>
-
-  <!-- Surface API_BASE / DEV early -->
-  <script>
-    window.EC = window.EC || {};
-    if (!window.EC.API_BASE) {
-      window.EC.API_BASE = 'https://essaycoach.alfons149.workers.dev/api';
-    }
-    if (typeof window.EC.DEV !== 'boolean') {
-      const qs = new URLSearchParams(location.search);
-      window.EC.DEV = (qs.get('dev') === '1');
-    }
-    console.log('[EC hotfix] API_BASE =', window.EC.API_BASE, 'DEV?', window.EC.DEV);
-  </script>
-
   <script defer src="js/app.js"></script>
-
-  <!-- On first load: default EN if nothing saved; then boot i18n -->
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const saved = localStorage.getItem('ec.lang');
-        if (!saved) localStorage.setItem('ec.lang', 'en');
-        const lang = localStorage.getItem('ec.lang') || 'en';
-        document.documentElement.lang = lang; // keep <html lang> in sync
-        if (window.I18N && typeof I18N.load === 'function') {
-          await I18N.load(lang);
-        }
-      } catch (e) {
-        console.warn('[EN boot] i18n load fallback', e);
-      }
-    });
-  </script>
 </head>
 <body>
-  <noscript>This app requires JavaScript to run.</noscript>
-
-  <!-- Top bar: language switcher & API indicator -->
   <header class="topbar">
     <div class="row">
       <h1 class="app-title" data-i18n="app.name">EssayCoach</h1>
       <span class="spacer"></span>
-
-      <!-- Language buttons (with translated tooltips) -->
-      <button class="btn-ghost" data-lang="en" title="English" data-i18n-title="tooltips.lang_en">EN</button>
-      <button class="btn-ghost" data-lang="es" title="Español" data-i18n-title="tooltips.lang_es">ES</button>
-      <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
-
-      <!-- API/dev badges -->
-      <span class="badge" id="apiMode" style="margin-left:8px"></span>
-      <span class="badge" id="devBadge" style="display:none">DEV</span>
+      <button class="btn-ghost" data-lang="en" data-i18n-title="tooltips.lang_en" title="English">EN</button>
+      <button class="btn-ghost" data-lang="es" data-i18n-title="tooltips.lang_es" title="Español">ES</button>
+      <button class="btn-ghost" data-lang="nl" data-i18n-title="tooltips.lang_nl" title="Nederlands">NL</button>
     </div>
   </header>
 
   <main class="container">
-    <h1 class="app-title" data-i18n="app.subtitle">EssayCoach – Cambridge Toolkit</h1>
-
-    <!-- Level toggles -->
     <section class="panel">
       <div class="row" style="gap:8px;">
         <strong data-i18n="labels.level">Level:</strong>
@@ -90,91 +33,31 @@
       </div>
     </section>
 
-    <!-- Inputs -->
     <section class="grid-2">
       <div class="card">
         <div class="card-title" data-i18n="labels.prompt">Task prompt</div>
-        <!-- remove stray space so placeholder shows -->
         <textarea id="task" rows="6" data-i18n-ph="placeholders.task"></textarea>
       </div>
-
       <div class="card">
         <div class="card-title" data-i18n="labels.essay">Your essay</div>
-        <!-- remove stray space so placeholder shows -->
         <textarea id="essay" rows="12" data-i18n-ph="placeholders.essay"></textarea>
       </div>
     </section>
-
-    <!-- Toolbar -->
-    <section class="toolbar row" style="gap:8px; align-items:center;">
-      <button id="btnCorrect" class="btn-primary" data-i18n="buttons.correct"
-              title="Correct the essay" data-i18n-title="tooltips.correct">Correct</button>
-      <button id="btnClear" class="btn-ghost" data-i18n="buttons.clear"
-              title="Clear all fields" data-i18n-title="tooltips.clear">Clear</button>
-
-      <span class="spacer"></span>
-
-      <!-- Word counters -->
-      <div id="inWC"  class="pill" data-i18n="io.input_words">Input: {n} words</div>
-      <div id="outWC" class="pill" data-i18n="io.output_words">Output: {n} words</div>
-    </section>
-
-    <!-- Results -->
-    <section class="grid-2">
-      <div class="card">
-        <div class="card-title" data-i18n="labels.feedback">Feedback</div>
-        <div id="feedback" class="prose">—</div>
-      </div>
-
-      <div class="card">
-        <div class="card-title" data-i18n="labels.edits">Edits</div>
-        <ul id="edits" class="list"></ul>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-title" data-i18n="labels.next_draft">Next draft</div>
-      <textarea id="nextDraft" rows="10" placeholder=""
-                data-i18n-ph="placeholders.next_draft"></textarea>
-    </section>
-
-    <section class="card" id="vocabCard" hidden>
-      <div class="card-title" data-i18n="labels.vocab_options">Vocabulary options</div>
-      <ul id="vocab" class="list"></ul>
-    </section>
   </main>
 
-  <!-- Language switch handler -->
   <script>
     document.addEventListener('click', async (e) => {
       const btn = e.target.closest('[data-lang]');
       if (!btn) return;
       const lang = btn.getAttribute('data-lang');
-      try {
-        localStorage.setItem('ec.lang', lang);
-        document.documentElement.lang = lang; // keep <html lang> updated
-        if (window.I18N && typeof I18N.load === 'function') {
-          await I18N.load(lang);
-        } else {
-          location.reload();
-        }
-      } catch (err) {
-        console.error('[lang switch]', err);
+      localStorage.setItem('ec.lang', lang);
+      document.documentElement.lang = lang;
+      if (window.I18N && typeof I18N.load === 'function') {
+        await I18N.load(lang);
+      } else {
+        location.reload();
       }
     });
-  </script>
-
-  <!-- API/dev badges -->
-  <script>
-    (function(){
-      const qs  = new URLSearchParams(location.search);
-      const dev = qs.get('dev') === '1';
-      const api = (window.EC && EC.API_BASE) ? 'live' : (dev ? 'mock' : 'auto');
-      const apiEl = document.getElementById('apiMode');
-      const devEl = document.getElementById('devBadge');
-      if (apiEl) apiEl.textContent = api;
-      if (devEl) devEl.style.display = dev ? 'inline' : 'none';
-    })();
   </script>
 </body>
 </html>
