@@ -683,4 +683,62 @@ textarea:focus {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px color-mix(in srgb, var(--ec-accent) 20%, transparent);
 }
+/* ===== HOVER-FIX: language buttons in the topbar ===== */
+
+/* 0) Ensure coral tokens exist (with safe fallbacks) */
+:root[data-theme="coral"]{
+  --ec-accent: #ff7f50;
+  --ec-accent-hover: #ff9770;
+  --ec-accent-active: #e66a3b;
+  --ec-accent-bg: #fff3ee;
+  --ec-border: #f2c7b0;
+  --ec-text: #1a1a1a;
+}
+
+/* 1) Minimal reset so browser blue styles don't leak through */
+.topbar button,
+.topbar .btn,
+.topbar .btn-ghost {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #fff;
+  color: var(--ec-text, #111);
+  font: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--ec-border, #ddd);
+  padding: 8px 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .08s ease;
+  text-decoration: none;
+}
+
+/* 2) Base ghost style (applies outside topbar too) */
+.btn-ghost {
+  background: #fff;
+  border: 1px solid var(--ec-border, #ddd);
+  color: var(--ec-text, #111);
+}
+
+/* 3) HIGH-SPECIFICITY HOVER inside the topbar (wins cascade) */
+.topbar button.btn-ghost:hover,
+.topbar .btn-ghost:hover {
+  background: var(--ec-accent-bg, #fff3ee) !important;
+  border-color: var(--ec-accent, #ff7f50) !important;
+  color: var(--ec-accent-active, #e66a3b) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ec-accent, #ff7f50) 25%, transparent);
+}
+
+/* 4) Focus/active for good measure */
+.topbar .btn-ghost:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent, #ff7f50) 35%, transparent);
+}
+.topbar .btn-ghost:active {
+  transform: translateY(0);
+  background: var(--ec-accent-hover, #ff9770) !important;
+  color: #fff !important;
+  border-color: var(--ec-accent-active, #e66a3b) !important;
+}
 
