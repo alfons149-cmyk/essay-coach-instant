@@ -1,17 +1,31 @@
 {
+  "meta.title": "EssayCoach – Cambridge Toolkit (EN)",
+  "app.name": "EssayCoach",
+  "app.subtitle": "EssayCoach – Cambridge Toolkit",
+
+  "labels.level": "Level:",
   "labels.prompt": "Task prompt",
   "labels.essay": "Your essay",
   "labels.feedback": "Feedback",
   "labels.edits": "Edits",
   "labels.next_draft": "Next draft",
+  "labels.vocab_options": "Vocabulary options",
+
   "buttons.correct": "Correct",
   "buttons.clear": "Clear",
+
   "io.input_words": "Input: {n} words",
   "io.output_words": "Output: {n} words",
+
   "placeholders.task": "Paste the exam task here...",
-  "placeholders.essay": "Paste or write your essay here..."
-}
-{
-  "labels.vocabulary_options": "Vocabulary options",
+  "placeholders.essay": "Paste or write your essay here...",
+  "placeholders.next_draft": "Start your next draft here...",
+
+  "tooltips.lang_en": "Switch to English",
+  "tooltips.lang_es": "Cambiar a español",
+  "tooltips.lang_nl": "Overschakelen naar Nederlands",
+  "tooltips.correct": "Correct the essay",
+  "tooltips.clear": "Clear all fields",
+
   "vocab.none": "No suggestions."
 }
