@@ -20,6 +20,15 @@
   --ec-grad-2: #ffe8e0;
   --ec-grad-shadow: rgba(230, 106, 59, 0.14);
 }
+button {
+  all: unset;
+  display: inline-block;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 10px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+}
 
 /* Base layout & typography */
 body{ background:var(--ec-bg); color:var(--ec-text); font-family:Inter,system-ui,Arial,sans-serif; margin:0; line-height:1.5; }
