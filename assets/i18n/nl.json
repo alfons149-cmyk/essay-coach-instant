@@ -1,17 +1,31 @@
 {
+  "meta.title": "EssayCoach – Cambridge Toolkit (NL)",
+  "app.name": "EssayCoach",
+  "app.subtitle": "EssayCoach – Cambridge Toolkit",
+
+  "labels.level": "Niveau:",
   "labels.prompt": "Taakopdracht",
   "labels.essay": "Jouw essay",
   "labels.feedback": "Feedback",
   "labels.edits": "Wijzigingen",
   "labels.next_draft": "Volgende versie",
+  "labels.vocab_options": "Woordkeuzes",
+
   "buttons.correct": "Corrigeer",
   "buttons.clear": "Wissen",
+
   "io.input_words": "Invoer: {n} woorden",
   "io.output_words": "Uitvoer: {n} woorden",
+
   "placeholders.task": "Plak hier de examenvraag of opdracht...",
-  "placeholders.essay": "Plak of schrijf hier je essay..."
-}
-{
-  "labels.vocabulary_options": "Woordkeuzes",
+  "placeholders.essay": "Plak of schrijf hier je essay...",
+  "placeholders.next_draft": "Begin hier aan je volgende versie...",
+
+  "tooltips.lang_en": "Overschakelen naar Engels",
+  "tooltips.lang_es": "Overschakelen naar Spaans",
+  "tooltips.lang_nl": "Overschakelen naar Nederlands",
+  "tooltips.correct": "Essay corrigeren",
+  "tooltips.clear": "Alle velden wissen",
+
   "vocab.none": "Geen suggesties."
 }
