@@ -1,0 +1,14 @@
+{
+  "name": "essaycoach-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=browser --format=esm --outfile=dist/index.js",
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0",
+    "wrangler": "^3.80.0"
+  }
+}
