@@ -1,0 +1,42 @@
+name: Deploy Front-end to Cloudflare Pages
+
+on:
+  push:
+    branches: [ main ]        # deploys on merge to main
+  pull_request:               # preview builds for PRs
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # If you have a build step (e.g., Vite), keep these; if your site is pure static, delete Node + npm steps
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm ci
+        if: hashFiles('package-lock.json') != ''
+
+      - name: Build
+        run: npm run build
+        if: hashFiles('package.json') != ''
+
+      # Publish the built site (set the "directory" to your build output or "." for root)
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: ${{ secrets.CF_PAGES_PROJECT }}   # e.g., essay-coach-instant
+          directory: ./dist                               # or "." if no build step
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
