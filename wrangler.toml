@@ -1,0 +1,4 @@
+# If you want the URL essaycoach.alfons149.workers.dev, the name MUST be "essaycoach"
+name = "essaycoach"
+main = "apps/worker/dist/index.js"
+compatibility_date = "2024-11-12"
