@@ -1,1 +1,59 @@
+<!doctype html>
+<html lang="en" data-theme="coral">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Course Book</title>
+  <base href="/essay-coach-instant/">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    html, body { height:100%; margin:0; }
+    iframe#viewer { position:fixed; inset:0; border:0; }
+    body, body * { user-select:none; -webkit-user-drag:none; }
+    @media print { body { display:none; } }
+  </style>
+</head>
+<body>
+  <iframe id="viewer" referrerpolicy="no-referrer"></iframe>
+
+  <script>
+  (async function () {
+    // Identify user (optional, for watermark/logging)
+    const who = JSON.parse(localStorage.getItem('ec.user') || '{"name":"Reader"}');
+
+    // API base from your app or fallback
+    const API = (window.EC && EC.API_BASE) || 'https://essaycoach.alfons149.workers.dev/api';
+
+    // Ask Worker for short-lived token
+    const res = await fetch(API + '/book/token', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ user: who.name })
+    });
+    if (!res.ok) {
+      document.body.textContent = 'Unable to open book.';
+      return;
+    }
+    const { token } = await res.json();
+
+    // Build viewer URL with secure file stream
+    const fileUrl   = encodeURIComponent(API + '/book/stream?t=' + encodeURIComponent(token));
+    const viewerUrl = `pdfjs/web/viewer.html?file=${fileUrl}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
+
+    document.getElementById('viewer').src = viewerUrl;
+  })();
+  </script>
+
+  <!-- Friction layer: block shortcuts/context menu -->
+  <script>
+  ['contextmenu','copy','cut','paste','dragstart','selectstart','keydown','print'].forEach(ev=>{
+    window.addEventListener(ev, e=>{
+      if (ev==='keydown' && (e.ctrlKey||e.metaKey)
+          && ['s','p','c','x','u'].includes(e.key.toLowerCase())) e.preventDefault();
+      else if (ev!=='keydown') e.preventDefault();
+    }, {capture:true});
+  });
+  </script>
+</body>
+</html>
 book.html
