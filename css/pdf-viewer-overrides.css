@@ -1,1 +1,8 @@
+/* Hide PDF.js buttons for download/print/open */
+#download, #secondaryDownload, #print, #openFile {
+  display: none !important;
+}
+
+/* Optional: disable visible text layer (prevents easy copy) */
+.textLayer { display: none !important; }
 
