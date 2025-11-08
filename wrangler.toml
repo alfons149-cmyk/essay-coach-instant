@@ -1,4 +1,29 @@
-# If you want the URL essaycoach.alfons149.workers.dev, the name MUST be "essaycoach"
+# Keep the vanity subdomain
 name = "essaycoach"
+# Choose ONE entry point (relative to this file):
+# If you compile to JS: 
 main = "apps/worker/dist/index.js"
-compatibility_date = "2024-11-12"
+# Or, if you want to run TS directly, comment the line above and use:
+# main = "apps/server/src/index.ts"
+# compatibility_flags = ["nodejs_compat"]   # uncomment if you use Node libs (e.g., Stripe)
+compatibility_date = "2025-01-01"
+
+# ---------- Storage bindings ----------
+# R2: PDF storage for the course book
+[[r2_buckets]]
+binding = "R2_BOOK"
+bucket_name = "essaycoach-books"
+
+# KV: entitlements/subscriptions
+[[kv_namespaces]]
+binding = "KV_ENTITLEMENTS"
+id = "kv_entitlements_prod"
+
+# ---------- Env vars (non-secret) ----------
+[vars]
+APP_URL = "https://alfons149-cmyk.github.io/essay-coach-instant"
+STRIPE_PRICE_MONTH = "price_xxx_month_15_eur"
+STRIPE_PRICE_SEMESTER = "price_yyy_6months_75_eur"
+BOOK_KEY = "course-book.pdf"
+TOKEN_TTL_SECONDS = "600"                       # 10 minutes
+ALLOWED_ORIGIN = "https://alfons149-cmyk.github.io"   # your front-end origin for CORS
