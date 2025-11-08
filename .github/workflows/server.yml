@@ -1,11 +1,11 @@
-# .github/workflows/server.yml
 name: Deploy API (Cloudflare Worker)
 on:
   push:
     branches: [ main ]
     paths:
-      - "worker.js"
       - "wrangler.toml"
+      - "apps/**"
+      - "worker.js"
       - ".github/workflows/server.yml"
   workflow_dispatch: {}
 
