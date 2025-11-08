@@ -1,4 +1,3 @@
-# .github/workflows/pages-deploy.yml
 name: Deploy to GitHub Pages
 on:
   push:
@@ -23,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # If your site is just static files in the repo root (index.html, css/, js/, assets/, pdfjs/, book.html):
+      # Publish the repo root (must contain index.html, css/, js/, assets/, pdfjs/, book.html)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
