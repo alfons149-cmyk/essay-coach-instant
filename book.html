@@ -1,46 +1,25 @@
 <!doctype html>
-<html lang="en" data-theme="coral">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Course Book</title>
-  <!-- GitHub Pages project base -->
   <base href="/essay-coach-instant/">
-  <link rel="stylesheet" href="css/style.css" />
   <style>
-    html, body { height:100%; margin:0; }
-    #viewer { position:fixed; inset:0; border:0; }
-    body, body * { user-select:none; -webkit-user-drag:none; }
-    @media print { body { display:none; } }
+    html, body {height:100%; margin:0;}
+    iframe#viewer {position:fixed; inset:0; border:0;}
   </style>
 </head>
 <body>
-  <iframe id="viewer" referrerpolicy="no-referrer"></iframe>
-
+  <iframe id="viewer"></iframe>
   <script>
-(async function () {
-  const iframe = document.getElementById('viewer');
-  const loadViewerWith = (fileUrl) => {
-    iframe.src = `pdfjs/web/viewer.html?file=${encodeURIComponent(fileUrl)}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
-  };
-
-  // Try secure Worker first (keep your existing code here if you want)
-
-  // Fallback: local file — use ABSOLUTE URL (not "assets/..."):
-  loadViewerWith(location.origin + '/essay-coach-instant/assets/book/course-book.pdf');
-})();
-</script>
-
-
-  <!-- Friction layer: block shortcuts/context menu -->
-  <script>
-  ['contextmenu','copy','cut','paste','dragstart','selectstart','keydown','print'].forEach(ev=>{
-    window.addEventListener(ev, e=>{
-      if (ev==='keydown' && (e.ctrlKey||e.metaKey) &&
-          ['s','p','c','x','u'].includes(e.key.toLowerCase())) e.preventDefault();
-      else if (ev!=='keydown') e.preventDefault();
-    }, {capture:true});
-  });
+    (function () {
+      const base = location.origin + '/essay-coach-instant';
+      const file = base + '/assets/book/course-book.pdf';
+      // cache-bust with timestamp in case the browser cached an old bad URL
+      const viewer = base + '/pdfjs/web/viewer.html#file=' + encodeURIComponent(file) + '&v=' + Date.now();
+      document.getElementById('viewer').src = viewer;
+    })();
   </script>
 </body>
 </html>
