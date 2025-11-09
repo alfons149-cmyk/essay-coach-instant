@@ -18,40 +18,19 @@
   <iframe id="viewer" referrerpolicy="no-referrer"></iframe>
 
   <script>
-  (async function () {
-    const iframe = document.getElementById('viewer');
+(async function () {
+  const iframe = document.getElementById('viewer');
+  const loadViewerWith = (fileUrl) => {
+    iframe.src = `pdfjs/web/viewer.html?file=${encodeURIComponent(fileUrl)}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
+  };
 
-    // Helper to point the iframe at PDF.js viewer with a given file URL
-    function loadViewerWith(fileUrl) {
-      const enc = encodeURIComponent(fileUrl);
-      iframe.src = `pdfjs/web/viewer.html?file=${enc}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
-    }
+  // Try secure Worker first (keep your existing code here if you want)
 
-    // 1) Try secure Worker stream
-    try {
-      const API = (window.EC && EC.API_BASE) || 'https://essaycoach.alfons149.workers.dev/api';
-      const who = JSON.parse(localStorage.getItem('ec.user') || '{"name":"Reader"}');
+  // Fallback: local file — use ABSOLUTE URL (not "assets/..."):
+  loadViewerWith(location.origin + '/essay-coach-instant/assets/book/course-book.pdf');
+})();
+</script>
 
-      const res = await fetch(API + '/book/token', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ user: who.name })
-      });
-
-      if (!res.ok) throw new Error('token_failed');
-      const { token } = await res.json();
-      const secureUrl = `${API}/book/stream?t=${encodeURIComponent(token)}`;
-      loadViewerWith(secureUrl);
-      return; // success, stop here
-    } catch (e) {
-      console.warn('[book] Secure load failed, falling back if available:', e);
-    }
-
-    // 2) Optional fallback (DEV/test): local public PDF
-    // Put a copy at assets/book/course-book.pdf if you want this fallback
-    loadViewerWith('assets/book/course-book.pdf');
-  })();
-  </script>
 
   <!-- Friction layer: block shortcuts/context menu -->
   <script>
