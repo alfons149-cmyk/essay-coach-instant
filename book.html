@@ -15,6 +15,14 @@
 </head>
 <body>
   <iframe id="viewer" referrerpolicy="no-referrer"></iframe>
+<script>
+  (function(){
+    const fileUrl = encodeURIComponent('assets/book/course-book.pdf');
+    const viewerUrl =
+      `pdfjs/web/viewer.html?file=${fileUrl}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
+    document.getElementById('viewer').src = viewerUrl;
+  })();
+</script>
 
   <script>
   (async function () {
