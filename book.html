@@ -4,51 +4,52 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Course Book</title>
+  <!-- GitHub Pages project base -->
   <base href="/essay-coach-instant/">
   <link rel="stylesheet" href="css/style.css" />
   <style>
     html, body { height:100%; margin:0; }
-    iframe#viewer { position:fixed; inset:0; border:0; }
+    #viewer { position:fixed; inset:0; border:0; }
     body, body * { user-select:none; -webkit-user-drag:none; }
     @media print { body { display:none; } }
   </style>
 </head>
 <body>
   <iframe id="viewer" referrerpolicy="no-referrer"></iframe>
-<script>
-  (function(){
-    const fileUrl = encodeURIComponent('assets/book/course-book.pdf');
-    const viewerUrl =
-      `pdfjs/web/viewer.html?file=${fileUrl}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
-    document.getElementById('viewer').src = viewerUrl;
-  })();
-</script>
 
   <script>
   (async function () {
-    // Identify user (optional, for watermark/logging)
-    const who = JSON.parse(localStorage.getItem('ec.user') || '{"name":"Reader"}');
+    const iframe = document.getElementById('viewer');
 
-    // API base from your app or fallback
-    const API = (window.EC && EC.API_BASE) || 'https://essaycoach.alfons149.workers.dev/api';
-
-    // Ask Worker for short-lived token
-    const res = await fetch(API + '/book/token', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ user: who.name })
-    });
-    if (!res.ok) {
-      document.body.textContent = 'Unable to open book.';
-      return;
+    // Helper to point the iframe at PDF.js viewer with a given file URL
+    function loadViewerWith(fileUrl) {
+      const enc = encodeURIComponent(fileUrl);
+      iframe.src = `pdfjs/web/viewer.html?file=${enc}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
     }
-    const { token } = await res.json();
 
-    // Build viewer URL with secure file stream
-    const fileUrl   = encodeURIComponent(API + '/book/stream?t=' + encodeURIComponent(token));
-    const viewerUrl = `pdfjs/web/viewer.html?file=${fileUrl}#disableDownload=true&disablePrint=true&disableTextLayer=true`;
+    // 1) Try secure Worker stream
+    try {
+      const API = (window.EC && EC.API_BASE) || 'https://essaycoach.alfons149.workers.dev/api';
+      const who = JSON.parse(localStorage.getItem('ec.user') || '{"name":"Reader"}');
 
-    document.getElementById('viewer').src = viewerUrl;
+      const res = await fetch(API + '/book/token', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ user: who.name })
+      });
+
+      if (!res.ok) throw new Error('token_failed');
+      const { token } = await res.json();
+      const secureUrl = `${API}/book/stream?t=${encodeURIComponent(token)}`;
+      loadViewerWith(secureUrl);
+      return; // success, stop here
+    } catch (e) {
+      console.warn('[book] Secure load failed, falling back if available:', e);
+    }
+
+    // 2) Optional fallback (DEV/test): local public PDF
+    // Put a copy at assets/book/course-book.pdf if you want this fallback
+    loadViewerWith('assets/book/course-book.pdf');
   })();
   </script>
 
@@ -56,12 +57,11 @@
   <script>
   ['contextmenu','copy','cut','paste','dragstart','selectstart','keydown','print'].forEach(ev=>{
     window.addEventListener(ev, e=>{
-      if (ev==='keydown' && (e.ctrlKey||e.metaKey)
-          && ['s','p','c','x','u'].includes(e.key.toLowerCase())) e.preventDefault();
+      if (ev==='keydown' && (e.ctrlKey||e.metaKey) &&
+          ['s','p','c','x','u'].includes(e.key.toLowerCase())) e.preventDefault();
       else if (ev!=='keydown') e.preventDefault();
     }, {capture:true});
   });
   </script>
 </body>
 </html>
-book.html
