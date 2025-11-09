@@ -4,22 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Course Book</title>
-  <base href="/essay-coach-instant/">
   <style>
-    html, body {height:100%; margin:0;}
-    iframe#viewer {position:fixed; inset:0; border:0;}
+    html, body { height:100%; margin:0; }
+    iframe { position:fixed; inset:0; border:0; }
   </style>
 </head>
 <body>
-  <iframe id="viewer"></iframe>
-  <script>
-    (function () {
-      const base = location.origin + '/essay-coach-instant';
-      const file = base + '/assets/book/course-book.pdf';
-      // cache-bust with timestamp in case the browser cached an old bad URL
-      const viewer = base + '/pdfjs/web/viewer.html#file=' + encodeURIComponent(file) + '&v=' + Date.now();
-      document.getElementById('viewer').src = viewer;
-    })();
-  </script>
+  <iframe
+    src="/essay-coach-instant/pdfjs/web/viewer.html#file=/essay-coach-instant/assets/book/course-book.pdf&v=1"
+    allow="clipboard-read; clipboard-write"
+  ></iframe>
 </body>
 </html>
