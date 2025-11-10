@@ -38,72 +38,80 @@
     <canvas id="pdf_canvas"></canvas>
   </main>
 
-  <!-- PDF.js from CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js"></script>
-<script>
-(() => {
-  const $ = s => document.querySelector(s);
-  const params = new URLSearchParams(location.search);
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js"></script>
+  <script>
+  (() => {
+    const $ = s => document.querySelector(s);
+    const params = new URLSearchParams(location.search);
 
-  // Read ?file=... and make it a proper absolute URL
-  let pdfUrl = params.get('file') || '/essay-coach-instant/assets/book/course-book.pdf';
-  try { pdfUrl = decodeURIComponent(pdfUrl); } catch (e) {}
-  if (!/^https?:\/\//i.test(pdfUrl) && !pdfUrl.startsWith('/')) pdfUrl = '/' + pdfUrl;
+    // 1) Read and normalize the PDF URL
+    let raw = params.get('file') || '/essay-coach-instant/assets/book/course-book.pdf';
+    try { raw = decodeURIComponent(raw); } catch(e) {}
+    // If it begins with '/', make it absolute to this origin.
+    // If it's relative, also resolve against this page.
+    const pdfUrl = new URL(raw, location.origin).href;
 
-  // worker from CDN
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js';
+    // See it in DevTools console
+    console.log('PDF URL →', pdfUrl);
 
-  const canvas = $('#pdf_canvas'), ctx = canvas.getContext('2d');
-  const pageNumInput = $('#page_num'), pageCountSpan = $('#page_count');
-  const btnPrev = $('#prev'), btnNext = $('#next');
-  const btnZoomIn = $('#zoom_in'), btnZoomOut = $('#zoom_out'), btnFit = $('#fit');
-  const linkDownload = $('#download'); linkDownload.href = pdfUrl;
+    // 2) Configure worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js';
 
-  let pdfDoc = null, pageNum = 1, scale = 1.25, pageRendering = false, pageNumPending = null;
+    // 3) UI refs
+    const canvas = $('#pdf_canvas'), ctx = canvas.getContext('2d');
+    const pageNumInput = $('#page_num'), pageCountSpan = $('#page_count');
+    const btnPrev = $('#prev'), btnNext = $('#next');
+    const btnZoomIn = $('#zoom_in'), btnZoomOut = $('#zoom_out'), btnFit = $('#fit');
+    const linkDownload = $('#download'); linkDownload.href = pdfUrl;
 
-  function renderPage(num){
-    pageRendering = true;
-    pdfDoc.getPage(num).then(page=>{
-      const viewport = page.getViewport({ scale });
-      canvas.width = viewport.width; canvas.height = viewport.height;
-      const task = page.render({ canvasContext: ctx, viewport });
-      task.promise.then(()=>{
-        pageRendering = false;
-        if (pageNumPending !== null){ renderPage(pageNumPending); pageNumPending = null; }
+    let pdfDoc = null, pageNum = 1, scale = 1.25, pageRendering = false, pageNumPending = null;
+
+    function renderPage(num){
+      pageRendering = true;
+      pdfDoc.getPage(num).then(page=>{
+        const viewport = page.getViewport({ scale });
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        const task = page.render({ canvasContext: ctx, viewport });
+        task.promise.then(()=>{
+          pageRendering = false;
+          if (pageNumPending !== null){ renderPage(pageNumPending); pageNumPending = null; }
+        });
       });
+      pageNumInput.value = num;
+    }
+    const queueRenderPage = n => (pageRendering ? (pageNumPending=n) : renderPage(n));
+    const onPrev = () => { if (pageNum>1){ pageNum--; queueRenderPage(pageNum); } };
+    const onNext = () => { if (pdfDoc && pageNum<pdfDoc.numPages){ pageNum++; queueRenderPage(pageNum); } };
+    const onZoom = f => { scale = Math.max(0.25, Math.min(5, scale*f)); queueRenderPage(pageNum); };
+
+    function fit(){
+      const w = document.getElementById('viewer').clientWidth - 32;
+      pdfDoc.getPage(pageNum).then(page=>{
+        const viewport = page.getViewport({ scale:1 });
+        scale = Math.max(0.25, Math.min(5, w/viewport.width));
+        queueRenderPage(pageNum);
+      });
+    }
+
+    btnPrev.onclick = onPrev; btnNext.onclick = onNext;
+    btnZoomIn.onclick = () => onZoom(1.10); btnZoomOut.onclick = () => onZoom(0.90); btnFit.onclick = fit;
+    pageNumInput.onchange = () => {
+      let v = +pageNumInput.value || 1;
+      v = Math.min(Math.max(v,1), pdfDoc?.numPages||1);
+      pageNum = v; queueRenderPage(pageNum);
+    };
+
+    // 4) Load document (use the fully-qualified URL we computed)
+    pdfjsLib.getDocument({ url: pdfUrl }).promise.then(doc=>{
+      pdfDoc = doc; pageCountSpan.textContent = '/ ' + pdfDoc.numPages; pageNum = 1; fit();
+    }).catch(err=>{
+      console.error('Failed to load PDF:', err);
+      alert('Could not load the PDF. Open the console for details.');
     });
-    pageNumInput.value = num;
-  }
-  function queueRenderPage(n){ pageRendering ? (pageNumPending=n) : renderPage(n); }
-  function onPrev(){ if (pageNum>1){ pageNum--; queueRenderPage(pageNum); } }
-  function onNext(){ if (pdfDoc && pageNum<pdfDoc.numPages){ pageNum++; queueRenderPage(pageNum); } }
-  function onZoom(f){ scale = Math.max(0.25, Math.min(5, scale*f)); queueRenderPage(pageNum); }
-  function fit(){ const w = document.getElementById('viewer').clientWidth - 32;
-    pdfDoc.getPage(pageNum).then(page=>{
-      const viewport = page.getViewport({ scale:1 });
-      scale = Math.max(0.25, Math.min(5, w/viewport.width)); queueRenderPage(pageNum);
-    });
-  }
 
-  btnPrev.onclick = onPrev; btnNext.onclick = onNext;
-  btnZoomIn.onclick = () => onZoom(1.10); btnZoomOut.onclick = () => onZoom(0.90); btnFit.onclick = fit;
-  pageNumInput.onchange = () => {
-    let v = +pageNumInput.value || 1;
-    v = Math.min(Math.max(v,1), pdfDoc?.numPages||1);
-    pageNum = v; queueRenderPage(pageNum);
-  };
-
-  pdfjsLib.getDocument(pdfUrl).promise.then(doc=>{
-    pdfDoc = doc; pageCountSpan.textContent = '/ ' + pdfDoc.numPages; pageNum = 1; fit();
-  }).catch(err=>{
-    console.error('Failed to load PDF:', err);
-    alert('Could not load the PDF file. Check the "file=" path or if the file exists.');
-  });
-
-  let t; window.addEventListener('resize', ()=>{ clearTimeout(t); t=setTimeout(fit,250); });
-})();
-</script>
-
+    let t; window.addEventListener('resize', ()=>{ clearTimeout(t); t=setTimeout(fit,250); });
+  })();
+  </script>
 </body>
 </html>
