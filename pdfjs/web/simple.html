@@ -45,7 +45,16 @@
     const $ = s => document.querySelector(s);
     const params = new URLSearchParams(location.search);
     // keep this URL *encoded* in the link you use
-    const pdfUrl = params.get('file') || '/essay-coach-instant/assets/book/course-book.pdf';
+    let pdfUrl = params.get('file') || '/essay-coach-instant/assets/book/course-book.pdf';
+
+// If the URL is percent-encoded (e.g. starts with %2F), decode it once.
+try { pdfUrl = decodeURIComponent(pdfUrl); } catch(e) { /* ignore */ }
+
+// If it's not absolute (doesn't start with / or http), make it absolute.
+if (!/^https?:\/\//i.test(pdfUrl) && !pdfUrl.startsWith('/')) {
+  pdfUrl = '/' + pdfUrl;
+}
+
 
     // worker from CDN
     pdfjsLib.GlobalWorkerOptions.workerSrc =
