@@ -1,5 +1,5 @@
 name = "essaycoach"
-main = "src/worker.js"
+main = "dist/index.js"
 compatibility_date = "2025-01-01"
 account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
 workers_dev = true
