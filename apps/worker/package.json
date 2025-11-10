@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=browser --format=esm --outfile=dist/index.js",
+    "build": "esbuild src/index.ts --bundle --platform=browser --format=esm --outfile=dist/index.js --sourcemap --minify",
     "dev": "wrangler dev",
     "deploy": "npm run build && wrangler deploy"
   },
