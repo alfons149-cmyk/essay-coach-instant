@@ -1,20 +1,14 @@
-# .github/workflows/server.yml
-name: Deploy API (Cloudflare Worker)
-on:
-  push:
-    branches: [ main ]
-    paths:
-      - "wrangler.toml"
-      - "apps/**"
-      - ".github/workflows/server.yml"
-  workflow_dispatch: {}
+name = "essaycoach"                # Worker name
+main = "src/worker.js"             # Entry file relative to this toml
+compatibility_date = "2025-01-01"
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: deploy
+# Add your Cloudflare account ID (find it in the CF dashboard, right top / Overview)
+account_id = "YOUR_ACCOUNT_ID"
+
+# Use workers.dev for now (no custom routes needed yet)
+workers_dev = true
+
+# If later you want a custom route, uncomment and edit:
+# routes = [
+#   { pattern = "api.your-domain.com/*", zone_name = "your-domain.com" }
+# ]
