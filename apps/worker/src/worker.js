@@ -8,7 +8,6 @@ export default {
       });
     }
 
-    // Default 404
     return new Response("Not Found", { status: 404 });
   }
 };
