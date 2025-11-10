@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF Viewer (Simple)</title>
+  <style>
+    :root { --bg:#0f1115; --fg:#e6e6e6; --muted:#9aa0a6; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+    header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:#141821;border-bottom:1px solid #1f2430}
+    header .left, header .right{display:flex;align-items:center;gap:8px}
+    input[type=number]{width:64px;padding:4px 6px;background:#0e121a;color:var(--fg);border:1px solid #2a3140;border-radius:6px}
+    button,a.btn{padding:6px 10px;border:1px solid #2a3140;background:#0e121a;color:var(--fg);border-radius:8px;cursor:pointer;text-decoration:none}
+    button:hover,a.btn:hover{border-color:#3a4356;background:#121725}
+    main{height:calc(100vh - 48px);display:grid;place-items:start center;overflow:auto}
+    canvas{margin:16px auto;display:block;background:#0b0e14;box-shadow:0 0 0 1px #1f2430,0 8px 24px rgba(0,0,0,.35);border-radius:8px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="left">
+      <button id="prev" title="Previous page">‹</button>
+      <span>Page</span>
+      <input id="page_num" type="number" min="1" value="1" />
+      <span id="page_count">/ ?</span>
+      <button id="next" title="Next page">›</button>
+    </div>
+    <div class="right">
+      <button id="zoom_out" title="Zoom out">−</button>
+      <button id="zoom_in" title="Zoom in">+</button>
+      <button id="fit" title="Fit to width">Fit</button>
+      <a id="download" class="btn" href="#" download>Download</a>
+    </div>
+  </header>
+
+  <main id="viewer">
+    <canvas id="pdf_canvas"></canvas>
+  </main>
+
+  <!-- PDF.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js"></script>
+  <script>
+  (() => {
+    const $ = s => document.querySelector(s);
+    const params = new URLSearchParams(location.search);
+    // keep this URL *encoded* in the link you use
+    const pdfUrl = params.get('file') || '/essay-coach-instant/assets/book/course-book.pdf';
+
+    // worker from CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js';
+
+    const canvas = $('#pdf_canvas'), ctx = canvas.getContext('2d');
+    const pageNumInput = $('#page_num'), pageCountSpan = $('#page_count');
+    const btnPrev = $('#prev'), btnNext = $('#next');
+    const btnZoomIn = $('#zoom_in'), btnZoomOut = $('#zoom_out'), btnFit = $('#fit');
+    const linkDownload = $('#download'); linkDownload.href = pdfUrl;
+
+    let pdfDoc = null, pageNum = 1, scale = 1.25, pageRendering = false, pageNumPending = null;
+
+    function renderPage(num){
+      pageRendering = true;
+      pdfDoc.getPage(num).then(page=>{
+        const viewport = page.getViewport({ scale });
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        const task = page.render({ canvasContext: ctx, viewport });
+        task.promise.then(()=>{
+          pageRendering = false;
+          if (pageNumPending !== null){ renderPage(pageNumPending); pageNumPending = null; }
+        });
+      });
+      pageNumInput.value = num;
+    }
+    function queueRenderPage(n){ pageRendering ? (pageNumPending=n) : renderPage(n); }
+    function onPrev(){ if (pageNum>1){ pageNum--; queueRenderPage(pageNum); } }
+    function onNext(){ if (pdfDoc && pageNum<pdfDoc.numPages){ pageNum++; queueRenderPage(pageNum); } }
+    function onZoom(f){ scale = Math.max(0.25, Math.min(5, scale*f)); queueRenderPage(pageNum); }
+    function fit(){ const w = document.getElementById('viewer').clientWidth - 32;
+      pdfDoc.getPage(pageNum).then(page=>{
+        const viewport = page.getViewport({ scale:1 });
+        scale = Math.max(0.25, Math.min(5, w/viewport.width)); queueRenderPage(pageNum);
+      });
+    }
+    btnPrev.onclick = onPrev; btnNext.onclick = onNext;
+    btnZoomIn.onclick = () => onZoom(1.10); btnZoomOut.onclick = () => onZoom(0.90); btnFit.onclick = fit;
+    pageNumInput.onchange = () => { let v = +pageNumInput.value||1; v=Math.min(Math.max(v,1), pdfDoc?.numPages||1); pageNum=v; queueRenderPage(pageNum); };
+
+    pdfjsLib.getDocument(pdfUrl).promise.then(doc=>{
+      pdfDoc = doc; pageCountSpan.textContent = '/ ' + pdfDoc.numPages; pageNum = 1; fit();
+    }).catch(err=>{
+      console.error('Failed to load PDF:', err);
+      alert('Could not load the PDF file. Check the "file=" path (URL-encoded) or if the file exists.');
+    });
+
+    let t; window.addEventListener('resize', ()=>{ clearTimeout(t); t=setTimeout(fit,250); });
+  })();
+  </script>
+</body>
+</html>
