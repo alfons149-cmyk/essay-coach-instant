@@ -157,6 +157,36 @@
       </div>
     </section>
 
+    <section class="card" id="bandsCard" hidden>
+  <div class="card-title" data-i18n="bands.title">Estimated Cambridge band</div>
+
+  <div class="row" style="gap:8px; align-items:center; flex-wrap:wrap;">
+    <div class="pill">
+      <strong data-i18n="bands.overall_score">Estimated score</strong>:
+      <span id="bandsOverallScore">—</span>
+    </div>
+    <div class="pill">
+      <strong data-i18n="bands.level_label">Exam level</strong>:
+      <span id="bandsLevel">B2</span>
+    </div>
+  </div>
+
+  <div style="margin-top:8px;">
+    <strong data-i18n="bands.category_title">By criteria</strong>
+    <ul id="bandsCategories" class="list"></ul>
+  </div>
+
+  <div style="margin-top:8px;">
+    <strong data-i18n="bands.improvement_title">What to improve to go up a band</strong>
+    <ul id="bandsImprovements" class="list"></ul>
+  </div>
+
+  <p style="margin-top:8px; font-size:0.85rem; opacity:0.8;" data-i18n="bands.disclaimer">
+    This score is an estimate based on the Cambridge English Scale and not an official exam grade.
+  </p>
+</section>
+
+
     <!-- Next draft -->
     <section class="card">
       <div class="card-title" data-i18n="labels.next_draft">Next draft</div>
