@@ -122,7 +122,7 @@ const result = scoreEssay("B2", {
 // Then render result.overall_scale, result.category_results, result.improvement_summary
 
 
-    if (e.target === el.btnCorrect) {
+        if (e.target === el.btnCorrect) {
       const level = localStorage.getItem('ec.level') || 'C1';
       const payload = {
         level,
@@ -154,6 +154,15 @@ const result = scoreEssay("B2", {
         // ✅ Vocabulary suggestions
         renderVocabSuggestions(res.vocabularySuggestions || {});
 
+        // ✅ Cambridge band estimate (TEMPORARY dummy scores)
+        // Later we'll plug in real scores from the API
+        renderBands(level, {
+          content: 0.7,
+          communicative: 0.6,
+          organisation: 0.8,
+          language: 0.55
+        });
+
       } catch (err) {
         console.error(err);
         if (el.feedback) el.feedback.textContent = '⚠️ Correction failed. Check API, CORS, or dev mode.';
@@ -161,6 +170,7 @@ const result = scoreEssay("B2", {
         e.target.disabled = false;
       }
     }
+
 
     // ✅ One-click replace
     const altBtn = e.target.closest('.vocab-alt');
