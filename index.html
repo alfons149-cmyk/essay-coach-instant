@@ -238,16 +238,17 @@
   </script>
   
 <script>
-  // Make sure no global click handler blocks it
-  (function(){
+  (function () {
     const a = document.getElementById('openBookTest');
+    if (!a) return; // safe guard
+
     a.addEventListener('click', (ev) => {
-      ev.stopPropagation(); // don't let delegated handlers see it
-      // no preventDefault: we want the browser to follow the link
-    }, true); // capture phase
+      ev.stopPropagation();
+    }, true);
     console.log('[BookTest] href =', a.href);
   })();
 </script>
+
 
 </body>
 </html>
