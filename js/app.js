@@ -42,14 +42,6 @@
       if (!res.ok) throw new Error(`API ${res.status}: ${text}`);
       return JSON.parse(text);
     }
-    // Example hardcoded until you integrate real scoring:
-renderBands(currentLevel || 'B2', {
-  content: 0.7,
-  communicative: 0.6,
-  organisation: 0.8,
-  language: 0.55
-});
-
 
     // --- DEV mock ---
     await sleep(300);
