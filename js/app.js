@@ -207,8 +207,14 @@
     setCounter(el.outWC, 'io.output_words', wc);
   }
   function renderBands(level, scores) {
+  if (typeof scoreEssay !== 'function') {
+    console.warn('[bands] scoreEssay is not available');
+    return;
+  }
   const res = scoreEssay(level, scores);
   if (!res) return;
+  ...
+}
 
   const card = document.getElementById('bandsCard');
   const overallEl = document.getElementById('bandsOverallScore');
