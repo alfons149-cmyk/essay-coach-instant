@@ -205,6 +205,46 @@ const result = scoreEssay("B2", {
     setCounter(el.inWC,  'io.input_words',  wc);
     setCounter(el.outWC, 'io.output_words', wc);
   }
+  function renderBands(level, scores) {
+  const res = scoreEssay(level, scores);
+  if (!res) return;
+
+  const card = document.getElementById('bandsCard');
+  const overallEl = document.getElementById('bandsOverallScore');
+  const levelEl = document.getElementById('bandsLevel');
+  const catList = document.getElementById('bandsCategories');
+  const impList = document.getElementById('bandsImprovements');
+
+  overallEl.textContent = res.overall_scale ? res.overall_scale : '—';
+  levelEl.textContent = res.level;
+
+  // Categories
+  catList.innerHTML = '';
+  res.category_results.forEach(cr => {
+    const li = document.createElement('li');
+    const key = `bands.category.${cr.category}`;
+    const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
+    const bandKey = `bands.band.${cr.band}`;
+    const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
+
+    li.innerHTML =
+      `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
+      `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
+    catList.appendChild(li);
+  });
+
+  // Improvements
+  impList.innerHTML = '';
+  const uniqImprovements = Array.from(new Set(res.improvement_summary));
+  uniqImprovements.forEach(text => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    impList.appendChild(li);
+  });
+
+  card.hidden = false;
+}
+
 
   // ---- UI helpers ----
   function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
