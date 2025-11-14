@@ -104,6 +104,15 @@
       updateCounters();
       return;
     }
+    // Example: after correction
+const result = scoreEssay("B2", {
+  content: 0.7,
+  communicative: 0.6,
+  organisation: 0.8,
+  language: 0.5
+});
+// Then render result.overall_scale, result.category_results, result.improvement_summary
+
 
     if (e.target === el.btnCorrect) {
       const level = localStorage.getItem('ec.level') || 'C1';
