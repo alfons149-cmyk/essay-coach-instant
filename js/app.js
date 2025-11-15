@@ -241,20 +241,39 @@
     overallEl.textContent = (res.overall_scale != null) ? res.overall_scale : '—';
     levelEl.textContent   = res.level || level;
 
-    // Categories
-    catList.innerHTML = '';
-    (res.category_results || []).forEach(cr => {
-      const li = document.createElement('li');
-      const key      = `bands.category.${cr.category}`;
-      const bandKey  = `bands.band.${cr.band}`;
-      const label    = (window.I18N && I18N.t) ? I18N.t(key)     : cr.category;
-      const bandLabel= (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
+     // Categories
+  catList.innerHTML = '';
+  res.category_results.forEach(cr => {
+    const li = document.createElement('li');
 
-      li.innerHTML =
-        `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
-        `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
-      catList.appendChild(li);
-    });
+    const catKey  = `bands.category.${cr.category}`;
+    const bandKey = `bands.band.${cr.band}`;
+    const descKey = `bands.desc.${cr.band}`; // NEW: description per band
+
+    const hasI18N = window.I18N && typeof I18N.t === 'function';
+
+    // Category label
+    const label = hasI18N ? I18N.t(catKey) : cr.category;
+
+    // Band label (translated if available)
+    let bandLabel = cr.band;
+    if (hasI18N) {
+      const maybeBand = I18N.t(bandKey);
+      if (maybeBand && maybeBand !== bandKey) bandLabel = maybeBand;
+    }
+
+    // Descriptor: try translated text per band, fallback to English cr.descriptor
+    let descriptor = cr.descriptor;
+    if (hasI18N) {
+      const maybeDesc = I18N.t(descKey);
+      if (maybeDesc && maybeDesc !== descKey) descriptor = maybeDesc;
+    }
+
+    li.innerHTML =
+      `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
+      `<span style="font-size:0.9em;opacity:0.9;">${descriptor}</span>`;
+    catList.appendChild(li);
+  });
 
     // Improvements
     impList.innerHTML = '';
