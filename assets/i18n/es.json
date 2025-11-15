@@ -33,20 +33,16 @@
   "bands.overall_score": "Puntuación estimada",
   "bands.level_label": "Nivel del examen",
   "bands.category_title": "Por criterios",
-
   "bands.category.Content": "Contenido",
   "bands.category.Communicative_Achievement": "Logro comunicativo",
   "bands.category.Organisation": "Organización",
   "bands.category.Language": "Lengua",
-
   "bands.band.low": "Tramo bajo",
   "bands.band.mid": "Tramo medio",
   "bands.band.high": "Tramo alto",
-
   "bands.improvement_title": "Qué mejorar para subir de banda",
-  "bands.disclaimer": "Esta puntuación es una estimación basada en la escala Cambridge y no sustituye una calificación oficial del examen."
+  "bands.disclaimer": "Esta puntuación es una estimación basada en la escala Cambridge y no sustituye una calificación oficial del examen.",
   "bands.desc.low": "Por debajo del nivel esperado para este examen; hay problemas frecuentes en este criterio.",
   "bands.desc.mid": "Aproximadamente en el nivel esperado; hay puntos fuertes pero también aspectos claros a mejorar.",
   "bands.desc.high": "Por encima del nivel esperado; este criterio es en general un punto fuerte."
-
 }
