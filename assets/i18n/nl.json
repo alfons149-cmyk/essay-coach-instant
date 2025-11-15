@@ -45,4 +45,8 @@
 
   "bands.improvement_title": "Wat je kunt verbeteren om hoger te scoren",
   "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officieel examencijfer."
+  "bands.desc.low": "Onder het verwachte niveau voor dit examen; er zijn vaak problemen bij dit criterium.",
+  "bands.desc.mid": "Ongeveer op het verwachte niveau; er zijn sterke punten maar ook duidelijke verbeterpunten.",
+  "bands.desc.high": "Boven het verwachte niveau; dit criterium is over het algemeen een sterk punt."
+
 }
