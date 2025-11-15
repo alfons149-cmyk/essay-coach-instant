@@ -33,20 +33,16 @@
   "bands.overall_score": "Geschatte score",
   "bands.level_label": "Examenniveau",
   "bands.category_title": "Per criterium",
-
   "bands.category.Content": "Inhoud",
   "bands.category.Communicative_Achievement": "Communicatief effect",
   "bands.category.Organisation": "Structuur",
   "bands.category.Language": "Taalgebruik",
-
   "bands.band.low": "Lage band",
   "bands.band.mid": "Middenband",
   "bands.band.high": "Hoge band",
-
   "bands.improvement_title": "Wat je kunt verbeteren om hoger te scoren",
-  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officieel examencijfer."
+  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officiële examencijfer.",
   "bands.desc.low": "Onder het verwachte niveau voor dit examen; er zijn vaak problemen bij dit criterium.",
   "bands.desc.mid": "Ongeveer op het verwachte niveau; er zijn sterke punten maar ook duidelijke verbeterpunten.",
   "bands.desc.high": "Boven het verwachte niveau; dit criterium is over het algemeen een sterk punt."
-
 }
