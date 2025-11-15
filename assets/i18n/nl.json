@@ -27,20 +27,22 @@
   "tooltips.correct": "Essay corrigeren",
   "tooltips.clear": "Alle velden wissen",
 
-  "vocab.none": "Geen suggesties."
-}
-{
+  "vocab.none": "Geen suggesties.",
+
   "bands.title": "Geschatte score volgens de Cambridge-schaal",
   "bands.overall_score": "Geschatte score",
   "bands.level_label": "Examenniveau",
   "bands.category_title": "Per criterium",
+
   "bands.category.Content": "Inhoud",
   "bands.category.Communicative_Achievement": "Communicatief effect",
   "bands.category.Organisation": "Structuur",
   "bands.category.Language": "Taalgebruik",
+
   "bands.band.low": "Lage band",
   "bands.band.mid": "Middenband",
   "bands.band.high": "Hoge band",
+
   "bands.improvement_title": "Wat je kunt verbeteren om hoger te scoren",
-  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officiële examencijfer."
+  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officieel examencijfer."
 }
