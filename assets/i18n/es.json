@@ -45,4 +45,8 @@
 
   "bands.improvement_title": "Qué mejorar para subir de banda",
   "bands.disclaimer": "Esta puntuación es una estimación basada en la escala Cambridge y no sustituye una calificación oficial del examen."
+  "bands.desc.low": "Por debajo del nivel esperado para este examen; hay problemas frecuentes en este criterio.",
+  "bands.desc.mid": "Aproximadamente en el nivel esperado; hay puntos fuertes pero también aspectos claros a mejorar.",
+  "bands.desc.high": "Por encima del nivel esperado; este criterio es en general un punto fuerte."
+
 }
