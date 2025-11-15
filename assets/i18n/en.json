@@ -22,10 +22,27 @@
   "placeholders.next_draft": "Start your next draft here...",
 
   "tooltips.lang_en": "Switch to English",
-  "tooltips.lang_es": "Cambiar a español",
-  "tooltips.lang_nl": "Overschakelen naar Nederlands",
+  "tooltips.lang_es": "Switch to Spanish",
+  "tooltips.lang_nl": "Switch to Dutch",
   "tooltips.correct": "Correct the essay",
   "tooltips.clear": "Clear all fields",
 
-  "vocab.none": "No suggestions."
+  "vocab.none": "No suggestions.",
+
+  "bands.title": "Estimated Cambridge band",
+  "bands.overall_score": "Estimated score",
+  "bands.level_label": "Exam level",
+  "bands.category_title": "By criteria",
+  "bands.category.Content": "Content",
+  "bands.category.Communicative_Achievement": "Communicative achievement",
+  "bands.category.Organisation": "Organisation",
+  "bands.category.Language": "Language",
+  "bands.band.low": "Low band",
+  "bands.band.mid": "Mid band",
+  "bands.band.high": "High band",
+  "bands.improvement_title": "What to improve to go up a band",
+  "bands.disclaimer": "This score is an estimate based on the Cambridge English Scale and not an official exam grade.",
+  "bands.desc.low": "Below the expected level for this exam; there are frequent problems in this criterion.",
+  "bands.desc.mid": "Roughly at the expected level; there are strengths but also clear areas to improve.",
+  "bands.desc.high": "Above the expected level; this criterion is generally a strong point."
 }
