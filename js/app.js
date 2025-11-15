@@ -1,4 +1,4 @@
-// js/app.js — EssayCoach UI (live API + vocab suggestions + correct word counters)
+// js/app.js — EssayCoach UI (live API + vocab suggestions + band estimate)
 (() => {
   // ---- Mode / API ----
   window.EC = window.EC || {};
@@ -7,9 +7,12 @@
   const API_BASE = (EC.API_BASE || '').replace(/\/+$/, '');
 
   // ---- Diagnostics ----
-  const ready = () => console.log('[EC] API_BASE =', API_BASE || '(mock)', 'DEV?', DEV);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
-  else ready();
+  const ready = () => console.log('[EC app] API_BASE =', API_BASE || '(mock)', 'DEV?', DEV);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready);
+  } else {
+    ready();
+  }
 
   // ---- DOM refs ----
   const $  = s => document.querySelector(s);
@@ -28,6 +31,7 @@
 
   // ---- Corrector (live API or mock) ----
   EC.correct = async (payload) => {
+    // Live API
     if (!DEV && API_BASE) {
       const url = `${API_BASE}/correct`;
       console.log('[EC] POST', url, payload);
@@ -68,11 +72,12 @@
     updateCounters();
   });
 
-  // ---- Events ----
+  // ---- Global click events ----
   document.addEventListener('click', async (e) => {
     const langBtn  = e.target.closest('[data-lang]');
     const levelBtn = e.target.closest('[data-level]');
 
+    // Language switch
     if (langBtn) {
       const lang = langBtn.getAttribute('data-lang');
       try {
@@ -87,6 +92,7 @@
       return;
     }
 
+    // Level switch
     if (levelBtn) {
       const level = levelBtn.getAttribute('data-level');
       localStorage.setItem('ec.level', level);
@@ -94,6 +100,7 @@
       return;
     }
 
+    // Clear button
     if (e.target === el.btnClear) {
       if (el.task)      el.task.value = '';
       if (el.essay)     el.essay.value = '';
@@ -102,10 +109,14 @@
       if (el.edits)     el.edits.innerHTML = '';
       renderVocabSuggestions({});
       updateCounters();
+      // Hide bands card as well
+      const card = document.getElementById('bandsCard');
+      if (card) card.hidden = true;
       return;
     }
 
-        if (e.target === el.btnCorrect) {
+    // Correct button
+    if (e.target === el.btnCorrect) {
       const level = localStorage.getItem('ec.level') || 'C1';
       const payload = {
         level,
@@ -125,10 +136,11 @@
         // Render results
         if (el.feedback)  el.feedback.textContent = res.feedback || '—';
         if (el.nextDraft) el.nextDraft.value = res.nextDraft || '';
-        if (el.edits)
+        if (el.edits) {
           el.edits.innerHTML = (res.edits || [])
             .map(x => `<li><strong>${escapeHTML(x.from)}</strong> → <em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`)
             .join('');
+        }
 
         // ✅ Word counters
         setCounter(el.inWC,  'io.input_words',  res.inputWords  ?? 0);
@@ -138,12 +150,12 @@
         renderVocabSuggestions(res.vocabularySuggestions || {});
 
         // ✅ Cambridge band estimate (TEMPORARY dummy scores)
-        // Later we'll plug in real scores from the API
+        // Later we'll plug real scores from the backend here.
         renderBands(level, {
-          content: 0.7,
+          content:       0.7,
           communicative: 0.6,
-          organisation: 0.8,
-          language: 0.55
+          organisation:  0.8,
+          language:      0.55
         });
 
       } catch (err) {
@@ -152,10 +164,10 @@
       } finally {
         e.target.disabled = false;
       }
+      return;
     }
 
-
-    // ✅ One-click replace
+    // ✅ One-click replace in vocab suggestions
     const altBtn = e.target.closest('.vocab-alt');
     if (altBtn) {
       const key = altBtn.getAttribute('data-key') || '';
@@ -163,14 +175,16 @@
       const targetTA = document.getElementById('nextDraft') || document.getElementById('essay');
       if (!targetTA) return;
       const ok = replaceNearest(targetTA, key, to);
-      if (el.feedback)
+      if (el.feedback) {
         el.feedback.textContent = ok
           ? `Replaced “${key}” → “${to}”.`
           : `Could not find "${key}" to replace.`;
+      }
       return;
     }
   });
 
+  // Essay input -> live counters
   if (el.essay) el.essay.addEventListener('input', updateCounters);
 
   window.addEventListener('ec:lang-changed', () => {
@@ -206,68 +220,69 @@
     setCounter(el.inWC,  'io.input_words',  wc);
     setCounter(el.outWC, 'io.output_words', wc);
   }
+
+  // ---- Cambridge bands renderer ----
   function renderBands(level, scores) {
-  if (typeof scoreEssay !== 'function') {
-    console.warn('[bands] scoreEssay is not available');
-    return;
+    if (typeof scoreEssay !== 'function') {
+      console.warn('[bands] scoreEssay is not available');
+      return;
+    }
+    const res = scoreEssay(level, scores);
+    if (!res) return;
+
+    const card     = document.getElementById('bandsCard');
+    const overallEl = document.getElementById('bandsOverallScore');
+    const levelEl   = document.getElementById('bandsLevel');
+    const catList   = document.getElementById('bandsCategories');
+    const impList   = document.getElementById('bandsImprovements');
+    if (!card || !overallEl || !levelEl || !catList || !impList) return;
+
+    // Overall
+    overallEl.textContent = (res.overall_scale != null) ? res.overall_scale : '—';
+    levelEl.textContent   = res.level || level;
+
+    // Categories
+    catList.innerHTML = '';
+    (res.category_results || []).forEach(cr => {
+      const li = document.createElement('li');
+      const key      = `bands.category.${cr.category}`;
+      const bandKey  = `bands.band.${cr.band}`;
+      const label    = (window.I18N && I18N.t) ? I18N.t(key)     : cr.category;
+      const bandLabel= (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
+
+      li.innerHTML =
+        `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
+        `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
+      catList.appendChild(li);
+    });
+
+    // Improvements
+    impList.innerHTML = '';
+    const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
+    uniqImprovements.forEach(text => {
+      const li = document.createElement('li');
+      li.textContent = text;
+      impList.appendChild(li);
+    });
+
+    card.hidden = false;
   }
-  const res = scoreEssay(level, scores);
-  if (!res) return;
-  ...
-}
-
-  const card = document.getElementById('bandsCard');
-  const overallEl = document.getElementById('bandsOverallScore');
-  const levelEl = document.getElementById('bandsLevel');
-  const catList = document.getElementById('bandsCategories');
-  const impList = document.getElementById('bandsImprovements');
-
-  overallEl.textContent = res.overall_scale ? res.overall_scale : '—';
-  levelEl.textContent = res.level;
-
-  // Categories
-  catList.innerHTML = '';
-  res.category_results.forEach(cr => {
-    const li = document.createElement('li');
-    const key = `bands.category.${cr.category}`;
-    const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
-    const bandKey = `bands.band.${cr.band}`;
-    const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
-
-    li.innerHTML =
-      `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
-      `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
-    catList.appendChild(li);
-  });
-
-  // Improvements
-  impList.innerHTML = '';
-  const uniqImprovements = Array.from(new Set(res.improvement_summary));
-  uniqImprovements.forEach(text => {
-    const li = document.createElement('li');
-    li.textContent = text;
-    impList.appendChild(li);
-  });
-
-  card.hidden = false;
-}
-
 
   // ---- UI helpers ----
   function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
     $$('[data-lang]').forEach(b => {
-      const a = b.getAttribute('data-lang') === lang;
-      b.classList.toggle('btn-primary', a);
-      b.classList.toggle('btn-ghost', !a);
-      b.setAttribute('aria-pressed', String(a));
+      const active = b.getAttribute('data-lang') === lang;
+      b.classList.toggle('btn-primary', active);
+      b.classList.toggle('btn-ghost', !active);
+      b.setAttribute('aria-pressed', String(active));
     });
   }
 
   function reflectLevelButtons(level = (localStorage.getItem('ec.level') || 'C1')) {
     $$('[data-level]').forEach(b => {
-      const a = b.getAttribute('data-level') === level;
-      b.classList.toggle('pill--active', a);
-      b.setAttribute('aria-pressed', String(a));
+      const active = b.getAttribute('data-level') === level;
+      b.classList.toggle('pill--active', active);
+      b.setAttribute('aria-pressed', String(active));
     });
   }
 
@@ -276,12 +291,14 @@
     const card = document.getElementById('vocabCard');
     const list = document.getElementById('vocab');
     if (!card || !list) return;
+
     const entries = Object.entries(vs || {});
     if (!entries.length) {
       card.hidden = true;
       list.innerHTML = '';
       return;
     }
+
     const items = entries.map(([key, arr]) => {
       const alts = (Array.isArray(arr) ? arr : [String(arr)])
         .filter(Boolean)
@@ -290,6 +307,7 @@
         ).join(' ');
       return `<li><strong>${escapeHTML(key)}</strong><div class="alt-row">${alts}</div></li>`;
     });
+
     list.innerHTML = items.join('');
     card.hidden = false;
   }
