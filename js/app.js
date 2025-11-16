@@ -1,4 +1,4 @@
-// js/app.js — EssayCoach UI (live API + vocab suggestions + band estimate)
+// js/app.js — EssayCoach UI (live API + vocab suggestions + word counters + bands + sentence insights)
 (() => {
   // ---- Mode / API ----
   window.EC = window.EC || {};
@@ -7,12 +7,9 @@
   const API_BASE = (EC.API_BASE || '').replace(/\/+$/, '');
 
   // ---- Diagnostics ----
-  const ready = () => console.log('[EC app] API_BASE =', API_BASE || '(mock)', 'DEV?', DEV);
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ready);
-  } else {
-    ready();
-  }
+  const ready = () => console.log('[EC] API_BASE =', API_BASE || '(mock)', 'DEV?', DEV);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
+  else ready();
 
   // ---- DOM refs ----
   const $  = s => document.querySelector(s);
@@ -31,7 +28,6 @@
 
   // ---- Corrector (live API or mock) ----
   EC.correct = async (payload) => {
-    // Live API
     if (!DEV && API_BASE) {
       const url = `${API_BASE}/correct`;
       console.log('[EC] POST', url, payload);
@@ -47,7 +43,7 @@
       return JSON.parse(text);
     }
 
-    // --- DEV mock ---
+    // --- DEV mock (runs when ?dev=1 or no API_BASE) ---
     await sleep(300);
     const txt = payload.essay || '';
     const wc  = wcCount(txt);
@@ -61,7 +57,16 @@
       feedback: `✅ Mock feedback for ${payload.level}.`,
       edits,
       nextDraft: txt.replace(/\ba lot\b/gi, edits[0]?.to || 'a lot'),
-      vocabularySuggestions: { 'a lot': ['many','numerous','substantially'] }
+      vocabularySuggestions: { 'a lot': ['many','numerous','substantially'] },
+      sentenceInsights: [
+        {
+          example: "I have a lot of friends.",
+          issue: "Informal, vague quantifier.",
+          explanation: "In exam writing, 'a lot of' is often too informal and imprecise.",
+          betterVersion: "I have many close friends.",
+          linkHint: "See the unit on formal quantifiers."
+        }
+      ]
     };
   };
 
@@ -72,7 +77,7 @@
     updateCounters();
   });
 
-  // ---- Global click events ----
+  // ---- Events ----
   document.addEventListener('click', async (e) => {
     const langBtn  = e.target.closest('[data-lang]');
     const levelBtn = e.target.closest('[data-level]');
@@ -92,7 +97,7 @@
       return;
     }
 
-    // Level switch
+    // Level switch (B2/C1/C2)
     if (levelBtn) {
       const level = levelBtn.getAttribute('data-level');
       localStorage.setItem('ec.level', level);
@@ -108,10 +113,10 @@
       if (el.feedback)  el.feedback.textContent = '—';
       if (el.edits)     el.edits.innerHTML = '';
       renderVocabSuggestions({});
+      renderSentenceInsights([]);     // also clear insights
+      const bandsCard = document.getElementById('bandsCard');
+      if (bandsCard) bandsCard.hidden = true;
       updateCounters();
-      // Hide bands card as well
-      const card = document.getElementById('bandsCard');
-      if (card) card.hidden = true;
       return;
     }
 
@@ -136,11 +141,10 @@
         // Render results
         if (el.feedback)  el.feedback.textContent = res.feedback || '—';
         if (el.nextDraft) el.nextDraft.value = res.nextDraft || '';
-        if (el.edits) {
+        if (el.edits)
           el.edits.innerHTML = (res.edits || [])
             .map(x => `<li><strong>${escapeHTML(x.from)}</strong> → <em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`)
             .join('');
-        }
 
         // ✅ Word counters
         setCounter(el.inWC,  'io.input_words',  res.inputWords  ?? 0);
@@ -149,14 +153,16 @@
         // ✅ Vocabulary suggestions
         renderVocabSuggestions(res.vocabularySuggestions || {});
 
-        // ✅ Cambridge band estimate (TEMPORARY dummy scores)
-        // Later we'll plug real scores from the backend here.
+        // ✅ Cambridge band estimate (TEMPORARY dummy scores until API sends real ones)
         renderBands(level, {
-          content:       0.7,
+          content: 0.7,
           communicative: 0.6,
-          organisation:  0.8,
-          language:      0.55
+          organisation: 0.8,
+          language: 0.55
         });
+
+        // ✅ Sentence insights (per-sentence coaching)
+        renderSentenceInsights(res.sentenceInsights || []);
 
       } catch (err) {
         console.error(err);
@@ -164,10 +170,9 @@
       } finally {
         e.target.disabled = false;
       }
-      return;
     }
 
-    // ✅ One-click replace in vocab suggestions
+    // ✅ One-click replace for vocab suggestions
     const altBtn = e.target.closest('.vocab-alt');
     if (altBtn) {
       const key = altBtn.getAttribute('data-key') || '';
@@ -175,16 +180,14 @@
       const targetTA = document.getElementById('nextDraft') || document.getElementById('essay');
       if (!targetTA) return;
       const ok = replaceNearest(targetTA, key, to);
-      if (el.feedback) {
+      if (el.feedback)
         el.feedback.textContent = ok
           ? `Replaced “${key}” → “${to}”.`
           : `Could not find "${key}" to replace.`;
-      }
       return;
     }
   });
 
-  // Essay input -> live counters
   if (el.essay) el.essay.addEventListener('input', updateCounters);
 
   window.addEventListener('ec:lang-changed', () => {
@@ -221,7 +224,7 @@
     setCounter(el.outWC, 'io.output_words', wc);
   }
 
-  // ---- Cambridge bands renderer ----
+  // ---- Bands renderer ----
   function renderBands(level, scores) {
     if (typeof scoreEssay !== 'function') {
       console.warn('[bands] scoreEssay is not available');
@@ -231,53 +234,34 @@
     if (!res) return;
 
     const card     = document.getElementById('bandsCard');
-    const overallEl = document.getElementById('bandsOverallScore');
-    const levelEl   = document.getElementById('bandsLevel');
-    const catList   = document.getElementById('bandsCategories');
-    const impList   = document.getElementById('bandsImprovements');
+    const overallEl= document.getElementById('bandsOverallScore');
+    const levelEl  = document.getElementById('bandsLevel');
+    const catList  = document.getElementById('bandsCategories');
+    const impList  = document.getElementById('bandsImprovements');
+
     if (!card || !overallEl || !levelEl || !catList || !impList) return;
 
-    // Overall
-    overallEl.textContent = (res.overall_scale != null) ? res.overall_scale : '—';
-    levelEl.textContent   = res.level || level;
+    overallEl.textContent = res.overall_scale ? res.overall_scale : '—';
+    levelEl.textContent   = res.level;
 
-     // Categories
-  catList.innerHTML = '';
-  res.category_results.forEach(cr => {
-    const li = document.createElement('li');
+    // Categories
+    catList.innerHTML = '';
+    res.category_results.forEach(cr => {
+      const li = document.createElement('li');
+      const key      = `bands.category.${cr.category}`;
+      const label    = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
+      const bandKey  = `bands.band.${cr.band}`;
+      const bandLabel= (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
 
-    const catKey  = `bands.category.${cr.category}`;
-    const bandKey = `bands.band.${cr.band}`;
-    const descKey = `bands.desc.${cr.band}`; // NEW: description per band
-
-    const hasI18N = window.I18N && typeof I18N.t === 'function';
-
-    // Category label
-    const label = hasI18N ? I18N.t(catKey) : cr.category;
-
-    // Band label (translated if available)
-    let bandLabel = cr.band;
-    if (hasI18N) {
-      const maybeBand = I18N.t(bandKey);
-      if (maybeBand && maybeBand !== bandKey) bandLabel = maybeBand;
-    }
-
-    // Descriptor: try translated text per band, fallback to English cr.descriptor
-    let descriptor = cr.descriptor;
-    if (hasI18N) {
-      const maybeDesc = I18N.t(descKey);
-      if (maybeDesc && maybeDesc !== descKey) descriptor = maybeDesc;
-    }
-
-    li.innerHTML =
-      `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
-      `<span style="font-size:0.9em;opacity:0.9;">${descriptor}</span>`;
-    catList.appendChild(li);
-  });
+      li.innerHTML =
+        `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
+        `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
+      catList.appendChild(li);
+    });
 
     // Improvements
     impList.innerHTML = '';
-    const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
+    const uniqImprovements = Array.from(new Set(res.improvement_summary));
     uniqImprovements.forEach(text => {
       const li = document.createElement('li');
       li.textContent = text;
@@ -287,21 +271,60 @@
     card.hidden = false;
   }
 
+  // ---- Sentence insights renderer ----
+  function renderSentenceInsights(items) {
+    const card = document.getElementById('sentenceCard');
+    const list = document.getElementById('sentenceList');
+    if (!card || !list) return;
+
+    if (!items || !items.length) {
+      card.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+
+    list.innerHTML = items.map(si => {
+      const ex   = escapeHTML(si.example || '');
+      const issue= escapeHTML(si.issue || '');
+      const expl = escapeHTML(si.explanation || '');
+      const better = escapeHTML(si.betterVersion || '');
+      const link = escapeHTML(si.linkHint || '');
+
+      const labelExample = (window.I18N && I18N.t) ? I18N.t('sentence.example')     : 'Original sentence';
+      const labelIssue   = (window.I18N && I18N.t) ? I18N.t('sentence.issue')       : 'What is going wrong';
+      const labelExpl    = (window.I18N && I18N.t) ? I18N.t('sentence.explanation') : 'Teacher’s explanation';
+      const labelBetter  = (window.I18N && I18N.t) ? I18N.t('sentence.better')      : 'Stronger version';
+      const labelLink    = (window.I18N && I18N.t) ? I18N.t('sentence.link')        : 'See this topic in the course book';
+
+      return `
+        <li class="sentence-item">
+          <p><strong>${labelExample}:</strong> ${ex}</p>
+          ${issue ? `<p><strong>${labelIssue}:</strong> ${issue}</p>` : ''}
+          ${expl ? `<p><strong>${labelExpl}:</strong> ${expl}</p>` : ''}
+          ${better ? `<p><strong>${labelBetter}:</strong> ${better}</p>` : ''}
+          ${link ? `<p style="font-size:0.85em;opacity:0.8;">${labelLink}: ${link}</p>` : ''}
+        </li>
+      `;
+    }).join('');
+
+    card.hidden = false;
+  }
+
   // ---- UI helpers ----
   function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
     $$('[data-lang]').forEach(b => {
-      const active = b.getAttribute('data-lang') === lang;
-      b.classList.toggle('btn-primary', active);
-      b.classList.toggle('btn-ghost', !active);
-      b.setAttribute('aria-pressed', String(active));
+      const a = b.getAttribute('data-lang') === lang;
+      b.classList.toggle('btn-primary', a);
+      b.classList.toggle('btn-ghost', !a);
+      b.setAttribute('aria-pressed', String(a));
     });
   }
 
   function reflectLevelButtons(level = (localStorage.getItem('ec.level') || 'C1')) {
     $$('[data-level]').forEach(b => {
-      const active = b.getAttribute('data-level') === level;
-      b.classList.toggle('pill--active', active);
-      b.setAttribute('aria-pressed', String(active));
+      const a = b.getAttribute('data-level') === level;
+      b.classList.toggle('pill--active', a);
+      b.setAttribute('aria-pressed', String(a));
     });
   }
 
@@ -310,14 +333,12 @@
     const card = document.getElementById('vocabCard');
     const list = document.getElementById('vocab');
     if (!card || !list) return;
-
     const entries = Object.entries(vs || {});
     if (!entries.length) {
       card.hidden = true;
       list.innerHTML = '';
       return;
     }
-
     const items = entries.map(([key, arr]) => {
       const alts = (Array.isArray(arr) ? arr : [String(arr)])
         .filter(Boolean)
@@ -326,7 +347,6 @@
         ).join(' ');
       return `<li><strong>${escapeHTML(key)}</strong><div class="alt-row">${alts}</div></li>`;
     });
-
     list.innerHTML = items.join('');
     card.hidden = false;
   }
