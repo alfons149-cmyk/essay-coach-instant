@@ -45,4 +45,12 @@
   "bands.desc.low": "Below the expected level for this exam; there are frequent problems in this criterion.",
   "bands.desc.mid": "Roughly at the expected level; there are strengths but also clear areas to improve.",
   "bands.desc.high": "Above the expected level; this criterion is generally a strong point."
+  
+  "sentence.title": "Sentence coaching from your draft",
+  "sentence.example": "Original sentence",
+  "sentence.issue": "What is going wrong",
+  "sentence.explanation": "Teacher’s explanation",
+  "sentence.better": "Stronger version",
+  "sentence.link": "See this topic in the course book"
+
 }
