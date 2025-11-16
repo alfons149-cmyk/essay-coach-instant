@@ -45,4 +45,11 @@
   "bands.desc.low": "Por debajo del nivel esperado para este examen; hay problemas frecuentes en este criterio.",
   "bands.desc.mid": "Aproximadamente en el nivel esperado; hay puntos fuertes pero también aspectos claros a mejorar.",
   "bands.desc.high": "Por encima del nivel esperado; este criterio es en general un punto fuerte."
+
+    "sentence.title": "Trabajo frase por frase de tu redacción",
+  "sentence.example": "Frase original",
+  "sentence.issue": "Qué problema hay",
+  "sentence.explanation": "Explicación del profesor",
+  "sentence.better": "Versión mejorada",
+  "sentence.link": "Consulta este tema en el libro del curso"
 }
