@@ -60,6 +60,22 @@ body{
   font-size: 1.05em;
   vertical-align: middle;
 }
+.card-title--feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.card-title--feedback::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  border-radius: 50%; /* circular photo */
+  background-image: url("/essay-coach-instant/assets/alfons-icon.jpg");
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
 
 /* Compact sentence insights list */
 #sentencesCard .list--compact li {
