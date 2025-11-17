@@ -10,6 +10,8 @@
   "labels.edits": "Edits",
   "labels.next_draft": "Next draft",
   "labels.vocab_options": "Vocabulary options",
+  "labels.sentence_insights": "Sentence insights",
+  "labels.course_book": "Read the Course Book",
 
   "buttons.correct": "Correct",
   "buttons.clear": "Clear",
@@ -37,20 +39,9 @@
   "bands.category.Communicative_Achievement": "Communicative achievement",
   "bands.category.Organisation": "Organisation",
   "bands.category.Language": "Language",
-  "bands.band.low": "Low band",
-  "bands.band.mid": "Mid band",
-  "bands.band.high": "High band",
+  "bands.band.low": "Lower band",
+  "bands.band.mid": "Middle band",
+  "bands.band.high": "Higher band",
   "bands.improvement_title": "What to improve to go up a band",
-  "bands.disclaimer": "This score is an estimate based on the Cambridge English Scale and not an official exam grade.",
-  "bands.desc.low": "Below the expected level for this exam; there are frequent problems in this criterion.",
-  "bands.desc.mid": "Roughly at the expected level; there are strengths but also clear areas to improve.",
-  "bands.desc.high": "Above the expected level; this criterion is generally a strong point."
-  
-  "sentence.title": "Sentence coaching from your draft",
-  "sentence.example": "Original sentence",
-  "sentence.issue": "What is going wrong",
-  "sentence.explanation": "Teacher’s explanation",
-  "sentence.better": "Stronger version",
-  "sentence.link": "See this topic in the course book"
-
+  "bands.disclaimer": "This score is an estimate based on the Cambridge English Scale and not an official exam grade."
 }
