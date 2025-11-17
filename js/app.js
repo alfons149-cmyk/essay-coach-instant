@@ -157,6 +157,8 @@
             organisation: 0.8,
             language: 0.55
           };
+                  // ✅ Sentence insights (from Worker)
+        renderSentenceInsights(res.sentenceInsights || []);
           renderBands(level, scores);
         }
 
