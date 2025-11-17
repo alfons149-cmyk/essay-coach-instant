@@ -4,18 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Title translates via i18n -->
   <title data-i18n="meta.title">EssayCoach – Cambridge Toolkit (EN)</title>
 
   <!-- GitHub Pages base (project pages) -->
   <base href="/essay-coach-instant/">
 
-  <!-- Icons / PWA (optional but safe) -->
+  <!-- Icons -->
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#111111" />
 
-  <!-- Fonts (optional) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
 
@@ -25,29 +24,11 @@
   <!-- Scripts (order matters) -->
   <script defer src="js/i18n.js"></script>
   <script defer src="js/config.js"></script>
-
-  <!-- EC bootstrap: API base + DEV flag (kept minimal) -->
-  <script>
-    window.EC = window.EC || {};
-    if (!window.EC.API_BASE) {
-      // Your live Worker or local dev can override this
-      window.EC.API_BASE = 'https://essaycoach.alfons149.workers.dev/api';
-    }
-    if (typeof window.EC.DEV !== 'boolean') {
-      const qs = new URLSearchParams(location.search);
-      window.EC.DEV = (qs.get('dev') === '1');
-    }
-    console.log('[EC] API_BASE =', window.EC.API_BASE || '(mock)', 'DEV?', !!window.EC.DEV);
-  </script>
-
   <script defer src="js/cambridge_rubric.js"></script>
-
   <script defer src="js/scoring.js"></script>
-
-
   <script defer src="js/app.js"></script>
 
-  <!-- First-load i18n boot (uses saved language; defaults to EN) -->
+  <!-- First-load i18n boot -->
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const saved = localStorage.getItem('ec.lang') || 'en';
@@ -58,7 +39,7 @@
     });
   </script>
 
-  <!-- Tiny debug guard (safe to keep) -->
+  <!-- Tiny debug guard -->
   <script>
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof window.I18N === 'undefined') {
@@ -76,12 +57,18 @@
       <h1 class="app-title" data-i18n="app.name">EssayCoach</h1>
       <span class="spacer"></span>
 
-      <!-- Language buttons with translated tooltips -->
+      <!-- Language buttons -->
       <button class="btn-ghost" data-lang="en" title="English"    data-i18n-title="tooltips.lang_en">EN</button>
       <button class="btn-ghost" data-lang="es" title="Español"    data-i18n-title="tooltips.lang_es">ES</button>
       <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
 
-      <!-- somewhere in index.html toolbar or header -->
+      <!-- Course book (simple PDF link) -->
+      <a class="btn-ghost"
+         href="assets/book/course-book.pdf"
+         target="_blank"
+         rel="noopener">
+        📘 <span data-i18n="labels.course_book">Read the Course Book</span>
+      </a>
 
       <!-- API/dev badges -->
       <span class="badge" id="apiMode" style="margin-left:8px"></span>
@@ -90,7 +77,7 @@
   </header>
 
   <main class="container">
-    <h1 class="app-title" data-i18n="app.subtitle">EssayCoach – Cambridge Toolkit</h1>
+    <h2 class="app-subtitle" data-i18n="app.subtitle">EssayCoach – Cambridge Toolkit</h2>
 
     <!-- Level -->
     <section class="panel">
@@ -106,13 +93,11 @@
     <section class="grid-2">
       <div class="card">
         <div class="card-title" data-i18n="labels.prompt">Task prompt</div>
-        <!-- empty content so placeholder shows -->
         <textarea id="task" rows="6" data-i18n-ph="placeholders.task"></textarea>
       </div>
 
       <div class="card">
         <div class="card-title" data-i18n="labels.essay">Your essay</div>
-        <!-- empty content so placeholder shows -->
         <textarea id="essay" rows="12" data-i18n-ph="placeholders.essay"></textarea>
       </div>
     </section>
@@ -128,11 +113,10 @@
               data-i18n="buttons.clear"
               title="Clear all fields"
               data-i18n-title="tooltips.clear">Clear</button>
-      
 
       <span class="spacer"></span>
 
-      <!-- Word counters (text updated by app.js) -->
+      <!-- Word counters -->
       <div id="inWC"  class="pill" data-i18n="io.input_words">Input: {n} words</div>
       <div id="outWC" class="pill" data-i18n="io.output_words">Output: {n} words</div>
     </section>
@@ -150,43 +134,35 @@
       </div>
     </section>
 
+    <!-- Cambridge band estimate -->
     <section class="card" id="bandsCard" hidden>
-  <div class="card-title" data-i18n="bands.title">Estimated Cambridge band</div>
+      <div class="card-title" data-i18n="bands.title">Estimated Cambridge band</div>
 
-  <div class="row" style="gap:8px; align-items:center; flex-wrap:wrap;">
-    <div class="pill">
-      <strong data-i18n="bands.overall_score">Estimated score</strong>:
-      <span id="bandsOverallScore">—</span>
-    </div>
-    <div class="pill">
-      <strong data-i18n="bands.level_label">Exam level</strong>:
-      <span id="bandsLevel">B2</span>
-    </div>
-  </div>
-
-  <div style="margin-top:8px;">
-    <strong data-i18n="bands.category_title">By criteria</strong>
-    <ul id="bandsCategories" class="list"></ul>
-  </div>
-
-  <div style="margin-top:8px;">
-    <strong data-i18n="bands.improvement_title">What to improve to go up a band</strong>
-    <ul id="bandsImprovements" class="list"></ul>
-  </div>
-
-  <p style="margin-top:8px; font-size:0.85rem; opacity:0.8;" data-i18n="bands.disclaimer">
-    This score is an estimate based on the Cambridge English Scale and not an official exam grade.
-  </p>
-</section>
-
-        <!-- Sentence insights -->
-    <section class="card" id="sentenceCard" hidden>
-      <div class="card-title" data-i18n="sentence.title">
-        Sentence coaching from your draft
+      <div class="row" style="gap:8px; align-items:center; flex-wrap:wrap;">
+        <div class="pill">
+          <strong data-i18n="bands.overall_score">Estimated score</strong>:
+          <span id="bandsOverallScore">—</span>
+        </div>
+        <div class="pill">
+          <strong data-i18n="bands.level_label">Exam level</strong>:
+          <span id="bandsLevel">B2</span>
+        </div>
       </div>
-      <ul id="sentenceList" class="list"></ul>
-    </section>
 
+      <div style="margin-top:8px;">
+        <strong data-i18n="bands.category_title">By criteria</strong>
+        <ul id="bandsCategories" class="list"></ul>
+      </div>
+
+      <div style="margin-top:8px;">
+        <strong data-i18n="bands.improvement_title">What to improve to go up a band</strong>
+        <ul id="bandsImprovements" class="list"></ul>
+      </div>
+
+      <p style="margin-top:8px; font-size:0.85rem; opacity:0.8;" data-i18n="bands.disclaimer">
+        This score is an estimate based on the Cambridge English Scale and not an official exam grade.
+      </p>
+    </section>
 
     <!-- Next draft -->
     <section class="card">
@@ -194,14 +170,20 @@
       <textarea id="nextDraft" rows="10" data-i18n-ph="placeholders.next_draft"></textarea>
     </section>
 
-    <!-- Vocabulary (optional, shown by app.js when available) -->
+    <!-- Vocabulary -->
     <section class="card" id="vocabCard" hidden>
       <div class="card-title" data-i18n="labels.vocab_options">Vocabulary options</div>
       <ul id="vocab" class="list"></ul>
     </section>
+
+    <!-- Sentence insights -->
+    <section class="card" id="sentenceCard" hidden>
+      <div class="card-title" data-i18n="labels.sentence_insights">Sentence insights</div>
+      <ul id="sentenceInsights" class="list"></ul>
+    </section>
   </main>
 
-  <!-- Language switch -->
+  <!-- Language switch (delegated) -->
   <script>
     document.addEventListener('click', async (e) => {
       const btn = e.target.closest('[data-lang]');
@@ -221,7 +203,6 @@
     });
   </script>
 
-
   <!-- API/dev badges -->
   <script>
     (function () {
@@ -234,19 +215,5 @@
       if (devEl) devEl.style.display = dev ? 'inline' : 'none';
     })();
   </script>
-  
-<script>
-  (function () {
-    const a = document.getElementById('openBookTest');
-    if (!a) return; // safe guard
-
-    a.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-    }, true);
-    console.log('[BookTest] href =', a.href);
-  })();
-</script>
-
-
 </body>
 </html>
