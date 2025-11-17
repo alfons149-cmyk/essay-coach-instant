@@ -142,14 +142,14 @@
             .map(x => `<li><strong>${escapeHTML(x.from)}</strong> → <em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`)
             .join('');
 
-        // Word counters
+               // ✅ Word counters
         setCounter(el.inWC,  'io.input_words',  res.inputWords  ?? 0);
         setCounter(el.outWC, 'io.output_words', res.outputWords ?? 0);
 
-        // Vocabulary suggestions
+        // ✅ Vocabulary suggestions
         renderVocabSuggestions(res.vocabularySuggestions || {});
 
-        // Cambridge band estimate
+        // ✅ Cambridge band estimate (only if scoreEssay is available)
         if (typeof window.scoreEssay === 'function') {
           const scores = {
             content: 0.7,
@@ -157,21 +157,19 @@
             organisation: 0.8,
             language: 0.55
           };
-                  // ✅ Sentence insights (from Worker)
-        renderSentenceInsights(res.sentenceInsights || []);
           renderBands(level, scores);
         }
 
-        // Sentence insights (from Worker)
+        // ✅ Sentence insights (from Worker)
         renderSentenceInsights(res.sentenceInsights || []);
 
       } catch (err) {
         console.error(err);
-        if (el.feedback) el.feedback.textContent = '⚠️ Correction failed. Check API, CORS, or dev mode.';
+        if (el.feedback) el.feedback.textContent =
+          '⚠️ Correction failed. Check API, CORS, or dev mode.';
       } finally {
         e.target.disabled = false;
       }
-    }
 
     // One-click replace in vocab suggestions
     const altBtn = e.target.closest('.vocab-alt');
