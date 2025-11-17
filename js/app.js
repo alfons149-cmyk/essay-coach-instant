@@ -1,4 +1,4 @@
-// js/app.js — EssayCoach UI (live API + vocab suggestions + word counters + bands + sentence insights)
+// js/app.js — EssayCoach UI
 (() => {
   // ---- Mode / API ----
   window.EC = window.EC || {};
@@ -43,7 +43,7 @@
       return JSON.parse(text);
     }
 
-    // --- DEV mock (runs when ?dev=1 or no API_BASE) ---
+    // --- DEV mock ---
     await sleep(300);
     const txt = payload.essay || '';
     const wc  = wcCount(txt);
@@ -60,11 +60,11 @@
       vocabularySuggestions: { 'a lot': ['many','numerous','substantially'] },
       sentenceInsights: [
         {
-          example: "I have a lot of friends.",
-          issue: "Informal, vague quantifier.",
-          explanation: "In exam writing, 'a lot of' is often too informal and imprecise.",
-          betterVersion: "I have many close friends.",
-          linkHint: "See the unit on formal quantifiers."
+          example: 'This is a very good essay.',
+          issue: 'Overused intensifier "very"',
+          explanation: 'At higher levels we prefer more precise adjectives instead of "very + adjective".',
+          betterVersion: 'This is an excellent essay.',
+          linkHint: 'U7'
         }
       ]
     };
@@ -82,7 +82,6 @@
     const langBtn  = e.target.closest('[data-lang]');
     const levelBtn = e.target.closest('[data-level]');
 
-    // Language switch
     if (langBtn) {
       const lang = langBtn.getAttribute('data-lang');
       try {
@@ -97,7 +96,6 @@
       return;
     }
 
-    // Level switch (B2/C1/C2)
     if (levelBtn) {
       const level = levelBtn.getAttribute('data-level');
       localStorage.setItem('ec.level', level);
@@ -105,7 +103,6 @@
       return;
     }
 
-    // Clear button
     if (e.target === el.btnClear) {
       if (el.task)      el.task.value = '';
       if (el.essay)     el.essay.value = '';
@@ -113,18 +110,17 @@
       if (el.feedback)  el.feedback.textContent = '—';
       if (el.edits)     el.edits.innerHTML = '';
       renderVocabSuggestions({});
-      renderSentenceInsights([]);     // also clear insights
-      const bandsCard = document.getElementById('bandsCard');
-      if (bandsCard) bandsCard.hidden = true;
+      renderSentenceInsights([]);
       updateCounters();
       return;
     }
 
-    // Correct button
     if (e.target === el.btnCorrect) {
       const level = localStorage.getItem('ec.level') || 'C1';
+      const lang  = localStorage.getItem('ec.lang')  || 'en';
       const payload = {
         level,
+        lang,
         task:  (el.task?.value || ''),
         essay: (el.essay?.value || ''),
       };
@@ -146,22 +142,25 @@
             .map(x => `<li><strong>${escapeHTML(x.from)}</strong> → <em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`)
             .join('');
 
-        // ✅ Word counters
+        // Word counters
         setCounter(el.inWC,  'io.input_words',  res.inputWords  ?? 0);
         setCounter(el.outWC, 'io.output_words', res.outputWords ?? 0);
 
-        // ✅ Vocabulary suggestions
+        // Vocabulary suggestions
         renderVocabSuggestions(res.vocabularySuggestions || {});
 
-        // ✅ Cambridge band estimate (TEMPORARY dummy scores until API sends real ones)
-        renderBands(level, {
-          content: 0.7,
-          communicative: 0.6,
-          organisation: 0.8,
-          language: 0.55
-        });
+        // Cambridge band estimate
+        if (typeof window.scoreEssay === 'function') {
+          const scores = {
+            content: 0.7,
+            communicative: 0.6,
+            organisation: 0.8,
+            language: 0.55
+          };
+          renderBands(level, scores);
+        }
 
-        // ✅ Sentence insights (per-sentence coaching)
+        // Sentence insights (from Worker)
         renderSentenceInsights(res.sentenceInsights || []);
 
       } catch (err) {
@@ -172,7 +171,7 @@
       }
     }
 
-    // ✅ One-click replace for vocab suggestions
+    // One-click replace in vocab suggestions
     const altBtn = e.target.closest('.vocab-alt');
     if (altBtn) {
       const key = altBtn.getAttribute('data-key') || '';
@@ -226,7 +225,7 @@
 
   // ---- Bands renderer ----
   function renderBands(level, scores) {
-    if (typeof scoreEssay !== 'function') {
+    if (typeof window.scoreEssay !== 'function') {
       console.warn('[bands] scoreEssay is not available');
       return;
     }
@@ -234,34 +233,34 @@
     if (!res) return;
 
     const card     = document.getElementById('bandsCard');
-    const overallEl= document.getElementById('bandsOverallScore');
-    const levelEl  = document.getElementById('bandsLevel');
-    const catList  = document.getElementById('bandsCategories');
-    const impList  = document.getElementById('bandsImprovements');
+    const overallEl = document.getElementById('bandsOverallScore');
+    const levelEl   = document.getElementById('bandsLevel');
+    const catList   = document.getElementById('bandsCategories');
+    const impList   = document.getElementById('bandsImprovements');
 
     if (!card || !overallEl || !levelEl || !catList || !impList) return;
 
-    overallEl.textContent = res.overall_scale ? res.overall_scale : '—';
+    overallEl.textContent = res.overall_scale ? String(res.overall_scale) : '—';
     levelEl.textContent   = res.level;
 
     // Categories
     catList.innerHTML = '';
     res.category_results.forEach(cr => {
       const li = document.createElement('li');
-      const key      = `bands.category.${cr.category}`;
-      const label    = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
-      const bandKey  = `bands.band.${cr.band}`;
-      const bandLabel= (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
+      const key     = `bands.category.${cr.category}`;
+      const label   = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
+      const bandKey = `bands.band.${cr.band}`;
+      const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
 
       li.innerHTML =
-        `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
-        `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
+        `<strong>${escapeHTML(label)}</strong>: ${escapeHTML(bandLabel)} (${escapeHTML(cr.score_range)})<br>` +
+        `<span style="font-size:0.9em;opacity:0.9;">${escapeHTML(cr.descriptor)}</span>`;
       catList.appendChild(li);
     });
 
     // Improvements
     impList.innerHTML = '';
-    const uniqImprovements = Array.from(new Set(res.improvement_summary));
+    const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
     uniqImprovements.forEach(text => {
       const li = document.createElement('li');
       li.textContent = text;
@@ -269,63 +268,6 @@
     });
 
     card.hidden = false;
-  }
-
-  // ---- Sentence insights renderer ----
-  function renderSentenceInsights(items) {
-    const card = document.getElementById('sentenceCard');
-    const list = document.getElementById('sentenceList');
-    if (!card || !list) return;
-
-    if (!items || !items.length) {
-      card.hidden = true;
-      list.innerHTML = '';
-      return;
-    }
-
-    list.innerHTML = items.map(si => {
-      const ex   = escapeHTML(si.example || '');
-      const issue= escapeHTML(si.issue || '');
-      const expl = escapeHTML(si.explanation || '');
-      const better = escapeHTML(si.betterVersion || '');
-      const link = escapeHTML(si.linkHint || '');
-
-      const labelExample = (window.I18N && I18N.t) ? I18N.t('sentence.example')     : 'Original sentence';
-      const labelIssue   = (window.I18N && I18N.t) ? I18N.t('sentence.issue')       : 'What is going wrong';
-      const labelExpl    = (window.I18N && I18N.t) ? I18N.t('sentence.explanation') : 'Teacher’s explanation';
-      const labelBetter  = (window.I18N && I18N.t) ? I18N.t('sentence.better')      : 'Stronger version';
-      const labelLink    = (window.I18N && I18N.t) ? I18N.t('sentence.link')        : 'See this topic in the course book';
-
-      return `
-        <li class="sentence-item">
-          <p><strong>${labelExample}:</strong> ${ex}</p>
-          ${issue ? `<p><strong>${labelIssue}:</strong> ${issue}</p>` : ''}
-          ${expl ? `<p><strong>${labelExpl}:</strong> ${expl}</p>` : ''}
-          ${better ? `<p><strong>${labelBetter}:</strong> ${better}</p>` : ''}
-          ${link ? `<p style="font-size:0.85em;opacity:0.8;">${labelLink}: ${link}</p>` : ''}
-        </li>
-      `;
-    }).join('');
-
-    card.hidden = false;
-  }
-
-  // ---- UI helpers ----
-  function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
-    $$('[data-lang]').forEach(b => {
-      const a = b.getAttribute('data-lang') === lang;
-      b.classList.toggle('btn-primary', a);
-      b.classList.toggle('btn-ghost', !a);
-      b.setAttribute('aria-pressed', String(a));
-    });
-  }
-
-  function reflectLevelButtons(level = (localStorage.getItem('ec.level') || 'C1')) {
-    $$('[data-level]').forEach(b => {
-      const a = b.getAttribute('data-level') === level;
-      b.classList.toggle('pill--active', a);
-      b.setAttribute('aria-pressed', String(a));
-    });
   }
 
   // ---- Vocabulary suggestions renderer ----
@@ -348,6 +290,32 @@
       return `<li><strong>${escapeHTML(key)}</strong><div class="alt-row">${alts}</div></li>`;
     });
     list.innerHTML = items.join('');
+    card.hidden = false;
+  }
+
+  // ---- Sentence insights renderer ----
+  function renderSentenceInsights(arr = []) {
+    const card = document.getElementById('sentenceCard');
+    const list = document.getElementById('sentenceInsights');
+    if (!card || !list) return;
+
+    if (!Array.isArray(arr) || !arr.length) {
+      card.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+
+    list.innerHTML = arr.map(si => `
+      <li>
+        <div class="sentence-example">“${escapeHTML(si.example || '')}”</div>
+        <strong>${escapeHTML(si.issue || '')}</strong>
+        ${si.linkHint ? `<span class="sentence-badge">${escapeHTML(si.linkHint)}</span>` : ''}
+        <br>
+        <span>${escapeHTML(si.explanation || '')}</span><br>
+        <em>${escapeHTML(si.betterVersion || '')}</em>
+      </li>
+    `).join('');
+
     card.hidden = false;
   }
 
@@ -381,6 +349,24 @@
     return true;
   }
 
+  // ---- UI helpers ----
+  function reflectLangButtons(lang = (localStorage.getItem('ec.lang') || 'en')) {
+    $$('[data-lang]').forEach(b => {
+      const a = b.getAttribute('data-lang') === lang;
+      b.classList.toggle('btn-primary', a);
+      b.classList.toggle('btn-ghost', !a);
+      b.setAttribute('aria-pressed', String(a));
+    });
+  }
+
+  function reflectLevelButtons(level = (localStorage.getItem('ec.level') || 'C1')) {
+    $$('[data-level]').forEach(b => {
+      const a = b.getAttribute('data-level') === level;
+      b.classList.toggle('pill--active', a);
+      b.setAttribute('aria-pressed', String(a));
+    });
+  }
+
   // ---- Utils ----
   function wcCount(s) {
     const m = String(s || '').trim().match(/\S+/g);
@@ -395,4 +381,7 @@
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
     );
   }
+
+  // Expose for console testing
+  window.renderSentenceInsights = renderSentenceInsights;
 })();
