@@ -10,6 +10,8 @@
   "labels.edits": "Correcciones",
   "labels.next_draft": "Siguiente versión",
   "labels.vocab_options": "Opciones de vocabulario",
+  "labels.sentence_insights": "Análisis de oraciones",
+  "labels.course_book": "Leer el libro del curso",
 
   "buttons.correct": "Corregir",
   "buttons.clear": "Limpiar",
@@ -41,15 +43,5 @@
   "bands.band.mid": "Tramo medio",
   "bands.band.high": "Tramo alto",
   "bands.improvement_title": "Qué mejorar para subir de banda",
-  "bands.disclaimer": "Esta puntuación es una estimación basada en la escala Cambridge y no sustituye una calificación oficial del examen.",
-  "bands.desc.low": "Por debajo del nivel esperado para este examen; hay problemas frecuentes en este criterio.",
-  "bands.desc.mid": "Aproximadamente en el nivel esperado; hay puntos fuertes pero también aspectos claros a mejorar.",
-  "bands.desc.high": "Por encima del nivel esperado; este criterio es en general un punto fuerte."
-
-    "sentence.title": "Trabajo frase por frase de tu redacción",
-  "sentence.example": "Frase original",
-  "sentence.issue": "Qué problema hay",
-  "sentence.explanation": "Explicación del profesor",
-  "sentence.better": "Versión mejorada",
-  "sentence.link": "Consulta este tema en el libro del curso"
+  "bands.disclaimer": "Esta puntuación es una estimación basada en la escala Cambridge y no sustituye una calificación oficial del examen."
 }
