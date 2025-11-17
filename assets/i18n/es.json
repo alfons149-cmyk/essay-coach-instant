@@ -44,4 +44,7 @@
   "bands.band.high": "Tramo alto",
   "bands.improvement_title": "Qué mejorar para subir de banda",
   "bands.disclaimer": "Esta puntuación es una estimación basada en la escala Cambridge y no sustituye una calificación oficial del examen."
+  ,
+  "sentence.title": "Cómo están construidas tus oraciones",
+  "sentence.read_unit": "Lee la unidad correspondiente en el Course Book."
 }
