@@ -144,6 +144,11 @@ textarea{
   font-size:16px;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
+/* Task prompt should be smaller than the main essay box */
+#task {
+  min-height: 4rem;   /* roughly half of before */
+  max-height: 8rem;   /* still lets it grow a bit if needed */
+}
 textarea:focus{
   outline:none;
   border-color: var(--ec-accent);
