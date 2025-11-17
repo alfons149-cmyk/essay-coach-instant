@@ -55,6 +55,46 @@ body{
 }
 .card-title{ font-weight:600; margin-bottom:8px; color:var(--ec-accent-active); }
 
+/* Compact sentence insights list */
+#sentencesCard .list--compact li {
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid #fca5a5;   /* soft accent */
+  background: #fff7ed;             /* very light orange */
+  font-size: 0.9rem;
+}
+
+/* Bits inside each insight */
+.sentence-example {
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.sentence-issue {
+  font-style: italic;
+  margin-bottom: 0.1rem;
+}
+
+.sentence-explanation,
+.sentence-fix {
+  margin-bottom: 0.1rem;
+}
+
+.sentence-fix strong {
+  font-weight: 600;
+}
+
+/* Blue “Read the unit in the Course Book” line */
+.sentence-hint {
+  margin-top: 0.1rem;
+  font-size: 0.85rem;
+  color: #2563eb;            /* nice readable blue */
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 /* =====================================
    Coral buttons & pills
    ===================================== */
