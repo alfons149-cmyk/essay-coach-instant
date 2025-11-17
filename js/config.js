@@ -1,24 +1,23 @@
 // js/config.js
 (() => {
-  const qs = new URLSearchParams(location.search);
+  const qs   = new URLSearchParams(location.search);
+  const DEV  = qs.get('dev') === '1';
+  const API_Q = qs.get('api'); // optional override via ?api=...
 
-  // Optional override via ?api=... and ?dev=1
-  const API_Q   = qs.get('api');
-  const DEV_QS  = qs.get('dev') === '1';
-
-  // Default API for your Worker
+  // Your real Worker endpoint (already exists)
   const DEFAULT_API = 'https://essaycoach.alfons149.workers.dev/api';
 
-  // If index.html already set EC.API_BASE / EC.DEV, respect them,
-  // otherwise fall back to these defaults / query params.
-  const prior   = window.EC || {};
-  const apiBase = (API_Q || prior.API_BASE || DEFAULT_API || '').replace(/\/+$/, '');
-  const devFlag = (typeof prior.DEV === 'boolean') ? prior.DEV : DEV_QS;
+  function normalizeApiBase(s) {
+    if (!s) return '';
+    return s.replace(/\/+$/, '');
+  }
 
-  window.EC = Object.assign({}, prior, {
-    API_BASE: apiBase,
-    DEV: devFlag
+  const API_BASE = normalizeApiBase(API_Q || DEFAULT_API);
+
+  window.EC = Object.assign(window.EC || {}, {
+    DEV,
+    API_BASE
   });
 
-  console.log('[EC config] API_BASE =', window.EC.API_BASE || '(mock)', 'DEV?', window.EC.DEV);
+  console.log('[EC config] DEV =', DEV, 'API_BASE =', API_BASE || '(mock)');
 })();
