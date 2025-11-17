@@ -292,6 +292,48 @@
     list.innerHTML = items.join('');
     card.hidden = false;
   }
+    function renderSentenceInsights(insights) {
+    const card = document.getElementById('sentencesCard');
+    const list = document.getElementById('sentencesList');
+    if (!card || !list) return;
+
+    const arr = Array.isArray(insights) ? insights : [];
+    if (!arr.length) {
+      card.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+
+    const items = arr.map(si => {
+      const ex   = escapeHTML(si.example || '');
+      const issue = escapeHTML(si.issue || '');
+      const expl = escapeHTML(si.explanation || '');
+      const better = escapeHTML(si.betterVersion || '');
+      const hint  = escapeHTML(si.linkHint || '');
+
+      const hintText =
+        hint
+          ? `${hint} – ${I18N && I18N.t ? I18N.t('sentence.read_unit') : 'Read the unit in the Course Book.'}`
+          : (I18N && I18N.t
+              ? I18N.t('sentence.read_unit')
+              : 'Read the unit in the Course Book.');
+
+      return `
+        <li>
+          <div class="sentence-example">“${ex}”</div>
+          ${issue ? `<div class="sentence-issue">${issue}</div>` : ''}
+          ${expl ? `<div class="sentence-explanation">${expl}</div>` : ''}
+          ${better ? `<div class="sentence-fix"><strong>Better:</strong> ${better}</div>` : ''}
+          <div class="sentence-hint">
+            📘 <span>${hintText}</span>
+          </div>
+        </li>
+      `;
+    });
+
+    list.innerHTML = items.join('');
+    card.hidden = false;
+  }
 
   // ---- Sentence insights renderer ----
   function renderSentenceInsights(arr = []) {
