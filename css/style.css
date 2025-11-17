@@ -54,6 +54,12 @@ body{
   box-shadow:0 1px 3px rgba(0,0,0,.04);
 }
 .card-title{ font-weight:600; margin-bottom:8px; color:var(--ec-accent-active); }
+.card-title--feedback::before {
+  content: "👩‍🏫";           /* or "👨‍🏫" or "🧑‍🏫" if you prefer */
+  margin-right: 0.4rem;
+  font-size: 1.05em;
+  vertical-align: middle;
+}
 
 /* Compact sentence insights list */
 #sentencesCard .list--compact li {
