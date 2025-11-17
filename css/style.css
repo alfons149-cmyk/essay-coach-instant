@@ -236,3 +236,31 @@ textarea:focus{
 @media (prefers-reduced-motion: reduce){
   .topbar{ backdrop-filter: none; }
 }
+#bandsCard .pill {
+  margin-right: 4px;
+}
+
+#bandsCategories li,
+#bandsImprovements li {
+  padding: 4px 0;
+}
+
+#sentenceCard li {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.sentence-badge {
+  font-size: 0.75rem;
+  background: #005bbb;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.sentence-example {
+  font-style: italic;
+  opacity: 0.9;
+}
+
