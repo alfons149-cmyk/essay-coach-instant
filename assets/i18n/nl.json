@@ -10,6 +10,8 @@
   "labels.edits": "Wijzigingen",
   "labels.next_draft": "Volgende versie",
   "labels.vocab_options": "Woordkeuzes",
+  "labels.sentence_insights": "Zinsanalyse",
+  "labels.course_book": "Lees het cursusboek",
 
   "buttons.correct": "Corrigeer",
   "buttons.clear": "Wissen",
@@ -41,15 +43,5 @@
   "bands.band.mid": "Middenband",
   "bands.band.high": "Hoge band",
   "bands.improvement_title": "Wat je kunt verbeteren om hoger te scoren",
-  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officiële examencijfer.",
-  "bands.desc.low": "Onder het verwachte niveau voor dit examen; er zijn vaak problemen bij dit criterium.",
-  "bands.desc.mid": "Ongeveer op het verwachte niveau; er zijn sterke punten maar ook duidelijke verbeterpunten.",
-  "bands.desc.high": "Boven het verwachte niveau; dit criterium is over het algemeen een sterk punt."
-
-    "sentence.title": "Zin-voor-zin feedback op je tekst",
-  "sentence.example": "Oorspronkelijke zin",
-  "sentence.issue": "Wat gaat er mis",
-  "sentence.explanation": "Uitleg van de docent",
-  "sentence.better": "Sterkere versie",
-  "sentence.link": "Zie dit onderwerp in het cursusboek"
+  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officieel examencijfer."
 }
