@@ -47,4 +47,9 @@
   ,
   "sentence.title": "Cómo están construidas tus oraciones",
   "sentence.read_unit": "Lee la unidad correspondiente en el Course Book."
+  "paragraph.title": "Lógica y estructura de los párrafos",
+  "paragraph.role.intro": "Introducción",
+  "paragraph.role.body": "Párrafo de desarrollo",
+  "paragraph.role.conclusion": "Conclusión"
+
 }
