@@ -180,6 +180,9 @@
 
         // Sentence insights from Worker
         renderSentenceInsights(res.sentenceInsights || []);
+        
+        renderParagraphInsights(res.paragraphInsights || []);
+
 
       } catch (err) {
         console.error(err);
