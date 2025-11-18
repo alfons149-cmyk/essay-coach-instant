@@ -47,4 +47,9 @@
   ,
   "sentence.title": "Hoe jouw zinnen zijn opgebouwd",
   "sentence.read_unit": "Lees de bijbehorende unit in het Course Book."
+  "paragraph.title": "Logica en structuur van alinea's",
+  "paragraph.role.intro": "Inleiding",
+  "paragraph.role.body": "Middelste alinea",
+  "paragraph.role.conclusion": "Slot alinea"
+
 }
