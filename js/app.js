@@ -250,6 +250,44 @@
     if (el.outWC) el.outWC.removeAttribute("data-i18n-template");
   }
 
+    function renderParagraphInsights(list) {
+    const card = document.getElementById('paragraphCard');
+    const ul   = document.getElementById('paragraphInsights');
+    if (!card || !ul) return;
+
+    if (!Array.isArray(list) || !list.length) {
+      card.hidden = true;
+      ul.innerHTML = '';
+      return;
+    }
+
+    ul.innerHTML = '';
+    list.forEach(pi => {
+      const li = document.createElement('li');
+
+      const paraLabel =
+        (window.I18N && I18N.t)
+          ? I18N.t('paragraph.role.' + (pi.role || 'body'))
+          : (pi.role || 'Body paragraph');
+
+      const paraNum = pi.paragraph ? `P${pi.paragraph}` : '';
+      const title = [paraNum, paraLabel].filter(Boolean).join(' – ');
+
+      li.innerHTML =
+        `<strong>${escapeHTML(title)}</strong>: ${escapeHTML(pi.issue)}<br>` +
+        `<span style="font-size:0.9em;opacity:0.9;">${escapeHTML(pi.explanation)}</span><br>` +
+        `<em style="font-size:0.9em;">${escapeHTML(pi.suggestion)}</em>` +
+        (pi.linkHint
+          ? `<br><span style="font-size:0.8em;opacity:0.8;">${escapeHTML(pi.linkHint)}</span>`
+          : '');
+
+      ul.appendChild(li);
+    });
+
+    card.hidden = false;
+  }
+
+
   function updateCounters() {
     if (!el.essay || !el.inWC || !el.outWC) return;
     const wc = wcCount(el.essay.value);
