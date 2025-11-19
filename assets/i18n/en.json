@@ -43,13 +43,13 @@
   "bands.band.mid": "Middle band",
   "bands.band.high": "Higher band",
   "bands.improvement_title": "What to improve to go up a band",
-  "bands.disclaimer": "This score is an estimate based on the Cambridge English Scale and not an official exam grade."
-    ,
+  "bands.disclaimer": "This score is an estimate based on the Cambridge English Scale and not an official exam grade.",
+
   "sentence.title": "How your sentences are built",
-  "sentence.read_unit": "Read the unit in the Course Book."
-    "paragraph.title": "Paragraph logic & structure",
+  "sentence.read_unit": "Read the unit in the Course Book.",
+
+  "paragraph.title": "Paragraph logic & structure",
   "paragraph.role.intro": "Introduction",
   "paragraph.role.body": "Body paragraph",
   "paragraph.role.conclusion": "Conclusion"
-
 }
