@@ -8,7 +8,7 @@
   "labels.essay": "Jouw essay",
   "labels.feedback": "Jouw persoonlijke feedback",
   "labels.edits": "Wijzigingen",
-  "labels.next_draft": "Gecorrigeerde essay",
+  "labels.next_draft": "Gecorrigeerd essay",
   "labels.vocab_options": "Woordkeuzes",
   "labels.sentence_insights": "Zinsanalyse",
   "labels.course_book": "Lees het cursusboek",
@@ -43,13 +43,13 @@
   "bands.band.mid": "Middenband",
   "bands.band.high": "Hoge band",
   "bands.improvement_title": "Wat je kunt verbeteren om hoger te scoren",
-  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officieel examencijfer."
-  ,
+  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officieel examencijfer.",
+
   "sentence.title": "Hoe jouw zinnen zijn opgebouwd",
-  "sentence.read_unit": "Lees de bijbehorende unit in het Course Book."
+  "sentence.read_unit": "Lees de bijbehorende unit in het Course Book.",
+
   "paragraph.title": "Logica en structuur van alinea's",
   "paragraph.role.intro": "Inleiding",
   "paragraph.role.body": "Middelste alinea",
-  "paragraph.role.conclusion": "Slot alinea"
-
+  "paragraph.role.conclusion": "Slotalinea"
 }
