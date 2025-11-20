@@ -250,43 +250,49 @@
     if (el.outWC) el.outWC.removeAttribute("data-i18n-template");
   }
 
-    function renderParagraphInsights(list) {
-    const card = document.getElementById('paragraphCard');
-    const ul   = document.getElementById('paragraphInsights');
-    if (!card || !ul) return;
+  function renderSentenceInsights(list) {
+  const card = document.getElementById('sentenceInsightsCard');
+  const body = document.getElementById('sentenceInsightsBody');
+  if (!card || !body) return;
 
-    if (!Array.isArray(list) || !list.length) {
-      card.hidden = true;
-      ul.innerHTML = '';
-      return;
-    }
-
-    ul.innerHTML = '';
-    list.forEach(pi => {
-      const li = document.createElement('li');
-
-      const paraLabel =
-        (window.I18N && I18N.t)
-          ? I18N.t('paragraph.role.' + (pi.role || 'body'))
-          : (pi.role || 'Body paragraph');
-
-      const paraNum = pi.paragraph ? `P${pi.paragraph}` : '';
-      const title = [paraNum, paraLabel].filter(Boolean).join(' – ');
-
-      li.innerHTML =
-        `<strong>${escapeHTML(title)}</strong>: ${escapeHTML(pi.issue)}<br>` +
-        `<span style="font-size:0.9em;opacity:0.9;">${escapeHTML(pi.explanation)}</span><br>` +
-        `<em style="font-size:0.9em;">${escapeHTML(pi.suggestion)}</em>` +
-        (pi.linkHint
-          ? `<br><span style="font-size:0.8em;opacity:0.8;">${escapeHTML(pi.linkHint)}</span>`
-          : '');
-
-      ul.appendChild(li);
-    });
-
-    card.hidden = false;
+  if (!Array.isArray(list) || !list.length) {
+    card.hidden = true;
+    body.innerHTML = '';
+    return;
   }
 
+  const items = list.map((si) => {
+    const example = escapeHTML(si.example || '');
+    const issue = escapeHTML(si.issue || '');
+    const explanation = escapeHTML(si.explanation || '');
+    const linkHint = escapeHTML(si.linkHint || '');
+
+    // Prefer betterVersions (array); fall back to single betterVersion
+    const alts = Array.isArray(si.betterVersions) && si.betterVersions.length
+      ? si.betterVersions
+      : (si.betterVersion ? [si.betterVersion] : []);
+
+    const altsHtml = alts.length
+      ? `<p class="insight-better">
+           <strong>Better option(s):</strong><br>
+           ${alts.map(v => '• ' + escapeHTML(v)).join('<br>')}
+         </p>`
+      : '';
+
+    return `
+      <li class="insight-item">
+        <p class="insight-example"><strong>Example</strong>: “${example}”</p>
+        <p class="insight-issue"><strong>Issue</strong>: ${issue}</p>
+        <p class="insight-explanation">${explanation}</p>
+        ${altsHtml}
+        <p class="insight-link"><em>${linkHint}</em></p>
+      </li>
+    `;
+  });
+
+  body.innerHTML = items.join('');
+  card.hidden = false;
+}
 
   function updateCounters() {
     if (!el.essay || !el.inWC || !el.outWC) return;
