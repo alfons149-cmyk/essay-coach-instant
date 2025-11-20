@@ -330,4 +330,29 @@ textarea:focus{
   font-style: italic;
   opacity: 0.9;
 }
+.sentence-insight {
+  margin-bottom: 0.75rem;
+}
+
+.sentence-insight__issue {
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.sentence-insight__expl {
+  font-size: 0.95rem;
+  margin: 0.25rem 0;
+}
+
+.sentence-insight__versions {
+  margin: 0.25rem 0 0.25rem 1rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.sentence-insight__hint {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin: 0.25rem 0 0.5rem;
+}
 
