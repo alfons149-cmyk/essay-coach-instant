@@ -344,41 +344,49 @@
   }
 
   // ---- Sentence insights card ----
-  function renderSentenceInsights(list) {
-    const card = document.getElementById("sentenceCard");
-    const ul   = document.getElementById("sentenceList");
-    if (!card || !ul) return;
+ function renderSentenceInsights(insights) {
+  const card   = document.getElementById('sentenceInsightsCard');
+  const listEl = document.getElementById('sentenceInsightsList');
+  if (!card || !listEl) return;
 
-    if (!Array.isArray(list) || list.length === 0) {
-      card.hidden = true;
-      ul.innerHTML = "";
-      return;
-    }
-
-    ul.innerHTML = list.map(si => {
-      const ex   = escapeHTML(si.example || "");
-      const iss  = escapeHTML(si.issue || "");
-      const exp  = escapeHTML(si.explanation || "");
-      const bet  = escapeHTML(si.betterVersion || "");
-      const hint = escapeHTML(si.linkHint || "");
-      const hintLine = hint
-        ? `<div class="sentence-hint">📘 Read this in the course book: <code>${hint}</code></div>`
-        : "";
-      const betterLine = bet
-        ? `<div class="sentence-better"><strong>Better:</strong> ${bet}</div>`
-        : "";
-      return `
-        <li class="sentence-item">
-          <div class="sentence-example">“${ex}”</div>
-          <div class="sentence-issue"><strong>${iss}</strong></div>
-          <div class="sentence-explanation">${exp}</div>
-          ${betterLine}
-          ${hintLine}
-        </li>`;
-    }).join("");
-
-    card.hidden = false;
+  // Hide card if nothing to show
+  if (!Array.isArray(insights) || !insights.length) {
+    card.hidden = true;
+    listEl.innerHTML = '';
+    return;
   }
+
+  const items = insights.map((si) => {
+    const example     = escapeHTML(si.example || '');
+    const issue       = escapeHTML(si.issue || '');
+    const explanation = escapeHTML(si.explanation || '');
+    const linkHint    = escapeHTML(si.linkHint || '');
+
+    const versions = Array.isArray(si.betterVersions)
+      ? si.betterVersions
+      : [];
+
+    const versionsHtml = versions
+      .filter(Boolean)
+      .map((v) => `<li>• ${escapeHTML(v)}</li>`)
+      .join('') || '<li>• —</li>';
+
+    return `
+      <li class="sentence-insight">
+        <p><strong>${example}</strong></p>
+        <p class="sentence-insight__issue">${issue}</p>
+        <p class="sentence-insight__expl">${explanation}</p>
+        <ul class="sentence-insight__versions">
+          ${versionsHtml}
+        </ul>
+        <p class="sentence-insight__hint">${linkHint}</p>
+      </li>
+    `;
+  });
+
+  listEl.innerHTML = items.join('');
+  card.hidden = false;
+}
 
   // ---- UI helpers ----
   function reflectLangButtons(lang = (localStorage.getItem("ec.lang") || "en")) {
