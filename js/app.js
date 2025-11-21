@@ -146,10 +146,13 @@
       }
 
       try {
-        e.target.disabled = true;
-        if (el.feedback) el.feedback.textContent = "…";
+  e.target.disabled = true;
+  if (el.feedback) {
+    el.feedback.textContent = '⏳ Wait about 45 seconds for your personalised correction…';
+  }
+  const res = await EC.correct(payload);
+  // ...
 
-        const res = await EC.correct(payload);
 
         // Main outputs
         if (el.feedback)  el.feedback.textContent = res.feedback || "—";
