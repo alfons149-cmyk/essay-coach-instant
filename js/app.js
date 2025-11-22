@@ -1,4 +1,4 @@
-// js/app.js — EssayCoach UI (live API + bands + sentence insights)
+// js/app.js — EssayCoach UI (API + bands + vocab + sentence insights)
 (() => {
   // ---- Mode / API ----
   window.EC = window.EC || {};
@@ -16,8 +16,8 @@
   }
 
   // ---- DOM refs ----
-  const $  = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
+  const $  = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
 
   const el = {
     task:       $("#task"),
@@ -33,7 +33,7 @@
 
   // ---- Corrector (live API or mock) ----
   EC.correct = async (payload) => {
-    // Live API path
+    // Real Worker
     if (!DEV && API_BASE) {
       const url = `${API_BASE}/correct`;
       console.log("[EC] POST", url, payload);
@@ -48,17 +48,24 @@
       const text = await res.text();
       console.log("[EC] /correct", res.status, text);
 
-      if (!res.ok) throw new Error(`API ${res.status}: ${text}`);
+      if (!res.ok) {
+        throw new Error(`API ${res.status}: ${text}`);
+      }
       return JSON.parse(text);
     }
 
-    // --- DEV mock (no backend) ---
+    // --- DEV mock (when ?dev=1 or no API_BASE) ---
     await sleep(300);
     const txt = payload.essay || "";
     const wc  = wcCount(txt);
-
     const edits = /\ba lot\b/i.test(txt)
-      ? [{ from: "a lot", to: payload.level === "B2" ? "much" : "numerous", reason: "Register" }]
+      ? [
+          {
+            from: "a lot",
+            to: payload.level === "B2" ? "much" : "numerous",
+            reason: "Register",
+          },
+        ]
       : [];
 
     return {
@@ -68,16 +75,19 @@
       feedback: `✅ Mock feedback for ${payload.level}.`,
       edits,
       nextDraft: txt.replace(/\ba lot\b/gi, edits[0]?.to || "a lot"),
-      vocabularySuggestions: { "a lot": ["many", "numerous", "substantially"] },
+      vocabularySuggestions: {
+        "a lot": ["many", "numerous", "substantially"],
+      },
       sentenceInsights: [
         {
-          example: "a lot of people is...",
-          issue: "Subject–verb agreement",
-          explanation: "Use a plural verb with 'people'.",
-          betterVersion: "A lot of people are...",
-          linkHint: "unit-sva"
-        }
-      ]
+          example: "a lot",
+          issue: "informal quantifier",
+          explanation:
+            "In exam writing, “a lot” is usually too informal. Try a more neutral, precise alternative.",
+          betterVersions: ["many", "numerous"],
+          linkHint: "See Unit 6 — Vocabulary precision & register.",
+        },
+      ],
     };
   };
 
@@ -102,9 +112,8 @@
         reflectLangButtons(lang);
         clearCounterTemplates();
         updateCounters();
-        document.documentElement.lang = lang;
       } catch (err) {
-        console.error("[i18n]", err);
+        console.error("[i18n] load error", err);
       }
       return;
     }
@@ -117,7 +126,7 @@
       return;
     }
 
-    // Clear
+    // Clear button
     if (e.target === el.btnClear) {
       if (el.task)      el.task.value = "";
       if (el.essay)     el.essay.value = "";
@@ -130,7 +139,7 @@
       return;
     }
 
-    // Correct
+    // Correct button
     if (e.target === el.btnCorrect) {
       const level = localStorage.getItem("ec.level") || "C1";
       const payload = {
@@ -140,26 +149,35 @@
       };
 
       if (!payload.essay.trim()) {
-        if (el.feedback) el.feedback.textContent =
-          "Please write or paste your essay first.";
+        if (el.feedback) {
+          el.feedback.textContent = "Please write or paste your essay first.";
+        }
         return;
       }
 
+      let res; // will hold the API result if it succeeds
+
       try {
-  e.target.disabled = true;
-  if (el.feedback) {
-    el.feedback.textContent = '⏳ Wait about 45 seconds for your personalised correction…';
-  }
-  const res = await EC.correct(payload);
-  // ...
+        e.target.disabled = true;
+        if (el.feedback) {
+          el.feedback.textContent =
+            "Correcting your essay… this may take a little while.";
+        }
 
+        // 1) Call Worker
+        res = await EC.correct(payload);
 
-        // Main outputs
+        // 2) Render main results
         if (el.feedback)  el.feedback.textContent = res.feedback || "—";
-        if (el.nextDraft) el.nextDraft.value      = res.nextDraft || "";
+        if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
+
         if (el.edits) {
           el.edits.innerHTML = (res.edits || [])
-            .map(x => `<li><strong>${escapeHTML(x.from)}</strong> → <em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`)
+            .map(
+              (x) =>
+                `<li><strong>${escapeHTML(x.from)}</strong> → ` +
+                `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
+            )
             .join("");
         }
 
@@ -167,45 +185,39 @@
         setCounter(el.inWC,  "io.input_words",  res.inputWords  ?? 0);
         setCounter(el.outWC, "io.output_words", res.outputWords ?? 0);
 
-        // Vocabulary suggestions
+        // Extra cards
         renderVocabSuggestions(res.vocabularySuggestions || {});
+        renderSentenceInsights(res.sentenceInsights || []);
 
-        // Cambridge band estimate (using dummy scores for now)
+        // Bands (simple heuristic via scoreEssay in scoring.js)
         if (typeof window.scoreEssay === "function") {
           const scores = {
-            content:        0.7,
-            communicative:  0.6,
-            organisation:   0.8,
-            language:       0.55,
+            content: 0.7,
+            communicative: 0.6,
+            organisation: 0.8,
+            language: 0.55,
           };
           renderBands(level, scores);
         }
-
-        // Sentence insights from Worker
-        renderSentenceInsights(res.sentenceInsights || []);
-        
-        renderParagraphInsights(res.paragraphInsights || []);
-
-
       } catch (err) {
-        console.error(err);
-        if (el.feedback) {
+        console.error("[EC] UI or API error:", err);
+        // Only show the big warning if the API itself failed (no result at all)
+        if (!res && el.feedback) {
           el.feedback.textContent =
             "⚠️ Correction failed. Check API, CORS, or dev mode.";
         }
       } finally {
         e.target.disabled = false;
       }
-      return;
     }
 
-    // One-click vocab replace
+    // One-click vocab replacement
     const altBtn = e.target.closest(".vocab-alt");
     if (altBtn) {
       const key = altBtn.getAttribute("data-key") || "";
       const to  = altBtn.getAttribute("data-to")  || "";
-      const targetTA = document.getElementById("nextDraft") ||
-                       document.getElementById("essay");
+      const targetTA =
+        document.getElementById("nextDraft") || document.getElementById("essay");
       if (!targetTA) return;
 
       const ok = replaceNearest(targetTA, key, to);
@@ -218,6 +230,7 @@
     }
   });
 
+  // Live word count while typing
   if (el.essay) {
     el.essay.addEventListener("input", updateCounters);
   }
@@ -236,11 +249,12 @@
     if (!tpl) {
       tpl = (window.I18N && I18N.t) ? I18N.t(i18nKey, { n: "{n}" }) : "";
       if (!tpl || !/\{n\}/.test(tpl)) {
-        tpl = node.textContent && /\{n\}/.test(node.textContent)
-          ? node.textContent
-          : (i18nKey === "io.input_words"
-              ? "Input: {n} words"
-              : "Output: {n} words");
+        tpl =
+          node.textContent && /\{n\}/.test(node.textContent)
+            ? node.textContent
+            : i18nKey === "io.input_words"
+            ? "Input: {n} words"
+            : "Output: {n} words";
       }
       node.setAttribute(ATTR, tpl);
     }
@@ -253,66 +267,6 @@
     if (el.outWC) el.outWC.removeAttribute("data-i18n-template");
   }
 
- // ---- Sentence insights renderer ----
-// Accepts either:
-//   sentenceInsights: [
-//     { example, issue, explanation, betterVersion, linkHint }
-//   ]
-// or
-//   { ... , betterVersions: ["v1", "v2"] }
-function renderSentenceInsights(list) {
-  const card = document.getElementById('sentenceInsightsCard');
-  const ul   = document.getElementById('sentenceInsightsList');
-  if (!card || !ul) return;               // no card in DOM → do nothing
-
-  const items = Array.isArray(list) ? list : [];
-
-  if (!items.length) {
-    card.hidden = true;
-    ul.innerHTML = '';
-    return;
-  }
-
-  const html = items.map((raw) => {
-    const example     = raw.example     ? String(raw.example)     : '';
-    const issue       = raw.issue       ? String(raw.issue)       : '';
-    const explanation = raw.explanation ? String(raw.explanation) : '';
-    const linkHint    = raw.linkHint    ? String(raw.linkHint)    : '';
-
-    // Allow both betterVersion and betterVersions
-    let betterList = [];
-    if (Array.isArray(raw.betterVersions)) {
-      betterList = raw.betterVersions.map(v => String(v)).filter(Boolean);
-    } else if (raw.betterVersion) {
-      betterList = [String(raw.betterVersion)];
-    }
-
-    const betterHtml = betterList.length
-      ? `<div class="si-better">
-           <strong>Better options:</strong>
-           ${betterList.map(v => `<code>${escapeHTML(v)}</code>`).join(' / ')}
-         </div>`
-      : '';
-
-    const linkHtml = linkHint
-      ? `<div class="si-link">${escapeHTML(linkHint)}</div>`
-      : '';
-
-    return `
-      <li class="si-item">
-        <p><strong>Example:</strong> ${escapeHTML(example)}</p>
-        <p><strong>Issue:</strong> ${escapeHTML(issue)}</p>
-        <p><strong>Why it matters:</strong> ${escapeHTML(explanation)}</p>
-        ${betterHtml}
-        ${linkHtml}
-      </li>
-    `;
-  }).join('');
-
-  ul.innerHTML = html;
-  card.hidden = false;
-}
-
   function updateCounters() {
     if (!el.essay || !el.inWC || !el.outWC) return;
     const wc = wcCount(el.essay.value);
@@ -322,33 +276,32 @@ function renderSentenceInsights(list) {
 
   // ---- Bands card ----
   function renderBands(level, scores) {
-    if (typeof window.scoreEssay !== "function") {
+    if (typeof scoreEssay !== "function") {
       console.warn("[bands] scoreEssay is not available");
       return;
     }
-
-    const res = window.scoreEssay(level, scores);
+    const res = scoreEssay(level, scores);
     if (!res) return;
 
-    const card     = document.getElementById("bandsCard");
-    const overallEl= document.getElementById("bandsOverallScore");
-    const levelEl  = document.getElementById("bandsLevel");
-    const catList  = document.getElementById("bandsCategories");
-    const impList  = document.getElementById("bandsImprovements");
+    const card      = document.getElementById("bandsCard");
+    const overallEl = document.getElementById("bandsOverallScore");
+    const levelEl   = document.getElementById("bandsLevel");
+    const catList   = document.getElementById("bandsCategories");
+    const impList   = document.getElementById("bandsImprovements");
 
     if (!card || !overallEl || !levelEl || !catList || !impList) return;
 
-    overallEl.textContent = res.overall_scale ?? "—";
-    levelEl.textContent   = res.level ?? level;
+    overallEl.textContent = res.overall_scale ? res.overall_scale : "—";
+    levelEl.textContent   = res.level;
 
     // Categories
     catList.innerHTML = "";
-    (res.category_results || []).forEach(cr => {
-      const li = document.createElement("li");
-      const key      = `bands.category.${cr.category}`;
-      const bandKey  = `bands.band.${cr.band}`;
-      const label    = (window.I18N && I18N.t) ? I18N.t(key)     : cr.category;
-      const bandLabel= (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
+    res.category_results.forEach((cr) => {
+      const li   = document.createElement("li");
+      const key  = `bands.category.${cr.category}`;
+      const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
+      const bandKey   = `bands.band.${cr.band}`;
+      const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
 
       li.innerHTML =
         `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
@@ -358,77 +311,14 @@ function renderSentenceInsights(list) {
 
     // Improvements
     impList.innerHTML = "";
-    const uniq = Array.from(new Set(res.improvement_summary || []));
-    uniq.forEach(text => {
+    const uniqImprovements = Array.from(new Set(res.improvement_summary));
+    uniqImprovements.forEach((text) => {
       const li = document.createElement("li");
       li.textContent = text;
       impList.appendChild(li);
     });
 
     card.hidden = false;
-  }
-
-  // ---- Sentence insights card ----
- function renderSentenceInsights(insights) {
-  const card   = document.getElementById('sentenceInsightsCard');
-  const listEl = document.getElementById('sentenceInsightsList');
-  if (!card || !listEl) return;
-
-  // Hide card if nothing to show
-  if (!Array.isArray(insights) || !insights.length) {
-    card.hidden = true;
-    listEl.innerHTML = '';
-    return;
-  }
-
-  const items = insights.map((si) => {
-    const example     = escapeHTML(si.example || '');
-    const issue       = escapeHTML(si.issue || '');
-    const explanation = escapeHTML(si.explanation || '');
-    const linkHint    = escapeHTML(si.linkHint || '');
-
-    const versions = Array.isArray(si.betterVersions)
-      ? si.betterVersions
-      : [];
-
-    const versionsHtml = versions
-      .filter(Boolean)
-      .map((v) => `<li>• ${escapeHTML(v)}</li>`)
-      .join('') || '<li>• —</li>';
-
-    return `
-      <li class="sentence-insight">
-        <p><strong>${example}</strong></p>
-        <p class="sentence-insight__issue">${issue}</p>
-        <p class="sentence-insight__expl">${explanation}</p>
-        <ul class="sentence-insight__versions">
-          ${versionsHtml}
-        </ul>
-        <p class="sentence-insight__hint">${linkHint}</p>
-      </li>
-    `;
-  });
-
-  listEl.innerHTML = items.join('');
-  card.hidden = false;
-}
-
-  // ---- UI helpers ----
-  function reflectLangButtons(lang = (localStorage.getItem("ec.lang") || "en")) {
-    $$("[data-lang]").forEach(b => {
-      const active = b.getAttribute("data-lang") === lang;
-      b.classList.toggle("btn-primary", active);
-      b.classList.toggle("btn-ghost", !active);
-      b.setAttribute("aria-pressed", String(active));
-    });
-  }
-
-  function reflectLevelButtons(level = (localStorage.getItem("ec.level") || "C1")) {
-    $$("[data-level]").forEach(b => {
-      const active = b.getAttribute("data-level") === level;
-      b.classList.toggle("pill--active", active);
-      b.setAttribute("aria-pressed", String(active));
-    });
   }
 
   // ---- Vocabulary suggestions renderer ----
@@ -447,15 +337,103 @@ function renderSentenceInsights(list) {
     const items = entries.map(([key, arr]) => {
       const alts = (Array.isArray(arr) ? arr : [String(arr)])
         .filter(Boolean)
-        .map(a =>
-          `<button type="button" class="vocab-alt btn-ghost" data-key="${escapeHTML(key)}" data-to="${escapeHTML(a)}">${escapeHTML(a)}</button>`
-        ).join(" ");
+        .map(
+          (a) =>
+            `<button type="button" class="vocab-alt btn-ghost" ` +
+            `data-key="${escapeHTML(key)}" data-to="${escapeHTML(
+              a
+            )}">${escapeHTML(a)}</button>`
+        )
+        .join(" ");
 
-      return `<li><strong>${escapeHTML(key)}</strong><div class="alt-row">${alts}</div></li>`;
+      return `<li><strong>${escapeHTML(
+        key
+      )}</strong><div class="alt-row">${alts}</div></li>`;
     });
 
     list.innerHTML = items.join("");
     card.hidden = false;
+  }
+
+  // ---- Sentence insights renderer ----
+  // Accepts:
+  //   [{ example, issue, explanation, betterVersion?, betterVersions?, linkHint }]
+  function renderSentenceInsights(list) {
+    const card = document.getElementById("sentenceInsightsCard");
+    const ul   = document.getElementById("sentenceInsightsList");
+    if (!card || !ul) return;
+
+    const items = Array.isArray(list) ? list : [];
+    if (!items.length) {
+      card.hidden = true;
+      ul.innerHTML = "";
+      return;
+    }
+
+    const html = items
+      .map((raw) => {
+        const example     = raw.example     ? String(raw.example)     : "";
+        const issue       = raw.issue       ? String(raw.issue)       : "";
+        const explanation = raw.explanation ? String(raw.explanation) : "";
+        const linkHint    = raw.linkHint    ? String(raw.linkHint)    : "";
+
+        // Allow betterVersion or betterVersions
+        let betterList = [];
+        if (Array.isArray(raw.betterVersions)) {
+          betterList = raw.betterVersions.map((v) => String(v)).filter(Boolean);
+        } else if (raw.betterVersion) {
+          betterList = [String(raw.betterVersion)];
+        }
+
+        const betterHtml = betterList.length
+          ? `<div class="si-better">
+               <strong>Better options:</strong>
+               ${betterList
+                 .map((v) => `<code>${escapeHTML(v)}</code>`)
+                 .join(" / ")}
+             </div>`
+          : "";
+
+        const linkHtml = linkHint
+          ? `<div class="si-link">${escapeHTML(linkHint)}</div>`
+          : "";
+
+        return `
+          <li class="si-item">
+            <p><strong>Example:</strong> ${escapeHTML(example)}</p>
+            <p><strong>Issue:</strong> ${escapeHTML(issue)}</p>
+            <p><strong>Why it matters:</strong> ${escapeHTML(explanation)}</p>
+            ${betterHtml}
+            ${linkHtml}
+          </li>
+        `;
+      })
+      .join("");
+
+    ul.innerHTML = html;
+    card.hidden = false;
+  }
+
+  // ---- UI helpers ----
+  function reflectLangButtons(
+    lang = localStorage.getItem("ec.lang") || "en"
+  ) {
+    $$("[data-lang]").forEach((b) => {
+      const active = b.getAttribute("data-lang") === lang;
+      b.classList.toggle("btn-primary", active);
+      b.classList.toggle("btn-ghost", !active);
+      b.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function reflectLevelButtons(
+    level = localStorage.getItem("ec.level") || "C1"
+  ) {
+    $$("[data-level]").forEach((b) => {
+      const active = b.getAttribute("data-level") === level;
+      b.classList.toggle("pill--active", active);
+      b.setAttribute("aria-pressed", String(active));
+    });
   }
 
   // ---- Replace nearest helper ----
@@ -467,6 +445,7 @@ function renderSentenceInsights(list) {
     const re = new RegExp(escapeForRegExp(n), "gi");
     let match;
     const matches = [];
+
     while ((match = re.exec(value)) !== null) {
       matches.push({ start: match.index, end: match.index + match[0].length });
       if (re.lastIndex === match.index) re.lastIndex++;
@@ -474,12 +453,15 @@ function renderSentenceInsights(list) {
     if (!matches.length) return false;
 
     const caret = textarea.selectionStart ?? 0;
-    let target = matches.find(m => caret >= m.start && caret <= m.end);
+    let target = matches.find((m) => caret >= m.start && caret <= m.end);
     if (!target) {
       target = matches
-        .map(m => ({
+        .map((m) => ({
           m,
-          d: Math.min(Math.abs(caret - m.start), Math.abs(caret - m.end))
+          d: Math.min(
+            Math.abs(caret - m.start),
+            Math.abs(caret - m.end)
+          ),
         }))
         .sort((a, b) => a.d - b.d)[0].m;
     }
@@ -492,6 +474,7 @@ function renderSentenceInsights(list) {
     const newCaret = before.length + replacement.length;
     textarea.setSelectionRange(newCaret, newCaret);
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
+
     return true;
   }
 
@@ -506,11 +489,11 @@ function renderSentenceInsights(list) {
   }
 
   function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
+    return new Promise((r) => setTimeout(r, ms));
   }
 
   function escapeHTML(s) {
-    return String(s).replace(/[&<>"']/g, m =>
+    return String(s).replace(/[&<>"']/g, (m) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])
     );
   }
