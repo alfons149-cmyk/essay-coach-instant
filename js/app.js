@@ -253,47 +253,63 @@
     if (el.outWC) el.outWC.removeAttribute("data-i18n-template");
   }
 
-  function renderSentenceInsights(list) {
+ // ---- Sentence insights renderer ----
+// Accepts either:
+//   sentenceInsights: [
+//     { example, issue, explanation, betterVersion, linkHint }
+//   ]
+// or
+//   { ... , betterVersions: ["v1", "v2"] }
+function renderSentenceInsights(list) {
   const card = document.getElementById('sentenceInsightsCard');
-  const body = document.getElementById('sentenceInsightsBody');
-  if (!card || !body) return;
+  const ul   = document.getElementById('sentenceInsightsList');
+  if (!card || !ul) return;               // no card in DOM → do nothing
 
-  if (!Array.isArray(list) || !list.length) {
+  const items = Array.isArray(list) ? list : [];
+
+  if (!items.length) {
     card.hidden = true;
-    body.innerHTML = '';
+    ul.innerHTML = '';
     return;
   }
 
-  const items = list.map((si) => {
-    const example = escapeHTML(si.example || '');
-    const issue = escapeHTML(si.issue || '');
-    const explanation = escapeHTML(si.explanation || '');
-    const linkHint = escapeHTML(si.linkHint || '');
+  const html = items.map((raw) => {
+    const example     = raw.example     ? String(raw.example)     : '';
+    const issue       = raw.issue       ? String(raw.issue)       : '';
+    const explanation = raw.explanation ? String(raw.explanation) : '';
+    const linkHint    = raw.linkHint    ? String(raw.linkHint)    : '';
 
-    // Prefer betterVersions (array); fall back to single betterVersion
-    const alts = Array.isArray(si.betterVersions) && si.betterVersions.length
-      ? si.betterVersions
-      : (si.betterVersion ? [si.betterVersion] : []);
+    // Allow both betterVersion and betterVersions
+    let betterList = [];
+    if (Array.isArray(raw.betterVersions)) {
+      betterList = raw.betterVersions.map(v => String(v)).filter(Boolean);
+    } else if (raw.betterVersion) {
+      betterList = [String(raw.betterVersion)];
+    }
 
-    const altsHtml = alts.length
-      ? `<p class="insight-better">
-           <strong>Better option(s):</strong><br>
-           ${alts.map(v => '• ' + escapeHTML(v)).join('<br>')}
-         </p>`
+    const betterHtml = betterList.length
+      ? `<div class="si-better">
+           <strong>Better options:</strong>
+           ${betterList.map(v => `<code>${escapeHTML(v)}</code>`).join(' / ')}
+         </div>`
+      : '';
+
+    const linkHtml = linkHint
+      ? `<div class="si-link">${escapeHTML(linkHint)}</div>`
       : '';
 
     return `
-      <li class="insight-item">
-        <p class="insight-example"><strong>Example</strong>: “${example}”</p>
-        <p class="insight-issue"><strong>Issue</strong>: ${issue}</p>
-        <p class="insight-explanation">${explanation}</p>
-        ${altsHtml}
-        <p class="insight-link"><em>${linkHint}</em></p>
+      <li class="si-item">
+        <p><strong>Example:</strong> ${escapeHTML(example)}</p>
+        <p><strong>Issue:</strong> ${escapeHTML(issue)}</p>
+        <p><strong>Why it matters:</strong> ${escapeHTML(explanation)}</p>
+        ${betterHtml}
+        ${linkHtml}
       </li>
     `;
-  });
+  }).join('');
 
-  body.innerHTML = items.join('');
+  ul.innerHTML = html;
   card.hidden = false;
 }
 
