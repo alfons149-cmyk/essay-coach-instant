@@ -51,7 +51,7 @@
 <body>
   <noscript>This app requires JavaScript to run.</noscript>
 
-  <!-- Top bar -->
+<!-- Top bar -->
 <header class="topbar">
   <div class="row" style="gap:8px; align-items:center;">
     <h1 class="app-title" data-i18n="app.name">EssayCoach</h1>
@@ -69,25 +69,27 @@
 
     <!-- API/dev badges -->
     <span class="badge" id="apiMode" style="margin-left:8px"></span>
-    <span class="badge" id="devBadge"  style="display:none">DEV</span>
+    <span class="badge" id="devBadge" style="display:none">DEV</span>
   </div>
 </header>
+
+<!-- Expertise tagline -->
+<div class="expert-tagline" data-i18n="app.tagline">
+  Built on 25 years of Cambridge exam classroom experience.
+</div>
+
+<!-- Centered level row -->
+<div class="level-row">
+  <span data-i18n="labels.level">Level:</span>
+  <button type="button" class="pill" data-level="B2">B2</button>
+  <button type="button" class="pill pill--active" data-level="C1">C1</button>
+  <button type="button" class="pill" data-level="C2">C2</button>
+</div>
 
 <!-- Expertise tagline under header -->
 <div class="expert-tagline" data-i18n="app.tagline">
   Powered by 25 years of Cambridge classroom teaching.
 </div>
-
-
-    <!-- Level -->
-    <section class="panel">
-      <div class="row" style="gap:8px;">
-        <strong data-i18n="labels.level">Level:</strong>
-        <button class="pill" data-level="B2">B2</button>
-        <button class="pill" data-level="C1">C1</button>
-        <button class="pill" data-level="C2">C2</button>
-      </div>
-    </section>
 
     <!-- Inputs -->
     <section class="grid-2">
