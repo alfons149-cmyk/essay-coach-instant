@@ -363,6 +363,7 @@ textarea:focus{
   font-style: italic;
   opacity: 0.85;
   color: var(--text-muted, #444);
+
   letter-spacing: 0.2px;
 }
 
