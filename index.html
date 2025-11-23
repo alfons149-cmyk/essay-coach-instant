@@ -52,27 +52,27 @@
   <noscript>This app requires JavaScript to run.</noscript>
 
   <!-- Top bar -->
-  <header class="topbar">
-    <div class="row" style="gap:8px; align-items:center;">
-      <h1 class="app-title" data-i18n="app.name">EssayCoach</h1>
-      <span class="spacer"></span>
+<header class="topbar">
+  <div class="row" style="gap:8px; align-items:center;">
+    <h1 class="app-title" data-i18n="app.name">EssayCoach</h1>
+    <span class="spacer"></span>
 
-      <!-- Language buttons -->
-      <button class="btn-ghost" data-lang="en" title="English"    data-i18n-title="tooltips.lang_en">EN</button>
-      <button class="btn-ghost" data-lang="es" title="Español"    data-i18n-title="tooltips.lang_es">ES</button>
-      <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
+    <!-- Language buttons -->
+    <button class="btn-ghost" data-lang="en" title="English"    data-i18n-title="tooltips.lang_en">EN</button>
+    <button class="btn-ghost" data-lang="es" title="Español"    data-i18n-title="tooltips.lang_es">ES</button>
+    <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
 
-      <!-- Course book (simple PDF link) -->
-      <button class="btn-ghost" id="btnCourseBook">
+    <!-- Course book -->
+    <button class="btn-ghost" id="btnCourseBook">
       📘 <span data-i18n="labels.course_book">Read the Course Book</span>
-      </button>
+    </button>
 
+    <!-- API/dev badges -->
+    <span class="badge" id="apiMode" style="margin-left:8px"></span>
+    <span class="badge" id="devBadge"  style="display:none">DEV</span>
+  </div>
+</header>
 
-      <!-- API/dev badges -->
-      <span class="badge" id="apiMode" style="margin-left:8px"></span>
-      <span class="badge" id="devBadge"  style="display:none">DEV</span>
-    </div>
-  </header>
 
   <main class="container">
     <h2 class="app-subtitle" data-i18n="app.subtitle">EssayCoach – Cambridge Toolkit</h2>
