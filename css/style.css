@@ -46,6 +46,11 @@ body{
 }
 .container{ max-width:1000px; margin:0 auto; padding:16px; }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 .card{
   border:1px solid var(--ec-border);
   border-radius:12px;
