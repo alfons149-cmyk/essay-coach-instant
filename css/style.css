@@ -355,14 +355,9 @@ textarea:focus{
   opacity: 0.8;
   margin: 0.25rem 0 0.5rem;
 }
-.app-subtitle-expert {
-  margin-top: -0.5rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  font-size: 0.9rem;
-  opacity: 0.75;
-  color: var(--text-muted, #555);
-  letter-spacing: 0.2px;
-  font-style: italic;
-}
+<!-- Expertise tagline under header -->
+<div class="expert-tagline" data-i18n="app.tagline">
+  Powered by 25 years of Cambridge classroom teaching.
+</div>
+
 
