@@ -358,13 +358,12 @@ textarea:focus{
 .expert-tagline {
   text-align: center;
   font-size: 0.9rem;
-  margin-top: 4px;
+  margin-top: 6px;
   margin-bottom: 18px;
   font-style: italic;
-  opacity: 0.85;
+  opacity: 0.9;
   color: var(--text-muted, #444);
-
-  letter-spacing: 0.2px;
+  letter-spacing: 0.25px;
 }
 
 
