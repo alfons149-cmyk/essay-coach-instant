@@ -369,9 +369,16 @@ textarea:focus{
 }
 .level-row {
   width: 100%;
-  text-align: center;
-  margin: 10px 0 0 0;
   display: block;
+  text-align: center;
+  margin: 8px 0 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.level-row .pill {
+  margin-left: 4px;
+  margin-right: 4px;
 }
 
 
