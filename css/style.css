@@ -367,7 +367,12 @@ textarea:focus{
   letter-spacing: 0.25px;
   display: block;
 }
-
+.level-row {
+  width: 100%;
+  text-align: center;
+  margin: 10px 0 0 0;
+  display: block;
+}
 
 
 
