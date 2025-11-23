@@ -356,6 +356,7 @@ textarea:focus{
   margin: 0.25rem 0 0.5rem;
 }
 .expert-tagline {
+  width: 100%;
   text-align: center;
   font-size: 0.9rem;
   margin-top: 6px;
@@ -364,7 +365,9 @@ textarea:focus{
   opacity: 0.9;
   color: var(--text-muted, #444);
   letter-spacing: 0.25px;
+  display: block;
 }
+
 
 
 
