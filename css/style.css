@@ -355,21 +355,14 @@ textarea:focus{
   opacity: 0.8;
   margin: 0.25rem 0 0.5rem;
 }
-/* Professional footer */
-.app-footer {
-  margin-top: 2.5rem;
-  padding: 1rem 0;
+.app-subtitle-expert {
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
   text-align: center;
-  font-size: 0.85rem;
-  opacity: 0.8;
+  font-size: 0.9rem;
+  opacity: 0.75;
   color: var(--text-muted, #555);
   letter-spacing: 0.2px;
-  border-top: 1px solid rgba(0,0,0,0.08);
+  font-style: italic;
 }
-
-.app-footer strong {
-  font-weight: 600;
-  color: var(--text-strong, #333);
-}
-
 
