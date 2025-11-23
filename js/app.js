@@ -160,9 +160,13 @@
       try {
         e.target.disabled = true;
         if (el.feedback) {
-          el.feedback.textContent =
-            "Correcting your essay… this may take a little while.";
-        }
+  if (window.I18N && I18N.t) {
+    el.feedback.textContent = I18N.t("status.correcting");
+  } else {
+    // Fallback in case i18n isn't ready for some reason
+    el.feedback.textContent = "Correcting your essay… this may take a little while.";
+  }
+}
 
         // 1) Call Worker
         res = await EC.correct(payload);
