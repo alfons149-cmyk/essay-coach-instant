@@ -127,6 +127,7 @@
     }
 
     // Clear button
+        // Clear button
     if (e.target === el.btnClear) {
       if (el.task)      el.task.value = "";
       if (el.essay)     el.essay.value = "";
@@ -135,9 +136,18 @@
       if (el.edits)     el.edits.innerHTML = "";
       renderVocabSuggestions({});
       renderSentenceInsights([]);
+      renderDebugJson(null);
+      window.EC_LAST_RESPONSE = null;
+
+      const dbgBtn = document.getElementById("btnToggleDebug");
+      if (dbgBtn && window.I18N && I18N.t) {
+        dbgBtn.textContent = I18N.t("debug.show");
+      }
+
       updateCounters();
       return;
     }
+
 
     // Correct button
     if (e.target === el.btnCorrect) {
