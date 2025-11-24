@@ -13,21 +13,44 @@
       <h1 class="book-title">The Cambridge Writing Coach</h1>
       <p class="book-subtitle">Mastering Essay Writing for Cambridge Exams (B2–C2)</p>
     </div>
+
     <nav class="book-nav">
+      <!-- Back to the app -->
+      <a class="book-home" href="https://alfons149-cmyk.github.io/essay-coach-instant/">
+        ← Back to EssayCoach
+      </a>
+
+      <!-- Unit buttons – you can adjust how many there are -->
       <button class="book-nav-btn" data-unit="1">Unit 1</button>
       <button class="book-nav-btn" data-unit="2">Unit 2</button>
       <button class="book-nav-btn" data-unit="3">Unit 3</button>
-      <!-- add more as you go -->
+      <button class="book-nav-btn" data-unit="4">Unit 4</button>
+      <button class="book-nav-btn" data-unit="5">Unit 5</button>
+      <button class="book-nav-btn" data-unit="6">Unit 6</button>
+      <button class="book-nav-btn" data-unit="7">Unit 7</button>
+      <button class="book-nav-btn" data-unit="8">Unit 8</button>
+      <button class="book-nav-btn" data-unit="9">Unit 9</button>
+      <button class="book-nav-btn" data-unit="10">Unit 10</button>
+      <button class="book-nav-btn" data-unit="11">Unit 11</button>
+      <button class="book-nav-btn" data-unit="12">Unit 12</button>
+      <button class="book-nav-btn" data-unit="13">Unit 13</button>
+      <button class="book-nav-btn" data-unit="14">Unit 14</button>
+      <button class="book-nav-btn" data-unit="15">Unit 15</button>
+      <button class="book-nav-btn" data-unit="16">Unit 16</button>
+      <button class="book-nav-btn" data-unit="17">Unit 17</button>
+      <button class="book-nav-btn" data-unit="18">Unit 18</button>
+      <button class="book-nav-btn" data-unit="19">Unit 19</button>
+      <button class="book-nav-btn" data-unit="20">Unit 20</button>
     </nav>
   </header>
 
-  <main class="book-main" id="bookMain">
+  <main class="book-main">
     <div class="book-loading" id="bookLoading">Loading unit…</div>
     <article class="book-content" id="bookContent"></article>
   </main>
 
   <script>
-    // --- simple unit loader ---
+    // --- Load a unit file like units/unit01.html ---
     async function loadUnit(n) {
       const content = document.getElementById('bookContent');
       const loading = document.getElementById('bookLoading');
@@ -52,7 +75,7 @@
       }
     }
 
-    // nav clicks
+    // Handle clicks on unit buttons
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.book-nav-btn');
       if (!btn) return;
@@ -60,31 +83,32 @@
       loadUnit(unit);
     });
 
-    // initial unit (from ?unit=3 or default 1)
+    // Initial unit from ?unit=3 or default 1
     (function () {
       const q = new URLSearchParams(location.search);
       const unit = q.get('unit') || '1';
       loadUnit(unit);
     })();
 
-    // --- copy / print / context menu guards (discourage, not bulletproof) ---
+    // --- Soft protection: no right-click, no Ctrl+C / Ctrl+P, etc. ---
     document.addEventListener('contextmenu', (e) => e.preventDefault());
 
     document.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
+
+      // Block common copy/print shortcuts
       if (
         (e.ctrlKey || e.metaKey) &&
         ['c', 'x', 's', 'p', 'u', 'a'].includes(key)
       ) {
         e.preventDefault();
       }
-      // F12, Ctrl+Shift+I/J – just as a deterrent
-      if (key === 'f12' || (e.ctrlKey && e.shiftKey && ['i','j'].includes(key))) {
+
+      // Light deterrent for F12 / DevTools
+      if (key === 'f12' || (e.ctrlKey && e.shiftKey && ['i', 'j'].includes(key))) {
         e.preventDefault();
       }
     });
   </script>
-
 </body>
 </html>
-
