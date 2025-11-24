@@ -694,3 +694,21 @@ textarea {
 .force-mobile .debug-toggle-row {
   display: none !important;
 }
+/* ===== Sentence insight links → connect app to Course Book ===== */
+
+.si-link {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #2563eb;           /* blue, like a link */
+  font-weight: 500;
+}
+
+.si-link::before {
+  content: "📘 ";
+}
+
+/* Optional: make the whole line feel like a subtle link */
+.si-link:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
