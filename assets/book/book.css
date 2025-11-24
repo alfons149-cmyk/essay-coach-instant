@@ -1,1 +1,99 @@
+/* Disable text selection (discourages copy) */
+.book-body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  margin: 0;
+  background: #faf5ff;
+  color: #222;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Lay out header + main to fill page */
+.book-html, .book-body {
+  height: 100%;
+}
+
+.book-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 16px;
+  background: linear-gradient(to right, #fff7ed, #fce7f3);
+  border-bottom: 1px solid #f97316;
+}
+
+.book-header-left {
+  min-width: 0;
+}
+
+.book-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.book-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.book-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.book-nav-btn {
+  border: 1px solid #f97316;
+  background: #fff7ed;
+  color: #7c2d12;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.book-nav-btn:hover {
+  background: #fed7aa;
+}
+
+.book-main {
+  max-width: 900px;
+  margin: 12px auto 32px;
+  padding: 0 16px 24px;
+}
+
+.book-loading {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.book-content h2,
+.book-content h3,
+.book-content h4 {
+  margin-top: 1.5em;
+  color: #7c2d12;
+}
+
+.book-content p {
+  line-height: 1.6;
+  margin: 0.5em 0;
+}
+
+.book-content ul {
+  padding-left: 1.2em;
+}
+
+/* small screens */
+@media (max-width: 640px) {
+  .book-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 
