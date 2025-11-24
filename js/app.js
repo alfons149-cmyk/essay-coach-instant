@@ -1,4 +1,4 @@
-// js/app.js — EssayCoach UI (API + bands + vocab + sentence insights + debug)
+// js/app.js — EssayCoach UI (API + bands + vocab + sentence insights + debug + busy state)
 (() => {
   // ---- Mode / API ----
   window.EC = window.EC || {};
@@ -166,9 +166,10 @@
         return;
       }
 
-            let res; // will hold the API result if it succeeds
+      let res; // will hold the API result if it succeeds
 
       try {
+        // busy state
         e.target.disabled = true;
         e.target.classList.add("is-busy");
         e.target.setAttribute("aria-busy", "true");
@@ -232,6 +233,8 @@
         e.target.classList.remove("is-busy");
         e.target.removeAttribute("aria-busy");
       }
+      return;
+    }
 
     // Debug toggle button
     const debugBtn = e.target.closest("#btnToggleDebug");
@@ -401,9 +404,11 @@
   //   [{ example, issue, explanation, betterVersion?, betterVersions?, linkHint }]
   function renderSentenceInsights(list) {
     const card = document.getElementById("sentenceInsightsCard") ||
-                 document.getElementById("sentencesCard");
+                 document.getElementById("sentencesCard") ||
+                 document.getElementById("sentenceCard");
     const ul   = document.getElementById("sentenceInsightsList") ||
-                 document.getElementById("sentencesList");
+                 document.getElementById("sentencesList") ||
+                 document.getElementById("sentenceList");
     if (!card || !ul) return;
 
     const items = Array.isArray(list) ? list : [];
