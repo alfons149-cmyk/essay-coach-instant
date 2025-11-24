@@ -436,8 +436,10 @@ const UNIT_LINKS = {
         : "";
 
       const linkHtml = linkHint
-        ? `<div class="si-link">${escapeHTML(linkHint)}</div>`
-        : "";
+  ? `<button class="si-link-btn" data-unit-link="${escapeHTML(linkHint)}">
+       ${escapeHTML(linkHint)}
+     </button>`
+  : "";
 
       return `
         <li class="si-item">
