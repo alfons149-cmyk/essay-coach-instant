@@ -1,4 +1,4 @@
-// js/app.js — EssayCoach UI (API + bands + vocab + sentence insights)
+// js/app.js — EssayCoach UI (API + bands + vocab + sentence insights + debug)
 (() => {
   // ---- Mode / API ----
   window.EC = window.EC || {};
@@ -98,7 +98,7 @@
     updateCounters();
   });
 
-  // ---- Events ----
+  // ---- Global click handler ----
   document.addEventListener("click", async (e) => {
     const langBtn  = e.target.closest("[data-lang]");
     const levelBtn = e.target.closest("[data-level]");
@@ -107,8 +107,11 @@
     if (langBtn) {
       const lang = langBtn.getAttribute("data-lang");
       try {
-        await I18N.load(lang);
         localStorage.setItem("ec.lang", lang);
+        document.documentElement.lang = lang;
+        if (window.I18N && typeof I18N.load === "function") {
+          await I18N.load(lang);
+        }
         reflectLangButtons(lang);
         clearCounterTemplates();
         updateCounters();
@@ -127,7 +130,6 @@
     }
 
     // Clear button
-        // Clear button
     if (e.target === el.btnClear) {
       if (el.task)      el.task.value = "";
       if (el.essay)     el.essay.value = "";
@@ -148,7 +150,6 @@
       return;
     }
 
-
     // Correct button
     if (e.target === el.btnCorrect) {
       const level = localStorage.getItem("ec.level") || "C1";
@@ -168,7 +169,7 @@
       let res; // will hold the API result if it succeeds
 
       try {
-              e.target.disabled = true;
+        e.target.disabled = true;
         if (el.feedback) {
           if (window.I18N && typeof I18N.t === "function") {
             el.feedback.textContent = I18N.t("status.correcting");
@@ -178,22 +179,12 @@
           }
         }
 
-    // Fallback in case i18n isn't ready for some reason
-    el.feedback.textContent = "Correcting your essay… this may take a little while.";
-  }
-}
-
         // 1) Call Worker
         res = await EC.correct(payload);
 
         // 2) Render main results
         if (el.feedback)  el.feedback.textContent = res.feedback || "—";
         if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
-
-                // Store and render debug JSON for advanced users
-        window.EC_LAST_RESPONSE = res;
-        renderDebugJson(res);
-
 
         if (el.edits) {
           el.edits.innerHTML = (res.edits || [])
@@ -213,6 +204,10 @@
         renderVocabSuggestions(res.vocabularySuggestions || {});
         renderSentenceInsights(res.sentenceInsights || []);
 
+        // Debug JSON
+        window.EC_LAST_RESPONSE = res;
+        renderDebugJson(res);
+
         // Bands (simple heuristic via scoreEssay in scoring.js)
         if (typeof window.scoreEssay === "function") {
           const scores = {
@@ -225,7 +220,6 @@
         }
       } catch (err) {
         console.error("[EC] UI or API error:", err);
-        // Only show the big warning if the API itself failed (no result at all)
         if (!res && el.feedback) {
           el.feedback.textContent =
             "⚠️ Correction failed. Check API, CORS, or dev mode.";
@@ -233,15 +227,16 @@
       } finally {
         e.target.disabled = false;
       }
+      return;
     }
 
-        // Debug toggle button
+    // Debug toggle button
     const debugBtn = e.target.closest("#btnToggleDebug");
     if (debugBtn) {
       const card = document.getElementById("debugCard");
       if (!card) return;
 
-      const willShow = card.hidden;   // currently hidden -> will show
+      const willShow = card.hidden;
       card.hidden = !card.hidden;
 
       if (window.I18N && I18N.t) {
@@ -253,7 +248,6 @@
       }
       return;
     }
-
 
     // One-click vocab replacement
     const altBtn = e.target.closest(".vocab-alt");
@@ -403,8 +397,10 @@
   // Accepts:
   //   [{ example, issue, explanation, betterVersion?, betterVersions?, linkHint }]
   function renderSentenceInsights(list) {
-    const card = document.getElementById("sentenceInsightsCard");
-    const ul   = document.getElementById("sentenceInsightsList");
+    const card = document.getElementById("sentenceInsightsCard") ||
+                 document.getElementById("sentencesCard");
+    const ul   = document.getElementById("sentenceInsightsList") ||
+                 document.getElementById("sentencesList");
     if (!card || !ul) return;
 
     const items = Array.isArray(list) ? list : [];
@@ -458,7 +454,7 @@
     card.hidden = false;
   }
 
-    // ---- Debug JSON renderer ----
+  // ---- Debug JSON renderer ----
   function renderDebugJson(data) {
     const card = document.getElementById("debugCard");
     const pre  = document.getElementById("debugJson");
@@ -475,10 +471,8 @@
     } catch (e) {
       pre.textContent = String(data);
     }
-    // Note: keep card.hidden as-is.
-    // User controls visibility with the toggle button.
+    // Visibility controlled by toggle button.
   }
-
 
   // ---- UI helpers ----
   function reflectLangButtons(
