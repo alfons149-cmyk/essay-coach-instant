@@ -1,1 +1,90 @@
+<!doctype html>
+<html lang="en" class="book-html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Cambridge Writing Coach – Course Book</title>
+  <link rel="stylesheet" href="book.css">
+</head>
+<body class="book-body">
+
+  <header class="book-header">
+    <div class="book-header-left">
+      <h1 class="book-title">The Cambridge Writing Coach</h1>
+      <p class="book-subtitle">Mastering Essay Writing for Cambridge Exams (B2–C2)</p>
+    </div>
+    <nav class="book-nav">
+      <button class="book-nav-btn" data-unit="1">Unit 1</button>
+      <button class="book-nav-btn" data-unit="2">Unit 2</button>
+      <button class="book-nav-btn" data-unit="3">Unit 3</button>
+      <!-- add more as you go -->
+    </nav>
+  </header>
+
+  <main class="book-main" id="bookMain">
+    <div class="book-loading" id="bookLoading">Loading unit…</div>
+    <article class="book-content" id="bookContent"></article>
+  </main>
+
+  <script>
+    // --- simple unit loader ---
+    async function loadUnit(n) {
+      const content = document.getElementById('bookContent');
+      const loading = document.getElementById('bookLoading');
+      if (!content || !loading) return;
+
+      loading.style.display = 'block';
+      content.innerHTML = '';
+
+      const url = `units/unit${String(n).padStart(2, '0')}.html`;
+
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const html = await res.text();
+        content.innerHTML = html;
+      } catch (err) {
+        content.innerHTML =
+          '<p>Sorry, this unit could not be loaded right now.</p>';
+        console.error('[book] load error', err);
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    // nav clicks
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.book-nav-btn');
+      if (!btn) return;
+      const unit = btn.getAttribute('data-unit') || '1';
+      loadUnit(unit);
+    });
+
+    // initial unit (from ?unit=3 or default 1)
+    (function () {
+      const q = new URLSearchParams(location.search);
+      const unit = q.get('unit') || '1';
+      loadUnit(unit);
+    })();
+
+    // --- copy / print / context menu guards (discourage, not bulletproof) ---
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    document.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        ['c', 'x', 's', 'p', 'u', 'a'].includes(key)
+      ) {
+        e.preventDefault();
+      }
+      // F12, Ctrl+Shift+I/J – just as a deterrent
+      if (key === 'f12' || (e.ctrlKey && e.shiftKey && ['i','j'].includes(key))) {
+        e.preventDefault();
+      }
+    });
+  </script>
+
+</body>
+</html>
 
