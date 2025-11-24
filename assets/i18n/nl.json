@@ -55,6 +55,10 @@
   "paragraph.role.intro": "Inleiding",
   "paragraph.role.body": "Middelste alinea",
   "paragraph.role.conclusion": "Slotalinea",
-   "status.correcting": "Je essay wordt gecorrigeerd… dit kan even duren."
+    "debug.show": "Geavanceerde AI-details tonen",
+  "debug.hide": "Geavanceerde AI-details verbergen",
+  "debug.title": "AI-respons (geavanceerde details)",
+
+   "status.correcting": "Je essay wordt gecorrigeerd… dit kan even duren.",
 }
 
