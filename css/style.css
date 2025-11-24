@@ -602,3 +602,16 @@ textarea {
     font-size: 1.1rem; /* slightly bigger icon */
   }
 }
+/* Developer-only mobile preview mode */
+.force-mobile body,
+.force-mobile .app-container {
+  max-width: 380px !important;
+  margin: 0 auto !important;
+  border: 2px dashed #888;
+  padding: 8px;
+}
+
+.force-mobile .topbar-row,
+.force-mobile .grid-2 {
+  display: block !important;
+}
