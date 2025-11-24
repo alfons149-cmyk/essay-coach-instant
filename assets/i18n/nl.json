@@ -4,61 +4,59 @@
   "app.subtitle": "EssayCoach – Cambridge Toolkit",
   "app.tagline": "Gebaseerd op 25 jaar ervaring met Cambridge-examens in de klas.",
 
-
-
   "labels.level": "Niveau:",
-  "labels.prompt": "Taakopdracht",
-  "labels.essay": "Jouw essay",
-  "labels.feedback": "Jouw persoonlijke feedback",
+  "labels.prompt": "Taak",
+  "labels.essay": "Je essay",
+  "labels.feedback": "Je persoonlijke feedback",
   "labels.edits": "Wijzigingen",
   "labels.next_draft": "Gecorrigeerd essay",
-  "labels.vocab_options": "Woordkeuzes",
-  "labels.sentence_insights": "Zinsanalyse",
+  "labels.vocab_options": "Woordenschat-opties",
+  "labels.sentence_insights": "Zinsinzichten",
   "labels.course_book": "Lees het cursusboek",
 
-  "buttons.correct": "Corrigeer",
-  "buttons.clear": "Wissen",
+  "buttons.correct": "Corrigeren",
+  "buttons.clear": "Alles wissen",
 
   "io.input_words": "Invoer: {n} woorden",
   "io.output_words": "Uitvoer: {n} woorden",
 
-  "placeholders.task": "Plak hier de examenvraag of opdracht...",
+  "placeholders.task": "Plak hier de examenvraag...",
   "placeholders.essay": "Plak of schrijf hier je essay...",
-  "placeholders.next_draft": "Begin hier aan je volgende versie...",
+  "placeholders.next_draft": "Begin hier met je volgende versie...",
 
   "tooltips.lang_en": "Overschakelen naar Engels",
   "tooltips.lang_es": "Overschakelen naar Spaans",
   "tooltips.lang_nl": "Overschakelen naar Nederlands",
-  "tooltips.correct": "Essay corrigeren",
+  "tooltips.correct": "Het essay corrigeren",
   "tooltips.clear": "Alle velden wissen",
 
   "vocab.none": "Geen suggesties.",
 
-  "bands.title": "Geschatte score volgens de Cambridge-schaal",
+  "bands.title": "Geschatte Cambridge-band",
   "bands.overall_score": "Geschatte score",
-  "bands.level_label": "Examenniveau",
+  "bands.level_label": "Examen­niveau",
   "bands.category_title": "Per criterium",
   "bands.category.Content": "Inhoud",
-  "bands.category.Communicative_Achievement": "Communicatief effect",
-  "bands.category.Organisation": "Structuur",
+  "bands.category.Communicative_Achievement": "Communicatieve prestatie",
+  "bands.category.Organisation": "Opbouw",
   "bands.category.Language": "Taalgebruik",
-  "bands.band.low": "Lage band",
+  "bands.band.low": "Lagere band",
   "bands.band.mid": "Middenband",
-  "bands.band.high": "Hoge band",
-  "bands.improvement_title": "Wat je kunt verbeteren om hoger te scoren",
-  "bands.disclaimer": "Deze score is een inschatting op basis van de Cambridge-schaal en vervangt geen officieel examencijfer.",
+  "bands.band.high": "Hogere band",
+  "bands.improvement_title": "Wat je kunt verbeteren om een band omhoog te gaan",
+  "bands.disclaimer": "Deze score is een schatting op basis van de Cambridge English Scale en geen officiële examencijfer.",
 
-  "sentence.title": "Hoe jouw zinnen zijn opgebouwd",
-  "sentence.read_unit": "Lees de bijbehorende unit in het Course Book.",
+  "sentence.title": "Hoe je zinnen zijn opgebouwd",
+  "sentence.read_unit": "Lees de unit in het cursusboek.",
 
-  "paragraph.title": "Logica en structuur van alinea's",
+  "paragraph.title": "Logica en structuur van alinea’s",
   "paragraph.role.intro": "Inleiding",
-  "paragraph.role.body": "Middelste alinea",
+  "paragraph.role.body": "Kernalinea",
   "paragraph.role.conclusion": "Slotalinea",
-    "debug.show": "Geavanceerde AI-details tonen",
+
+  "status.correcting": "Je essay wordt gecorrigeerd… dit kan even duren.",
+
+  "debug.show": "Geavanceerde AI-details tonen",
   "debug.hide": "Geavanceerde AI-details verbergen",
-  "debug.title": "AI-respons (geavanceerde details)",
-
-   "status.correcting": "Je essay wordt gecorrigeerd… dit kan even duren."
+  "debug.title": "AI-respons (geavanceerde details)"
 }
-
