@@ -1,24 +1,18 @@
-// js/app.js — EssayCoach UI (API + bands + vocab + sentence insights + debug + busy state)
+// js/app.js — EssayCoach UI (busy state + vocab + sentence insights + debug)
 (() => {
-  // ---- Mode / API ----
+  // ---- Global config / API ----
   window.EC = window.EC || {};
   const qs  = new URLSearchParams(location.search);
   const DEV = (typeof EC.DEV === "boolean") ? EC.DEV : (qs.get("dev") === "1");
   const API_BASE = (EC.API_BASE || "").replace(/\/+$/, "");
 
-  // ---- Diagnostics ----
-  const ready = () =>
-    console.log("[EC] API_BASE =", API_BASE || "(mock)", "DEV?", DEV);
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", ready);
-  } else {
-    ready();
-  }
+  console.log("[EC] API_BASE =", API_BASE || "(mock)", "DEV?", DEV);
 
-  // ---- DOM refs ----
+  // ---- DOM helpers ----
   const $  = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
 
+  // ---- Element refs ----
   const el = {
     task:       $("#task"),
     essay:      $("#essay"),
@@ -28,12 +22,11 @@
     inWC:       $("#inWC"),
     outWC:      $("#outWC"),
     btnCorrect: $("#btnCorrect"),
-    btnClear:   $("#btnClear"),
+    btnClear:   $("#btnClear")
   };
 
   // ---- Corrector (live API or mock) ----
-  EC.correct = async (payload) => {
-    // Real Worker
+  async function correctEssay(payload) {
     if (!DEV && API_BASE) {
       const url = `${API_BASE}/correct`;
       console.log("[EC] POST", url, payload);
@@ -42,7 +35,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        credentials: "omit",
+        credentials: "omit"
       });
 
       const text = await res.text();
@@ -54,18 +47,16 @@
       return JSON.parse(text);
     }
 
-    // --- DEV mock (when ?dev=1 or no API_BASE) ---
+    // DEV mock
     await sleep(300);
     const txt = payload.essay || "";
     const wc  = wcCount(txt);
     const edits = /\ba lot\b/i.test(txt)
-      ? [
-          {
-            from: "a lot",
-            to: payload.level === "B2" ? "much" : "numerous",
-            reason: "Register",
-          },
-        ]
+      ? [{
+          from: "a lot",
+          to: payload.level === "B2" ? "much" : "numerous",
+          reason: "Register"
+        }]
       : [];
 
     return {
@@ -76,34 +67,32 @@
       edits,
       nextDraft: txt.replace(/\ba lot\b/gi, edits[0]?.to || "a lot"),
       vocabularySuggestions: {
-        "a lot": ["many", "numerous", "substantially"],
+        "a lot": ["many", "numerous", "substantially"]
       },
-      sentenceInsights: [
-        {
-          example: "a lot",
-          issue: "informal quantifier",
-          explanation:
-            "In exam writing, “a lot” is usually too informal. Try a more neutral, precise alternative.",
-          betterVersions: ["many", "numerous"],
-          linkHint: "See Unit 6 — Vocabulary precision & register.",
-        },
-      ],
+      sentenceInsights: [{
+        example: "a lot",
+        issue: "informal quantifier",
+        explanation:
+          "In exam writing, “a lot” is usually too informal. Try a more neutral, precise alternative.",
+        betterVersions: ["many", "numerous"],
+        linkHint: "See Unit 6 — Vocabulary precision & register."
+      }]
     };
-  };
+  }
 
-  // ---- Init on load ----
+  // ---- Initial setup ----
   document.addEventListener("DOMContentLoaded", () => {
     reflectLangButtons();
     reflectLevelButtons();
     updateCounters();
   });
 
-  // ---- Global click handler ----
+  // ---- Main click handler ----
   document.addEventListener("click", async (e) => {
     const langBtn  = e.target.closest("[data-lang]");
     const levelBtn = e.target.closest("[data-level]");
 
-    // Language switch
+    // Language switch (visual + i18n)
     if (langBtn) {
       const lang = langBtn.getAttribute("data-lang");
       try {
@@ -141,7 +130,7 @@
       renderDebugJson(null);
       window.EC_LAST_RESPONSE = null;
 
-      const dbgBtn = document.getElementById("btnToggleDebug");
+      const dbgBtn = $("#btnToggleDebug");
       if (dbgBtn && window.I18N && I18N.t) {
         dbgBtn.textContent = I18N.t("debug.show");
       }
@@ -155,8 +144,8 @@
       const level = localStorage.getItem("ec.level") || "C1";
       const payload = {
         level,
-        task:  (el.task?.value || ""),
-        essay: (el.essay?.value || ""),
+        task:  el.task ? el.task.value || "" : "",
+        essay: el.essay ? el.essay.value || "" : ""
       };
 
       if (!payload.essay.trim()) {
@@ -166,10 +155,10 @@
         return;
       }
 
-      let res; // will hold the API result if it succeeds
+      let res;
 
       try {
-        // busy state
+        // Busy state ON
         e.target.disabled = true;
         e.target.classList.add("is-busy");
         e.target.setAttribute("aria-busy", "true");
@@ -183,19 +172,18 @@
           }
         }
 
-        // 1) Call Worker
-        res = await EC.correct(payload);
+        // Call Worker / mock
+        res = await correctEssay(payload);
 
-        // 2) Render main results
+        // Render main results
         if (el.feedback)  el.feedback.textContent = res.feedback || "—";
         if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
 
         if (el.edits) {
           el.edits.innerHTML = (res.edits || [])
-            .map(
-              (x) =>
-                `<li><strong>${escapeHTML(x.from)}</strong> → ` +
-                `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
+            .map((x) =>
+              `<li><strong>${escapeHTML(x.from)}</strong> → ` +
+              `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
             )
             .join("");
         }
@@ -212,13 +200,13 @@
         window.EC_LAST_RESPONSE = res;
         renderDebugJson(res);
 
-        // Bands (simple heuristic via scoreEssay in scoring.js)
+        // Bands (if scoreEssay exists)
         if (typeof window.scoreEssay === "function") {
           const scores = {
             content: 0.7,
             communicative: 0.6,
             organisation: 0.8,
-            language: 0.55,
+            language: 0.55
           };
           renderBands(level, scores);
         }
@@ -229,17 +217,19 @@
             "⚠️ Correction failed. Check API, CORS, or dev mode.";
         }
       } finally {
+        // Busy state OFF
         e.target.disabled = false;
         e.target.classList.remove("is-busy");
         e.target.removeAttribute("aria-busy");
       }
+
       return;
     }
 
     // Debug toggle button
     const debugBtn = e.target.closest("#btnToggleDebug");
     if (debugBtn) {
-      const card = document.getElementById("debugCard");
+      const card = $("#debugCard");
       if (!card) return;
 
       const willShow = card.hidden;
@@ -260,8 +250,7 @@
     if (altBtn) {
       const key = altBtn.getAttribute("data-key") || "";
       const to  = altBtn.getAttribute("data-to")  || "";
-      const targetTA =
-        document.getElementById("nextDraft") || document.getElementById("essay");
+      const targetTA = $("#nextDraft") || $("#essay");
       if (!targetTA) return;
 
       const ok = replaceNearest(targetTA, key, to);
@@ -279,12 +268,7 @@
     el.essay.addEventListener("input", updateCounters);
   }
 
-  window.addEventListener("ec:lang-changed", () => {
-    clearCounterTemplates();
-    updateCounters();
-  });
-
-  // ---- Counter helpers ----
+  // ---- Counters ----
   function setCounter(node, i18nKey, n) {
     if (!node) return;
     const ATTR = "data-i18n-template";
@@ -320,25 +304,24 @@
 
   // ---- Bands card ----
   function renderBands(level, scores) {
-    if (typeof scoreEssay !== "function") {
+    if (typeof window.scoreEssay !== "function") {
       console.warn("[bands] scoreEssay is not available");
       return;
     }
     const res = scoreEssay(level, scores);
     if (!res) return;
 
-    const card      = document.getElementById("bandsCard");
-    const overallEl = document.getElementById("bandsOverallScore");
-    const levelEl   = document.getElementById("bandsLevel");
-    const catList   = document.getElementById("bandsCategories");
-    const impList   = document.getElementById("bandsImprovements");
+    const card      = $("#bandsCard");
+    const overallEl = $("#bandsOverallScore");
+    const levelEl   = $("#bandsLevel");
+    const catList   = $("#bandsCategories");
+    const impList   = $("#bandsImprovements");
 
     if (!card || !overallEl || !levelEl || !catList || !impList) return;
 
-    overallEl.textContent = res.overall_scale ? res.overall_scale : "—";
+    overallEl.textContent = res.overall_scale || "—";
     levelEl.textContent   = res.level;
 
-    // Categories
     catList.innerHTML = "";
     res.category_results.forEach((cr) => {
       const li   = document.createElement("li");
@@ -353,7 +336,6 @@
       catList.appendChild(li);
     });
 
-    // Improvements
     impList.innerHTML = "";
     const uniqImprovements = Array.from(new Set(res.improvement_summary));
     uniqImprovements.forEach((text) => {
@@ -365,10 +347,10 @@
     card.hidden = false;
   }
 
-  // ---- Vocabulary suggestions renderer ----
+  // ---- Vocabulary suggestions ----
   function renderVocabSuggestions(vs) {
-    const card = document.getElementById("vocabCard");
-    const list = document.getElementById("vocab");
+    const card = $("#vocabCard");
+    const list = $("#vocab");
     if (!card || !list) return;
 
     const entries = Object.entries(vs || {});
@@ -381,34 +363,29 @@
     const items = entries.map(([key, arr]) => {
       const alts = (Array.isArray(arr) ? arr : [String(arr)])
         .filter(Boolean)
-        .map(
-          (a) =>
-            `<button type="button" class="vocab-alt btn-ghost" ` +
-            `data-key="${escapeHTML(key)}" data-to="${escapeHTML(
-              a
-            )}">${escapeHTML(a)}</button>`
+        .map((a) =>
+          `<button type="button" class="vocab-alt btn-ghost" ` +
+          `data-key="${escapeHTML(key)}" data-to="${escapeHTML(a)}">` +
+          `${escapeHTML(a)}</button>`
         )
         .join(" ");
 
-      return `<li><strong>${escapeHTML(
-        key
-      )}</strong><div class="alt-row">${alts}</div></li>`;
+      return `<li><strong>${escapeHTML(key)}</strong>` +
+             `<div class="alt-row">${alts}</div></li>`;
     });
 
     list.innerHTML = items.join("");
     card.hidden = false;
   }
 
-  // ---- Sentence insights renderer ----
-  // Accepts:
-  //   [{ example, issue, explanation, betterVersion?, betterVersions?, linkHint }]
+  // ---- Sentence insights ----
   function renderSentenceInsights(list) {
-    const card = document.getElementById("sentenceInsightsCard") ||
-                 document.getElementById("sentencesCard") ||
-                 document.getElementById("sentenceCard");
-    const ul   = document.getElementById("sentenceInsightsList") ||
-                 document.getElementById("sentencesList") ||
-                 document.getElementById("sentenceList");
+    const card = $("#sentenceInsightsCard") ||
+                 $("#sentencesCard") ||
+                 $("#sentenceCard");
+    const ul   = $("#sentenceInsightsList") ||
+                 $("#sentencesList") ||
+                 $("#sentenceList");
     if (!card || !ul) return;
 
     const items = Array.isArray(list) ? list : [];
@@ -418,54 +395,48 @@
       return;
     }
 
-    const html = items
-      .map((raw) => {
-        const example     = raw.example     ? String(raw.example)     : "";
-        const issue       = raw.issue       ? String(raw.issue)       : "";
-        const explanation = raw.explanation ? String(raw.explanation) : "";
-        const linkHint    = raw.linkHint    ? String(raw.linkHint)    : "";
+    const html = items.map((raw) => {
+      const example     = raw.example     ? String(raw.example)     : "";
+      const issue       = raw.issue       ? String(raw.issue)       : "";
+      const explanation = raw.explanation ? String(raw.explanation) : "";
+      const linkHint    = raw.linkHint    ? String(raw.linkHint)    : "";
 
-        // Allow betterVersion or betterVersions
-        let betterList = [];
-        if (Array.isArray(raw.betterVersions)) {
-          betterList = raw.betterVersions.map((v) => String(v)).filter(Boolean);
-        } else if (raw.betterVersion) {
-          betterList = [String(raw.betterVersion)];
-        }
+      let betterList = [];
+      if (Array.isArray(raw.betterVersions)) {
+        betterList = raw.betterVersions.map((v) => String(v)).filter(Boolean);
+      } else if (raw.betterVersion) {
+        betterList = [String(raw.betterVersion)];
+      }
 
-        const betterHtml = betterList.length
-          ? `<div class="si-better">
-               <strong>Better options:</strong>
-               ${betterList
-                 .map((v) => `<code>${escapeHTML(v)}</code>`)
-                 .join(" / ")}
-             </div>`
-          : "";
+      const betterHtml = betterList.length
+        ? `<div class="si-better"><strong>Better options:</strong> ` +
+          betterList.map((v) => `<code>${escapeHTML(v)}</code>`).join(" / ") +
+          `</div>`
+        : "";
 
-        const linkHtml = linkHint
-          ? `<div class="si-link">${escapeHTML(linkHint)}</div>`
-          : "";
+      const linkHtml = linkHint
+        ? `<div class="si-link">${escapeHTML(linkHint)}</div>`
+        : "";
 
-        return `
-          <li class="si-item">
-            <p><strong>Example:</strong> ${escapeHTML(example)}</p>
-            <p><strong>Issue:</strong> ${escapeHTML(issue)}</p>
-            <p><strong>Why it matters:</strong> ${escapeHTML(explanation)}</p>
-            ${betterHtml}
-            ${linkHtml}
-          </li>
-        `;
-      })
-      .join("");
+      return `
+        <li class="si-item">
+          <p><strong>Example:</strong> ${escapeHTML(example)}</p>
+          <p><strong>Issue:</strong> ${escapeHTML(issue)}</p>
+          <p><strong>Why it matters:</strong> ${escapeHTML(explanation)}</p>
+          ${betterHtml}
+          ${linkHtml}
+        </li>
+      `;
+    }).join("");
 
     ul.innerHTML = html;
     card.hidden = false;
   }
 
-  // ---- Debug JSON renderer ----
+  // ---- Debug JSON ----
   function renderDebugJson(data) {
-    const card = document.getElementById("debugCard");
-    const pre  = document.getElementById("debugJson");
+    const card = $("#debugCard");
+    const pre  = $("#debugJson");
     if (!card || !pre) return;
 
     if (!data) {
@@ -479,32 +450,30 @@
     } catch (e) {
       pre.textContent = String(data);
     }
-    // Visibility controlled by toggle button.
+    // visibility controlled by toggle button
   }
 
-  // ---- UI helpers ----
-  function reflectLangButtons(
-    lang = localStorage.getItem("ec.lang") || "en"
-  ) {
+  // ---- Button highlight helpers ----
+  function reflectLangButtons(lang) {
+    const current = lang || localStorage.getItem("ec.lang") || "en";
     $$("[data-lang]").forEach((b) => {
-      const active = b.getAttribute("data-lang") === lang;
+      const active = b.getAttribute("data-lang") === current;
       b.classList.toggle("btn-primary", active);
       b.classList.toggle("btn-ghost", !active);
       b.setAttribute("aria-pressed", String(active));
     });
   }
 
-  function reflectLevelButtons(
-    level = localStorage.getItem("ec.level") || "C1"
-  ) {
+  function reflectLevelButtons(level) {
+    const current = level || localStorage.getItem("ec.level") || "C1";
     $$("[data-level]").forEach((b) => {
-      const active = b.getAttribute("data-level") === level;
+      const active = b.getAttribute("data-level") === current;
       b.classList.toggle("pill--active", active);
       b.setAttribute("aria-pressed", String(active));
     });
   }
 
-  // ---- Replace nearest helper ----
+  // ---- Replace nearest occurrence ----
   function replaceNearest(textarea, needle, replacement) {
     const value = textarea.value;
     const n = String(needle);
@@ -529,7 +498,7 @@
           d: Math.min(
             Math.abs(caret - m.start),
             Math.abs(caret - m.end)
-          ),
+          )
         }))
         .sort((a, b) => a.d - b.d)[0].m;
     }
@@ -557,7 +526,7 @@
   }
 
   function sleep(ms) {
-    return new Promise((r) => setTimeout(r, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   function escapeHTML(s) {
