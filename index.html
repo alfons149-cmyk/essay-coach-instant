@@ -4,7 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title data-i18n="meta.title">EssayCoach – Cambridge Toolkit (EN)</title>
+  <title data-i18n="meta.title">EssayCoach – Cambridge Toolkit (EN)</title>  <!-- Developer-only mobile preview: ?mobile=1 adds "force-mobile" class -->
+  
+  <script>
+    (function () {
+      try {
+        const qp = new URLSearchParams(window.location.search);
+        if (qp.get("mobile") === "1") {
+          document.documentElement.classList.add("force-mobile");
+          console.log("[DEV] Mobile preview mode ON (force-mobile).");
+        }
+      } catch (e) {
+        console.warn("[DEV] Mobile preview mode init failed:", e);
+      }
+    })();
+  </script>
+
+
+  
 
   <!-- GitHub Pages base (project pages) -->
   <base href="/essay-coach-instant/">
