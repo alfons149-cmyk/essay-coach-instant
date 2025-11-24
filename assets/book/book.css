@@ -1,18 +1,19 @@
-/* Disable text selection (discourages copy) */
+/* General look */
+.book-html,
 .book-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  height: 100%;
+}
+
+.book-body {
   margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
   background: #faf5ff;
   color: #222;
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* Lay out header + main to fill page */
-.book-html, .book-body {
-  height: 100%;
-}
-
+/* Header bar */
 .book-header {
   position: sticky;
   top: 0;
@@ -42,10 +43,29 @@
   color: #6b7280;
 }
 
+/* Nav area */
 .book-nav {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.book-home {
+  margin-right: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.book-home:hover {
+  background: #dbeafe;
 }
 
 .book-nav-btn {
@@ -54,14 +74,16 @@
   color: #7c2d12;
   padding: 4px 8px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .book-nav-btn:hover {
   background: #fed7aa;
 }
 
+/* Main content area */
 .book-main {
   max-width: 900px;
   margin: 12px auto 32px;
@@ -89,11 +111,14 @@
   padding-left: 1.2em;
 }
 
-/* small screens */
+/* Small screens */
 @media (max-width: 640px) {
   .book-header {
     flex-direction: column;
     align-items: flex-start;
   }
-}
 
+  .book-nav {
+    justify-content: flex-start;
+  }
+}
