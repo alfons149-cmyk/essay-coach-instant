@@ -712,3 +712,17 @@ textarea {
   text-decoration: underline;
   cursor: pointer;
 }
+.si-link-btn {
+  margin-top: 6px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  background: #eef3ff;
+  border: 1px solid #c3d4ff;
+  color: #2353c4;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.si-link-btn:hover {
+  background: #dce7ff;
+}
