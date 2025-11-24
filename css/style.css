@@ -615,3 +615,49 @@ textarea {
 .force-mobile .grid-2 {
   display: block !important;
 }
+/* ========== DEVELOPER MOBILE PREVIEW MODE ========== */
+/* Activated when URL has ?mobile=1 → adds .force-mobile to <html> */
+
+.force-mobile body,
+.force-mobile .app-container {
+  max-width: 380px !important;          /* simulate a phone width */
+  margin: 0 auto !important;
+}
+
+.force-mobile body {
+  border: 2px dashed #999;              /* visual cue: you're in preview mode */
+  padding: 4px;
+}
+
+/* Force all grid-2 sections into one column (even on big screens) */
+.force-mobile .grid-2 {
+  display: grid;
+  grid-template-columns: 1fr !important;
+}
+
+/* Make top bar behave like mobile even on big screens */
+.force-mobile .topbar-row {
+  flex-wrap: wrap !important;
+  row-gap: 8px;
+}
+
+.force-mobile .topbar-right {
+  width: 100%;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Slight tweaks so it looks nice in the fake narrow view */
+.force-mobile .card {
+  padding: 12px;
+}
+
+.force-mobile .card-title {
+  font-size: 0.95rem;
+}
+
+/* Optional: always hide debug JSON in mobile preview */
+.force-mobile #debugCard,
+.force-mobile .debug-toggle-row {
+  display: none !important;
+}
