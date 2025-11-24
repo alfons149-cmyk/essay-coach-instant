@@ -552,6 +552,44 @@ const UNIT_LINKS = {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  // =====================
+// SentenceInsight → open unit
+// =====================
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".si-link-btn");
+  if (!btn) return;
+
+  const text = btn.getAttribute("data-unit-link")?.toLowerCase() || "";
+
+  // Unit lookup table (matches "unit 5", "unit 3", etc.)
+  const UNIT_LINKS = {
+    "unit 1": "assets/book/units/unit01.html",
+    "unit 2": "assets/book/units/unit02.html",
+    "unit 3": "assets/book/units/unit03.html",
+    "unit 4": "assets/book/units/unit04.html",
+    "unit 5": "assets/book/units/unit05.html",
+    "unit 6": "assets/book/units/unit06.html",
+    "unit 7": "assets/book/units/unit07.html",
+  };
+
+  // Find which unit number appears in the linkHint text
+  let match = null;
+  for (const key of Object.keys(UNIT_LINKS)) {
+    if (text.includes(key)) {
+      match = UNIT_LINKS[key];
+      break;
+    }
+  }
+
+  if (!match) {
+    console.warn("No matching unit found for linkHint:", text);
+    return;
+  }
+
+  window.open(match, "_blank", "noopener");
+});
+
+
   function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, (m) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])
