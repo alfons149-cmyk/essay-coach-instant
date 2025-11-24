@@ -54,5 +54,10 @@
   "paragraph.role.body": "Body paragraph",
   "paragraph.role.conclusion": "Conclusion",
 
+    "debug.show": "Show advanced AI details",
+  "debug.hide": "Hide advanced AI details",
+  "debug.title": "AI response (advanced details)"
+
+
   "status.correcting": "Correcting your essay… this may take a little while."
 }
