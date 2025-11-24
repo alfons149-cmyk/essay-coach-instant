@@ -591,3 +591,14 @@ textarea {
     font-size: 0.95rem;
   }
 }
+/* Shorter Course Book button on mobile */
+@media (max-width: 640px) {
+  #btnCourseBook span {
+    display: none;   /* hide text */
+  }
+
+  #btnCourseBook {
+    padding-inline: 6px;
+    font-size: 1.1rem; /* slightly bigger icon */
+  }
+}
