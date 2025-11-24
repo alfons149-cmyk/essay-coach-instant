@@ -12,6 +12,18 @@
   const $  = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
 
+  // Map phrases in linkHint → unit file
+const UNIT_LINKS = {
+  "unit 1": "assets/book/units/unit01.html",
+  "unit 2": "assets/book/units/unit02.html",
+  "unit 3": "assets/book/units/unit03.html",
+  "unit 4": "assets/book/units/unit04.html",
+  "unit 5": "assets/book/units/unit05.html",
+  "unit 6": "assets/book/units/unit06.html",
+  "unit 7": "assets/book/units/unit07.html",
+};
+
+
   // ---- Element refs ----
   const el = {
     task:       $("#task"),
