@@ -36,6 +36,16 @@
       }
     });
   </script>
+
+  <script>
+  (function () {
+    const qp = new URLSearchParams(location.search);
+    if (qp.get("mobile") === "1") {
+      document.documentElement.classList.add("force-mobile");
+    }
+  })();
+</script>
+
 </head>
 
 <body>
