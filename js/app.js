@@ -418,6 +418,28 @@
     card.hidden = false;
   }
 
+    // ---- Debug JSON renderer ----
+  function renderDebugJson(data) {
+    const card = document.getElementById("debugCard");
+    const pre  = document.getElementById("debugJson");
+    if (!card || !pre) return;
+
+    if (!data) {
+      pre.textContent = "";
+      card.hidden = true;
+      return;
+    }
+
+    try {
+      pre.textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+      pre.textContent = String(data);
+    }
+    // Note: keep card.hidden as-is.
+    // User controls visibility with the toggle button.
+  }
+
+
   // ---- UI helpers ----
   function reflectLangButtons(
     lang = localStorage.getItem("ec.lang") || "en"
