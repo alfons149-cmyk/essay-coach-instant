@@ -166,10 +166,13 @@
         return;
       }
 
-      let res; // will hold the API result if it succeeds
+            let res; // will hold the API result if it succeeds
 
       try {
         e.target.disabled = true;
+        e.target.classList.add("is-busy");
+        e.target.setAttribute("aria-busy", "true");
+
         if (el.feedback) {
           if (window.I18N && typeof I18N.t === "function") {
             el.feedback.textContent = I18N.t("status.correcting");
@@ -226,9 +229,9 @@
         }
       } finally {
         e.target.disabled = false;
+        e.target.classList.remove("is-busy");
+        e.target.removeAttribute("aria-busy");
       }
-      return;
-    }
 
     // Debug toggle button
     const debugBtn = e.target.closest("#btnToggleDebug");
