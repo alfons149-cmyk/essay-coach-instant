@@ -175,6 +175,11 @@
         if (el.feedback)  el.feedback.textContent = res.feedback || "—";
         if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
 
+                // Store and render debug JSON for advanced users
+        window.EC_LAST_RESPONSE = res;
+        renderDebugJson(res);
+
+
         if (el.edits) {
           el.edits.innerHTML = (res.edits || [])
             .map(
