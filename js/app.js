@@ -168,11 +168,16 @@
       let res; // will hold the API result if it succeeds
 
       try {
-        e.target.disabled = true;
+              e.target.disabled = true;
         if (el.feedback) {
-  if (window.I18N && I18N.t) {
-    el.feedback.textContent = I18N.t("status.correcting");
-  } else {
+          if (window.I18N && typeof I18N.t === "function") {
+            el.feedback.textContent = I18N.t("status.correcting");
+          } else {
+            el.feedback.textContent =
+              "Correcting your essay… this may take a little while.";
+          }
+        }
+
     // Fallback in case i18n isn't ready for some reason
     el.feedback.textContent = "Correcting your essay… this may take a little while.";
   }
