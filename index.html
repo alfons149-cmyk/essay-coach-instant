@@ -219,26 +219,6 @@
 
     </main>
 
-    <!-- Language switch (delegated) -->
-    <script>
-      document.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-lang]');
-        if (!btn) return;
-        const lang = btn.getAttribute('data-lang');
-        try {
-          localStorage.setItem('ec.lang', lang);
-          document.documentElement.lang = lang;
-          if (window.I18N && typeof I18N.load === 'function') {
-            await I18N.load(lang);
-          } else {
-            location.reload();
-          }
-        } catch (err) {
-          console.error('[lang switch]', err);
-        }
-      });
-    </script>
-
     <!-- Open the course book in a new tab -->
     <script>
       document.addEventListener('DOMContentLoaded', () => {
