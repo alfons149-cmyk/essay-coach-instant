@@ -230,6 +230,26 @@
       }
     }
 
+        // Debug toggle button
+    const debugBtn = e.target.closest("#btnToggleDebug");
+    if (debugBtn) {
+      const card = document.getElementById("debugCard");
+      if (!card) return;
+
+      const willShow = card.hidden;   // currently hidden -> will show
+      card.hidden = !card.hidden;
+
+      if (window.I18N && I18N.t) {
+        debugBtn.textContent = I18N.t(willShow ? "debug.hide" : "debug.show");
+      } else {
+        debugBtn.textContent = willShow
+          ? "Hide advanced AI details"
+          : "Show advanced AI details";
+      }
+      return;
+    }
+
+
     // One-click vocab replacement
     const altBtn = e.target.closest(".vocab-alt");
     if (altBtn) {
