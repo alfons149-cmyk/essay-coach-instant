@@ -1,12 +1,441 @@
-/* ========== RESPONSIVE LAYOUT IMPROVEMENTS ========== */
+/* =====================================
+   EssayCoach Coral Theme — CLEAN FINAL
+   ===================================== */
 
-/* No horizontal scroll, app centered */
-html, body {
+/* Theme tokens */
+:root[data-theme="coral"] {
+  --ec-bg: #fffdfc;
+  --ec-surface: #ffffff;
+  --ec-border: #f2c7b0;
+  --ec-text: #1a1a1a;
+  --ec-muted: #666;
+
+  --ec-accent: #ff7f50;
+  --ec-accent-hover: #ff9770;
+  --ec-accent-active: #e66a3b;
+  --ec-accent-bg: #fff3ee;
+
+  --ec-pill-bg: #ffe9e2;
+
+  --ec-grad-1: #fff6f2;
+  --ec-grad-2: #ffe8e0;
+  --ec-grad-shadow: rgba(230, 106, 59, 0.14);
+}
+
+/* Base reset for buttons so browser blue doesn't bleed through */
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  all: unset;
+  display: inline-block;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 10px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  line-height: 1;
+}
+
+/* Base layout & typography */
+body {
+  background: var(--ec-bg);
+  color: var(--ec-text);
+  font-family: Inter, system-ui, Arial, sans-serif;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Cards */
+.card {
+  border: 1px solid var(--ec-border);
+  border-radius: 12px;
+  background: var(--ec-surface);
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--ec-accent-active);
+}
+
+/* Feedback title with Alfons avatar */
+.card-title--feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.card-title--feedback::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-image: url("/essay-coach-instant/assets/alfons-icon.jpg");
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+/* Sentence-insights list (compact) */
+#sentencesCard .list--compact li {
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid #fca5a5;
+  background: #fff7ed;
+  font-size: 0.9rem;
+}
+
+.sentence-example {
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.sentence-issue {
+  font-style: italic;
+  margin-bottom: 0.1rem;
+}
+
+.sentence-explanation,
+.sentence-fix {
+  margin-bottom: 0.1rem;
+}
+
+.sentence-fix strong {
+  font-weight: 600;
+}
+
+/* Blue “Read the unit in the Course Book” line */
+.sentence-hint {
+  margin-top: 0.1rem;
+  font-size: 0.85rem;
+  color: #2563eb;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* =====================================
+   Buttons & pills
+   ===================================== */
+
+/* Generic baseline (applies to all buttons) */
+button,
+.btn {
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 8px 14px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.08s ease;
+  border: 1px solid transparent;
+  background: #fff;
+  color: var(--ec-text);
+}
+
+/* Primary action (Correct) */
+.btn-primary {
+  background: var(--ec-accent);
+  border: 1px solid var(--ec-accent-active);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--ec-accent-hover);
+  border-color: var(--ec-accent-hover);
+}
+.btn-primary:active {
+  background: var(--ec-accent-active);
+}
+
+/* Ghost buttons (Clear, language toggles, vocab alt) */
+.btn-ghost {
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  color: var(--ec-text);
+}
+.btn-ghost:hover {
+  background: var(--ec-accent-bg);
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* Safety: any old HTML with .lang-btn behaves like ghost */
+.lang-btn {
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  color: var(--ec-text);
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.lang-btn:hover {
+  background: var(--ec-accent-bg);
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* Level pills */
+.pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ec-border);
+  background: var(--ec-pill-bg);
+  color: var(--ec-text);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.pill:hover {
+  background: var(--ec-accent-hover);
+  color: #fff;
+  border-color: var(--ec-accent-active);
+}
+.pill--active,
+.pill[aria-pressed="true"] {
+  background: var(--ec-accent);
+  color: #fff;
+  border-color: var(--ec-accent-active);
+}
+
+/* Textareas & focus ring */
+textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ec-border);
+  background: #fff;
+  color: var(--ec-text);
+  font-size: 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Task prompt smaller than main essay box */
+#task {
+  min-height: 4rem;
+  max-height: 8rem;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--ec-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-accent) 30%, transparent);
+}
+
+/* Word counters (as pills) */
+.pill[data-i18n] {
+  background: var(--ec-pill-bg);
+  border: 1px solid var(--ec-border);
+  color: var(--ec-muted);
+}
+.pill[data-i18n]:hover {
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* Vocab suggestion buttons */
+.vocab-alt {
+  margin: 4px 6px 0 0;
+  font-size: 0.9rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--ec-accent-bg);
+  border: 1px solid var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+.vocab-alt:hover {
+  background: var(--ec-accent-hover);
+  color: #fff;
+}
+
+/* =====================================
+   Gradient topbar
+   ===================================== */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 14px 16px;
+  backdrop-filter: saturate(110%) blur(2px);
+  background: linear-gradient(
+    180deg,
+    var(--ec-grad-1) 0%,
+    var(--ec-grad-2) 60%,
+    var(--ec-grad-1) 100%
+  );
+  border-bottom: 1px solid var(--ec-border);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.02),
+    0 6px 18px -10px var(--ec-grad-shadow);
+}
+
+/* Layout inside topbar */
+.topbar .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.topbar .spacer {
+  margin-left: auto;
+}
+
+/* Title in banner */
+.app-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.2px;
+  color: var(--ec-accent-active);
+  margin: 0;
+}
+
+/* Optional badge (DEV / API mode) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 10px;
+  border: 1px solid var(--ec-border);
+  background: var(--ec-accent-bg);
+  color: var(--ec-accent-active);
+  font-size: 12px;
+}
+.badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ec-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ec-accent) 20%, transparent);
+}
+
+/* Ensure hover in the topbar wins any cascade */
+.topbar .btn-ghost:hover {
+  background: color-mix(in srgb, var(--ec-accent) 15%, #fff);
+  border-color: var(--ec-accent-active);
+  color: var(--ec-accent-active);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--ec-accent) 20%, transparent);
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .topbar {
+    backdrop-filter: none;
+  }
+}
+
+/* Bands / paragraph insights helpers */
+#bandsCard .pill {
+  margin-right: 4px;
+}
+
+#bandsCategories li,
+#bandsImprovements li {
+  padding: 4px 0;
+}
+
+/* Extra sentence-insight styling */
+#sentenceCard li {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.sentence-badge {
+  font-size: 0.75rem;
+  background: #005bbb;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.sentence-insight {
+  margin-bottom: 0.75rem;
+}
+
+.sentence-insight__issue {
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.sentence-insight__expl {
+  font-size: 0.95rem;
+  margin: 0.25rem 0;
+}
+
+.sentence-insight__versions {
+  margin: 0.25rem 0 0.25rem 1rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.sentence-insight__hint {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin: 0.25rem 0 0.5rem;
+}
+
+/* =====================================
+   Tagline and level row
+   ===================================== */
+
+.expert-tagline {
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 6px;
+  margin-bottom: 18px;
+  font-style: italic;
+  opacity: 0.9;
+  color: var(--text-muted, #444);
+  letter-spacing: 0.25px;
+  display: block;
+}
+
+.level-row {
+  width: 100%;
+  text-align: center;
+  margin: 8px 0 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.level-row .pill {
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+/* =====================================
+   Layout container + responsive grid
+   ===================================== */
+
+html,
+body {
   max-width: 100%;
   overflow-x: hidden;
 }
 
-/* Main container: nice width on desktop, padded on mobile */
 .app-container {
   max-width: 1100px;
   margin: 0 auto;
@@ -26,13 +455,7 @@ html, body {
   }
 }
 
-/* Make textareas behave nicely on mobile */
-textarea {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Top bar: good on desktop, graceful on small screens */
+/* Top bar rows */
 .topbar-row {
   display: flex;
   justify-content: space-between;
@@ -66,28 +489,7 @@ textarea {
   }
 }
 
-/* Tagline + level: tighten on very small screens */
-.expert-tagline {
-  width: 100%;
-  text-align: center;
-  font-size: 0.9rem;
-  margin-top: 6px;
-  margin-bottom: 12px;
-  font-style: italic;
-  opacity: 0.9;
-  color: var(--text-muted, #444);
-  letter-spacing: 0.25px;
-}
-
-.level-row {
-  width: 100%;
-  text-align: center;
-  margin: 0 0 16px;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-/* Toolbar: better for touch – buttons can wrap and get more space */
+/* Toolbar layout */
 .toolbar-row {
   display: flex;
   align-items: center;
@@ -103,20 +505,12 @@ textarea {
 
   .toolbar-row > .btn-primary,
   .toolbar-row > .btn-ghost {
-    flex: 1 1 140px;    /* let buttons grow nicely */
+    flex: 1 1 140px;
   }
 
   .toolbar-row #inWC,
   .toolbar-row #outWC {
     margin-top: 4px;
-  }
-}
-
-/* Debug JSON: useful on desktop, hidden on very small screens */
-@media (max-width: 640px) {
-  .debug-toggle-row,
-  #debugCard {
-    display: none;
   }
 }
 
@@ -134,33 +528,109 @@ textarea {
 /* Shorter Course Book button on mobile */
 @media (max-width: 640px) {
   #btnCourseBook span {
-    display: none;   /* hide text */
+    display: none;
   }
 
   #btnCourseBook {
     padding-inline: 6px;
-    font-size: 1.1rem; /* slightly bigger icon */
+    font-size: 1.1rem;
   }
 }
 
-/* ========== DEVELOPER MOBILE PREVIEW MODE ========== */
-/* Activated when URL has ?mobile=1 → adds .force-mobile to <html> */
+/* =====================================
+   JSON debug viewer
+   ===================================== */
+
+.debug-toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 4px 0 12px;
+}
+
+.debug-toggle {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  padding-inline: 0.5rem;
+}
+
+.debug-json {
+  max-height: 260px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  background: #0b1120;
+  color: #e5e7eb;
+  padding: 8px;
+  border-radius: 6px;
+  white-space: pre;
+  line-height: 1.4;
+}
+
+/* Hide debug on very small screens */
+@media (max-width: 640px) {
+  .debug-toggle-row,
+  #debugCard {
+    display: none;
+  }
+}
+
+/* =====================================
+   Busy / loading state for Correct button
+   ===================================== */
+
+.btn-primary.is-busy {
+  position: relative;
+  opacity: 0.8;
+  cursor: wait;
+}
+
+/* Tiny spinner on the right side of the button text */
+.btn-primary.is-busy::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-left-color: transparent;
+  animation: ec-spin 0.6s linear infinite;
+}
+
+/* Spinner animation */
+@keyframes ec-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =====================================
+   Developer mobile preview (?mobile=1)
+   ===================================== */
 
 .force-mobile body,
 .force-mobile .app-container {
-  max-width: 380px !important;          /* simulate a phone width */
+  max-width: 380px !important;
   margin: 0 auto !important;
-  border: 2px dashed #999;              /* visual cue: you're in preview mode */
-  padding: 4px;
+  border: 2px dashed #888;
+  padding: 8px;
 }
 
-/* Force all grid-2 sections into one column (even on big screens) */
+.force-mobile .topbar-row,
 .force-mobile .grid-2 {
-  display: grid;
+  display: grid !important;
   grid-template-columns: 1fr !important;
 }
 
-/* Make top bar behave like mobile even on big screens */
+.force-mobile body {
+  border: 2px dashed #999;
+  padding: 4px;
+}
+
 .force-mobile .topbar-row {
   flex-wrap: wrap !important;
   row-gap: 8px;
@@ -172,7 +642,6 @@ textarea {
   flex-wrap: wrap;
 }
 
-/* Slight tweaks so it looks nice in the fake narrow view */
 .force-mobile .card {
   padding: 12px;
 }
@@ -181,18 +650,19 @@ textarea {
   font-size: 0.95rem;
 }
 
-/* Optional: always hide debug JSON in mobile preview */
 .force-mobile #debugCard,
 .force-mobile .debug-toggle-row {
   display: none !important;
 }
 
-/* ===== Sentence insight links → connect app to Course Book ===== */
+/* =====================================
+   Sentence insight → Course Book links
+   ===================================== */
 
 .si-link {
   margin-top: 4px;
   font-size: 0.9rem;
-  color: #2563eb;           /* blue, like a link */
+  color: #2563eb;
   font-weight: 500;
 }
 
@@ -200,7 +670,6 @@ textarea {
   content: "📘 ";
 }
 
-/* Optional: make the whole line feel like a subtle link */
 .si-link:hover {
   text-decoration: underline;
   cursor: pointer;
