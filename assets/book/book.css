@@ -122,25 +122,66 @@
     justify-content: flex-start;
   }
 }
-.unit-grid {
+/* ========== ORANGE UNIT-PILL NAV (overview + units) ========== */
+
+.book-unit-nav {
+  max-width: 900px;
+  margin: 10px auto 8px;
+  padding: 0 16px 4px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 4px;
 }
 
+/* Each row of pills */
 .unit-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
+/* Overview row gets a tiny bit more space below */
+.unit-row--overview {
+  margin-bottom: 4px;
+}
+
+/* Base pill look */
+.unit-pill,
 .unit-row a {
+  display: inline-block;
   border: 2px solid #ff8a4c;
   padding: 2px 10px;
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: 0.85rem;
   text-decoration: none;
   color: #c85000;
+  background: #fff7ed;
   white-space: nowrap;
+}
+
+/* Overview pill (current page) */
+.overview-pill {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+/* Active unit (if you ever add .unit-active to one pill) */
+.unit-active {
+  background: #ffedd5;
+  border-color: #ea580c;
+  color: #9a3412;
+}
+
+/* Small screens: keep it readable */
+@media (max-width: 640px) {
+  .book-unit-nav {
+    padding-inline: 12px;
+  }
+
+  .unit-pill,
+  .unit-row a {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+  }
 }
