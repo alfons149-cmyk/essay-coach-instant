@@ -1,6 +1,6 @@
 /* ========== RESPONSIVE LAYOUT IMPROVEMENTS ========== */
 
-/* No horizontal scroll, app centered (already, but safe to keep here) */
+/* No horizontal scroll, app centered */
 html, body {
   max-width: 100%;
   overflow-x: hidden;
@@ -130,6 +130,7 @@ textarea {
     font-size: 0.95rem;
   }
 }
+
 /* Shorter Course Book button on mobile */
 @media (max-width: 640px) {
   #btnCourseBook span {
@@ -141,19 +142,7 @@ textarea {
     font-size: 1.1rem; /* slightly bigger icon */
   }
 }
-/* Developer-only mobile preview mode */
-.force-mobile body,
-.force-mobile .app-container {
-  max-width: 380px !important;
-  margin: 0 auto !important;
-  border: 2px dashed #888;
-  padding: 8px;
-}
 
-.force-mobile .topbar-row,
-.force-mobile .grid-2 {
-  display: block !important;
-}
 /* ========== DEVELOPER MOBILE PREVIEW MODE ========== */
 /* Activated when URL has ?mobile=1 → adds .force-mobile to <html> */
 
@@ -161,9 +150,6 @@ textarea {
 .force-mobile .app-container {
   max-width: 380px !important;          /* simulate a phone width */
   margin: 0 auto !important;
-}
-
-.force-mobile body {
   border: 2px dashed #999;              /* visual cue: you're in preview mode */
   padding: 4px;
 }
@@ -200,6 +186,7 @@ textarea {
 .force-mobile .debug-toggle-row {
   display: none !important;
 }
+
 /* ===== Sentence insight links → connect app to Course Book ===== */
 
 .si-link {
@@ -218,6 +205,7 @@ textarea {
   text-decoration: underline;
   cursor: pointer;
 }
+
 .si-link-btn {
   margin-top: 6px;
   padding: 4px 8px;
@@ -232,4 +220,3 @@ textarea {
 .si-link-btn:hover {
   background: #dce7ff;
 }
-
