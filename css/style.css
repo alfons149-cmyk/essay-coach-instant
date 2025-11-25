@@ -726,3 +726,226 @@ textarea {
 .si-link-btn:hover {
   background: #dce7ff;
 }
+<h1>Course Book – Table of Contents</h1>
+<p class="toc-intro">
+  This course takes you step by step from solid B2 sentence control to confident, elegant C2 exam writing.
+  Browse the units below and open the one you want to study.
+</p>
+
+<!-- Optional “pill” legend -->
+<p class="toc-legend">
+  <span class="toc-pill toc-pill--b2">B2 focus</span>
+  <span class="toc-pill toc-pill--c1">C1 focus</span>
+  <span class="toc-pill toc-pill--c2">C2 focus</span>
+</p>
+
+<section class="toc-grid">
+
+  <!-- UNIT 1 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 1</span> Clauses, Phrases & Complete Sentences</h2>
+    <p class="toc-level toc-pill toc-pill--b2">B2 foundations</p>
+    <p class="toc-summary">
+      Learn what a complete sentence is, how clauses work, and how to avoid fragments.
+    </p>
+    <a href="units/unit01.html" class="toc-link">Open Unit 1</a>
+  </article>
+
+  <!-- UNIT 2 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 2</span> Word Order & Sentence Construction</h2>
+    <p class="toc-level toc-pill toc-pill--b2">B2 foundations</p>
+    <p class="toc-summary">
+      Practise natural English word order and fix common mistakes with adverbs and objects.
+    </p>
+    <a href="units/unit02.html" class="toc-link">Open Unit 2</a>
+  </article>
+
+  <!-- UNIT 3 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 3</span> Joining Clauses with the Right Connectors</h2>
+    <p class="toc-level toc-pill toc-pill--b2">B2 foundations</p>
+    <p class="toc-summary">
+      Stop comma splices and run-ons by learning how to join ideas clearly and correctly.
+    </p>
+    <a href="units/unit03.html" class="toc-link">Open Unit 3</a>
+  </article>
+
+  <!-- UNIT 4 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 4</span> Punctuation for Flow & Clarity</h2>
+    <p class="toc-level toc-pill toc-pill--b2">B2 foundations</p>
+    <p class="toc-summary">
+      Use commas, full stops, and linking words to guide the reader smoothly through your text.
+    </p>
+    <a href="units/unit04.html" class="toc-link">Open Unit 4</a>
+  </article>
+
+  <!-- UNIT 5 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 5</span> Building Logical Paragraphs</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 structure</p>
+    <p class="toc-summary">
+      Learn how topic sentences, development, and mini-conclusions make paragraphs easy to follow.
+    </p>
+    <a href="units/unit05.html" class="toc-link">Open Unit 5</a>
+  </article>
+
+  <!-- UNIT 6 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 6</span> Vocabulary Precision & Register</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 language</p>
+    <p class="toc-summary">
+      Upgrade vague words like “a lot” or “things” to precise academic choices that fit exam writing.
+    </p>
+    <a href="units/unit06.html" class="toc-link">Open Unit 6</a>
+  </article>
+
+  <!-- UNIT 7 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 7</span> Advanced Cohesion & Reference Chains</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 cohesion</p>
+    <p class="toc-summary">
+      Connect sentences with pronouns and reference words so your paragraphs feel truly “joined up”.
+    </p>
+    <a href="units/unit07.html" class="toc-link">Open Unit 7</a>
+  </article>
+
+  <!-- UNIT 8 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 8</span> Paragraph Roles: Intro, Body & Conclusion</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 structure</p>
+    <p class="toc-summary">
+      Understand what each paragraph should do and how to build a clear beginning, middle, and ending.
+    </p>
+    <a href="units/unit08.html" class="toc-link">Open Unit 8</a>
+  </article>
+
+  <!-- UNIT 9 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 9</span> Developing Arguments & Examples</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 argument</p>
+    <p class="toc-summary">
+      Move beyond simple opinions and learn to support your ideas with reasons and concrete examples.
+    </p>
+    <a href="units/unit09.html" class="toc-link">Open Unit 9</a>
+  </article>
+
+  <!-- UNIT 10 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 10</span> Essay Structures for Cambridge Exams</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 exam focus</p>
+    <p class="toc-summary">
+      Compare typical structures for B2, C1 and C2 essays and learn how to choose the best layout.
+    </p>
+    <a href="units/unit10.html" class="toc-link">Open Unit 10</a>
+  </article>
+
+  <!-- UNIT 11 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 11</span> Planning Under Time Pressure</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 exam skills</p>
+    <p class="toc-summary">
+      Use fast planning strategies so you never start writing with an empty mind in the exam.
+    </p>
+    <a href="units/unit11.html" class="toc-link">Open Unit 11</a>
+  </article>
+
+  <!-- UNIT 12 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 12</span> Editing Grammar & Common Errors</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 accuracy</p>
+    <p class="toc-summary">
+      Fix the most frequent grammar and tense problems seen in Cambridge scripts before they cost marks.
+    </p>
+    <a href="units/unit12.html" class="toc-link">Open Unit 12</a>
+  </article>
+
+  <!-- UNIT 13 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 13</span> Sentence Types & Complexity</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1–C2 bridge</p>
+    <p class="toc-summary">
+      Learn to use simple, compound, complex and compound-complex sentences in a controlled, natural way.
+    </p>
+    <a href="units/unit13.html" class="toc-link">Open Unit 13</a>
+  </article>
+
+  <!-- UNIT 14 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 14</span> Cohesive Devices & Discourse Markers</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 cohesion</p>
+    <p class="toc-summary">
+      Go beyond “also” and “however” and discover more flexible, advanced ways to link ideas.
+    </p>
+    <a href="units/unit14.html" class="toc-link">Open Unit 14</a>
+  </article>
+
+  <!-- UNIT 15 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 15</span> Opinions, Counterarguments & Concessions</h2>
+    <p class="toc-level toc-pill toc-pill--c1">C1 argument</p>
+    <p class="toc-summary">
+      Make your essays more persuasive by recognising other views and answering them calmly.
+    </p>
+    <a href="units/unit15.html" class="toc-link">Open Unit 15</a>
+  </article>
+
+  <!-- UNIT 16 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 16</span> Style, Tone, and Natural Formality</h2>
+    <p class="toc-level toc-pill toc-pill--c2">C2 style</p>
+    <p class="toc-summary">
+      Move from “correct” to “mature” by controlling tone, register, and the overall feel of your writing.
+    </p>
+    <a href="units/unit16.html" class="toc-link">Open Unit 16</a>
+  </article>
+
+  <!-- UNIT 17 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 17</span> Editing for Style and Precision</h2>
+    <p class="toc-level toc-pill toc-pill--c2">C2 editing</p>
+    <p class="toc-summary">
+      Train your “editor’s eye” to remove noise, tighten sentences, and choose exactly the right words.
+    </p>
+    <a href="units/unit17.html" class="toc-link">Open Unit 17</a>
+  </article>
+
+  <!-- UNIT 18 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 18</span> Writing for Impact — Developing a Personal Academic Voice</h2>
+    <p class="toc-level toc-pill toc-pill--c2">C2 voice</p>
+    <p class="toc-summary">
+      Discover how to sound like yourself in formal English: clear, balanced, and quietly powerful.
+    </p>
+    <a href="units/unit18.html" class="toc-link">Open Unit 18</a>
+  </article>
+
+  <!-- UNIT 19 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 19</span> Mastering the C2 Essay Task</h2>
+    <p class="toc-level toc-pill toc-pill--c2">C2 exam focus</p>
+    <p class="toc-summary">
+      Understand exactly what the C2 essay demands and how to summarise, evaluate, and synthesise texts.
+    </p>
+    <a href="units/unit19.html" class="toc-link">Open Unit 19</a>
+  </article>
+
+  <!-- UNIT 20 -->
+  <article class="toc-card">
+    <h2><span class="toc-unit">Unit 20</span> Refining the C2 Essay — Elegance, Depth, and Nuance</h2>
+    <p class="toc-level toc-pill toc-pill--c2">C2 refinement</p>
+    <p class="toc-summary">
+      Add the final polish: elegance, subtlety, and sophisticated argumentation that feels truly native-level.
+    </p>
+    <a href="units/unit20.html" class="toc-link">Open Unit 20</a>
+  </article>
+
+</section>
+
+<hr class="toc-divider">
+
+<p class="toc-outro">
+  Start wherever you need most help — sentences, paragraphs, or full essays.  
+  The app’s feedback will point you to the right unit, so the book and the tool work together.
+</p>
