@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" data-theme="coral">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Course Book – Reader</title>
+
+  <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
+  <link rel="apple-touch-icon" href="/essay-coach-instant/icon-192.png">
+  <link rel="manifest" href="/essay-coach-instant/manifest.webmanifest">
+  <meta name="theme-color" content="#111111" />
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/essay-coach-instant/css/style.css?v=dev1">
+</head>
+
+<body>
+  <div class="app-container unit-page">
+    <a href="/essay-coach-instant/" class="unit-back-link">← Back to Course Book</a>
+
+    <header class="unit-hero">
+      <p class="unit-label">Course Book</p>
+      <h1>Unit Reader</h1>
+      <p class="unit-intro">
+        Choose a unit from the buttons below. The content will open here without leaving the app.
+      </p>
+    </header>
+
+    <div class="reader-layout">
+      <nav class="reader-nav">
+        <button type="button" class="reader-unit-btn" data-unit="1">Unit 1</button>
+        <button type="button" class="reader-unit-btn" data-unit="2">Unit 2</button>
+        <!-- Add more buttons when you add more units -->
+        <!-- <button type="button" class="reader-unit-btn" data-unit="3">Unit 3</button> -->
+      </nav>
+
+      <main id="unit-content" class="unit-content reader-main">
+        <p>Select a unit to start reading.</p>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const contentEl = document.getElementById('unit-content');
+      const buttons = Array.from(document.querySelectorAll('.reader-unit-btn'));
+
+      function getUnitFromURL() {
+        const qs = new URLSearchParams(location.search);
+        return qs.get('unit') || '1';  // default to Unit 1
+      }
+
+      function setActiveButton(unitId) {
+        buttons.forEach(btn => {
+          btn.classList.toggle('is-active', btn.dataset.unit === String(unitId));
+        });
+      }
+
+      async function loadUnit(unitId) {
+        setActiveButton(unitId);
+        contentEl.innerHTML = '<p>Loading unit…</p>';
+
+        try {
+          // files live in /essay-coach-instant/book/units/unit-1.html etc.
+          const response = await fetch(`book/units/unit-${unitId}.html`);
+          if (!response.ok) throw new Error('Unit not found');
+          const html = await response.text();
+          contentEl.innerHTML = html;
+
+          // update URL without reloading the page
+          const qs = new URLSearchParams(location.search);
+          qs.set('unit', unitId);
+          history.replaceState(null, '', `${location.pathname}?${qs.toString()}`);
+        } catch (err) {
+          console.error(err);
+          contentEl.innerHTML = '<p>Sorry, this unit could not be loaded.</p>';
+        }
+      }
+
+      // click handlers
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => loadUnit(btn.dataset.unit));
+      });
+
+      // initial load based on ?unit=… in URL
+      const initialUnit = getUnitFromURL();
+      loadUnit(initialUnit);
+    })();
+  </script>
+</body>
+</html>
