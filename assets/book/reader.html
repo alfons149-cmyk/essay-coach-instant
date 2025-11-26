@@ -1,46 +1,57 @@
 <!doctype html>
-<html lang="en" data-theme="coral">
+<html lang="en" class="book-html">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Course Book – Reader</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Cambridge Writing Coach – Reader</title>
 
-  <link rel="icon" type="image/png" sizes="192x192" href="/essay-coach-instant/icon-192.png">
-  <link rel="apple-touch-icon" href="/essay-coach-instant/icon-192.png">
-  <link rel="manifest" href="/essay-coach-instant/manifest.webmanifest">
-  <meta name="theme-color" content="#111111" />
-
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="/essay-coach-instant/css/style.css?v=dev1">
+  <!-- Same stylesheet as your TOC page -->
+  <link rel="stylesheet" href="book.css">
 </head>
+<body class="book-body">
 
-<body>
-  <div class="app-container unit-page">
-    <a href="/essay-coach-instant/" class="unit-back-link">← Back to Course Book</a>
+  <!-- Top header: title + back to app -->
+  <header class="book-header">
+    <div class="book-header-left">
+      <h1 class="book-title">The Cambridge Writing Coach</h1>
+      <p class="book-subtitle">Mastering Essay Writing for Cambridge Exams (B2–C2)</p>
+    </div>
 
-    <header class="unit-hero">
+    <nav class="book-nav">
+      <!-- Back to the app -->
+      <a class="book-home" href="https://alfons149-cmyk.github.io/essay-coach-instant/">
+        ← Back to EssayCoach
+      </a>
+    </nav>
+  </header>
+
+  <!-- Unit selector + reading area -->
+  <main class="book-main">
+    <header class="reader-header">
       <p class="unit-label">Course Book</p>
       <h1>Unit Reader</h1>
-      <p class="unit-intro">
-        Choose a unit from the buttons below. The content will open here without leaving the app.
+      <p class="reader-intro">
+        Choose a unit on the left. The content will open here without leaving the book.
       </p>
     </header>
 
     <div class="reader-layout">
+      <!-- Left side: unit buttons -->
       <nav class="reader-nav">
-        <button type="button" class="reader-unit-btn" data-unit="1">Unit 1</button>
-        <button type="button" class="reader-unit-btn" data-unit="2">Unit 2</button>
-        <!-- Add more buttons when you add more units -->
-        <!-- <button type="button" class="reader-unit-btn" data-unit="3">Unit 3</button> -->
+        <!-- You can add more buttons later up to 20 -->
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="1">Unit 1</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="2">Unit 2</button>
+        <!-- Example for future units:
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="3">Unit 3</button>
+        -->
       </nav>
 
-      <main id="unit-content" class="unit-content reader-main">
+      <!-- Right side: unit content gets loaded here -->
+      <section id="unit-content" class="reader-main">
         <p>Select a unit to start reading.</p>
-      </main>
+      </section>
     </div>
-  </div>
+  </main>
 
   <script>
     (function () {
@@ -49,7 +60,7 @@
 
       function getUnitFromURL() {
         const qs = new URLSearchParams(location.search);
-        return qs.get('unit') || '1';  // default to Unit 1
+        return qs.get('unit') || '1'; // default to Unit 1
       }
 
       function setActiveButton(unitId) {
@@ -63,13 +74,14 @@
         contentEl.innerHTML = '<p>Loading unit…</p>';
 
         try {
-          // files live in /essay-coach-instant/book/units/unit-1.html etc.
-          const response = await fetch(`book/units/unit-${unitId}.html`);
+          const fileId = String(unitId).padStart(2, '0'); // 1 → "01", 2 → "02"
+          // Units live in /book/units/unit01.html, unit02.html, etc.
+          const response = await fetch(`units/unit${fileId}.html`);
           if (!response.ok) throw new Error('Unit not found');
           const html = await response.text();
           contentEl.innerHTML = html;
 
-          // update URL without reloading the page
+          // Update URL (reader.html?unit=2) without reloading
           const qs = new URLSearchParams(location.search);
           qs.set('unit', unitId);
           history.replaceState(null, '', `${location.pathname}?${qs.toString()}`);
@@ -79,12 +91,12 @@
         }
       }
 
-      // click handlers
+      // Button clicks
       buttons.forEach(btn => {
         btn.addEventListener('click', () => loadUnit(btn.dataset.unit));
       });
 
-      // initial load based on ?unit=… in URL
+      // Initial load from ?unit=… in URL
       const initialUnit = getUnitFromURL();
       loadUnit(initialUnit);
     })();
