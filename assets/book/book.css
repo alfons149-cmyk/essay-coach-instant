@@ -339,3 +339,33 @@
 .next-unit a {
   margin-left: 6px;
 }
+.unit-mini-toc {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: #f7f7fb;
+  border: 1px solid #e0e2f0;
+  font-size: 0.95rem;
+}
+
+.unit-mini-toc-label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.unit-mini-toc ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.unit-mini-toc li {
+  margin: 0.15rem 0;
+}
+
+.unit-mini-toc a {
+  text-decoration: none;
+}
+
+.unit-mini-toc a:hover {
+  text-decoration: underline;
+}
