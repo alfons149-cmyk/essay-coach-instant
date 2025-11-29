@@ -205,9 +205,10 @@
         // Call Worker / mock
         res = await correctEssay(payload);
 
-        // Render main results
-        if (el.feedback)  el.feedback.textContent = res.feedback || "—";
+                // Render main results
+        setFeedbackAndCourseHelp(res.feedback || "—");
         if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
+
 
         if (el.edits) {
           el.edits.innerHTML = (res.edits || [])
