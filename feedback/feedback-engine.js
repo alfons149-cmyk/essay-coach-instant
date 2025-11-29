@@ -1,25 +1,38 @@
-import { mistakeMap } from "./mistake-map.js";
+// feedback-engine.js
+// Detect mistake IDs from feedback text
+// Adds a global: window.FeedbackEngine.detectMistakes()
 
-export function generateFeedback(detectedMistakes) {
-  const feedbackItems = detectedMistakes.map(code => {
-    const match = mistakeMap.find(m => m.id === code);
-    if (!match) return null;
+import { MISTAKE_MAP } from "./mistake-map.js";
 
-    return `
-      <div class="feedback-item">
-        <p>${match.message}</p>
-        <a class="feedback-link" href="${match.link}" target="_blank">
-          Study this in Unit ${match.unit}
-        </a>
-      </div>
-    `;
-  });
+/**
+ * Very simple keyword-based detection.
+ * You can improve this later with AI or heuristics.
+ *
+ * @param {string} text – AI feedback text (plain text)
+ * @returns {string[]} mistake IDs found in the feedback
+ */
+function detectMistakes(text) {
+  if (!text) return [];
 
-  return `
-    <div class="feedback-container">
-      <h2>Your Feedback</h2>
-      ${feedbackItems.join("")}
-    </div>
-  `;
+  const found = new Set();
+  const lower = text.toLowerCase();
+
+  for (const [id, data] of Object.entries(MISTAKE_MAP)) {
+    // Check each keyword for this mistake
+    if (!data.keywords || !data.keywords.length) continue;
+
+    for (const kw of data.keywords) {
+      if (lower.includes(kw.toLowerCase())) {
+        found.add(id);
+        break;
+      }
+    }
+  }
+
+  return Array.from(found);
 }
 
+// Expose globally for app.js
+window.FeedbackEngine = {
+  detectMistakes
+};
