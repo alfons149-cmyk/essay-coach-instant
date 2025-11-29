@@ -269,7 +269,7 @@
 
 
     <!-- API/dev badges -->
-    <script>
+        <script>
       (function () {
         const qs  = new URLSearchParams(location.search);
         const dev = qs.get('dev') === '1';
@@ -280,6 +280,17 @@
         if (devEl) devEl.style.display = dev ? 'inline' : 'none';
       })();
     </script>
+
+    <!-- Feedback mapping + engine + UI (modules) -->
+    <script type="module" src="feedback/mistake-map.js"></script>
+    <script type="module" src="feedback/feedback-engine.js"></script>
+    <script type="module" src="feedback/feedback-ui.js"></script>
+
+    <!-- DO NOT add another app.js here; it already loads in <head> as js/app.js -->
+  </div>
+</body>
+</html>
+
   </div>
 </body>
 </html>
