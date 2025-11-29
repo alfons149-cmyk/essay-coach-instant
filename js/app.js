@@ -148,7 +148,7 @@
       return;
     }
 
-    // Clear button
+        // Clear button
     if (e.target === el.btnClear) {
       if (el.task)      el.task.value = "";
       if (el.essay)     el.essay.value = "";
@@ -160,6 +160,18 @@
       renderDebugJson(null);
       window.EC_LAST_RESPONSE = null;
 
+      // Optional: clear Course Book help card
+      try {
+        if (
+          window.FeedbackUI &&
+          typeof window.FeedbackUI.renderFeedbackCard === "function"
+        ) {
+          window.FeedbackUI.renderFeedbackCard("");
+        }
+      } catch (err) {
+        console.warn("[FeedbackUI] could not clear card:", err);
+      }
+
       const dbgBtn = $("#btnToggleDebug");
       if (dbgBtn && window.I18N && I18N.t) {
         dbgBtn.textContent = I18N.t("debug.show");
@@ -168,6 +180,7 @@
       updateCounters();
       return;
     }
+
 
     // Correct button
     if (e.target === el.btnCorrect) {
