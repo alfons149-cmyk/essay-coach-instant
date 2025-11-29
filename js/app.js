@@ -26,6 +26,29 @@
     btnClear:   $("#btnClear")
   };
 
+    // ---- Course Book helper bridge ----
+  function setFeedbackAndCourseHelp(feedbackHtml) {
+    if (!el.feedback) return;
+
+    // 1) Show feedback in the normal panel
+    el.feedback.innerHTML = feedbackHtml || "—";
+
+    // 2) Trigger the Course Book help card, if that script is loaded
+    try {
+      if (
+        window.FeedbackUI &&
+        typeof window.FeedbackUI.renderFeedbackCard === "function"
+      ) {
+        const plainText =
+          el.feedback.innerText || el.feedback.textContent || "";
+        window.FeedbackUI.renderFeedbackCard(plainText);
+      }
+    } catch (err) {
+      console.warn("[FeedbackUI] Could not render Course Book help card:", err);
+    }
+  }
+
+
   // ---- Corrector (live API or mock) ----
   async function correctEssay(payload) {
     if (!DEV && API_BASE) {
