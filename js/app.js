@@ -1,4 +1,5 @@
 // js/app.js — EssayCoach UI (busy state + vocab + sentence insights + debug)
+
 (() => {
   // ---- Global config / API ----
   window.EC = window.EC || {};
@@ -11,7 +12,6 @@
   // ---- DOM helpers ----
   const $  = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
-
 
   // ---- Element refs ----
   const el = {
@@ -26,14 +26,12 @@
     btnClear:   $("#btnClear")
   };
 
-    // ---- Course Book helper bridge ----
+  // ---- Course Book helper bridge ----
   function setFeedbackAndCourseHelp(feedbackHtml) {
     if (!el.feedback) return;
 
-    // 1) Show feedback in the normal panel
     el.feedback.innerHTML = feedbackHtml || "—";
 
-    // 2) Trigger the Course Book help card, if that script is loaded
     try {
       if (
         window.FeedbackUI &&
@@ -47,7 +45,6 @@
       console.warn("[FeedbackUI] Could not render Course Book help card:", err);
     }
   }
-
 
   // ---- Corrector (live API or mock) ----
   async function correctEssay(payload) {
