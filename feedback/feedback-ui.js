@@ -1,7 +1,5 @@
 // essay-coach-instant/feedback/feedback-ui.js
 
-// If mistake-map.js exports as a global (non-module), you can remove this import
-// and use `window.MISTAKE_MAP` instead.
 import { MISTAKE_MAP } from './mistake-map.js';
 
 /**
@@ -19,7 +17,7 @@ function buildReaderLink(mistake) {
 
 /**
  * Render a pretty feedback card into a container element.
- * 
+ *
  * @param {string[]} mistakeIds – keys that exist in MISTAKE_MAP
  * @param {HTMLElement} containerEl – where the card should appear
  */
@@ -114,10 +112,26 @@ export function renderFeedbackCard(mistakeIds, containerEl) {
 
 /**
  * Optional helper if you want to test quickly from the console:
- * 
+ *
  * window.EC_FEEDBACK_DEMO(['articles_missing', 'run_on_sentence', ...])
  */
 window.EC_FEEDBACK_DEMO = function (mistakeIds) {
+  const container = document.querySelector('#feedback-card');
+  if (!container) return;
+  renderFeedbackCard(mistakeIds, container);
+};
+
+/* 🔽 NEW: expose a small global adapter for app.js 🔽 */
+if (!window.FeedbackUI) {
+  window.FeedbackUI = {};
+}
+
+/**
+ * Global helper: app.js can just do
+ *   FeedbackUI.renderFeedbackCard(mistakeIds)
+ * and this will render into #feedback-card.
+ */
+window.FeedbackUI.renderFeedbackCard = function (mistakeIds) {
   const container = document.querySelector('#feedback-card');
   if (!container) return;
   renderFeedbackCard(mistakeIds, container);
