@@ -408,22 +408,26 @@ const RAW_MISTAKES = [
     sectionId: "u8-linking"
   },
 
-   // UNIT 9
+     // UNIT 9
   {
     id: "weakIntroduction",
     message: "Your introduction does not clearly introduce the topic and task.",
-    unit: 9
+    unit: 9,
+    sectionId: "u9-introduction"
   },
   {
     id: "weakConclusion",
     message: "The conclusion could summarise your main ideas more clearly.",
-    unit: 9
+    unit: 9,
+    sectionId: "u9-conclusion"
   },
   {
     id: "newIdeaInConclusion",
     message: "Avoid introducing completely new ideas in the conclusion.",
-    unit: 9
+    unit: 9,
+    sectionId: "u9-new-ideas"
   },
+
 
     // UNIT 10
   {
