@@ -514,17 +514,20 @@ const RAW_MISTAKES = [
     unit: 13
   },
 
-  // UNIT 14
+    // UNIT 14
   {
     id: "unbalancedDiscussion",
     message: "The two sides of the discussion are not presented in a balanced way.",
-    unit: 14
+    unit: 14,
+    sectionId: "u14-balance"
   },
   {
     id: "noEvaluation",
     message: "At C1, examiners look for evaluation, not just description.",
-    unit: 14
+    unit: 14,
+    sectionId: "u14-evaluation"
   },
+
 
   // UNIT 15
   {
