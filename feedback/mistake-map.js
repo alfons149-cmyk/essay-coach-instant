@@ -479,23 +479,28 @@ const RAW_MISTAKES = [
     sectionId: "u11-spelling"
   },
 
-
   // UNIT 12
   {
     id: "underLength",
     message: "Your answer seems quite short; aim for the full recommended length.",
-    unit: 12
+    unit: 12,
+    sectionId: "u12-underlength"
   },
   {
     id: "overLength",
     message: "Your answer is very long; this may cause timing problems in the exam.",
-    unit: 12
+    unit: 12,
+    sectionId: "u12-overlength"
   },
   {
     id: "panicEditing",
     message: "The final paragraph feels rushed; leave a few minutes for calm editing.",
-    unit: 12
+    unit: 12,
+    sectionId: "u12-editing"
   },
+
+  
+  
 
   // UNIT 13
   {
