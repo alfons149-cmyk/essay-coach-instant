@@ -451,28 +451,34 @@ const RAW_MISTAKES = [
   {
     id: "articleError",
     message: "Check your use of a/an/the in this phrase.",
-    unit: 11
+    unit: 11,
+    sectionId: "u11-articles"
   },
   {
     id: "uncountablePlural",
     message: "Be careful: some uncountable nouns do not take a plural form.",
-    unit: 11
+    unit: 11,
+    sectionId: "u11-uncountable"
   },
   {
     id: "ifClauseForm",
     message: "The structure of this conditional sentence is not quite right.",
-    unit: 11
+    unit: 11,
+    sectionId: "u11-conditionals"
   },
   {
     id: "relativePronounError",
     message: "Check whether ‘who/which/that’ is used correctly here.",
-    unit: 11
+    unit: 11,
+    sectionId: "u11-relative-pronouns"
   },
   {
     id: "spellingCommonWord",
     message: "There may be a spelling mistake in a common academic word.",
-    unit: 11
+    unit: 11,
+    sectionId: "u11-spelling"
   },
+
 
   // UNIT 12
   {
