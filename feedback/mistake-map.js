@@ -425,7 +425,7 @@ const RAW_MISTAKES = [
     unit: 9
   },
 
-  // UNIT 10
+    // UNIT 10
   {
     id: "overusingConnectors",
     message: "There are too many explicit connectors; the writing feels heavy.",
@@ -441,6 +441,7 @@ const RAW_MISTAKES = [
     message: "Connections between sentences and ideas are not very clear.",
     unit: 10
   },
+
 
   // UNIT 11
   {
