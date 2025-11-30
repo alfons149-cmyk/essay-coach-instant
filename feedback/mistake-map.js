@@ -529,17 +529,20 @@ const RAW_MISTAKES = [
   },
 
 
-  // UNIT 15
+    // UNIT 15
   {
     id: "shallowParagraph",
     message: "This paragraph could go deeper: add explanation or evaluation.",
-    unit: 15
+    unit: 15,
+    sectionId: "u15-depth"
   },
   {
     id: "missingBalanceInParagraph",
     message: "C1 paragraphs often acknowledge other perspectives briefly.",
-    unit: 15
+    unit: 15,
+    sectionId: "u15-balance"
   },
+
 
   // UNIT 16
   {
