@@ -348,55 +348,64 @@ const RAW_MISTAKES = [
     unit: 5
   },
 
-  // UNIT 6
+ // UNIT 6
   {
     id: "missingOpinion",
     message: "Your own opinion is not clearly stated in the essay.",
-    unit: 6
+    unit: 6,
+    sectionId: "u6-opinion"
   },
   {
     id: "ignoringTaskNotes",
     message: "You did not fully cover all parts/notes of the task.",
-    unit: 6
+    unit: 6,
+    sectionId: "u6-task-coverage"
   },
   {
     id: "wrongTextType",
     message: "The tone/structure does not match the required text type (essay).",
-    unit: 6
+    unit: 6,
+    sectionId: "u6-text-type"
   },
 
   // UNIT 7
   {
     id: "offTaskContent",
     message: "Some content does not directly answer the exam question.",
-    unit: 7
+    unit: 7,
+    sectionId: "u7-task"
   },
   {
     id: "unbalancedArguments",
     message: "The essay gives much more space to one side than the other.",
-    unit: 7
+    unit: 7,
+    sectionId: "u7-balance"
   },
   {
     id: "noClearPlan",
     message: "The ideas seem unordered; planning could help structure them.",
-    unit: 7
+    unit: 7,
+    sectionId: "u7-planning"
   },
 
   // UNIT 8
   {
     id: "missingExample",
     message: "Your point would be stronger with a short, concrete example.",
-    unit: 8
+    unit: 8,
+    sectionId: "u8-example"
   },
   {
     id: "noExplanationAfterPoint",
     message: "After a point, add explanation to show why it matters.",
-    unit: 8
+    unit: 8,
+    sectionId: "u8-explanation"
   },
   {
     id: "weakLinkSentence",
     message: "Linking sentences between paragraphs could be clearer.",
-    unit: 8
+    unit: 8,
+    sectionId: "u8-linking"
   },
 
   // UNIT 9
