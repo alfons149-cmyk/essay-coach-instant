@@ -186,485 +186,452 @@ const KEYWORDS = {
   // You can keep adding overrides as you like
 };
 
-// ---- RAW DATA (your original array, simplified) ----
+// ---- UNIT ANCHORS (where in the book each topic lives) ----
+// NOTE: `id` should match the HTML id of the section in book/units/unitXX.html.
+// If any of these differ from your actual markup, just tweak the `id` strings.
+
+const UNIT_ANCHORS = {
+  // ===== UNIT 1 – Clauses, Phrases, and Sentences =====
+  u1_clause:          { unit: 1, id: "u1-clause",          title: "What Is a Clause?" },
+  u1_types_clauses:   { unit: 1, id: "u1-types-clauses",   title: "Types of Clauses" },
+  u1_phrase:          { unit: 1, id: "u1-phrase",          title: "What Is a Phrase?" },
+  u1_sentence:        { unit: 1, id: "u1-sentence",        title: "What Is a Sentence?" },
+  u1_patterns:        { unit: 1, id: "u1-patterns",        title: "Sentence Patterns" },
+  u1_two_types:       { unit: 1, id: "u1-two-types",       title: "Two Basic Sentence Types" },
+  u1_types_sentences: { unit: 1, id: "u1-types-sentences", title: "Types of Sentences" },
+  u1_connectors:      { unit: 1, id: "u1-connectors",      title: "Connecting Your Clauses" },
+  u1_putting:         { unit: 1, id: "u1-putting",         title: "Putting It All Together" },
+  u1_practice:        { unit: 1, id: "u1-practice",        title: "Quick Practice" },
+  u1_final:           { unit: 1, id: "u1-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 2 – Word Order and Sentence Structure =====
+  // (adjust ids to match your actual unit02.html sections)
+  u2_word_order:      { unit: 2, id: "u2-word-order",      title: "Word Order Basics" },
+  u2_adverbs:         { unit: 2, id: "u2-adverbs",         title: "Adverbs and Position" },
+  u2_time_place:      { unit: 2, id: "u2-time-place",      title: "Time, Place, and Manner" },
+  u2_questions:       { unit: 2, id: "u2-questions",       title: "Question Word Order" },
+  u2_final:           { unit: 2, id: "u2-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 3 – Types of Sentences and Connectors =====
+  u3_sentence_types:  { unit: 3, id: "u3-sentence-types",  title: "Sentence Types" },
+  u3_linking:         { unit: 3, id: "u3-linking",         title: "Basic Linking Words" },
+  u3_connectors:      { unit: 3, id: "u3-connectors",      title: "Using Connectors" },
+  u3_final:           { unit: 3, id: "u3-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 4 – Punctuation and Sentence Flow =====
+  u4_why_punctuation: { unit: 4, id: "u4-why-punctuation", title: "Why Punctuation Matters" },
+  u4_full_stops:      { unit: 4, id: "u4-full-stops",      title: "Full Stops and Sentence Boundaries" },
+  u4_commas:          { unit: 4, id: "u4-commas",          title: "Commas: Pauses, Lists, and Clauses" },
+  u4_semicolons:      { unit: 4, id: "u4-semicolons-colons", title: "Semicolons and Colons" },
+  u4_flow:            { unit: 4, id: "u4-flow",            title: "Punctuation and Sentence Flow" },
+  u4_mistakes:        { unit: 4, id: "u4-mistakes",        title: "Common Punctuation Mistakes" },
+  u4_practice:        { unit: 4, id: "u4-practice",        title: "Practice: Fix the Punctuation" },
+  u4_final:           { unit: 4, id: "u4-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 5 – (Paragraph basics / topic sentences etc.) =====
+  u5_paragraphs:      { unit: 5, id: "u5-paragraphs",      title: "What Is a Paragraph?" },
+  u5_topic:           { unit: 5, id: "u5-topic-sentences", title: "Topic Sentences" },
+  u5_support:         { unit: 5, id: "u5-support",         title: "Support and Examples" },
+  u5_final:           { unit: 5, id: "u5-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 6 – Cohesion and Coherence =====
+  u6_cohesion:        { unit: 6, id: "u6-cohesion",        title: "Cohesion Devices" },
+  u6_reference:       { unit: 6, id: "u6-reference",       title: "Reference and Substitution" },
+  u6_paragraph_flow:  { unit: 6, id: "u6-flow",            title: "Paragraph Flow" },
+  u6_final:           { unit: 6, id: "u6-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 7 – Introductions & Conclusions (for B2) =====
+  u7_intro:           { unit: 7, id: "u7-intro",           title: "Writing Introductions" },
+  u7_conclusion:      { unit: 7, id: "u7-conclusion",      title: "Writing Conclusions" },
+  u7_final:           { unit: 7, id: "u7-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 8 – Argument & Opinion =====
+  u8_opinion:         { unit: 8, id: "u8-opinion",         title: "Stating Your Opinion" },
+  u8_arguments:       { unit: 8, id: "u8-arguments",       title: "Developing Arguments" },
+  u8_final:           { unit: 8, id: "u8-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 9 – Examples & Development =====
+  u9_examples:        { unit: 9, id: "u9-examples",        title: "Using Examples" },
+  u9_development:     { unit: 9, id: "u9-development",     title: "Developing Paragraphs" },
+  u9_final:           { unit: 9, id: "u9-final",           title: "Final Thoughts" },
+
+  // ===== UNIT 10 – Planning B2 Essays =====
+  u10_plan:           { unit: 10, id: "u10-plan",          title: "Planning B2 Essays" },
+  u10_outline:        { unit: 10, id: "u10-outline",       title: "Building an Outline" },
+  u10_final:          { unit: 10, id: "u10-final",         title: "Final Thoughts" },
+
+  // ===== UNIT 11 – Editing B2 Essays =====
+  u11_editing:        { unit: 11, id: "u11-editing",       title: "Editing B2 Essays" },
+  u11_grammar:        { unit: 11, id: "u11-grammar",       title: "Grammar and Accuracy" },
+  u11_style:          { unit: 11, id: "u11-style",         title: "Style and Clarity" },
+  u11_final:          { unit: 11, id: "u11-final",         title: "Final Thoughts" },
+
+  // ===== UNIT 12 – Confidence & Timing =====
+  u12_underlength:    { unit: 12, id: "u12-underlength",   title: "Under-length Essays" },
+  u12_overlength:     { unit: 12, id: "u12-overlength",    title: "Over-length Essays" },
+  u12_editing:        { unit: 12, id: "u12-editing",       title: "Editing Under Time Pressure" },
+  u12_routine:        { unit: 12, id: "u12-routine",       title: "Confidence Through Routine" },
+  u12_final:          { unit: 12, id: "u12-final",         title: "Final Thoughts" },
+
+  // ===== UNIT 13 – Understanding the C1 Essay Task =====
+  u13_overview:       { unit: 13, id: "u13-overview",      title: "Understanding the C1 Essay Task" },
+  u13_scale:          { unit: 13, id: "u13-scale",         title: "What’s Being Tested" },
+  u13_structure:      { unit: 13, id: "u13-structure",     title: "Recommended Structure" },
+  u13_language:       { unit: 13, id: "u13-language",      title: "Language and Register" },
+  u13_final:          { unit: 13, id: "u13-final",         title: "Final Reflection" },
+
+  // ===== UNIT 14 – Planning and Developing C1 Essays =====
+  u14_balance:        { unit: 14, id: "u14-balance",       title: "Balancing Two Opinions" },
+  u14_evaluation:     { unit: 14, id: "u14-evaluation",    title: "Planning with Evaluation" },
+  u14_outline:        { unit: 14, id: "u14-outline",       title: "Building a C1 Outline" },
+  u14_final:          { unit: 14, id: "u14-final",         title: "Final Reflection" },
+
+  // ===== UNIT 15 – Writing and Linking C1 Paragraphs =====
+  u15_paragraphs:     { unit: 15, id: "u15-paragraphs",    title: "C1 Paragraph Structure" },
+  u15_flow:           { unit: 15, id: "u15-flow",          title: "Linking Within Paragraphs" },
+  u15_linking:        { unit: 15, id: "u15-linking",       title: "Linking Between Paragraphs" },
+  u15_final:          { unit: 15, id: "u15-final",         title: "Final Reflection" },
+
+  // ===== UNIT 16 – Style, Tone, and Natural Formality =====
+  u16_style:          { unit: 16, id: "u16-style",         title: "Style and Tone" },
+  u16_formality:      { unit: 16, id: "u16-formality",     title: "Natural Formality" },
+  u16_grammar:        { unit: 16, id: "u16-grammar",       title: "Formal Grammar Tools" },
+  u16_final:          { unit: 16, id: "u16-final",         title: "Final Reflection" },
+
+  // ===== UNIT 17 – Editing for Style and Precision =====
+  u17_structure:      { unit: 17, id: "u17-structure",     title: "Structure-Level Editing" },
+  u17_sentence:       { unit: 17, id: "u17-sentence",      title: "Sentence-Level Editing" },
+  u17_word:           { unit: 17, id: "u17-word",          title: "Word-Level Precision" },
+  u17_checklist:      { unit: 17, id: "u17-checklist",     title: "Editing Checklist" },
+  u17_final:          { unit: 17, id: "u17-final",         title: "Final Reflection" },
+
+  // ===== UNIT 18 – Writing for Impact — Academic Voice =====
+  u18_voice:          { unit: 18, id: "u18-voice",         title: "What Is Academic Voice?" },
+  u18_tone:           { unit: 18, id: "u18-tone",          title: "Tone and Perspective" },
+  u18_presence:       { unit: 18, id: "u18-presence",      title: "Writing with Presence" },
+  u18_final:          { unit: 18, id: "u18-final",         title: "Final Reflection" },
+
+  // ===== UNIT 19 – Mastering the C2 Essay Task =====
+  u19_task:           { unit: 19, id: "u19-task",          title: "The C2 Essay Task" },
+  u19_reading:        { unit: 19, id: "u19-reading",       title: "Reading and Evaluating Texts" },
+  u19_planning:       { unit: 19, id: "u19-planning",      title: "Planning a C2 Essay" },
+  u19_model:          { unit: 19, id: "u19-model",         title: "Model C2 Essay" },
+  u19_final:          { unit: 19, id: "u19-final",         title: "Final Reflection" },
+
+  // ===== UNIT 20 – Refining the C2 Essay: Elegance, Depth, Nuance =====
+  u20_elegance:       { unit: 20, id: "u20-elegance",      title: "Elegance in Writing" },
+  u20_depth:          { unit: 20, id: "u20-depth",         title: "Depth and Nuance" },
+  u20_style:          { unit: 20, id: "u20-style",         title: "Refined Style and Rhythm" },
+  u20_model:          { unit: 20, id: "u20-model",         title: "Refined C2 Example" },
+  u20_final:          { unit: 20, id: "u20-final",         title: "Final Reflection" }
+};
+
+// ---- RAW DATA (mistakes → units + anchors) ----
 const RAW_MISTAKES = [
-  // UNIT 1
- u1_clause: { title: "What Is a Clause?" },
-u1_types_clauses: { title: "Types of Clauses" },
-u1_phrase: { title: "What Is a Phrase?" },
-u1_sentence: { title: "What Is a Sentence?" },
-u1_patterns: { title: "Sentence Patterns" },
-u1_two_types: { title: "Two Basic Sentence Types" },
-u1_types_sentences: { title: "Types of Sentences" },
-u1_connectors: { title: "Connecting Clauses" },
-u1_putting: { title: "Putting It All Together" },
-u1_practice: { title: "Quick Practice" },
-u1_final: { title: "Final Thoughts" },
+  // ===== UNIT 1 – sentence basics =====
   {
     id: "subjectVerbAgreement",
     message: "Check your subject–verb agreement in this sentence.",
-    unit: 1
+    unit: 1,
+    anchor: "u1_clause"
   },
   {
     id: "missingSubject",
     message: "This sentence seems to be missing a clear subject.",
-    unit: 1
+    unit: 1,
+    anchor: "u1_sentence"
   },
   {
     id: "missingMainVerb",
-    message: "This group of words does not contain a main verb.",
-    unit: 1
+    message: "This group of words does not contain a main (finite) verb.",
+    unit: 1,
+    anchor: "u1_sentence"
   },
   {
     id: "sentenceFragment",
     message: "This looks like a fragment, not a complete sentence.",
-    unit: 1
+    unit: 1,
+    anchor: "u1_sentence"
   },
   {
     id: "dependentClauseAlone",
     message: "A dependent clause cannot stand alone as a sentence.",
-    unit: 1
+    unit: 1,
+    anchor: "u1_types_clauses"
   },
   {
     id: "tooManyClauses",
     message: "There are too many clauses in one sentence; consider splitting it.",
-    unit: 1
+    unit: 1,
+    anchor: "u1_patterns"
   },
 
-  // UNIT 2
+  // ===== UNIT 2 – word order =====
   {
     id: "wordOrder",
     message: "The word order in this sentence is unnatural in English.",
-    unit: 2
+    unit: 2,
+    anchor: "u2_word_order"
   },
   {
     id: "adverbFrequencyPosition",
-    message: "Adverbs of frequency are in an unusual position here.",
-    unit: 2
+    message: "Check the position of the adverb of frequency.",
+    unit: 2,
+    anchor: "u2_adverbs"
   },
   {
     id: "timePlaceMannerOrder",
-    message: "Time, place, and manner information are not in the usual order.",
-    unit: 2
-  },
-  {
-    id: "splittingVerbObject",
-    message: "Avoid splitting the verb and its object with extra information.",
-    unit: 2
+    message: "Time, place, and manner are in an unusual order here.",
+    unit: 2,
+    anchor: "u2_time_place"
   },
   {
     id: "questionWordOrder",
-    message: "The word order in this question is incorrect.",
-    unit: 2
-  },
-  {
-    id: "multipleAdverbsOrder",
-    message: "The order of different adverbs (time/place/manner) is confusing.",
-    unit: 2
+    message: "The word order in this question is not correct for English.",
+    unit: 2,
+    anchor: "u2_questions"
   },
 
-  // UNIT 3
-  {
-    id: "connectors",
-    message: "You used a connector in a way that feels incorrect or unclear.",
-    unit: 3
-  },
-  {
-    id: "runOnSentence",
-    message: "This is a run-on sentence; two sentences are joined incorrectly.",
-    unit: 3
-  },
-  {
-    id: "commaSplice",
-    message: "Two sentences are joined with a comma only (comma splice).",
-    unit: 3
-  },
-  {
-    id: "missingConnector",
-    message: "Consider adding a connector to show the relationship between ideas.",
-    unit: 3
-  },
-  {
-    id: "althoughButTogether",
-    message: "Do not use ‘although’ and ‘but’ together in the same sentence.",
-    unit: 3
-  },
-  {
-    id: "howeverWithCommaOnly",
-    message: "‘However’ usually needs a semicolon or full stop before it.",
-    unit: 3
-  },
-  {
-    id: "noSentenceVariety",
-    message: "Most of your sentences have the same structure; add variety.",
-    unit: 3
-  },
-
-  // UNIT 4
-  {
-    id: "punctuation",
-    message: "Punctuation here makes the sentence hard to follow.",
-    unit: 4
-  },
-  {
-    id: "missingFullStop",
-    message: "You may be missing a full stop between ideas.",
-    unit: 4
-  },
-  {
-    id: "extraComma",
-    message: "There seems to be an unnecessary comma in this sentence.",
-    unit: 4
-  },
-  {
-    id: "missingCommaIntroClause",
-    message: "Introductory clauses usually need a comma after them.",
-    unit: 4
-  },
-  {
-    id: "capitalLetterError",
-    message: "Check your use of capital letters here.",
-    unit: 4
-  },
-  {
-    id: "listPunctuation",
-    message: "The punctuation in this list is inconsistent.",
-    unit: 4
-  },
-
-  // UNIT 5
-  {
-    id: "sentenceTooLong",
-    message: "This sentence is very long; consider dividing it for clarity.",
-    unit: 5
-  },
-  {
-    id: "sentenceTooShortSeries",
-    message: "You use many very short sentences; try combining some ideas.",
-    unit: 5
-  },
-  {
-    id: "weakTopicSentence",
-    message: "The paragraph could use a clearer topic sentence.",
-    unit: 5
-  },
-  {
-    id: "offTopicSentence",
-    message: "This sentence does not clearly relate to the paragraph’s main idea.",
-    unit: 5
-  },
-  {
-    id: "poorParagraphBreaks",
-    message: "Consider where you start new paragraphs to show idea changes.",
-    unit: 5
-  },
-
- // UNIT 6
-  {
-    id: "missingOpinion",
-    message: "Your own opinion is not clearly stated in the essay.",
-    unit: 6,
-    sectionId: "u6-opinion"
-  },
-  {
-    id: "ignoringTaskNotes",
-    message: "You did not fully cover all parts/notes of the task.",
-    unit: 6,
-    sectionId: "u6-task-coverage"
-  },
-  {
-    id: "wrongTextType",
-    message: "The tone/structure does not match the required text type (essay).",
-    unit: 6,
-    sectionId: "u6-text-type"
-  },
-
-  // UNIT 7
-  {
-    id: "offTaskContent",
-    message: "Some content does not directly answer the exam question.",
-    unit: 7,
-    sectionId: "u7-task"
-  },
-  {
-    id: "unbalancedArguments",
-    message: "The essay gives much more space to one side than the other.",
-    unit: 7,
-    sectionId: "u7-balance"
-  },
-  {
-    id: "noClearPlan",
-    message: "The ideas seem unordered; planning could help structure them.",
-    unit: 7,
-    sectionId: "u7-planning"
-  },
-
-  // UNIT 8
-  {
-    id: "missingExample",
-    message: "Your point would be stronger with a short, concrete example.",
-    unit: 8,
-    sectionId: "u8-example"
-  },
-  {
-    id: "noExplanationAfterPoint",
-    message: "After a point, add explanation to show why it matters.",
-    unit: 8,
-    sectionId: "u8-explanation"
-  },
-  {
-    id: "weakLinkSentence",
-    message: "Linking sentences between paragraphs could be clearer.",
-    unit: 8,
-    sectionId: "u8-linking"
-  },
-
-     // UNIT 9
-  {
-    id: "weakIntroduction",
-    message: "Your introduction does not clearly introduce the topic and task.",
-    unit: 9,
-    sectionId: "u9-introduction"
-  },
-  {
-    id: "weakConclusion",
-    message: "The conclusion could summarise your main ideas more clearly.",
-    unit: 9,
-    sectionId: "u9-conclusion"
-  },
-  {
-    id: "newIdeaInConclusion",
-    message: "Avoid introducing completely new ideas in the conclusion.",
-    unit: 9,
-    sectionId: "u9-new-ideas"
-  },
-
-
-    // UNIT 10
+  // ===== UNIT 3 – sentence types / connectors =====
   {
     id: "overusingConnectors",
-    message: "There are too many explicit connectors; the writing feels heavy.",
-    unit: 10
+    message: "You are using too many linking words; simplify the connections.",
+    unit: 3,
+    anchor: "u3_connectors"
   },
   {
     id: "repeatingSameConnector",
-    message: "You repeat the same linking word; try some variety.",
-    unit: 10
-  },
-  {
-    id: "poorCohesion",
-    message: "Connections between sentences and ideas are not very clear.",
-    unit: 10
+    message: "Try to use a wider range of linking words instead of repeating the same one.",
+    unit: 3,
+    anchor: "u3_connectors"
   },
 
-
-  // UNIT 11
+  // ===== UNIT 4 – punctuation =====
   {
-    id: "articleError",
-    message: "Check your use of a/an/the in this phrase.",
-    unit: 11,
-    sectionId: "u11-articles"
+    id: "runOnSentence",
+    message: "This looks like a run-on sentence; you may need a full stop or connector.",
+    unit: 4,
+    anchor: "u4_full_stops"
   },
   {
-    id: "uncountablePlural",
-    message: "Be careful: some uncountable nouns do not take a plural form.",
-    unit: 11,
-    sectionId: "u11-uncountable"
+    id: "commaSplice",
+    message: "Two complete sentences are joined with only a comma.",
+    unit: 4,
+    anchor: "u4_mistakes"
   },
   {
-    id: "ifClauseForm",
-    message: "The structure of this conditional sentence is not quite right.",
-    unit: 11,
-    sectionId: "u11-conditionals"
-  },
-  {
-    id: "relativePronounError",
-    message: "Check whether ‘who/which/that’ is used correctly here.",
-    unit: 11,
-    sectionId: "u11-relative-pronouns"
-  },
-  {
-    id: "spellingCommonWord",
-    message: "There may be a spelling mistake in a common academic word.",
-    unit: 11,
-    sectionId: "u11-spelling"
+    id: "missingFullStop",
+    message: "You may need a full stop here to separate two sentences.",
+    unit: 4,
+    anchor: "u4_full_stops"
   },
 
-  // UNIT 12
+  // ===== UNIT 5 – paragraph basics =====
   {
-    id: "underLength",
-    message: "Your answer seems quite short; aim for the full recommended length.",
-    unit: 12,
-    sectionId: "u12-underlength"
-  },
-  {
-    id: "overLength",
-    message: "Your answer is very long; this may cause timing problems in the exam.",
-    unit: 12,
-    sectionId: "u12-overlength"
-  },
-  {
-    id: "panicEditing",
-    message: "The final paragraph feels rushed; leave a few minutes for calm editing.",
-    unit: 12,
-    sectionId: "u12-editing"
+    id: "noTopicSentence",
+    message: "This paragraph would benefit from a clearer topic sentence.",
+    unit: 5,
+    anchor: "u5_topic"
   },
 
-  
-  
-
-  // UNIT 13
+  // ===== UNIT 6 – cohesion =====
   {
-    id: "noClearParagraphPlan",
-    message: "Paragraphs do not follow a clear overall plan.",
-    unit: 13
-  },
-  {
-    id: "ideaRepetition",
-    message: "You repeat the same idea instead of developing it.",
-    unit: 13
+    id: "cohesionIssue",
+    message: "The connection between these sentences is not completely clear.",
+    unit: 6,
+    anchor: "u6_cohesion"
   },
 
-    // UNIT 14
+  // ===== UNIT 7 – intros & conclusions =====
   {
-    id: "unbalancedDiscussion",
-    message: "The two sides of the discussion are not presented in a balanced way.",
-    unit: 14,
-    sectionId: "u14-balance"
+    id: "weakIntroduction",
+    message: "Your introduction could be clearer about the topic and your position.",
+    unit: 7,
+    anchor: "u7_intro"
   },
   {
-    id: "noEvaluation",
-    message: "At C1, examiners look for evaluation, not just description.",
-    unit: 14,
-    sectionId: "u14-evaluation"
-  },
-
-
-    // UNIT 15
-  {
-    id: "shallowParagraph",
-    message: "This paragraph could go deeper: add explanation or evaluation.",
-    unit: 15,
-    sectionId: "u15-depth"
-  },
-  {
-    id: "missingBalanceInParagraph",
-    message: "C1 paragraphs often acknowledge other perspectives briefly.",
-    unit: 15,
-    sectionId: "u15-balance"
+    id: "missingConclusion",
+    message: "Your essay would benefit from a clearer conclusion.",
+    unit: 7,
+    anchor: "u7_conclusion"
   },
 
-
-  // UNIT 16
+  // ===== UNIT 8/9 – development / examples =====
   {
-    id: "tooInformal",
-    message: "Some expressions are too informal for a Cambridge essay.",
-    unit: 16
-  },
-  {
-    id: "contractionsInFormalWriting",
-    message: "Avoid contractions (don’t, it’s, can’t) in formal writing.",
-    unit: 16
-  },
-  {
-    id: "overFormal",
-    message: "Some phrases sound overly formal or unnatural.",
-    unit: 16
-  },
-  {
-    id: "emotionalLanguage",
-    message: "Try to sound calm and objective rather than emotional.",
-    unit: 16
-  },
-  {
-    id: "inconsistentTone",
-    message: "The tone shifts between informal and formal.",
-    unit: 16
+    id: "insufficientDevelopment",
+    message: "This idea is not fully developed; consider adding an explanation or example.",
+    unit: 9,
+    anchor: "u9_development"
   },
 
-  // UNIT 17
+  // ===== UNIT 10 – B2 planning =====
   {
-    id: "veryPlusAdjective",
-    message: "Replace ‘very + adjective’ with a stronger, single-word alternative.",
-    unit: 17
+    id: "noPlan",
+    message: "The structure feels unclear; planning your main points first would help.",
+    unit: 10,
+    anchor: "u10_plan"
   },
-  {
-    id: "vagueVocabulary",
-    message: "Words like ‘things’ or ‘stuff’ are vague; choose something more precise.",
-    unit: 17
-  },
+
+  // ===== UNIT 11 – B2 editing =====
   {
     id: "redundantPhrases",
-    message: "There are redundant words here that you can safely remove.",
-    unit: 17
+    message: "There are some redundant words that you could remove to tighten the sentence.",
+    unit: 11,
+    anchor: "u11_style"
   },
   {
     id: "paddingExpressions",
-    message: "Phrases like ‘due to the fact that’ can usually be shortened.",
-    unit: 17
-  },
-  {
-    id: "repeatedWords",
-    message: "You repeat the same adjective or noun; consider synonyms.",
-    unit: 17
+    message: "Try to replace this long expression with something more concise.",
+    unit: 11,
+    anchor: "u11_style"
   },
 
-  // UNIT 18
+  // ===== UNIT 12 – confidence & timing / length =====
   {
-    id: "tooManyITthink",
-    message: "You use ‘I think’ / ‘I believe’ very often; show your view more indirectly.",
-    unit: 18
+    id: "underLength",
+    message: "Your answer seems under the recommended word limit.",
+    unit: 12,
+    anchor: "u12_underlength"
   },
   {
-    id: "noAcademicVoice",
-    message: "The essay feels like spoken language rather than academic writing.",
-    unit: 18
-  },
-  {
-    id: "overTemplateLanguage",
-    message: "Some phrases feel memorised; try to sound more personal and natural.",
-    unit: 18
+    id: "overLength",
+    message: "Your answer is longer than necessary; try to stay within the limit.",
+    unit: 12,
+    anchor: "u12_overlength"
   },
 
-  // UNIT 19
+  // ===== UNIT 13 – C1 essay task =====
   {
-    id: "weakTextSummary",
-    message: "Your summary of the source texts is either too long or too short.",
-    unit: 19
-  },
-  {
-    id: "noSynthesis",
-    message: "You describe each text separately but do not clearly connect them.",
-    unit: 19
-  },
-  {
-    id: "littleEvaluation",
-    message: "C2 essays should evaluate the ideas, not just repeat them.",
-    unit: 19
+    id: "onlyOneOpinion",
+    message: "You need to discuss both given opinions in a C1 essay task.",
+    unit: 13,
+    anchor: "u13_overview"
   },
 
-  // UNIT 20
+  // ===== UNIT 14 – C1 planning =====
+  {
+    id: "unbalancedArguments",
+    message: "One side of the argument is much more developed than the other.",
+    unit: 14,
+    anchor: "u14_balance"
+  },
+  {
+    id: "noEvaluation",
+    message: "At C1 level, you should not only describe ideas but also evaluate them.",
+    unit: 14,
+    anchor: "u14_evaluation"
+  },
+
+  // ===== UNIT 15 – C1 paragraphs / linking =====
+  {
+    id: "weakLinking",
+    message: "The link between these paragraphs could be smoother.",
+    unit: 15,
+    anchor: "u15_linking"
+  },
+  {
+    id: "paragraphDepth",
+    message: "This paragraph could go deeper into explanation or evaluation.",
+    unit: 15,
+    anchor: "u15_paragraphs"
+  },
+
+  // ===== UNIT 16 – style & tone =====
+  {
+    id: "tooInformal",
+    message: "This expression is too informal for a Cambridge essay.",
+    unit: 16,
+    anchor: "u16_formality"
+  },
+  {
+    id: "contractionsInFormalWriting",
+    message: "Avoid contractions in formal exam writing.",
+    unit: 16,
+    anchor: "u16_formality"
+  },
+  {
+    id: "overFormal",
+    message: "The language here sounds overly formal or unnatural.",
+    unit: 16,
+    anchor: "u16_style"
+  },
+  {
+    id: "emotionalLanguage",
+    message: "Try to use more neutral, objective language instead of emotional words.",
+    unit: 16,
+    anchor: "u16_style"
+  },
+  {
+    id: "veryPlusAdjective",
+    message: "Instead of 'very + adjective', consider using a more precise word.",
+    unit: 16,
+    anchor: "u16_style"
+  },
+  {
+    id: "vagueVocabulary",
+    message: "This word is vague; you could choose something more specific.",
+    unit: 16,
+    anchor: "u16_style"
+  },
+
+  // ===== UNIT 17 – advanced editing =====
+  {
+    id: "wordySentence",
+    message: "This sentence could be shorter and clearer.",
+    unit: 17,
+    anchor: "u17_sentence"
+  },
+  {
+    id: "styleInconsistency",
+    message: "The tone in this sentence does not match the rest of the essay.",
+    unit: 17,
+    anchor: "u17_word"
+  },
+
+  // ===== UNIT 18 – academic voice =====
+  {
+    id: "overPersonal",
+    message: "Academic voice usually avoids overly personal or emotional phrasing.",
+    unit: 18,
+    anchor: "u18_voice"
+  },
+
+  // ===== UNIT 19 – C2 essay task =====
+  {
+    id: "overSummarising",
+    message: "At C2 level, you should not only summarise but also evaluate the texts.",
+    unit: 19,
+    anchor: "u19_task"
+  },
+
+  // ===== UNIT 20 – refinement / elegance =====
   {
     id: "heavyStyle",
-    message: "The style feels heavy; try shorter, clearer sentences for elegance.",
-    unit: 20
-  },
-  {
-    id: "lackOfNuance",
-    message: "Statements here sound absolute; add nuance with cautious language.",
-    unit: 20
-  },
-  {
-    id: "awkwardMetaphor",
-    message: "A metaphor or image here feels overdone or unclear.",
-    unit: 20
-  },
-  {
-    id: "rhythmIssues",
-    message: "The rhythm of this paragraph is uneven; vary sentence length.",
-    unit: 20
+    message: "This part feels heavy; you could simplify the sentence for elegance.",
+    unit: 20,
+    anchor: "u20_elegance"
   }
 ];
+
+// ---- Helper: build a Course Book URL for a mistake ----
+function getCourseBookLink(mistakeOrId) {
+  const id = typeof mistakeOrId === "string" ? mistakeOrId : mistakeOrId.id;
+  const meta = RAW_MISTAKES.find(m => m.id === id);
+  if (!meta) {
+    // fallback: just open the book index
+    return "book/index.html";
+  }
+
+  const anchor = meta.anchor && UNIT_ANCHORS[meta.anchor];
+  if (!anchor) {
+    // fallback: open the correct unit but no section anchor
+    const unit = meta.unit || 1;
+    return `book/reader.html?unit=${unit}`;
+  }
+
+  return `book/reader.html?unit=${anchor.unit}#${anchor.id}`;
+}
+
 
 // ---- Exported map: id → metadata ----
 export const MISTAKE_MAP = {};
