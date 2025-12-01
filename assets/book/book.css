@@ -187,6 +187,46 @@
   }
 }
 
+.unit-summary {
+  margin-top: 32px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding-top: 16px;
+}
+
+.unit-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .unit-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.summary-card {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.02);
+}
+
+.summary-card h3 {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.summary-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.unit-summary-extra ol {
+  padding-left: 1.5rem;
+}
+
+
 /* Hide the top “Unit 1 … Unit 20” pill row on phones */
 @media (max-width: 768px) {
   .book-unit-nav {
