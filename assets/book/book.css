@@ -179,6 +179,23 @@
     padding-inline: 12px;
   }
 
+  /* Hide Unit Reader chrome on small screens */
+@media (max-width: 640px) {
+  .reader-header,
+  .reader-nav {
+    display: none;
+  }
+
+  .reader-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .reader-main {
+    /* Optional: tweak padding / text to explain */
+  }
+}
+
+
   .unit-pill,
   .unit-row a {
     font-size: 0.8rem;
