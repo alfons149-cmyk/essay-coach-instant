@@ -632,22 +632,20 @@ function getCourseBookLink(mistakeOrId) {
   return `assets/book/reader.html?unit=${anchorMeta.unit}#${anchorMeta.id}`;
 }
 
-
-
 // ---- Exported map: id → metadata ----
 export const MISTAKE_MAP = {};
 
-// Turn the array into an object, add keywords, keep unit + optional sectionId
+// Turn the array into an object, add keywords, keep unit + anchor
 RAW_MISTAKES.forEach((m) => {
   MISTAKE_MAP[m.id] = {
     id: m.id,
-    label: m.label || m.message,   // short title
-    description: m.message,       // longer explanation
+    label: m.label || m.message,          // short title
+    description: m.message,               // longer explanation
     unit: m.unit,
-    sectionId: m.sectionId || null,
-    keywords: KEYWORDS[m.id] || defaultKeywords(m.message)
+    anchor: m.anchor || null,             // e.g. "u1_clause"
+    keywords: KEYWORDS[m.id] || defaultKeywords(m.message),
   };
 });
 
-// Optional: export the raw list as well, if you ever need it
+// Optional: export the raw list too
 export const MISTAKE_LIST = RAW_MISTAKES;
