@@ -616,21 +616,22 @@ const RAW_MISTAKES = [
 // ---- Helper: build a Course Book URL for a mistake ----
 function getCourseBookLink(mistakeOrId) {
   const id = typeof mistakeOrId === "string" ? mistakeOrId : mistakeOrId.id;
-  const meta = RAW_MISTAKES.find(m => m.id === id);
+  const meta = RAW_MISTAKES.find((m) => m.id === id);
   if (!meta) {
     // fallback: just open the book index
-    return "book/index.html";
+    return "assets/book/index.html";
   }
 
-  const anchor = meta.anchor && UNIT_ANCHORS[meta.anchor];
-  if (!anchor) {
+  const anchorMeta = meta.anchor && UNIT_ANCHORS[meta.anchor];
+  if (!anchorMeta) {
     // fallback: open the correct unit but no section anchor
     const unit = meta.unit || 1;
-    return `book/reader.html?unit=${unit}`;
+    return `assets/book/reader.html?unit=${unit}`;
   }
 
-  return `book/reader.html?unit=${anchor.unit}#${anchor.id}`;
+  return `assets/book/reader.html?unit=${anchorMeta.unit}#${anchorMeta.id}`;
 }
+
 
 
 // ---- Exported map: id → metadata ----
