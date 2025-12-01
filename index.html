@@ -80,10 +80,16 @@
           <button class="btn-ghost" data-lang="es" title="Español" data-i18n-title="tooltips.lang_es">ES</button>
           <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
 
-          <!-- Course book -->
-          <button class="btn-ghost" id="btnCourseBook">
-            📘 <span data-i18n="labels.course_book">Read the Course Book</span>
-          </button>
+          <a
+  class="btn-ghost"
+  id="btnCourseBook"
+  href="book/index.html"   <!-- or book/units/unit01.html if you prefer -->
+  target="_blank"
+  rel="noopener"
+>
+  📘 <span data-i18n="labels.course_book">Read the Course Book</span>
+</a>
+
 
           <!-- API/dev badges -->
           <span class="badge" id="apiMode" style="margin-left:8px"></span>
