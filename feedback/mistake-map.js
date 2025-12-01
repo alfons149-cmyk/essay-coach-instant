@@ -189,6 +189,17 @@ const KEYWORDS = {
 // ---- RAW DATA (your original array, simplified) ----
 const RAW_MISTAKES = [
   // UNIT 1
+ u1_clause: { title: "What Is a Clause?" },
+u1_types_clauses: { title: "Types of Clauses" },
+u1_phrase: { title: "What Is a Phrase?" },
+u1_sentence: { title: "What Is a Sentence?" },
+u1_patterns: { title: "Sentence Patterns" },
+u1_two_types: { title: "Two Basic Sentence Types" },
+u1_types_sentences: { title: "Types of Sentences" },
+u1_connectors: { title: "Connecting Clauses" },
+u1_putting: { title: "Putting It All Together" },
+u1_practice: { title: "Quick Practice" },
+u1_final: { title: "Final Thoughts" },
   {
     id: "subjectVerbAgreement",
     message: "Check your subject–verb agreement in this sentence.",
