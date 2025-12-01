@@ -118,14 +118,6 @@
     updateCounters();
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btnCourseBook');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    window.open('assets/book/index.html', '_blank', 'noopener');
-  });
-});
-
 
   // ---- Main click handler ----
   document.addEventListener("click", async (e) => {
