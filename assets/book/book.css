@@ -174,21 +174,11 @@
 }
 
 /* Small screens: keep it readable */
+/* Small screens: keep it readable */
 @media (max-width: 640px) {
   .book-unit-nav {
     padding-inline: 12px;
   }
-
-
-  .reader-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .reader-main {
-    /* Optional: tweak padding / text to explain */
-  }
-}
-
 
   .unit-pill,
   .unit-row a {
@@ -196,6 +186,14 @@
     padding: 2px 8px;
   }
 }
+
+/* Hide the top “Unit 1 … Unit 20” pill row on phones */
+@media (max-width: 768px) {
+  .book-unit-nav {
+    display: none;
+  }
+}
+
 /* ===== Reader layout ===== */
 
 .reader-header {
