@@ -183,6 +183,13 @@
       return;
     }
 
+    document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btnCourseBook');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    window.open('assets/book/index.html', '_blank', 'noopener');
+  });
+});
 
     // Correct button
     if (e.target === el.btnCorrect) {
