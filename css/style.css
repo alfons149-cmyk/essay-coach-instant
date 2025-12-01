@@ -964,3 +964,10 @@ body {
   font-size: 0.8rem;
   color: #6b7280;
 }
+/* ===== Hide in-app Unit Reader on small screens ===== */
+@media (max-width: 900px) {
+  .reader-layout,
+  .reader-header {
+    display: none !important;
+  }
+}
