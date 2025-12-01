@@ -179,12 +179,6 @@
     padding-inline: 12px;
   }
 
-  /* Hide Unit Reader chrome on small screens */
-@media (max-width: 640px) {
-  .reader-header,
-  .reader-nav {
-    display: none;
-  }
 
   .reader-layout {
     grid-template-columns: 1fr;
