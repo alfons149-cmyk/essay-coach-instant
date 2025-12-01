@@ -386,3 +386,22 @@
 .unit-mini-toc a:hover {
   text-decoration: underline;
 }
+/* ===== Hide Unit Reader on small screens (phones/tablets) ===== */
+@media (max-width: 900px) {
+  /* Hide the reader chrome completely */
+  .reader-header,
+  .reader-layout {
+    display: none !important;
+  }
+
+  /* Optional: show a simple message instead */
+  body.book-body::before {
+    content: "The Unit Reader is best viewed on a larger screen.";
+    display: block;
+    padding: 16px;
+    max-width: 900px;
+    margin: 16px auto;
+    font-size: 0.95rem;
+    color: #444;
+  }
+}
