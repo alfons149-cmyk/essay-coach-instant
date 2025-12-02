@@ -254,6 +254,8 @@ const UNIT_ANCHORS = {
   u7_intro:           { unit: 7, id: "u7-intro",           title: "Writing Introductions" },
   u7_conclusion:      { unit: 7, id: "u7-conclusion",      title: "Writing Conclusions" },
   u7_final:           { unit: 7, id: "u7-final",           title: "Final Thoughts" },
+  u7_summary:         { unit: 7, id: "u7-summary",         title: "Summary & Quick Reference" }
+
 
   // ===== UNIT 8 – Argument & Opinion =====
   u8_opinion:         { unit: 8, id: "u8-opinion",         title: "Stating Your Opinion" },
