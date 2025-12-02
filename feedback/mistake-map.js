@@ -261,6 +261,8 @@ const UNIT_ANCHORS = {
   u8_opinion:         { unit: 8, id: "u8-opinion",         title: "Stating Your Opinion" },
   u8_arguments:       { unit: 8, id: "u8-arguments",       title: "Developing Arguments" },
   u8_final:           { unit: 8, id: "u8-final",           title: "Final Thoughts" },
+  u8_summary:         { unit: 8, id: "u8-summary",         title: "Summary & Quick Reference" },
+
 
   // ===== UNIT 9 – Examples & Development =====
   u9_examples:        { unit: 9, id: "u9-examples",        title: "Using Examples" },
