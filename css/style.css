@@ -1200,3 +1200,9 @@ body {
 .landing-wave path {
   fill: #ff7b6b; /* tweak to match your existing coral */
 }
+.landing-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  width: 100%;
+}
