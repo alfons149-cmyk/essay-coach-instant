@@ -247,6 +247,8 @@ const UNIT_ANCHORS = {
   u6_reference:       { unit: 6, id: "u6-reference",       title: "Reference and Substitution" },
   u6_paragraph_flow:  { unit: 6, id: "u6-flow",            title: "Paragraph Flow" },
   u6_final:           { unit: 6, id: "u6-final",           title: "Final Thoughts" },
+  u6_summary:         { unit: 6, id: "u6-summary",         title: "Summary & Quick Reference" }
+
 
   // ===== UNIT 7 – Introductions & Conclusions (for B2) =====
   u7_intro:           { unit: 7, id: "u7-intro",           title: "Writing Introductions" },
