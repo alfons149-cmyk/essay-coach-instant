@@ -231,6 +231,8 @@ const UNIT_ANCHORS = {
   u4_mistakes:        { unit: 4, id: "u4-mistakes",        title: "Common Punctuation Mistakes" },
   u4_practice:        { unit: 4, id: "u4-practice",        title: "Practice: Fix the Punctuation" },
   u4_final:           { unit: 4, id: "u4-final",           title: "Final Thoughts" },
+  u4_summary:         { unit: 4, id: "u4-summary",         title: "Summary & Quick Reference" }
+
 
   // ===== UNIT 5 – (Paragraph basics / topic sentences etc.) =====
   u5_paragraphs:      { unit: 5, id: "u5-paragraphs",      title: "What Is a Paragraph?" },
