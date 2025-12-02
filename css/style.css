@@ -1206,3 +1206,117 @@ body {
   max-width: 900px;
   width: 100%;
 }
+/* Landing layout */
+.landing {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem 4rem;
+  background:
+    radial-gradient(
+      circle at top center,
+      rgba(255, 123, 107, 0.25) 0,
+      rgba(255, 123, 107, 0) 55%
+    ),
+    linear-gradient(
+      180deg,
+      #fff7f4 0%,
+      #ffffff 45%,
+      #ffffff 100%
+    );
+}
+
+.landing-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  width: 100%;
+}
+
+/* Optional: if you still have .landing-wave SVG */
+.landing-wave {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-wave path {
+  fill: #ff7b6b;
+}
+
+/* Hero grid */
+.landing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: center;
+  margin-top: 2.5rem;
+}
+
+.landing-column {
+  min-width: 0;
+}
+
+.landing-copy p {
+  margin-bottom: 0.75rem;
+}
+
+.landing-list {
+  margin: 1rem 0 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+.landing-list li + li {
+  margin-top: 0.35rem;
+}
+
+/* SVG hero */
+.landing-illustration {
+  display: flex;
+  justify-content: center;
+}
+
+.hero-svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* CTA styling tweak (optional: uses teal accent) */
+.landing-cta .btn-primary,
+.cta-button {
+  background: linear-gradient(135deg, #ff7b6b, #ff5b4a);
+  border: none;
+}
+
+.landing-cta .btn-primary:hover,
+.cta-button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.landing-note {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+  .landing-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .landing-illustration {
+    order: -1; /* show the SVG above the text on mobile, or remove if you prefer */
+  }
+
+  .landing {
+    padding-top: 2.5rem;
+  }
+}
