@@ -211,6 +211,8 @@ const UNIT_ANCHORS = {
   u2_time_place:      { unit: 2, id: "u2-time-place",      title: "Time, Place, and Manner" },
   u2_questions:       { unit: 2, id: "u2-questions",       title: "Question Word Order" },
   u2_final:           { unit: 2, id: "u2-final",           title: "Final Thoughts" },
+  u2_summary:         { unit: 2, id: "u2-summary",         title: "Summary & Quick Reference" }
+
 
   // ===== UNIT 3 – Types of Sentences and Connectors =====
   u3_sentence_types:  { unit: 3, id: "u3-sentence-types",  title: "Sentence Types" },
