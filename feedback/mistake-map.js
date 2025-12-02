@@ -239,6 +239,8 @@ const UNIT_ANCHORS = {
   u5_topic:           { unit: 5, id: "u5-topic-sentences", title: "Topic Sentences" },
   u5_support:         { unit: 5, id: "u5-support",         title: "Support and Examples" },
   u5_final:           { unit: 5, id: "u5-final",           title: "Final Thoughts" },
+  u5_summary:         { unit: 5, id: "u5-summary",         title: "Summary & Quick Reference" }
+
 
   // ===== UNIT 6 – Cohesion and Coherence =====
   u6_cohesion:        { unit: 6, id: "u6-cohesion",        title: "Cohesion Devices" },
