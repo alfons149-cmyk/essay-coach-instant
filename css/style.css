@@ -1183,3 +1183,20 @@ body {
       #ffffff 100%
     );
 }
+.landing-wave {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-wave svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Optional: make the wave itself coral */
+.landing-wave path {
+  fill: #ff7b6b; /* tweak to match your existing coral */
+}
