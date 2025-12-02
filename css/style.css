@@ -1320,3 +1320,13 @@ body {
     padding-top: 2.5rem;
   }
 }
+.app-title--logo {
+  display: flex;
+  align-items: center;
+}
+
+.app-title--logo .logo-inline {
+  height: 32px;
+  width: auto;
+  display: block;
+}
