@@ -219,6 +219,8 @@ const UNIT_ANCHORS = {
   u3_linking:         { unit: 3, id: "u3-linking",         title: "Basic Linking Words" },
   u3_connectors:      { unit: 3, id: "u3-connectors",      title: "Using Connectors" },
   u3_final:           { unit: 3, id: "u3-final",           title: "Final Thoughts" },
+  u3_summary:         { unit: 3, id: "u3-summary",         title: "Summary & Quick Reference" }
+
 
   // ===== UNIT 4 – Punctuation and Sentence Flow =====
   u4_why_punctuation: { unit: 4, id: "u4-why-punctuation", title: "Why Punctuation Matters" },
