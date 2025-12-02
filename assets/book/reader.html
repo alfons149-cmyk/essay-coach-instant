@@ -70,6 +70,25 @@
 
   <script>
     (function () {
+  const contentEl = document.getElementById('unit-content');
+  const buttons = Array.from(document.querySelectorAll('.reader-unit-btn'));
+
+  function getUnitFromURL() {
+    const qs = new URLSearchParams(location.search);
+    return qs.get('unit') || '1'; // old default = Unit 1
+  }
+
+  async function loadUnit(unitId) {
+    ...
+    const fileId = String(unitId).padStart(2, '0');
+    const response = await fetch(`units/unit${fileId}.html`);
+    ...
+  }
+
+  ...
+})();
+    
+    (function () {
       const contentEl = document.getElementById('unit-content');
       const buttons = Array.from(document.querySelectorAll('.reader-unit-btn'));
 
