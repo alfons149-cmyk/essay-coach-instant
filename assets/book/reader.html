@@ -69,39 +69,67 @@
   </main>
 
   <script>
+    
     (function () {
   const contentEl = document.getElementById('unit-content');
   const buttons = Array.from(document.querySelectorAll('.reader-unit-btn'));
 
   function getUnitFromURL() {
     const qs = new URLSearchParams(location.search);
-    return qs.get('unit') || '1'; // old default = Unit 1
+    const unitParam = qs.get('unit');
+    return unitParam || 'home';   // default: landing page
+  }
+
+  function setActiveButton(unitId) {
+    buttons.forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.unit === String(unitId));
+    });
   }
 
   async function loadUnit(unitId) {
-    ...
-    const fileId = String(unitId).padStart(2, '0');
-    const response = await fetch(`units/unit${fileId}.html`);
-    ...
+    setActiveButton(unitId);
+    contentEl.innerHTML = '<p>Loading…</p>';
+
+    try {
+      let url;
+
+      if (unitId === 'home') {
+        url = 'units/home.html';      // your new landing page
+      } else {
+        const fileId = String(unitId).padStart(2, '0');
+        url = `units/unit${fileId}.html`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Unit not found');
+      const html = await response.text();
+      contentEl.innerHTML = html;
+
+      // Update URL
+      const qs = new URLSearchParams(location.search);
+      if (unitId === 'home') {
+        qs.delete('unit');
+        history.replaceState(null, '', `${location.pathname}`);
+      } else {
+        qs.set('unit', unitId);
+        history.replaceState(null, '', `${location.pathname}?${qs.toString()}`);
+      }
+    } catch (err) {
+      console.error(err);
+      contentEl.innerHTML = '<p>Sorry, this content could not be loaded.</p>';
+    }
   }
 
-  ...
+  // Button clicks
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => loadUnit(btn.dataset.unit));
+  });
+
+  // Initial load
+  const initialUnit = getUnitFromURL();
+  loadUnit(initialUnit);
 })();
-    
-    (function () {
-      const contentEl = document.getElementById('unit-content');
-      const buttons = Array.from(document.querySelectorAll('.reader-unit-btn'));
 
-      function getUnitFromURL() {
-        const qs = new URLSearchParams(location.search);
-        return qs.get('unit') || '1'; // default to Unit 1
-      }
-
-      function setActiveButton(unitId) {
-        buttons.forEach(btn => {
-          btn.classList.toggle('is-active', btn.dataset.unit === String(unitId));
-        });
-      }
 
       async function loadUnit(unitId) {
         setActiveButton(unitId);
