@@ -74,32 +74,96 @@
         </p>
       </header>
 
-      <div class="landing-grid">
-        <div class="landing-column">
-          <h2>Why this app?</h2>
-          <p>
-            These days, many people practise writing essays using AI. That’s fine — but AI will <em>not</em> sit next
-            to you in the exam room. When you face the real Cambridge paper, <strong>you</strong> have to do everything
-            yourself.
-          </p>
-          <p>
-            You also don’t learn to write strong exam essays in a single evening. It takes practice and a clear idea of
-            what Cambridge expects at each level.
-          </p>
-        </div>
-
-        <div class="landing-column">
-          <h2>What EssayCoach gives you</h2>
-          <ul class="landing-list">
-            <li><strong>Instant feedback</strong> on your essays — in under a minute.</li>
-            <li>Corrections and comments based on the <strong>Cambridge writing scale</strong>.</li>
-            <li>A full <strong>Course Book</strong> with all the rules, patterns, and examples you need.</li>
-            <li>Support for <strong>B2, C1, and C2 essays</strong> in one place.</li>
-            <li><strong>Unlimited practice</strong> — no limits on how many essays you submit.</li>
-            <li>Available <strong>24/7</strong>, whenever you decide to train.</li>
-          </ul>
-        </div>
+          <div class="landing-grid">
+      <!-- Left: copy -->
+      <div class="landing-column landing-copy">
+        <h2>Train for the real exam, not just for AI</h2>
+        <p>
+          These days, many people practise essays with AI. That’s fine – but AI will
+          <strong>not</strong> sit next to you in the exam room. When you face the real Cambridge paper,
+          <strong>you</strong> have to do everything yourself.
+        </p>
+        <p>
+          EssayCoach works like your personal teacher. It corrects your essays in under a minute,
+          using the logic of the Cambridge writing scale, and then shows you exactly which rule
+          or unit to study in the Course Book.
+        </p>
+        <ul class="landing-list">
+          <li>Unlimited B2, C1, and C2 essay practice.</li>
+          <li>Instant, Cambridge-style feedback – 24/7.</li>
+          <li>Direct links to clear explanations and examples.</li>
+        </ul>
       </div>
+
+      <!-- Right: SVG hero illustration -->
+      <div class="landing-column landing-illustration" aria-hidden="true">
+        <svg
+          class="hero-svg"
+          viewBox="0 0 420 320"
+          role="img"
+        >
+          <!-- Background blob -->
+          <defs>
+            <linearGradient id="heroBlob" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff7b6b" stop-opacity="0.75" />
+              <stop offset="100%" stop-color="#ff5b4a" stop-opacity="0.9" />
+            </linearGradient>
+            <linearGradient id="heroScreen" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#ffffff" />
+              <stop offset="100%" stop-color="#fff7f4" />
+            </linearGradient>
+          </defs>
+
+          <ellipse cx="210" cy="150" rx="190" ry="120" fill="url(#heroBlob)" opacity="0.9" />
+
+          <!-- Laptop base -->
+          <rect x="90" y="150" width="240" height="120" rx="14" fill="#ffffff" />
+          <rect x="100" y="160" width="220" height="90" rx="10" fill="url(#heroScreen)" />
+          <rect x="80" y="245" width="260" height="20" rx="10" fill="#f6d4c9" />
+
+          <!-- Screen top bar -->
+          <rect x="100" y="160" width="220" height="16" rx="10" fill="#ffe0d4" />
+          <circle cx="112" cy="168" r="3" fill="#ff7b6b" />
+          <circle cx="122" cy="168" r="3" fill="#ffb299" />
+          <circle cx="132" cy="168" r="3" fill="#f6d4c9" />
+
+          <!-- Essay lines -->
+          <g stroke="#f2c9ba" stroke-width="2" stroke-linecap="round">
+            <line x1="115" y1="188" x2="300" y2="188" />
+            <line x1="115" y1="202" x2="280" y2="202" />
+            <line x1="115" y1="216" x2="270" y2="216" />
+          </g>
+
+          <!-- Highlighted corrected line -->
+          <line
+            x1="115" y1="230" x2="255" y2="230"
+            stroke="#1396a5" stroke-width="3" stroke-linecap="round"
+          />
+
+          <!-- Floating “score” card -->
+          <rect x="260" y="70" width="110" height="70" rx="12" fill="#ffffff" stroke="#f6d4c9" />
+          <text x="275" y="97" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#ff5b4a">
+            Estimated band
+          </text>
+          <text x="275" y="118" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#1396a5">
+            C1 / C2
+          </text>
+
+          <!-- Floating “rules” card -->
+          <rect x="60" y="70" width="120" height="70" rx="12" fill="#ffffff" stroke="#f6d4c9" />
+          <text x="75" y="96" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#ff5b4a">
+            Course Book
+          </text>
+          <text x="75" y="118" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#444">
+            Unit 4 – Punctuation
+          </text>
+
+          <!-- Teal accent circle behind cards -->
+          <circle cx="210" cy="90" r="26" fill="#1396a5" opacity="0.22" />
+        </svg>
+      </div>
+    </div>
+
 
       <div class="landing-cta">
         <button class="btn-primary cta-button" data-start-app>
