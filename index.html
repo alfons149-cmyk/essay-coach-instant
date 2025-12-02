@@ -66,6 +66,37 @@
 </head>
 
 <body>
+
+  <!-- Landing page – shown first -->
+  <section id="landing-hero" class="landing">
+    <!-- your landing HTML here -->
+    <button class="cta-button" data-start-app>
+      Start practising my essays now
+    </button>
+  </section>
+
+  <!-- Existing app – hidden at first -->
+  <div id="app-root" hidden>
+    <!-- EVERYTHING that currently shows (Task prompt / Your essay / etc.) goes here -->
+  </div>
+
+  <script src="main.js"></script> <!-- or whatever your app’s script is -->
+  <script>
+    // Tiny toggle script
+    (function () {
+      const landing = document.getElementById("landing-hero");
+      const appRoot = document.getElementById("app-root");
+      const startBtn = document.querySelector("[data-start-app]");
+
+      if (!startBtn || !landing || !appRoot) return;
+
+      startBtn.addEventListener("click", () => {
+        landing.style.display = "none";
+        appRoot.hidden = false;
+      });
+    })();
+  </script>
+  
   <div class="app-container">
     <noscript>This app requires JavaScript to run.</noscript>
 
