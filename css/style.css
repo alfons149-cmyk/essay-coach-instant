@@ -1163,24 +1163,23 @@ body {
   z-index: 1;
   margin-top: 80px; /* so it doesn’t overlap the highest part of the wave */
 }
-/* Subtle radial gradient behind landing wave */
-#landing-hero {
+.landing {
   position: relative;
-  background: radial-gradient(
-      circle at 50% 20%,
-      rgba(255, 175, 145, 0.35) 0%,
-      rgba(255, 115, 115, 0.18) 35%,
-      rgba(255, 255, 255, 0) 75%
-  );
-}
-
-/* Make sure the wave sits above the gradient */
-#landing-hero .landing-wave {
-  position: relative;
-  z-index: 2;
-}
-
-#landing-hero .landing-inner {
-  position: relative;
-  z-index: 3; /* content stays above wave + gradient */
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem 4rem;
+  background:
+    radial-gradient(
+      circle at top center,
+      rgba(255, 140, 120, 0.35) 0,
+      rgba(255, 140, 120, 0) 55%
+    ),
+    linear-gradient(
+      180deg,
+      #fff7f4 0%,
+      #ffffff 45%,
+      #ffffff 100%
+    );
 }
