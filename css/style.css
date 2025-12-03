@@ -1361,3 +1361,60 @@ body {
   fill: #64748b;
 }
 
+/* --------------------------------------------------
+   Top bar inline logo
+-------------------------------------------------- */
+
+.app-title.app-title--logo {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+/* The SVG itself */
+.app-logo-svg {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+
+/* Badge (the square on the left) */
+.logo-badge-bg {
+  fill: #ff7b6b;              /* coral */
+}
+
+/* Pen / check elements inside the badge */
+.logo-badge-pen {
+  fill: #ffffff;              /* white so it “pops” */
+}
+
+/* Divider line between badge and text */
+.logo-divider {
+  stroke: #ffb7a4;
+  stroke-width: 1.4;
+}
+
+/* Main wordmark: “EssayCoach” */
+.logo-title-main {
+  fill: #ffffff;              /* white on dark top bar */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Subline: “Cambridge Writing Toolkit” */
+.logo-title-sub {
+  fill: #ffd7cc;              /* soft coral tint */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+}
+
+/* Small-screen tweaks */
+@media (max-width: 640px) {
+  .app-logo-svg {
+    height: 28px;
+  }
+  .logo-title-sub {
+    display: none;            /* keep it clean on mobile */
+  }
+}
