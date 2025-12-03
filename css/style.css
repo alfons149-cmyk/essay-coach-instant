@@ -1400,3 +1400,40 @@ body {
   background: #ff7b6b;      /* your coral */
   color: #ffffff;
 }
+/* --------------------------------------------------
+   Top bar logo (file-based SVG)
+-------------------------------------------------- */
+
+/* Reset any old hiding styles and show the logo */
+.topbar .app-title {
+  margin: 0;
+  padding: 0;
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  text-indent: 0;
+  clip: auto;
+  clip-path: none;
+  white-space: nowrap;
+}
+
+/* Make the title behave like a logo container */
+.app-title.app-title--logo {
+  display: flex;
+  align-items: center;
+}
+
+/* The SVG image itself */
+.app-title--logo .logo-inline {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+
+/* Small-screen tweaks */
+@media (max-width: 640px) {
+  .app-title--logo .logo-inline {
+    height: 28px;
+  }
+}
