@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 60" role="img">
+  <title>EssayCoach – Cambridge Writing Toolkit</title>
+
+  <!-- Left badge (coral square + pen icon) -->
+  <rect x="0" y="6" width="50" height="48" rx="10" fill="#ff7b6b"/>
+  <path d="M18 38 L26 18 L34 38 L30 40 L26 30 L22 40 Z" fill="#ffffff"/>
+  <rect x="25" y="40" width="3" height="7" fill="#ffffff"/>
+  <circle cx="26.5" cy="48" r="2" fill="#ffffff"/>
+
+  <!-- Divider line -->
+  <line x1="65" y1="10" x2="65" y2="50" stroke="#ffb7a4" stroke-width="2"/>
+
+  <!-- Wordmark: EssayCoach (outlined paths, no webfonts required) -->
+  <g fill="#ffffff" transform="translate(80, 0) scale(0.95)">
+    <path d="M5 40V20h17v3H8v5h12v3H8v6h14v3H5z"/>
+    <path d="M29 40c-5 0-8-3-8-7s3-7 8-7c5 0 8 3 8 7s-3 7-8 7zm0-11c-3 0-5 2-5 4s2 4 5 4 5-2 5-4-2-4-5-4z"/>
+    <path d="M48 40c-4 0-6-2-6-5 0-4 4-5 7-5h5v-1c0-2-2-3-4-3-2 0-4 1-5 2l-2-2c2-2 5-3 8-3 5 0 8 2 8 6v11h-3l-1-2c-1 1-3 2-5 2zm6-7h-5c-2 0-4 1-4 3s2 3 4 3c2 0 4-1 5-3v-3z"/>
+    <path d="M69 40V21h3v19h-3z"/>
+    <path d="M79 40V27h-4v-3h4v-2c0-4 2-7 7-7 2 0 4 1 5 2l-2 2c-1-1-2-1-3-1-3 0-4 2-4 4v2h13v16h-3V27h-10v13h-3z"/>
+    <path d="M118 40V20h3v17l10-9h4l-9 7 10 12h-4l-8-10-3 2v8h-3z"/>
+  </g>
+
+  <!-- Subline -->
+  <text
+    x="80"
+    y="52"
+    font-family="Inter, system-ui, -apple-system, sans-serif"
+    font-size="12"
+    fill="#ffd7cc"
+  >
+    Cambridge Writing Toolkit
+  </text>
+</svg>
