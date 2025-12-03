@@ -549,3 +549,31 @@ export const MISTAKE_MAP = Object.fromEntries(
 
 // (Optional) export helpers if other files need them
 export { KEYWORDS, UNIT_ANCHORS };
+
+// ---- Exported map: id → metadata ----
+export const MISTAKE_MAP = {};
+
+// Turn the array into an object, add keywords, and derive unit + sectionId
+RAW_MISTAKES.forEach((m) => {
+  const anchorMeta = m.anchor ? UNIT_ANCHORS[m.anchor] : null;
+
+  const unitFromAnchor = anchorMeta ? anchorMeta.unit : undefined;
+  const sectionId = anchorMeta ? anchorMeta.id : null;
+
+  MISTAKE_MAP[m.id] = {
+    id: m.id,
+    label: m.label || m.message,           // short title shown in UI
+    description: m.message,                // longer explanation
+    // unit used by feedback-ui.buildReaderLink(m)
+    unit: unitFromAnchor || m.unit || null,
+    // sectionId used for the #... part of the URL
+    sectionId,
+    // keep the original anchor key if you want it elsewhere
+    anchor: m.anchor || null,
+    // keywords for detection
+    keywords: KEYWORDS[m.id] || defaultKeywords(m.message),
+  };
+});
+
+// Optional: export the raw list too, if anything else uses it
+export const MISTAKE_LIST = RAW_MISTAKES;
