@@ -184,34 +184,38 @@
   <div id="app-root" class="app-container" hidden>
     <noscript>This app requires JavaScript to run.</noscript>
 
-<!-- Top bar -->
-<header class="topbar">
-  <div class="topbar-row">
+<!-- 🔹 App root – hidden until user clicks the CTA -->
+<div id="app-root" class="app-container" hidden>
+  <noscript>This app requires JavaScript to run.</noscript>
 
-    <h1 class="app-title app-title--logo" aria-label="EssayCoach – Cambridge Writing Trainer">
-      <img
-        src="assets/logo-essaycoach-horizontal.svg"
-        alt="EssayCoach – Cambridge Writing Trainer"
-        class="logo-inline"
-      >
-    </h1>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-row">
+      <h1 class="app-title app-title--logo" aria-label="EssayCoach – Cambridge Writing Trainer">
+        <img
+          src="assets/logo-essaycoach-horizontal.svg"
+          alt="EssayCoach – Cambridge Writing Trainer"
+          class="logo-inline"
+        >
+      </h1>
 
-    <div class="topbar-right">
-      <!-- Language buttons -->
-      <button class="btn-ghost" data-lang="en" title="English" data-i18n-title="tooltips.lang_en">EN</button>
-      <button class="btn-ghost" data-lang="es" title="Español" data-i18n-title="tooltips.lang_es">ES</button>
-      <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
+      <div class="topbar-right">
+        <!-- Language buttons -->
+        <button class="btn-ghost" data-lang="en" title="English" data-i18n-title="tooltips.lang_en">EN</button>
+        <button class="btn-ghost" data-lang="es" title="Español" data-i18n-title="tooltips.lang_es">ES</button>
+        <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
 
+        <!-- Open the Course Book -->
+        <button class="btn-ghost" id="btnCourseBook" type="button">
+          📘 <span data-i18n="labels.course_book">Read the Course Book</span>
+        </button>
 
-      <!-- Open the Course Book -->
-      <button class="btn-ghost" id="btnCourseBook" type="button">
-        📘 <span data-i18n="labels.course_book">Read the Course Book</span>
-      </button>
-
-      <!-- API/dev badges -->
-      <span class="badge" id="apiMode" style="margin-left:8px"></span>
-      <span class="badge" id="devBadge" style="display:none">DEV</span>
+        <!-- API/dev badges -->
+        <span class="badge" id="apiMode" style="margin-left:8px"></span>
+        <span class="badge" id="devBadge" style="display:none">DEV</span>
+      </div>
     </div>
+  </header>
   </div>
 </header>
 
