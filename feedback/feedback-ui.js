@@ -5,10 +5,13 @@ import { MISTAKE_MAP } from './mistake-map.js';
 /**
  * Build the reader link: book/reader.html?unit=11#u11-level2
  */
+// essay-coach-instant/feedback/feedback-ui.js
+
 function buildReaderLink(mistake) {
   if (!mistake.unit) return null;
 
-  let url = `book/reader.html?unit=${mistake.unit}`;
+  // correct path, based on your /assets/book/ structure
+  let url = `assets/book/reader.html?unit=${mistake.unit}`;
   if (mistake.sectionId) {
     url += `#${mistake.sectionId}`;
   }
