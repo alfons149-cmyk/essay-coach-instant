@@ -10,13 +10,13 @@ import { MISTAKE_MAP } from './mistake-map.js';
 function buildReaderLink(mistake) {
   if (!mistake.unit) return null;
 
-  // correct path, based on your /assets/book/ structure
   let url = `assets/book/reader.html?unit=${mistake.unit}`;
   if (mistake.sectionId) {
     url += `#${mistake.sectionId}`;
   }
   return url;
 }
+
 
 /**
  * Render a pretty feedback card into a container element.
