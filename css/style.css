@@ -1383,3 +1383,20 @@ body {
     height: 28px;
   }
 }
+/* Force the logo to show clearly in the top bar */
+.topbar .app-title--logo {
+  display: flex;
+  align-items: center;
+}
+
+.topbar .app-title--logo .logo-inline {
+  display: block !important;
+  height: 32px !important;
+  width: auto;
+}
+
+/* Optional: give the top bar a solid background so the white logo card stands out */
+.topbar {
+  background: #ff7b6b;      /* your coral */
+  color: #ffffff;
+}
