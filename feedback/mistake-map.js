@@ -340,326 +340,189 @@ const UNIT_ANCHORS = {
   u20_final:          { unit: 20, id: "u20-final",         title: "Final Reflection" }
 };
 
-// ---- RAW DATA (mistakes → units + anchors) ----
-const RAW_MISTAKES = [
-  // ===== UNIT 1 – sentence basics =====
-  {
-    id: "subjectVerbAgreement",
-    message: "Check your subject–verb agreement in this sentence.",
-    unit: 1,
-    anchor: "u1_clause"
+// ---- RAW MISTAKE DEFINITIONS ----
+// Each entry says which UNIT_ANCHORS key explains this mistake best.
+const RAW_MISTAKES = {
+  subjectVerbAgreement: {
+    label: "Subject–verb agreement",
+    description:
+      "Some verbs do not agree with their subjects in number or person. Review how subjects and verbs match.",
+    anchorKey: "u1_patterns", // sentence patterns & agreement
   },
-  {
-    id: "missingSubject",
-    message: "This sentence seems to be missing a clear subject.",
-    unit: 1,
-    anchor: "u1_sentence"
+  missingSubject: {
+    label: "Missing subject",
+    description:
+      "Some clauses are missing a clear subject. Every finite verb needs a subject.",
+    anchorKey: "u1_clause",
   },
-  {
-    id: "missingMainVerb",
-    message: "This group of words does not contain a main (finite) verb.",
-    unit: 1,
-    anchor: "u1_sentence"
+  missingMainVerb: {
+    label: "Missing main verb",
+    description:
+      "Some sentences have no main (finite) verb and are therefore incomplete.",
+    anchorKey: "u1_sentence",
   },
-  {
-    id: "sentenceFragment",
-    message: "This looks like a fragment, not a complete sentence.",
-    unit: 1,
-    anchor: "u1_sentence"
+  sentenceFragment: {
+    label: "Sentence fragments",
+    description:
+      "You have sentence fragments that cannot stand alone as full sentences.",
+    anchorKey: "u1_types_sentences",
   },
-  {
-    id: "dependentClauseAlone",
-    message: "A dependent clause cannot stand alone as a sentence.",
-    unit: 1,
-    anchor: "u1_types_clauses"
+  dependentClauseAlone: {
+    label: "Dependent clause alone",
+    description:
+      "A dependent clause with words like because, although or if cannot stand alone as a sentence.",
+    anchorKey: "u1_connectors",
   },
-  {
-    id: "tooManyClauses",
-    message: "There are too many clauses in one sentence; consider splitting it.",
-    unit: 1,
-    anchor: "u1_patterns"
+  wordOrder: {
+    label: "Word order",
+    description:
+      "Some sentences use an unnatural or incorrect word order.",
+    anchorKey: "u2_word_order",
   },
-
-  // ===== UNIT 2 – word order =====
-  {
-    id: "wordOrder",
-    message: "The word order in this sentence is unnatural in English.",
-    unit: 2,
-    anchor: "u2_word_order"
+  adverbFrequencyPosition: {
+    label: "Adverbs of frequency – position",
+    description:
+      "Review where to place adverbs of frequency (always, often, usually, sometimes, never) in the sentence.",
+    anchorKey: "u2_adverbs",
   },
-  {
-    id: "adverbFrequencyPosition",
-    message: "Check the position of the adverb of frequency.",
-    unit: 2,
-    anchor: "u2_adverbs"
+  timePlaceMannerOrder: {
+    label: "Time, place, and manner",
+    description:
+      "The order of time, place, and manner is sometimes unnatural. Review typical word order in English.",
+    anchorKey: "u2_time_place",
   },
-  {
-    id: "timePlaceMannerOrder",
-    message: "Time, place, and manner are in an unusual order here.",
-    unit: 2,
-    anchor: "u2_time_place"
+  splittingVerbObject: {
+    label: "Splitting verb and object",
+    description:
+      "Try not to separate the verb from its object unnecessarily.",
+    anchorKey: "u2_word_order",
   },
-  {
-    id: "questionWordOrder",
-    message: "The word order in this question is not correct for English.",
-    unit: 2,
-    anchor: "u2_questions"
+  questionWordOrder: {
+    label: "Question word order",
+    description:
+      "Check the word order in questions (auxiliary before subject).",
+    anchorKey: "u2_questions",
   },
-
-  // ===== UNIT 3 – sentence types / connectors =====
-  {
-    id: "overusingConnectors",
-    message: "You are using too many linking words; simplify the connections.",
-    unit: 3,
-    anchor: "u3_connectors"
+  runOnSentence: {
+    label: "Run-on sentences",
+    description:
+      "Two or more independent clauses are joined incorrectly (run-on sentence).",
+    anchorKey: "u3_sentence_types",
   },
-  {
-    id: "repeatingSameConnector",
-    message: "Try to use a wider range of linking words instead of repeating the same one.",
-    unit: 3,
-    anchor: "u3_connectors"
+  commaSplice: {
+    label: "Comma splice",
+    description:
+      "Two complete sentences are joined with only a comma. Review correct ways to join clauses.",
+    anchorKey: "u3_connectors",
   },
-
-  // ===== UNIT 4 – punctuation =====
-  {
-    id: "runOnSentence",
-    message: "This looks like a run-on sentence; you may need a full stop or connector.",
-    unit: 4,
-    anchor: "u4_full_stops"
+  missingFullStop: {
+    label: "Missing full stop",
+    description:
+      "You sometimes join two sentences without a full stop.",
+    anchorKey: "u3_sentence_types",
   },
-  {
-    id: "commaSplice",
-    message: "Two complete sentences are joined with only a comma.",
-    unit: 4,
-    anchor: "u4_mistakes"
+  articleError: {
+    label: "Articles – a/an/the",
+    description:
+      "Check your use of a, an and the with singular and plural nouns.",
+    // TODO: point this to your real articles section anchor if you have one
+    anchorKey: "u3_summary",
   },
-  {
-    id: "missingFullStop",
-    message: "You may need a full stop here to separate two sentences.",
-    unit: 4,
-    anchor: "u4_full_stops"
+  uncountablePlural: {
+    label: "Uncountable nouns in plural",
+    description:
+      "Some uncountable nouns (information, advice, etc.) are incorrectly used in the plural.",
+    // TODO: update anchorKey if you have a dedicated uncountable-nouns section
+    anchorKey: "u3_summary",
   },
-
-  // ===== UNIT 5 – paragraph basics =====
-  {
-    id: "noTopicSentence",
-    message: "This paragraph would benefit from a clearer topic sentence.",
-    unit: 5,
-    anchor: "u5_topic"
+  ifClauseForm: {
+    label: "If-clauses and conditionals",
+    description:
+      "Review the forms of common conditional sentences (if-clauses).",
+    anchorKey: "u3_sentence_types",
   },
-
-  // ===== UNIT 6 – cohesion =====
-  {
-    id: "cohesionIssue",
-    message: "The connection between these sentences is not completely clear.",
-    unit: 6,
-    anchor: "u6_cohesion"
+  relativePronounError: {
+    label: "Relative pronouns",
+    description:
+      "Review who, which and that in relative clauses.",
+    anchorKey: "u3_connectors",
   },
-
-  // ===== UNIT 7 – intros & conclusions =====
-  {
-    id: "weakIntroduction",
-    message: "Your introduction could be clearer about the topic and your position.",
-    unit: 7,
-    anchor: "u7_intro"
+  spellingCommonWord: {
+    label: "Spelling of common academic words",
+    description:
+      "There are spelling mistakes in common academic or high-frequency words.",
+    anchorKey: "u1_practice",
   },
-  {
-    id: "missingConclusion",
-    message: "Your essay would benefit from a clearer conclusion.",
-    unit: 7,
-    anchor: "u7_conclusion"
+  tooInformal: {
+    label: "Too informal",
+    description:
+      "Some expressions are too informal for this type of writing.",
+    anchorKey: "u3_final",
   },
-
-  // ===== UNIT 8/9 – development / examples =====
-  {
-    id: "insufficientDevelopment",
-    message: "This idea is not fully developed; consider adding an explanation or example.",
-    unit: 9,
-    anchor: "u9_development"
+  contractionsInFormalWriting: {
+    label: "Contractions in formal writing",
+    description:
+      "Avoid contractions (don't, can't, I'm, etc.) in formal essays.",
+    anchorKey: "u3_final",
   },
-
-  // ===== UNIT 10 – B2 planning =====
-  {
-    id: "noPlan",
-    message: "The structure feels unclear; planning your main points first would help.",
-    unit: 10,
-    anchor: "u10_plan"
+  overFormal: {
+    label: "Overly formal",
+    description:
+      "Some phrases sound overly formal and unnatural for modern academic writing.",
+    anchorKey: "u3_final",
   },
-
-  // ===== UNIT 11 – B2 editing =====
-  {
-    id: "redundantPhrases",
-    message: "There are some redundant words that you could remove to tighten the sentence.",
-    unit: 11,
-    anchor: "u11_style"
+  emotionalLanguage: {
+    label: "Emotional language",
+    description:
+      "Try to avoid very emotional or exaggerated language in academic writing.",
+    anchorKey: "u3_final",
   },
-  {
-    id: "paddingExpressions",
-    message: "Try to replace this long expression with something more concise.",
-    unit: 11,
-    anchor: "u11_style"
+  veryPlusAdjective: {
+    label: "Very + adjective",
+    description:
+      "Use a more precise adjective instead of “very + basic adjective”.",
+    anchorKey: "u3_final",
   },
-
-  // ===== UNIT 12 – confidence & timing / length =====
-  {
-    id: "underLength",
-    message: "Your answer seems under the recommended word limit.",
-    unit: 12,
-    anchor: "u12_underlength"
+  vagueVocabulary: {
+    label: "Vague vocabulary",
+    description:
+      "Replace vague words (things, stuff, nice, a lot of, etc.) with more precise vocabulary.",
+    anchorKey: "u3_summary",
   },
-  {
-    id: "overLength",
-    message: "Your answer is longer than necessary; try to stay within the limit.",
-    unit: 12,
-    anchor: "u12_overlength"
+  redundantPhrases: {
+    label: "Redundant phrases",
+    description:
+      "Some expressions repeat the same idea and can be removed.",
+    anchorKey: "u3_summary",
   },
-
-  // ===== UNIT 13 – C1 essay task =====
-  {
-    id: "onlyOneOpinion",
-    message: "You need to discuss both given opinions in a C1 essay task.",
-    unit: 13,
-    anchor: "u13_overview"
+  paddingExpressions: {
+    label: "Padding expressions",
+    description:
+      "Expressions like “due to the fact that” make sentences longer without adding meaning.",
+    anchorKey: "u3_summary",
   },
-
-  // ===== UNIT 14 – C1 planning =====
-  {
-    id: "unbalancedArguments",
-    message: "One side of the argument is much more developed than the other.",
-    unit: 14,
-    anchor: "u14_balance"
+  overusingConnectors: {
+    label: "Too many connectors",
+    description:
+      "You use too many linking words. Choose only the ones you really need.",
+    anchorKey: "u3_connectors",
   },
-  {
-    id: "noEvaluation",
-    message: "At C1 level, you should not only describe ideas but also evaluate them.",
-    unit: 14,
-    anchor: "u14_evaluation"
+  repeatingSameConnector: {
+    label: "Repeating the same connector",
+    description:
+      "Use a wider range of linking words instead of repeating the same one.",
+    anchorKey: "u3_connectors",
   },
-
-  // ===== UNIT 15 – C1 paragraphs / linking =====
-  {
-    id: "weakLinking",
-    message: "The link between these paragraphs could be smoother.",
-    unit: 15,
-    anchor: "u15_linking"
+  underLength: {
+    label: "Too short",
+    description:
+      "Your answer is under the word limit. Aim for the full length.",
+    anchorKey: "u1_final",
   },
-  {
-    id: "paragraphDepth",
-    message: "This paragraph could go deeper into explanation or evaluation.",
-    unit: 15,
-    anchor: "u15_paragraphs"
+  overLength: {
+    label: "Too long",
+    description:
+      "Your answer is over the word limit. Try to be more concise.",
+    anchorKey: "u1_final",
   },
-
-  // ===== UNIT 16 – style & tone =====
-  {
-    id: "tooInformal",
-    message: "This expression is too informal for a Cambridge essay.",
-    unit: 16,
-    anchor: "u16_formality"
-  },
-  {
-    id: "contractionsInFormalWriting",
-    message: "Avoid contractions in formal exam writing.",
-    unit: 16,
-    anchor: "u16_formality"
-  },
-  {
-    id: "overFormal",
-    message: "The language here sounds overly formal or unnatural.",
-    unit: 16,
-    anchor: "u16_style"
-  },
-  {
-    id: "emotionalLanguage",
-    message: "Try to use more neutral, objective language instead of emotional words.",
-    unit: 16,
-    anchor: "u16_style"
-  },
-  {
-    id: "veryPlusAdjective",
-    message: "Instead of 'very + adjective', consider using a more precise word.",
-    unit: 16,
-    anchor: "u16_style"
-  },
-  {
-    id: "vagueVocabulary",
-    message: "This word is vague; you could choose something more specific.",
-    unit: 16,
-    anchor: "u16_style"
-  },
-
-  // ===== UNIT 17 – advanced editing =====
-  {
-    id: "wordySentence",
-    message: "This sentence could be shorter and clearer.",
-    unit: 17,
-    anchor: "u17_sentence"
-  },
-  {
-    id: "styleInconsistency",
-    message: "The tone in this sentence does not match the rest of the essay.",
-    unit: 17,
-    anchor: "u17_word"
-  },
-
-  // ===== UNIT 18 – academic voice =====
-  {
-    id: "overPersonal",
-    message: "Academic voice usually avoids overly personal or emotional phrasing.",
-    unit: 18,
-    anchor: "u18_voice"
-  },
-
-  // ===== UNIT 19 – C2 essay task =====
-  {
-    id: "overSummarising",
-    message: "At C2 level, you should not only summarise but also evaluate the texts.",
-    unit: 19,
-    anchor: "u19_task"
-  },
-
-  // ===== UNIT 20 – refinement / elegance =====
-  {
-    id: "heavyStyle",
-    message: "This part feels heavy; you could simplify the sentence for elegance.",
-    unit: 20,
-    anchor: "u20_elegance"
-  }
-];
-
-// ---- Helper: build a Course Book URL for a mistake ----
-function getCourseBookLink(mistakeOrId) {
-  const id = typeof mistakeOrId === "string" ? mistakeOrId : mistakeOrId.id;
-  const meta = RAW_MISTAKES.find((m) => m.id === id);
-  if (!meta) {
-    // fallback: just open the book index
-    return "assets/book/index.html";
-  }
-
-  const anchorMeta = meta.anchor && UNIT_ANCHORS[meta.anchor];
-  if (!anchorMeta) {
-    // fallback: open the correct unit but no section anchor
-    const unit = meta.unit || 1;
-    return `assets/book/reader.html?unit=${unit}`;
-  }
-
-  return `assets/book/reader.html?unit=${anchorMeta.unit}#${anchorMeta.id}`;
-}
-
-// ---- Exported map: id → metadata ----
-export const MISTAKE_MAP = {};
-
-// Turn the array into an object, add keywords, keep unit + anchor
-RAW_MISTAKES.forEach((m) => {
-  MISTAKE_MAP[m.id] = {
-    id: m.id,
-    label: m.label || m.message,          // short title
-    description: m.message,               // longer explanation
-    unit: m.unit,
-    anchor: m.anchor || null,             // e.g. "u1_clause"
-    keywords: KEYWORDS[m.id] || defaultKeywords(m.message),
-  };
-});
-
-// Optional: export the raw list too
-export const MISTAKE_LIST = RAW_MISTAKES;
+};
