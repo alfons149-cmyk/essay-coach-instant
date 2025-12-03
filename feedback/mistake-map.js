@@ -526,3 +526,26 @@ const RAW_MISTAKES = {
     anchorKey: "u1_final",
   },
 };
+// ---- BUILD FINAL MISTAKE_MAP (exported) ----
+
+export const MISTAKE_MAP = Object.fromEntries(
+  Object.entries(RAW_MISTAKES).map(([id, cfg]) => {
+    const anchor = cfg.anchorKey ? UNIT_ANCHORS[cfg.anchorKey] : null;
+
+    return [
+      id,
+      {
+        id,
+        label: cfg.label,
+        description: cfg.description,
+        unit: anchor ? anchor.unit : undefined,
+        sectionId: anchor ? anchor.id : undefined,
+        // keywords used by the detection engine (fall back to defaults)
+        keywords: KEYWORDS[id] || defaultKeywords(cfg.description),
+      },
+    ];
+  })
+);
+
+// (Optional) export helpers if other files need them
+export { KEYWORDS, UNIT_ANCHORS };
