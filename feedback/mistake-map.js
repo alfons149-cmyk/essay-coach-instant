@@ -211,7 +211,7 @@ const UNIT_ANCHORS = {
   u2_time_place:      { unit: 2, id: "u2-time-place",      title: "Time, Place, and Manner" },
   u2_questions:       { unit: 2, id: "u2-questions",       title: "Question Word Order" },
   u2_final:           { unit: 2, id: "u2-final",           title: "Final Thoughts" },
-  u2_summary:         { unit: 2, id: "u2-summary",         title: "Summary & Quick Reference" }
+  u2_summary:         { unit: 2, id: "u2-summary",         title: "Summary & Quick Reference" },
 
 
   // ===== UNIT 3 – Types of Sentences and Connectors =====
@@ -219,7 +219,7 @@ const UNIT_ANCHORS = {
   u3_linking:         { unit: 3, id: "u3-linking",         title: "Basic Linking Words" },
   u3_connectors:      { unit: 3, id: "u3-connectors",      title: "Using Connectors" },
   u3_final:           { unit: 3, id: "u3-final",           title: "Final Thoughts" },
-  u3_summary:         { unit: 3, id: "u3-summary",         title: "Summary & Quick Reference" }
+  u3_summary:         { unit: 3, id: "u3-summary",         title: "Summary & Quick Reference" },
 
 
   // ===== UNIT 4 – Punctuation and Sentence Flow =====
@@ -231,7 +231,7 @@ const UNIT_ANCHORS = {
   u4_mistakes:        { unit: 4, id: "u4-mistakes",        title: "Common Punctuation Mistakes" },
   u4_practice:        { unit: 4, id: "u4-practice",        title: "Practice: Fix the Punctuation" },
   u4_final:           { unit: 4, id: "u4-final",           title: "Final Thoughts" },
-  u4_summary:         { unit: 4, id: "u4-summary",         title: "Summary & Quick Reference" }
+  u4_summary:         { unit: 4, id: "u4-summary",         title: "Summary & Quick Reference" },
 
 
   // ===== UNIT 5 – (Paragraph basics / topic sentences etc.) =====
@@ -239,7 +239,7 @@ const UNIT_ANCHORS = {
   u5_topic:           { unit: 5, id: "u5-topic-sentences", title: "Topic Sentences" },
   u5_support:         { unit: 5, id: "u5-support",         title: "Support and Examples" },
   u5_final:           { unit: 5, id: "u5-final",           title: "Final Thoughts" },
-  u5_summary:         { unit: 5, id: "u5-summary",         title: "Summary & Quick Reference" }
+  u5_summary:         { unit: 5, id: "u5-summary",         title: "Summary & Quick Reference" },
 
 
   // ===== UNIT 6 – Cohesion and Coherence =====
@@ -247,14 +247,14 @@ const UNIT_ANCHORS = {
   u6_reference:       { unit: 6, id: "u6-reference",       title: "Reference and Substitution" },
   u6_paragraph_flow:  { unit: 6, id: "u6-flow",            title: "Paragraph Flow" },
   u6_final:           { unit: 6, id: "u6-final",           title: "Final Thoughts" },
-  u6_summary:         { unit: 6, id: "u6-summary",         title: "Summary & Quick Reference" }
+  u6_summary:         { unit: 6, id: "u6-summary",         title: "Summary & Quick Reference" },
 
 
   // ===== UNIT 7 – Introductions & Conclusions (for B2) =====
   u7_intro:           { unit: 7, id: "u7-intro",           title: "Writing Introductions" },
   u7_conclusion:      { unit: 7, id: "u7-conclusion",      title: "Writing Conclusions" },
   u7_final:           { unit: 7, id: "u7-final",           title: "Final Thoughts" },
-  u7_summary:         { unit: 7, id: "u7-summary",         title: "Summary & Quick Reference" }
+  u7_summary:         { unit: 7, id: "u7-summary",         title: "Summary & Quick Reference" },
 
 
   // ===== UNIT 8 – Argument & Opinion =====
