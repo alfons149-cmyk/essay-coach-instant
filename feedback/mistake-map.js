@@ -213,14 +213,12 @@ const UNIT_ANCHORS = {
   u2_final:           { unit: 2, id: "u2-final",           title: "Final Thoughts" },
   u2_summary:         { unit: 2, id: "u2-summary",         title: "Summary & Quick Reference" },
 
-
   // ===== UNIT 3 – Types of Sentences and Connectors =====
   u3_sentence_types:  { unit: 3, id: "u3-sentence-types",  title: "Sentence Types" },
   u3_linking:         { unit: 3, id: "u3-linking",         title: "Basic Linking Words" },
   u3_connectors:      { unit: 3, id: "u3-connectors",      title: "Using Connectors" },
   u3_final:           { unit: 3, id: "u3-final",           title: "Final Thoughts" },
   u3_summary:         { unit: 3, id: "u3-summary",         title: "Summary & Quick Reference" },
-
 
   // ===== UNIT 4 – Punctuation and Sentence Flow =====
   u4_why_punctuation: { unit: 4, id: "u4-why-punctuation", title: "Why Punctuation Matters" },
@@ -233,14 +231,12 @@ const UNIT_ANCHORS = {
   u4_final:           { unit: 4, id: "u4-final",           title: "Final Thoughts" },
   u4_summary:         { unit: 4, id: "u4-summary",         title: "Summary & Quick Reference" },
 
-
   // ===== UNIT 5 – (Paragraph basics / topic sentences etc.) =====
   u5_paragraphs:      { unit: 5, id: "u5-paragraphs",      title: "What Is a Paragraph?" },
   u5_topic:           { unit: 5, id: "u5-topic-sentences", title: "Topic Sentences" },
   u5_support:         { unit: 5, id: "u5-support",         title: "Support and Examples" },
   u5_final:           { unit: 5, id: "u5-final",           title: "Final Thoughts" },
   u5_summary:         { unit: 5, id: "u5-summary",         title: "Summary & Quick Reference" },
-
 
   // ===== UNIT 6 – Cohesion and Coherence =====
   u6_cohesion:        { unit: 6, id: "u6-cohesion",        title: "Cohesion Devices" },
@@ -249,20 +245,17 @@ const UNIT_ANCHORS = {
   u6_final:           { unit: 6, id: "u6-final",           title: "Final Thoughts" },
   u6_summary:         { unit: 6, id: "u6-summary",         title: "Summary & Quick Reference" },
 
-
   // ===== UNIT 7 – Introductions & Conclusions (for B2) =====
   u7_intro:           { unit: 7, id: "u7-intro",           title: "Writing Introductions" },
   u7_conclusion:      { unit: 7, id: "u7-conclusion",      title: "Writing Conclusions" },
   u7_final:           { unit: 7, id: "u7-final",           title: "Final Thoughts" },
   u7_summary:         { unit: 7, id: "u7-summary",         title: "Summary & Quick Reference" },
 
-
   // ===== UNIT 8 – Argument & Opinion =====
   u8_opinion:         { unit: 8, id: "u8-opinion",         title: "Stating Your Opinion" },
   u8_arguments:       { unit: 8, id: "u8-arguments",       title: "Developing Arguments" },
   u8_final:           { unit: 8, id: "u8-final",           title: "Final Thoughts" },
   u8_summary:         { unit: 8, id: "u8-summary",         title: "Summary & Quick Reference" },
-
 
   // ===== UNIT 9 – Examples & Development =====
   u9_examples:        { unit: 9, id: "u9-examples",        title: "Using Examples" },
@@ -337,8 +330,9 @@ const UNIT_ANCHORS = {
   u20_depth:          { unit: 20, id: "u20-depth",         title: "Depth and Nuance" },
   u20_style:          { unit: 20, id: "u20-style",         title: "Refined Style and Rhythm" },
   u20_model:          { unit: 20, id: "u20-model",         title: "Refined C2 Example" },
-  u20_final:          { unit: 20, id: "u20-final",         title: "Final Reflection" }
+  u20_final:          { unit: 20, id: "u20-final",         title: "Final Reflection" },
 };
+
 
 // ---- RAW MISTAKE DEFINITIONS ----
 // Each entry says which UNIT_ANCHORS key explains this mistake best.
