@@ -1305,7 +1305,7 @@ body {
   opacity: 0.9;
 }
 
-/* Mobile layout */
+/* Mobile layout: landing */
 @media (max-width: 768px) {
   .landing-grid {
     grid-template-columns: 1fr;
@@ -1313,7 +1313,7 @@ body {
   }
 
   .landing-illustration {
-    order: -1; /* show the SVG above the text on mobile, or remove if you prefer */
+    order: -1;
   }
 
   .landing {
@@ -1328,7 +1328,7 @@ body {
 .app-title--logo {
   display: flex;
   align-items: center;
-  margin: 0;               /* remove default h1 margin */
+  margin: 0;
 }
 
 .app-title--logo .logo-inline {
@@ -1337,7 +1337,6 @@ body {
   display: block;
 }
 
-/* Small-screen tweaks */
 @media (max-width: 640px) {
   .app-title--logo .logo-inline {
     height: 28px;
