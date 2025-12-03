@@ -1320,46 +1320,7 @@ body {
     padding-top: 2.5rem;
   }
 }
-/* Topbar logo layout */
-.app-title--logo {
-  display: flex;
-  align-items: center;
-  margin: 0;              /* remove default h1 margin */
-}
 
-/* Make the inline SVG behave like a normal logo image */
-.app-title--logo .app-logo-svg {
-  height: 32px;
-  width: auto;
-  display: block;
-}
-
-/* Colours and typography for the SVG logo */
-.logo-badge-bg {
-  fill: #0f172a;          /* dark navy badge */
-}
-
-.logo-badge-pen {
-  fill: #f97316;          /* orange pen shape */
-}
-
-.logo-divider {
-  stroke: rgba(148, 163, 184, 0.7);
-  stroke-width: 1.2;
-}
-
-.logo-title-main {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  fill: #0f172a;
-}
-
-.logo-title-sub {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 11px;
-  fill: #64748b;
-}
 /* --------------------------------------------------
    Top bar logo (file-based SVG)
 -------------------------------------------------- */
