@@ -1360,15 +1360,14 @@ body {
   font-size: 11px;
   fill: #64748b;
 }
-
 /* --------------------------------------------------
    Top bar logo (file-based SVG)
 -------------------------------------------------- */
 
-.app-title.app-title--logo {
+.app-title--logo {
   display: flex;
   align-items: center;
-  margin: 0;
+  margin: 0;               /* remove default h1 margin */
 }
 
 .app-title--logo .logo-inline {
@@ -1382,10 +1381,4 @@ body {
   .app-title--logo .logo-inline {
     height: 28px;
   }
-}
-
-/* Optional: coral top bar */
-.topbar {
-  background: #ff7b6b;  /* coral */
-  color: #ffffff;
 }
