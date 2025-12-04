@@ -139,3 +139,14 @@ window.FeedbackUI.renderFeedbackCard = function (mistakeIds) {
   if (!container) return;
   renderFeedbackCard(mistakeIds, container);
 };
+// existing code…
+window.FeedbackUI.renderFeedbackCard = function (mistakeIds) {
+  const container = document.querySelector('#feedback-card');
+  if (!container) return;
+  renderFeedbackCard(mistakeIds, container);
+};
+
+// 👇 add this for debugging
+if (typeof window !== 'undefined') {
+  window.EC_BUILD_READER_LINK = buildReaderLink;
+}
