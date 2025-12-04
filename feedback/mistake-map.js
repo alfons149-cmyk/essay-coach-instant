@@ -655,3 +655,8 @@ RAW_MISTAKES.forEach((m) => {
 
 export const MISTAKE_LIST = RAW_MISTAKES;
 export { UNIT_ANCHORS, KEYWORDS };
+
+// Debug helper: expose MISTAKE_MAP on window so we can inspect it in the console
+if (typeof window !== 'undefined') {
+  window.EC_MISTAKE_MAP = MISTAKE_MAP;
+}
