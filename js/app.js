@@ -47,8 +47,14 @@
         window.FeedbackUI &&
         typeof window.FeedbackUI.renderFeedbackCard === "function"
       ) {
-        const mistakeIds = window.FeedbackEngine.detectMistakes(plainText);
-        window.FeedbackUI.renderFeedbackCard(mistakeIds);
+        // essayText = the student’s full answer as a string
+const result = FeedbackEngine.detectMistakesWithLocations(feedbackText, essayText);
+
+// result.ids → ["tooManyClauses", "noTopicSentence", ...]
+// result.locationsById → { tooManyClauses: 1, noTopicSentence: 2, ... }
+
+FeedbackUI.renderFeedbackCardWithLocations(result);
+
       }
     } catch (err) {
       console.warn("[FeedbackUI] Could not render Course Book help card:", err);
