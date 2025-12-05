@@ -86,6 +86,20 @@ export function renderFeedbackCard(mistakeIds, containerEl, locationsById = null
 
     main.appendChild(label);
     main.appendChild(desc);
+
+        // Optional: show paragraph location if we know it
+    const paraIndex =
+      locationsById && typeof locationsById[id] === 'number'
+        ? locationsById[id]
+        : null;
+
+    if (paraIndex != null) {
+      const location = document.createElement('p');
+      location.className = 'ec-feedback-item__location';
+      location.textContent = `This refers to paragraph ${paraIndex} of your essay.`;
+      main.appendChild(location);
+    }
+
     item.appendChild(main);
 
     const linkUrl = buildReaderLink(m);
