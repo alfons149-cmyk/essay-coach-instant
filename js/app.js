@@ -48,11 +48,8 @@ if (
   typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
 ) {
   // NEW: use paragraph-aware detection + UI
-  const result = window.FeedbackEngine.detectMistakesWithLocations(
-    feedbackText,
-    essayText
-  );
-  window.FeedbackUI.renderFeedbackCardWithLocations(result);
+  const mistakeIds = FeedbackEngine.detectMistakes(feedbackText);
+FeedbackUI.renderFeedbackCard(mistakeIds);
 
 } else if (
   window.FeedbackEngine &&
