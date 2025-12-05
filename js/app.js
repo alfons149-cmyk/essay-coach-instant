@@ -27,45 +27,49 @@
   };
 
     // ---- Course Book helper bridge ----
-  function setFeedbackAndCourseHelp(feedbackHtml) {
-    if (!el.feedback) return;
+function setFeedbackAndCourseHelp(feedbackHtml) {
+  if (!el.feedback) return;
 
-    // 1) Show feedback in the normal panel
-    el.feedback.innerHTML = feedbackHtml || "—";
+  // 1) Show feedback in the normal panel
+  el.feedback.innerHTML = feedbackHtml || "—";
 
-    // 2) Trigger the Course Book help card, if the engine + UI exist
-    try {
-      const plainText =
-        el.feedback.innerText || el.feedback.textContent || "";
+  // 2) Trigger the Course Book help card, if the engine + UI exist
+  try {
+    // Plain text version of the feedback panel
+    const feedbackText =
+      el.feedback.innerText || el.feedback.textContent || "";
 
-      // feedbackText = text of the corrections / feedback
-// essayText    = the student’s full answer as a string
+    // Full essay text (what the student wrote)
+    const essayText = el.essay ? (el.essay.value || "") : "";
 
-if (
-  window.FeedbackEngine &&
-  typeof window.FeedbackEngine.detectMistakesWithLocations === "function" &&
-  window.FeedbackUI &&
-  typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
-) {
-  // NEW: use paragraph-aware detection + UI
-  const mistakeIds = FeedbackEngine.detectMistakes(feedbackText);
-FeedbackUI.renderFeedbackCard(mistakeIds);
+    // Prefer the new, paragraph-aware API if available
+    if (
+      window.FeedbackEngine &&
+      typeof window.FeedbackEngine.detectMistakesWithLocations === "function" &&
+      window.FeedbackUI &&
+      typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
+    ) {
+      const result = window.FeedbackEngine.detectMistakesWithLocations(
+        feedbackText,
+        essayText
+      );
+      window.FeedbackUI.renderFeedbackCardWithLocations(result);
 
-} else if (
-  window.FeedbackEngine &&
-  typeof window.FeedbackEngine.detectMistakes === "function" &&
-  window.FeedbackUI &&
-  typeof window.FeedbackUI.renderFeedbackCard === "function"
-) {
-  // Fallback: old behaviour (no paragraph numbers)
-  const ids = window.FeedbackEngine.detectMistakes(feedbackText);
-  window.FeedbackUI.renderFeedbackCard(ids);
+    // Fallback: old behaviour (no paragraph numbers)
+    } else if (
+      window.FeedbackEngine &&
+      typeof window.FeedbackEngine.detectMistakes === "function" &&
+      window.FeedbackUI &&
+      typeof window.FeedbackUI.renderFeedbackCard === "function"
+    ) {
+      const ids = window.FeedbackEngine.detectMistakes(feedbackText);
+      window.FeedbackUI.renderFeedbackCard(ids);
+    }
+  } catch (err) {
+    console.error("[EC] setFeedbackAndCourseHelp error:", err);
+  }
 }
 
-    } catch (err) {
-      console.warn("[FeedbackUI] Could not render Course Book help card:", err);
-    }
-  }
 
 
   // ---- Corrector (live API or mock) ----
