@@ -38,28 +38,27 @@
     <div class="reader-layout">
       <!-- Left side: unit buttons -->
       <nav class="reader-nav">
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="1">Unit 1</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="2">Unit 2</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="3">Unit 3</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="4">Unit 4</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="5">Unit 5</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="6">Unit 6</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="7">Unit 7</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="8">Unit 8</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="9">Unit 9</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="10">Unit 10</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="11">Unit 11</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="12">Unit 12</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="13">Unit 13</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="14">Unit 14</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="15">Unit 15</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="16">Unit 16</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="17">Unit 17</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="18">Unit 18</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="19">Unit 19</button>
-  <button type="button" class="unit-pill reader-unit-btn" data-unit="20">Unit 20</button>
-</nav>
-
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="1">Unit 1</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="2">Unit 2</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="3">Unit 3</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="4">Unit 4</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="5">Unit 5</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="6">Unit 6</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="7">Unit 7</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="8">Unit 8</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="9">Unit 9</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="10">Unit 10</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="11">Unit 11</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="12">Unit 12</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="13">Unit 13</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="14">Unit 14</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="15">Unit 15</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="16">Unit 16</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="17">Unit 17</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="18">Unit 18</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="19">Unit 19</button>
+        <button type="button" class="unit-pill reader-unit-btn" data-unit="20">Unit 20</button>
+      </nav>
 
       <!-- Right side: unit content gets loaded here -->
       <section id="unit-content" class="reader-main">
@@ -68,170 +67,75 @@
     </div>
   </main>
 
+  <!-- Single, clean script that matches the HTML above -->
   <script>
-    
     (function () {
-  const contentEl = document.getElementById('unit-content');
-  const buttons = Array.from(document.querySelectorAll('.reader-unit-btn'));
+      const contentEl = document.getElementById('unit-content');
+      const buttons = Array.from(document.querySelectorAll('.reader-unit-btn'));
 
-  function getUnitFromURL() {
-    const qs = new URLSearchParams(location.search);
-    const unitParam = qs.get('unit');
-    return unitParam || 'home';   // default: landing page
-  }
-
-  function setActiveButton(unitId) {
-    buttons.forEach(btn => {
-      btn.classList.toggle('is-active', btn.dataset.unit === String(unitId));
-    });
-  }
-
-  async function loadUnit(unitId) {
-    setActiveButton(unitId);
-    contentEl.innerHTML = '<p>Loading…</p>';
-
-    try {
-      let url;
-
-      if (unitId === 'home') {
-        url = 'units/home.html';      // your new landing page
-      } else {
-        const fileId = String(unitId).padStart(2, '0');
-        url = `units/unit${fileId}.html`;
+      function getUnitFromURL() {
+        const qs = new URLSearchParams(window.location.search);
+        const unitParam = qs.get('unit');
+        const unitNum = unitParam ? Number(unitParam) : NaN;
+        return Number.isFinite(unitNum) && unitNum >= 1 && unitNum <= 20
+          ? String(unitNum)
+          : null;
       }
 
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Unit not found');
-      const html = await response.text();
-      contentEl.innerHTML = html;
-
-      // Update URL
-      const qs = new URLSearchParams(location.search);
-      if (unitId === 'home') {
-        qs.delete('unit');
-        history.replaceState(null, '', `${location.pathname}`);
-      } else {
-        qs.set('unit', unitId);
-        history.replaceState(null, '', `${location.pathname}?${qs.toString()}`);
+      function setActiveButton(unitId) {
+        buttons.forEach(btn => {
+          btn.classList.toggle('is-active', btn.dataset.unit === String(unitId));
+        });
       }
-    } catch (err) {
-      console.error(err);
-      contentEl.innerHTML = '<p>Sorry, this content could not be loaded.</p>';
-    }
-  }
-
-  // Button clicks
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => loadUnit(btn.dataset.unit));
-  });
-
-  // Initial load
-  const initialUnit = getUnitFromURL();
-  loadUnit(initialUnit);
-})();
-
 
       async function loadUnit(unitId) {
+        if (!contentEl) return;
+
         setActiveButton(unitId);
-        contentEl.innerHTML = '<p>Loading unit…</p>';
+        contentEl.innerHTML = '<p>Loading…</p>';
 
         try {
-          const fileId = String(unitId).padStart(2, '0'); // 1 → "01", 2 → "02"
-          // Units live in /book/units/unit01.html, unit02.html, etc.
-          const response = await fetch(`units/unit${fileId}.html`);
+          const fileId = String(unitId).padStart(2, '0'); // 1 → "01"
+          const url = `units/unit${fileId}.html`;         // relative to /assets/book/reader.html
+
+          const response = await fetch(url);
           if (!response.ok) throw new Error('Unit not found');
+
           const html = await response.text();
           contentEl.innerHTML = html;
 
-          // Update URL (reader.html?unit=2) without reloading
-          const qs = new URLSearchParams(location.search);
+          // If there is a hash (e.g. #u16-formality), scroll to that section
+          if (window.location.hash) {
+            const target = contentEl.querySelector(window.location.hash);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+
+          // Update URL (reader.html?unit=2#u2-...)
+          const qs = new URLSearchParams(window.location.search);
           qs.set('unit', unitId);
-          history.replaceState(null, '', `${location.pathname}?${qs.toString()}`);
+          const newUrl = `${window.location.pathname}?${qs.toString()}${window.location.hash}`;
+          history.replaceState(null, '', newUrl);
         } catch (err) {
           console.error(err);
-          contentEl.innerHTML = '<p>Sorry, this unit could not be loaded.</p>';
+          contentEl.innerHTML = '<p>Sorry, this content could not be loaded.</p>';
         }
       }
 
       // Button clicks
       buttons.forEach(btn => {
-        btn.addEventListener('click', () => loadUnit(btn.dataset.unit));
+        btn.addEventListener('click', () => {
+          const unit = btn.dataset.unit;
+          loadUnit(unit);
+        });
       });
 
-      // Initial load from ?unit=… in URL
-      const initialUnit = getUnitFromURL();
+      // Initial load (from ?unit=… in URL, e.g. ?unit=16)
+      const initialUnit = getUnitFromURL() || '1'; // default to Unit 1 if none
       loadUnit(initialUnit);
     })();
   </script>
-
-  <script>
-  // Map unit numbers to the HTML file inside /assets/book/units/
-  const UNIT_FILES = {
-    1:  'units/unit01.html',
-    2:  'units/unit02.html',
-    3:  'units/unit03.html',
-    4:  'units/unit04.html',
-    5:  'units/unit05.html',
-    6:  'units/unit06.html',
-    7:  'units/unit07.html',
-    8:  'units/unit08.html',
-    9:  'units/unit09.html',
-    10: 'units/unit10.html',
-    11: 'units/unit11.html',
-    12: 'units/unit12.html',
-    13: 'units/unit13.html',
-    14: 'units/unit14.html',
-    15: 'units/unit15.html',
-    16: 'units/unit16.html',
-    17: 'units/unit17.html',
-    18: 'units/unit18.html',
-    19: 'units/unit19.html',
-    20: 'units/unit20.html'
-  };
-
-  const frame   = document.getElementById('unit-frame');   // iframe or content <div>
-  const links   = document.querySelectorAll('[data-unit-link]');
-  const status  = document.getElementById('unit-status');  // "Select a unit..." text
-
-  function openUnit(unit) {
-    const file = UNIT_FILES[unit];
-    if (!file || !frame) return;
-
-    // Load the unit HTML into the iframe
-    frame.src = file;
-
-    // Update selected state in the sidebar
-    links.forEach(link => {
-      link.classList.toggle('is-active', Number(link.dataset.unitLink) === unit);
-    });
-
-    // Update status text
-    if (status) {
-      status.textContent = `Now reading Unit ${unit}`;
-    }
-
-    // Update the URL so deep links like ?unit=5 keep working
-    const url = new URL(window.location.href);
-    url.searchParams.set('unit', unit);
-    window.history.replaceState(null, '', url.toString());
-  }
-
-  // Wire up clicks on the unit list
-  links.forEach(link => {
-    link.addEventListener('click', (evt) => {
-      evt.preventDefault();
-      const unit = Number(link.dataset.unitLink);
-      openUnit(unit);
-    });
-  });
-
-  // Auto-open the unit from ?unit=... when the page loads
-  const params = new URLSearchParams(window.location.search);
-  const initialUnit = Number(params.get('unit'));
-  if (initialUnit && UNIT_FILES[initialUnit]) {
-    openUnit(initialUnit);
-  }
-</script>
 
 </body>
 </html>
