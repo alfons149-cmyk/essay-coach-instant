@@ -3,24 +3,29 @@
 import { MISTAKE_MAP } from "./mistake-map.js";
 
 /**
- * Build the reader link: assets/book/reader.html?unit=11#u11-level2
+ * Build the reader link:
+ *   assets/book/reader.html?unit=11&return=<essay-url>#u11-level2
  */
 function buildReaderLink(mistake) {
   if (!mistake || !mistake.unit) return null;
 
-  // Remember where the user is (the essay page)
-  const returnUrl = encodeURIComponent(window.location.href);
+  // Start from the current page URL so the path includes /essay-coach-instant/
+  const readerUrl = new URL("assets/book/reader.html", window.location.href);
 
-  // Base: reader with unit + return URL
-  let url = `assets/book/reader.html?unit=${mistake.unit}&return=${returnUrl}`;
+  // Unit number from the mistake
+  readerUrl.searchParams.set("unit", String(mistake.unit));
 
-  // Optional: jump to the exact section inside that unit
+  // Remember EXACTLY where the user is in the app
+  readerUrl.searchParams.set("return", window.location.href);
+
+  // Optional: jump to a section in the unit
   if (mistake.sectionId) {
-    url += `#${mistake.sectionId}`;
+    readerUrl.hash = mistake.sectionId; // -> #u6-cohesion, etc.
   }
 
-  return url;
+  return readerUrl.toString();
 }
+
 
 /**
  * Render a pretty feedback card into a container element.
