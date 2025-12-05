@@ -163,5 +163,75 @@
       loadUnit(initialUnit);
     })();
   </script>
+
+  <script>
+  // Map unit numbers to the HTML file inside /assets/book/units/
+  const UNIT_FILES = {
+    1:  'units/unit01.html',
+    2:  'units/unit02.html',
+    3:  'units/unit03.html',
+    4:  'units/unit04.html',
+    5:  'units/unit05.html',
+    6:  'units/unit06.html',
+    7:  'units/unit07.html',
+    8:  'units/unit08.html',
+    9:  'units/unit09.html',
+    10: 'units/unit10.html',
+    11: 'units/unit11.html',
+    12: 'units/unit12.html',
+    13: 'units/unit13.html',
+    14: 'units/unit14.html',
+    15: 'units/unit15.html',
+    16: 'units/unit16.html',
+    17: 'units/unit17.html',
+    18: 'units/unit18.html',
+    19: 'units/unit19.html',
+    20: 'units/unit20.html'
+  };
+
+  const frame   = document.getElementById('unit-frame');   // iframe or content <div>
+  const links   = document.querySelectorAll('[data-unit-link]');
+  const status  = document.getElementById('unit-status');  // "Select a unit..." text
+
+  function openUnit(unit) {
+    const file = UNIT_FILES[unit];
+    if (!file || !frame) return;
+
+    // Load the unit HTML into the iframe
+    frame.src = file;
+
+    // Update selected state in the sidebar
+    links.forEach(link => {
+      link.classList.toggle('is-active', Number(link.dataset.unitLink) === unit);
+    });
+
+    // Update status text
+    if (status) {
+      status.textContent = `Now reading Unit ${unit}`;
+    }
+
+    // Update the URL so deep links like ?unit=5 keep working
+    const url = new URL(window.location.href);
+    url.searchParams.set('unit', unit);
+    window.history.replaceState(null, '', url.toString());
+  }
+
+  // Wire up clicks on the unit list
+  links.forEach(link => {
+    link.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      const unit = Number(link.dataset.unitLink);
+      openUnit(unit);
+    });
+  });
+
+  // Auto-open the unit from ?unit=... when the page loads
+  const params = new URLSearchParams(window.location.search);
+  const initialUnit = Number(params.get('unit'));
+  if (initialUnit && UNIT_FILES[initialUnit]) {
+    openUnit(initialUnit);
+  }
+</script>
+
 </body>
 </html>
