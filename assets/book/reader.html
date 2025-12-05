@@ -160,5 +160,27 @@
   })();
 </script>
 
+  <script>
+  (function () {
+    const btn = document.getElementById("back-to-essay-fab");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      const params = new URLSearchParams(window.location.search);
+      const ret = params.get("return");
+
+      if (ret) {
+        // Go back to the exact essay page
+        window.location.href = decodeURIComponent(ret);
+      } else {
+        // Fallback: go to the main app
+        window.location.href =
+          "https://alfons149-cmyk.github.io/essay-coach-instant/";
+      }
+    });
+  })();
+</script>
+
+
 </body>
 </html>
