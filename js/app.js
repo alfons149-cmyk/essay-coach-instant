@@ -38,24 +38,33 @@
       const plainText =
         el.feedback.innerText || el.feedback.textContent || "";
 
-      // Expectation:
-      //  - feedback-engine.js defines window.FeedbackEngine.detectMistakes(text) → ['articles_missing', ...]
-      //  - feedback-ui.js defines window.FeedbackUI.renderFeedbackCard(mistakeIds)
-      if (
-        window.FeedbackEngine &&
-        typeof window.FeedbackEngine.detectMistakes === "function" &&
-        window.FeedbackUI &&
-        typeof window.FeedbackUI.renderFeedbackCard === "function"
-      ) {
-        // essayText = the student’s full answer as a string
-const result = FeedbackEngine.detectMistakesWithLocations(feedbackText, essayText);
+      // feedbackText = text of the corrections / feedback
+// essayText    = the student’s full answer as a string
 
-// result.ids → ["tooManyClauses", "noTopicSentence", ...]
-// result.locationsById → { tooManyClauses: 1, noTopicSentence: 2, ... }
+if (
+  window.FeedbackEngine &&
+  typeof window.FeedbackEngine.detectMistakesWithLocations === "function" &&
+  window.FeedbackUI &&
+  typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
+) {
+  // NEW: use paragraph-aware detection + UI
+  const result = window.FeedbackEngine.detectMistakesWithLocations(
+    feedbackText,
+    essayText
+  );
+  window.FeedbackUI.renderFeedbackCardWithLocations(result);
 
-FeedbackUI.renderFeedbackCardWithLocations(result);
+} else if (
+  window.FeedbackEngine &&
+  typeof window.FeedbackEngine.detectMistakes === "function" &&
+  window.FeedbackUI &&
+  typeof window.FeedbackUI.renderFeedbackCard === "function"
+) {
+  // Fallback: old behaviour (no paragraph numbers)
+  const ids = window.FeedbackEngine.detectMistakes(feedbackText);
+  window.FeedbackUI.renderFeedbackCard(ids);
+}
 
-      }
     } catch (err) {
       console.warn("[FeedbackUI] Could not render Course Book help card:", err);
     }
