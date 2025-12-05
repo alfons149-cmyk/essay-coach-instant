@@ -154,11 +154,20 @@ window.FeedbackUI.renderFeedbackCard = function (mistakeIds) {
   renderFeedbackCard(mistakeIds, container);
 };
 // existing code…
-window.FeedbackUI.renderFeedbackCard = function (mistakeIds) {
+window.FeedbackUI.renderFeedbackCard = function (mistakeIds, locationsById) {
   const container = document.querySelector('#feedback-card');
   if (!container) return;
-  renderFeedbackCard(mistakeIds, container);
+  renderFeedbackCard(mistakeIds, container, locationsById);
 };
+
+// Convenience helper for the new engine result
+window.FeedbackUI.renderFeedbackCardWithLocations = function (result) {
+  if (!result) return;
+  const container = document.querySelector('#feedback-card');
+  if (!container) return;
+  renderFeedbackCard(result.ids, container, result.locationsById || null);
+};
+
 
 // 👇 add this for debugging
 if (typeof window !== 'undefined') {
