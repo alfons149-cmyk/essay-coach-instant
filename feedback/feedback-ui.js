@@ -24,7 +24,7 @@ function buildReaderLink(mistake) {
  * @param {string[]} mistakeIds – keys that exist in MISTAKE_MAP
  * @param {HTMLElement} containerEl – where the card should appear
  */
-export function renderFeedbackCard(mistakeIds, containerEl) {
+export function renderFeedbackCard(mistakeIds, containerEl, locationsById = null) {
   if (!containerEl) return;
 
   // Clean previous content
