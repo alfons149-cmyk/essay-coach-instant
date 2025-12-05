@@ -8,10 +8,17 @@ import { MISTAKE_MAP } from "./mistake-map.js";
 function buildReaderLink(mistake) {
   if (!mistake || !mistake.unit) return null;
 
-  let url = `assets/book/reader.html?unit=${mistake.unit}`;
+  // Remember where the user is (the essay page)
+  const returnUrl = encodeURIComponent(window.location.href);
+
+  // Base: reader with unit + return URL
+  let url = `assets/book/reader.html?unit=${mistake.unit}&return=${returnUrl}`;
+
+  // Optional: jump to the exact section inside that unit
   if (mistake.sectionId) {
     url += `#${mistake.sectionId}`;
   }
+
   return url;
 }
 
