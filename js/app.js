@@ -30,19 +30,15 @@
 function setFeedbackAndCourseHelp(feedbackHtml) {
   if (!el.feedback) return;
 
-  // 1) Show feedback in the normal panel
+  // Show feedback in the normal panel
   el.feedback.innerHTML = feedbackHtml || "—";
 
-  // 2) Trigger the Course Book help card, if the engine + UI exist
   try {
-    // Plain text version of the feedback panel
     const feedbackText =
       el.feedback.innerText || el.feedback.textContent || "";
 
-    // Full essay text (what the student wrote)
     const essayText = el.essay ? (el.essay.value || "") : "";
 
-    // Prefer the new, paragraph-aware API if available
     if (
       window.FeedbackEngine &&
       typeof window.FeedbackEngine.detectMistakesWithLocations === "function" &&
@@ -54,8 +50,6 @@ function setFeedbackAndCourseHelp(feedbackHtml) {
         essayText
       );
       window.FeedbackUI.renderFeedbackCardWithLocations(result);
-
-    // Fallback: old behaviour (no paragraph numbers)
     } else if (
       window.FeedbackEngine &&
       typeof window.FeedbackEngine.detectMistakes === "function" &&
