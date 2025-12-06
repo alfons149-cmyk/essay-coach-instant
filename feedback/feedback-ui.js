@@ -31,13 +31,6 @@ function buildReaderLink(mistake) {
 }
 
 
-  // Helpful debug log – you can remove once you see it working
-  console.log("[EC] reader link:", readerUrl.toString());
-
-  return readerUrl.toString();
-}
-
-
 /**
  * Render a pretty feedback card into a container element.
  *
