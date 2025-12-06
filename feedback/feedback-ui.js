@@ -2,12 +2,7 @@
 
 import { MISTAKE_MAP } from "./mistake-map.js";
 
-/**/**
- * Build the reader link:
- *   assets/book/reader.html?unit=11&return=<essay-url>#u11-level2
- */
-
-   /**
+/**
  * Build the reader link:
  *   assets/book/reader.html?unit=11&return=<essay-url>#u11-level2
  */
