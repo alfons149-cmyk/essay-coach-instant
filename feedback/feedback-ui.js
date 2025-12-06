@@ -6,22 +6,30 @@ import { MISTAKE_MAP } from "./mistake-map.js";
  * Build the reader link:
  *   assets/book/reader.html?unit=11&return=<essay-url>#u11-level2
  */
+
+   /**
+ * Build the reader link:
+ *   assets/book/reader.html?unit=11&return=<essay-url>#u11-level2
+ */
 function buildReaderLink(mistake) {
   if (!mistake || !mistake.unit) return null;
 
-  // Build a full URL to the reader, relative to the current page
-  const readerUrl = new URL("assets/book/reader.html", window.location.href);
+  // Where the user is now (the essay page)
+  const returnUrl = encodeURIComponent(window.location.href);
 
-  // Unit number from the mistake
-  readerUrl.searchParams.set("unit", String(mistake.unit));
+  // Base URL with unit + return
+  let url = `assets/book/reader.html?unit=${encodeURIComponent(
+    mistake.unit
+  )}&return=${returnUrl}`;
 
-  // Remember EXACTLY where the user is (the current essay page)
-  readerUrl.searchParams.set("return", window.location.href);
-
-  // Optional: jump to a section inside the unit
+  // Optional: jump to the exact section in that unit
   if (mistake.sectionId) {
-    readerUrl.hash = mistake.sectionId; // → #u6-cohesion, etc.
+    url += `#${mistake.sectionId}`;
   }
+
+  return url;
+}
+
 
   // Helpful debug log – you can remove once you see it working
   console.log("[EC] reader link:", readerUrl.toString());
