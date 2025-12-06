@@ -169,17 +169,25 @@
       const params = new URLSearchParams(window.location.search);
       const ret = params.get("return");
 
-      if (ret) {
-        // Go back to the exact essay page
-        window.location.href = decodeURIComponent(ret);
-      } else {
-        // Fallback: go to the main app
-        window.location.href =
-          "https://alfons149-cmyk.github.io/essay-coach-instant/";
+      // 1) Best case: this tab was opened from EssayCoach → just close it
+      if (window.opener && !window.opener.closed) {
+        window.close();
+        return;
       }
+
+      // 2) If we have a return URL, go there
+      if (ret) {
+        window.location.href = ret;
+        return;
+      }
+
+      // 3) Last fallback: go to the app home
+      window.location.href =
+        "https://alfons149-cmyk.github.io/essay-coach-instant/";
     });
   })();
 </script>
+
 
 
 </body>
