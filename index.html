@@ -287,15 +287,32 @@
         </section>
 
         <!-- Actions -->
-        <footer class="app-actions">
-          <button id="btnClear" type="button" class="btn-secondary">
-            Clear
-          </button>
+        <footer class="ec-actions">
+  <button id="btnClear" type="button"
+          class="ec-btn ec-btn--ghost"
+          data-i18n="buttons.clear"
+          data-i18n-title="tooltips.clear"
+          title="Clear">
+    Clear
+  </button>
 
-          <button id="btnCorrect" type="button" class="btn-primary">
-            Correct my essay
-          </button>
-        </footer>
+  <button id="btnCorrect" type="button"
+          class="ec-btn ec-btn--primary"
+          data-i18n="buttons.correct"
+          data-i18n-title="tooltips.correct"
+          title="Correct">
+    Correct
+  </button>
+</footer>
+
+<div class="ec-field__meta">
+  <span class="ec-wordcount">
+    <span id="inWC">Input: {n} words</span>
+  </span>
+</div>
+...
+<span id="outWC">Output: {n} words</span>
+
       </section>
 
       <!-- RIGHT: FEEDBACK / OUTPUT -->
