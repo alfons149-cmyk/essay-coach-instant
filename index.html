@@ -358,6 +358,48 @@
           </div>
         </section>
 
+        <!-- Estimated band & key focus -->
+<section id="bandsCard" class="ec-block" hidden>
+  <header class="ec-block__header">
+    <h3 class="ec-block__title" data-i18n="bands.title">
+      Estimated Cambridge band
+    </h3>
+  </header>
+
+  <div class="ec-box ec-box--bands">
+    <div class="bands-summary">
+      <p>
+        <strong data-i18n="bands.overall_score">Estimated score</strong>:
+        <span id="bandsOverallScore">–</span>
+      </p>
+
+      <p>
+        <strong data-i18n="bands.level_label">Exam level</strong>:
+        <span id="bandsLevel">–</span>
+      </p>
+    </div>
+
+    <div class="bands-columns">
+      <div class="bands-column">
+        <h4 data-i18n="bands.category_title">By criteria</h4>
+        <ul id="bandsCategories"></ul>
+      </div>
+
+      <div class="bands-column">
+        <h4 data-i18n="bands.improvement_title">
+          What to improve to go up a band
+        </h4>
+        <ul id="bandsImprovements"></ul>
+      </div>
+    </div>
+
+    <p class="bands-disclaimer" data-i18n="bands.disclaimer">
+      This score is an estimate based on the Cambridge English Scale and not an official exam grade.
+    </p>
+  </div>
+</section>
+
+
         <!-- Edits -->
         <section class="app-block">
           <header class="app-block__header">
