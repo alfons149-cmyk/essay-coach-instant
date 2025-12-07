@@ -227,152 +227,162 @@
       <button type="button" class="pill" data-level="C2">C2</button>
     </div>
 
-    <main class="app-main">
-      <!-- Inputs -->
-      <section class="grid-2">
-        <div class="card">
-          <div class="card-title" data-i18n="labels.prompt">Task prompt</div>
-          <textarea id="task" rows="3" data-i18n-ph="placeholders.task"></textarea>
-        </div>
+        <main class="app-main">
 
-        <div class="card">
-          <div class="card-title" data-i18n="labels.essay">Your essay</div>
-          <textarea id="essay" rows="12" data-i18n-ph="placeholders.essay"></textarea>
-        </div>
-      </section>
+      <!-- LEFT: INPUT / WRITING -->
+      <section class="app-column app-column--left">
 
-      <!-- Toolbar -->
-      <section class="toolbar toolbar-row">
-        <button id="btnCorrect" class="btn-primary"
-                data-i18n="buttons.correct"
-                title="Correct the essay"
-                data-i18n-title="tooltips.correct">
-          Correct
-        </button>
+        <!-- Task prompt -->
+        <section class="app-block">
+          <header class="app-block__header">
+            <h2 class="app-block__title">Task</h2>
+            <p class="app-block__hint">
+              Paste the exam task here so the coach knows what you are answering.
+            </p>
+          </header>
 
-        <button id="btnClear" class="btn-ghost"
-                data-i18n="buttons.clear"
-                title="Clear all fields"
-                data-i18n-title="tooltips.clear">
-          Clear
-        </button>
-
-        <!-- Word counters -->
-        <div id="inWC"  class="pill" data-i18n="io.input_words">Input: {n} words</div>
-        <div id="outWC" class="pill" data-i18n="io.output_words">Output: {n} words</div>
-      </section>
-
-      <!-- Advanced debug toggle -->
-      <div class="debug-toggle-row">
-        <button
-          type="button"
-          id="btnToggleDebug"
-          class="btn-ghost debug-toggle"
-          data-i18n="debug.show">
-          Show advanced AI details
-        </button>
-      </div>
-
-      <!-- Feedback + edits -->
-      <section class="grid-2">
-        <div class="card">
-          <div class="card-title card-title--feedback" data-i18n="labels.feedback">
-            Feedback
+          <div class="app-field">
+            <label class="app-field__label" for="task">Task prompt</label>
+            <textarea
+              id="task"
+              class="app-textarea app-textarea--task"
+              rows="4"
+              placeholder="Copy the question from the exam paper here..."
+            ></textarea>
           </div>
-          <div id="feedback" class="prose">—</div>
-        </div>
+        </section>
 
-        <div class="card">
-          <div class="card-title" data-i18n="labels.edits">Edits</div>
-          <ul id="edits" class="list"></ul>
-        </div>
-      </section>
+        <!-- Essay -->
+        <section class="app-block">
+          <header class="app-block__header">
+            <h2 class="app-block__title">Your essay</h2>
+            <p class="app-block__hint">
+              Aim for the full word limit. You can revise as many times as you like.
+            </p>
+          </header>
 
-      <section class="feedback-panel">
-        <h2 class="feedback-panel__title">Course Book Help</h2>
-        <div id="feedback-card">
-          <!-- JS will render the card in here -->
-        </div>
-      </section>
+          <div class="app-field">
+            <label class="app-field__label" for="essay">Write your answer</label>
+            <textarea
+              id="essay"
+              class="app-textarea app-textarea--essay"
+              rows="12"
+              placeholder="Write your answer here..."
+            ></textarea>
 
-      <!-- Cambridge band estimate -->
-      <section class="card" id="bandsCard" hidden>
-        <div class="card-title" data-i18n="bands.title">Estimated Cambridge band</div>
-
-        <div class="row" style="gap:8px; align-items:center; flex-wrap:wrap;">
-          <div class="pill">
-            <strong data-i18n="bands.overall_score">Estimated score</strong>:
-            <span id="bandsOverallScore">—</span>
+            <div class="app-field__meta">
+              <span class="app-wordcount">
+                Input: <span id="inWC">0</span> words
+              </span>
+            </div>
           </div>
-          <div class="pill">
-            <strong data-i18n="bands.level_label">Exam level</strong>:
-            <span id="bandsLevel">B2</span>
+        </section>
+
+        <!-- Actions -->
+        <footer class="app-actions">
+          <button id="btnClear" type="button" class="btn-secondary">
+            Clear
+          </button>
+
+          <button id="btnCorrect" type="button" class="btn-primary">
+            Correct my essay
+          </button>
+        </footer>
+      </section>
+
+      <!-- RIGHT: FEEDBACK / OUTPUT -->
+      <section class="app-column app-column--right">
+
+        <!-- Summary -->
+        <section class="app-block app-block--summary">
+          <header class="app-block__header">
+            <h2 class="app-block__title">Summary</h2>
+          </header>
+
+          <div class="summary-grid">
+            <div class="summary-item">
+              <p class="summary-label">Estimated band</p>
+              <p class="summary-value" id="band-estimate">–</p>
+            </div>
+            <div class="summary-item">
+              <p class="summary-label">Key focus</p>
+              <p class="summary-value" id="key-area">–</p>
+            </div>
+            <div class="summary-item">
+              <p class="summary-label">Output length</p>
+              <p class="summary-value">
+                <span id="outWC">0</span> words
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div style="margin-top:8px;">
-          <strong data-i18n="bands.category_title">By criteria</strong>
-          <ul id="bandsCategories" class="list"></ul>
-        </div>
+        <!-- Feedback -->
+        <section class="app-block">
+          <header class="app-block__header">
+            <h2 class="app-block__title">Feedback</h2>
+            <p class="app-block__hint">
+              This is your teacher-style feedback based on the Cambridge scale.
+            </p>
+          </header>
 
-        <div style="margin-top:8px;">
-          <strong data-i18n="bands.improvement_title">What to improve to go up a band</strong>
-          <ul id="bandsImprovements" class="list"></ul>
-        </div>
+          <div id="feedback" class="app-box app-box--feedback">
+            <p class="app-placeholder">
+              Your feedback will appear here after you click “Correct my essay”.
+            </p>
+          </div>
+        </section>
 
-        <p style="margin-top:8px; font-size:0.85rem; opacity:0.8;" data-i18n="bands.disclaimer">
-          This score is an estimate based on the Cambridge English Scale and not an official exam grade.
-        </p>
-      </section>
+        <!-- Edits -->
+        <section class="app-block">
+          <header class="app-block__header">
+            <h2 class="app-block__title">Edits & suggested corrections</h2>
+          </header>
 
-      <!-- Sentence insights (simple version) -->
-      <section class="card" id="sentenceCard" hidden>
-        <div class="card-title" data-i18n="sentences.title">
-          Sentence insights from your essay
-        </div>
-        <p style="margin-top:4px; font-size:0.9rem; color:#2563eb;">
-          💡 Read the unit in the Course Book that explains how this type of sentence works.
-        </p>
-        <ul id="sentenceList" class="list sentence-list"></ul>
-      </section>
+          <div id="edits" class="app-box app-box--edits">
+            <p class="app-placeholder">
+              Sentence-level suggestions will appear here.
+            </p>
+          </div>
+        </section>
 
-      <!-- Next draft -->
-      <section class="card">
-        <div class="card-title" data-i18n="labels.next_draft">Next draft</div>
-        <textarea id="nextDraft" rows="10" data-i18n-ph="placeholders.next_draft"></textarea>
-      </section>
+        <!-- Course book help -->
+        <section class="app-block">
+          <header class="app-block__header">
+            <h2 class="app-block__title">Course book help</h2>
+            <p class="app-block__hint">
+              These links take you to the units that practise your weakest areas.
+            </p>
+          </header>
 
-      <!-- Vocabulary -->
-      <section class="card" id="vocabCard" hidden>
-        <div class="card-title" data-i18n="labels.vocab_options">Vocabulary options</div>
-        <ul id="vocab" class="list"></ul>
-      </section>
+          <div id="feedback-card" class="app-box app-box--coursebook">
+            <!-- feedback-ui.js renders “Improve this essay” card here -->
+          </div>
+        </section>
 
-      <!-- Sentence insights (new structure card) -->
-      <section class="card" id="sentencesCard" hidden>
-        <div class="card-title" data-i18n="sentence.title">
-          How your sentences are built
-        </div>
-        <ul id="sentencesList" class="list list--compact"></ul>
-      </section>
+        <!-- Next draft -->
+        <section class="app-block">
+          <header class="app-block__header">
+            <h2 class="app-block__title">Next draft</h2>
+            <p class="app-block__hint">
+              Rewrite your answer using the feedback and course book help.
+            </p>
+          </header>
 
-      <!-- Paragraph insights -->
-      <section class="card" id="paragraphCard" hidden>
-        <div class="card-title" data-i18n="paragraph.title">
-          Paragraph logic & structure
-        </div>
-        <ul id="paragraphInsights" class="list"></ul>
-      </section>
+          <div class="app-field">
+            <textarea
+              id="nextDraft"
+              class="app-textarea app-textarea--draft"
+              rows="8"
+              placeholder="Rewrite your answer here..."
+            ></textarea>
+          </div>
+        </section>
 
-      <!-- JSON debug viewer (advanced users) -->
-      <section class="card" id="debugCard" hidden>
-        <div class="card-title" data-i18n="debug.title">
-          AI response (advanced details)
-        </div>
-        <pre id="debugJson" class="debug-json"></pre>
       </section>
 
     </main>
+
 
     <!-- Open the course book in a new tab -->
     <script>
