@@ -469,6 +469,11 @@ body {
   align-items: center;
   gap: 12px;
   flex-wrap: nowrap;
+
+  /* NEW: match or slightly exceed .app-main width */
+  max-width: 900px;   /* try 900px so it’s just a bit wider than the text */
+  margin: 0 auto;     /* center inside the topbar */
+  width: 100%;
 }
 
 .topbar-right {
