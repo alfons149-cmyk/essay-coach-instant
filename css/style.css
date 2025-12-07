@@ -442,6 +442,13 @@ body {
   padding: 0 1.5rem;
 }
 
+/* Main app content: center and narrow it a bit */
+.app-main {
+  max-width: 880px;        /* try 880px first; tweak to taste */
+  margin: 2rem auto 4rem;  /* center inside .app-container */
+}
+
+
 /* Two-column sections → stack on smaller screens */
 .grid-2 {
   display: grid;
