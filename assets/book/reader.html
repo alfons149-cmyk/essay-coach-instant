@@ -137,27 +137,5 @@
     })();
   </script>
 
-  <script>
-  (function () {
-    const btn = document.getElementById("back-to-essay-fab");
-    if (!btn) return;
-
-    btn.addEventListener("click", () => {
-      // If this tab was opened from EssayCoach, just close it
-      if (window.opener && !window.opener.closed) {
-        window.close();
-      } else {
-        // Fallback: go to the main EssayCoach app
-        window.location.href =
-          "https://alfons149-cmyk.github.io/essay-coach-instant/";
-      }
-    });
-  })();
-</script>
-
-  
-
-
-
 </body>
 </html>
