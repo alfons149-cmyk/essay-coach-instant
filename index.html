@@ -228,240 +228,261 @@
 
         <main class="app-main">
 
-      <!-- LEFT: INPUT / WRITING -->
-      <section class="app-column app-column--left">
+  <!-- LEFT: INPUT / WRITING -->
+  <section class="app-column app-column--left">
 
-        <!-- Task prompt -->
-        <section class="app-block">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Task</h2>
-            <p class="app-block__hint">
-              Paste the exam task here so the coach knows what you are answering.
-            </p>
-          </header>
+    <!-- Task prompt -->
+    <section class="app-block">
+      <header class="app-block__header">
+        <h2 class="app-block__title">Task</h2>
+        <p class="app-block__hint">
+          Paste the exam task here so the coach knows what you are answering.
+        </p>
+      </header>
 
-          <div class="app-field">
-            <label class="app-field__label" for="task">Task prompt</label>
-            <textarea
-              id="task"
-              class="app-textarea app-textarea--task"
-              rows="4"
-              placeholder="Copy the question from the exam paper here..."
-            ></textarea>
-          </div>
-        </section>
-
-        <!-- Essay -->
-        <section class="app-block">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Your essay</h2>
-            <p class="app-block__hint">
-              Aim for the full word limit. You can revise as many times as you like.
-            </p>
-          </header>
-
-        <!-- Essay -->
-        <section class="app-block">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Your essay</h2>
-            <p class="app-block__hint">
-              Aim for the full word limit. You can revise as many times as you like.
-            </p>
-          </header>
-
-          <div class="app-field">
-            <label class="app-field__label" for="essay">Write your answer</label>
-            <textarea
-              id="essay"
-              class="app-textarea app-textarea--essay"
-              rows="12"
-              placeholder="Write your answer here..."
-            ></textarea>
-
-            <div class="app-field__meta">
-              <span class="app-wordcount">
-                Input: <span id="inWC">0</span> words
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <!-- Actions -->
-        <footer class="ec-actions">
-  <button id="btnClear" type="button"
-          class="ec-btn ec-btn--ghost"
-          data-i18n="buttons.clear"
-          data-i18n-title="tooltips.clear"
-          title="Clear">
-    Clear
-  </button>
-
-  <button id="btnCorrect" type="button"
-          class="ec-btn ec-btn--primary"
-          data-i18n="buttons.correct"
-          data-i18n-title="tooltips.correct"
-          title="Correct">
-    Correct
-  </button>
-</footer>
-
-<div class="ec-field__meta">
-  <span class="ec-wordcount">
-    <span id="inWC">Input: {n} words</span>
-  </span>
-</div>
-...
-<span id="outWC">Output: {n} words</span>
-
-      </section>
-
-<section id="vocabCard" class="ec-block" hidden>
-  <header class="ec-block__header">
-    <h3 class="ec-block__title" data-i18n="labels.vocab_options">
-      Vocabulary options
-    </h3>
-  </header>
-
-  <div id="vocab" class="ec-box ec-box--vocab">
-    <!-- JS fills <li> items here -->
-  </div>
-</section>
-
-
-      <!-- RIGHT: FEEDBACK / OUTPUT -->
-      <section class="app-column app-column--right">
-
-        <!-- Summary -->
-        <section class="app-block app-block--summary">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Summary</h2>
-          </header>
-
-          <div class="summary-grid">
-            <div class="summary-item">
-              <p class="summary-label">Estimated band</p>
-              <p class="summary-value" id="band-estimate">–</p>
-            </div>
-            <div class="summary-item">
-              <p class="summary-label">Key focus</p>
-              <p class="summary-value" id="key-area">–</p>
-            </div>
-            <div class="summary-item">
-              <p class="summary-label">Output length</p>
-              <p class="summary-value">
-                <span id="outWC">0</span> words
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <!-- Feedback -->
-        <section class="app-block">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Feedback</h2>
-            <p class="app-block__hint">
-              This is your teacher-style feedback based on the Cambridge scale.
-            </p>
-          </header>
-
-          <div id="feedback" class="app-box app-box--feedback">
-            <p class="app-placeholder">
-              Your feedback will appear here after you click “Correct my essay”.
-            </p>
-          </div>
-        </section>
-
-        <!-- Estimated band & key focus -->
-<section id="bandsCard" class="ec-block" hidden>
-  <header class="ec-block__header">
-    <h3 class="ec-block__title" data-i18n="bands.title">
-      Estimated Cambridge band
-    </h3>
-  </header>
-
-  <div class="ec-box ec-box--bands">
-    <div class="bands-summary">
-      <p>
-        <strong data-i18n="bands.overall_score">Estimated score</strong>:
-        <span id="bandsOverallScore">–</span>
-      </p>
-
-      <p>
-        <strong data-i18n="bands.level_label">Exam level</strong>:
-        <span id="bandsLevel">–</span>
-      </p>
-    </div>
-
-    <div class="bands-columns">
-      <div class="bands-column">
-        <h4 data-i18n="bands.category_title">By criteria</h4>
-        <ul id="bandsCategories"></ul>
+      <div class="app-field">
+        <label class="app-field__label" for="task">Task prompt</label>
+        <textarea
+          id="task"
+          class="app-textarea app-textarea--task"
+          rows="4"
+          placeholder="Copy the question from the exam paper here..."
+        ></textarea>
       </div>
+    </section>
 
-      <div class="bands-column">
-        <h4 data-i18n="bands.improvement_title">
-          What to improve to go up a band
-        </h4>
-        <ul id="bandsImprovements"></ul>
+    <!-- Essay -->
+    <section class="app-block">
+      <header class="app-block__header">
+        <h2 class="app-block__title">Your essay</h2>
+        <p class="app-block__hint">
+          Aim for the full word limit. You can revise as many times as you like.
+        </p>
+      </header>
+
+      <div class="app-field">
+        <label class="app-field__label" for="essay">Write your answer</label>
+        <textarea
+          id="essay"
+          class="app-textarea app-textarea--essay"
+          rows="12"
+          placeholder="Write your answer here..."
+        ></textarea>
+
+        <div class="app-field__meta">
+          <span class="app-wordcount">
+            <span id="inWC" data-i18n="labels.inWC">Input: {n} words</span>
+          </span>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <p class="bands-disclaimer" data-i18n="bands.disclaimer">
-      This score is an estimate based on the Cambridge English Scale and not an official exam grade.
-    </p>
-  </div>
-</section>
+    <!-- Actions -->
+    <footer class="ec-actions">
+      <button id="btnClear" type="button"
+              class="ec-btn ec-btn--ghost"
+              data-i18n="buttons.clear"
+              data-i18n-title="tooltips.clear"
+              title="Clear">
+        Clear
+      </button>
+
+      <button id="btnCorrect" type="button"
+              class="ec-btn ec-btn--primary"
+              data-i18n="buttons.correct"
+              data-i18n-title="tooltips.correct"
+              title="Correct">
+        Correct
+      </button>
+    </footer>
+
+  </section>
 
 
-        <!-- Edits -->
-        <section class="app-block">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Edits & suggested corrections</h2>
-          </header>
+  <!-- RIGHT: FEEDBACK / OUTPUT -->
+  <section class="app-column app-column--right">
 
-          <div id="edits" class="app-box app-box--edits">
-            <p class="app-placeholder">
-              Sentence-level suggestions will appear here.
-            </p>
+    <!-- Summary -->
+    <section class="app-block app-block--summary">
+      <header class="app-block__header">
+        <h2 class="app-block__title">Summary</h2>
+      </header>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <p class="summary-label">Estimated band</p>
+          <p class="summary-value" id="band-estimate">–</p>
+        </div>
+        <div class="summary-item">
+          <p class="summary-label">Key focus</p>
+          <p class="summary-value" id="key-area">–</p>
+        </div>
+        <div class="summary-item">
+          <p class="summary-label">Output length</p>
+          <p class="summary-value">
+            <span id="outWC" data-i18n="labels.outWC">Output: {n} words</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feedback -->
+    <section class="app-block">
+      <header class="app-block__header">
+        <h2 class="app-block__title">Feedback</h2>
+        <p class="app-block__hint">
+          This is your teacher-style feedback based on the Cambridge scale.
+        </p>
+      </header>
+
+      <div id="feedback" class="app-box app-box--feedback">
+        <p class="app-placeholder">
+          Your feedback will appear here after you click “Correct my essay”.
+        </p>
+      </div>
+    </section>
+
+    <!-- Estimated band & key focus (detailed) -->
+    <section id="bandsCard" class="ec-block" hidden>
+      <header class="ec-block__header">
+        <h3 class="ec-block__title" data-i18n="bands.title">
+          Estimated Cambridge band
+        </h3>
+      </header>
+
+      <div class="ec-box ec-box--bands">
+        <div class="bands-summary">
+          <p>
+            <strong data-i18n="bands.overall_score">Estimated score</strong>:
+            <span id="bandsOverallScore">–</span>
+          </p>
+
+          <p>
+            <strong data-i18n="bands.level_label">Exam level</strong>:
+            <span id="bandsLevel">–</span>
+          </p>
+        </div>
+
+        <div class="bands-columns">
+          <div class="bands-column">
+            <h4 data-i18n="bands.category_title">By criteria</h4>
+            <ul id="bandsCategories"></ul>
+          </div>
+
+          <div class="bands-column">
+            <h4 data-i18n="bands.improvement_title">
+              What to improve to go up a band
+            </h4>
+            <ul id="bandsImprovements"></ul>
+          </div>
+        </div>
+
+        <p class="bands-disclaimer" data-i18n="bands.disclaimer">
+          This score is an estimate based on the Cambridge English Scale and not an official exam grade.
+        </p>
+      </div>
+    </section>
+
+    <!-- Edits -->
+    <section class="app-block">
+      <header class="app-block__header">
+        <h2 class="app-block__title">Edits &amp; suggested corrections</h2>
+      </header>
+
+      <div id="edits" class="app-box app-box--edits">
+        <p class="app-placeholder">
+          Sentence-level suggestions will appear here.
+        </p>
+      </div>
+    </section>
+
+    <!-- Vocabulary options -->
+    <section id="vocabCard" class="ec-block" hidden>
+      <header class="ec-block__header">
+        <h3 class="ec-block__title" data-i18n="labels.vocab_options">
+          Vocabulary options
+        </h3>
+      </header>
+
+      <div id="vocab" class="ec-box ec-box--vocab">
+        <!-- JS will fill vocabulary suggestions here -->
+      </div>
+    </section>
+
+    <!-- Course book help -->
+    <section class="app-block">
+      <header class="app-block__header">
+        <h2 class="app-block__title">Course book help</h2>
+        <p class="app-block__hint">
+          These links take you to the units that practise your weakest areas.
+        </p>
+      </header>
+
+      <div id="feedback-card" class="app-box app-box--coursebook">
+        <!-- feedback-ui.js renders “Improve this essay” card here -->
+      </div>
+    </section>
+
+    <!-- Next draft -->
+    <section class="app-block">
+      <header class="app-block__header">
+        <h2 class="app-block__title">Next draft</h2>
+        <p class="app-block__hint">
+          Rewrite your answer using the feedback and course book help.
+        </p>
+      </header>
+
+      <div class="app-field">
+        <textarea
+          id="nextDraft"
+          class="app-textarea app-textarea--draft"
+          rows="8"
+          placeholder="Rewrite your answer here..."
+        ></textarea>
+      </div>
+    </section>
+
+    <!-- Advanced: sentence insights, vocab, debug -->
+    <section class="ec-block ec-block--advanced">
+      <header class="ec-block__header">
+        <button type="button" class="ec-toggle-advanced" data-ec-advanced-toggle>
+          Show advanced details ▼
+        </button>
+      </header>
+
+      <div class="ec-advanced-body" data-ec-advanced-body hidden>
+
+        <!-- Sentence insights -->
+        <section class="ec-subblock">
+          <h4 class="ec-subblock__title">Sentence insights</h4>
+          <div id="sentence-insights">
+            <!-- JS will populate with insight items -->
           </div>
         </section>
 
-        <!-- Course book help -->
-        <section class="app-block">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Course book help</h2>
-            <p class="app-block__hint">
-              These links take you to the units that practise your weakest areas.
-            </p>
-          </header>
-
-          <div id="feedback-card" class="app-box app-box--coursebook">
-            <!-- feedback-ui.js renders “Improve this essay” card here -->
+        <!-- Useful vocabulary (extra view) -->
+        <section class="ec-subblock">
+          <h4 class="ec-subblock__title">Useful vocabulary</h4>
+          <div id="vocab-suggestions">
+            <!-- JS will populate with vocab suggestions -->
           </div>
         </section>
 
-        <!-- Next draft -->
-        <section class="app-block">
-          <header class="app-block__header">
-            <h2 class="app-block__title">Next draft</h2>
-            <p class="app-block__hint">
-              Rewrite your answer using the feedback and course book help.
-            </p>
-          </header>
-
-          <div class="app-field">
-            <textarea
-              id="nextDraft"
-              class="app-textarea app-textarea--draft"
-              rows="8"
-              placeholder="Rewrite your answer here..."
-            ></textarea>
+        <!-- Debug info -->
+        <section class="ec-subblock">
+          <h4 class="ec-subblock__title">AI debug info</h4>
+          <div id="debug-info">
+            <!-- JS will populate with raw / debug info in dev mode -->
           </div>
         </section>
 
-      </section>
+      </div>
+    </section>
 
-    </main>
+  </section>
+
+</main>
+
 
 
     <!-- Open the course book in a new tab -->
