@@ -227,201 +227,152 @@
       <button type="button" class="pill" data-level="C2">C2</button>
     </div>
 
-    <main class="ec-main-layout">
-
-  <!-- LEFT: INPUT / WRITING TOOL -->
-  <section class="ec-panel ec-panel--input">
-
-    <!-- 1. Level + basic settings -->
-    <header class="ec-panel__header">
-      <div class="ec-panel__title-group">
-        <p class="ec-panel__kicker">Step 1</p>
-        <h2 class="ec-panel__title">Choose your exam level</h2>
-        <p class="ec-panel__subtitle">
-          The feedback and course book links will be tailored to this level.
-        </p>
-      </div>
-
-      <div class="ec-level-select">
-        <!-- keep your existing level radio / select here -->
-        <!-- example: -->
-        <!--
-        <label><input type="radio" name="level" value="b2" checked> B2</label>
-        <label><input type="radio" name="level" value="c1"> C1</label>
-        <label><input type="radio" name="level" value="c2"> C2</label>
-        -->
-      </div>
-    </header>
-
-    <!-- 2. Task prompt -->
-    <section class="ec-block">
-      <header class="ec-block__header">
-        <p class="ec-block__kicker">Step 2</p>
-        <h3 class="ec-block__title">Paste your task</h3>
-        <p class="ec-block__hint">
-          Copy the exam task here so the coach knows what you are answering.
-        </p>
-      </header>
-
-      <div class="ec-field">
-        <label class="ec-field__label" for="task">Task prompt</label>
-        <textarea id="task" class="ec-textarea ec-textarea--task" rows="4"
-          placeholder="Copy the question from the exam paper here..."></textarea>
-      </div>
-    </section>
-
-    <!-- 3. Essay input -->
-    <section class="ec-block">
-      <header class="ec-block__header">
-        <p class="ec-block__kicker">Step 3</p>
-        <h3 class="ec-block__title">Write your essay</h3>
-        <p class="ec-block__hint">
-          Aim for the full word limit. You can revise as many times as you like.
-        </p>
-      </header>
-
-      <div class="ec-field">
-        <label class="ec-field__label" for="essay">Your essay</label>
-        <textarea id="essay" class="ec-textarea ec-textarea--essay" rows="12"
-          placeholder="Write your answer here..."></textarea>
-
-        <div class="ec-field__meta">
-          <span class="ec-wordcount">
-            Input: <span id="inWC">0</span> words
-          </span>
+    <main class="app-main">
+      <!-- Inputs -->
+      <section class="grid-2">
+        <div class="card">
+          <div class="card-title" data-i18n="labels.prompt">Task prompt</div>
+          <textarea id="task" rows="3" data-i18n-ph="placeholders.task"></textarea>
         </div>
-      </div>
-    </section>
 
-    <!-- 4. Actions -->
-    <footer class="ec-actions">
-      <button id="btnClear" type="button" class="ec-btn ec-btn--ghost">
-        Clear
-      </button>
-
-      <button id="btnCorrect" type="button" class="ec-btn ec-btn--primary">
-        Correct my essay
-      </button>
-    </footer>
-
-  </section>
-
-
-  <!-- RIGHT: FEEDBACK / OUTPUT -->
-  <section class="ec-panel ec-panel--output">
-
-    <!-- Summary band + key info -->
-    <section class="ec-block ec-block--summary">
-      <header class="ec-block__header">
-        <p class="ec-block__kicker">Summary</p>
-        <h3 class="ec-block__title">Estimated band & key points</h3>
-      </header>
-
-      <div class="ec-summary-grid">
-        <!-- Example structure; adapt to your existing IDs -->
-        <div class="ec-summary-item">
-          <p class="ec-summary-label">Estimated band</p>
-          <p class="ec-summary-value" id="band-estimate">–</p>
+        <div class="card">
+          <div class="card-title" data-i18n="labels.essay">Your essay</div>
+          <textarea id="essay" rows="12" data-i18n-ph="placeholders.essay"></textarea>
         </div>
-        <div class="ec-summary-item">
-          <p class="ec-summary-label">Most important area</p>
-          <p class="ec-summary-value" id="key-area">–</p>
-        </div>
-        <div class="ec-summary-item">
-          <p class="ec-summary-label">Output length</p>
-          <p class="ec-summary-value">
-            <span id="outWC">0</span> words
-          </p>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Main feedback + edits -->
-    <section class="ec-block">
-      <header class="ec-block__header">
-        <p class="ec-block__kicker">Step 4</p>
-        <h3 class="ec-block__title">Teacher-style feedback</h3>
-        <p class="ec-block__hint">
-          Read this carefully before you change anything. It summarises your strengths and priorities.
-        </p>
-      </header>
-
-      <div id="feedback" class="ec-box ec-box--feedback">
-        <!-- app.js inserts feedback HTML here -->
-        <p class="ec-placeholder">Your feedback will appear here after you click “Correct my essay”.</p>
-      </div>
-    </section>
-
-    <section class="ec-block">
-      <header class="ec-block__header">
-        <h3 class="ec-block__title">Edits & suggested corrections</h3>
-        <p class="ec-block__hint">
-          This shows concrete changes you could make to improve the text.
-        </p>
-      </header>
-
-      <div id="edits" class="ec-box ec-box--edits">
-        <!-- app.js inserts edits here -->
-        <p class="ec-placeholder">Sentence-level suggestions will appear here.</p>
-      </div>
-    </section>
-
-    <!-- Course book help -->
-    <section class="ec-block">
-      <header class="ec-block__header">
-        <h3 class="ec-block__title">Course book help</h3>
-        <p class="ec-block__hint">
-          These links take you to the exact unit that practises your weakest areas.
-        </p>
-      </header>
-
-      <div id="feedback-card" class="ec-box ec-box--coursebook">
-        <!-- feedback-ui.js renders “Improve this essay” card here -->
-      </div>
-    </section>
-
-    <!-- Next draft -->
-    <section class="ec-block">
-      <header class="ec-block__header">
-        <h3 class="ec-block__title">Next draft (optional)</h3>
-        <p class="ec-block__hint">
-          Use this space to rewrite your essay after reading the feedback.
-        </p>
-      </header>
-
-      <div class="ec-field">
-        <textarea id="nextDraft" class="ec-textarea ec-textarea--draft" rows="8"
-          placeholder="Rewrite your answer here using the feedback and course book help..."></textarea>
-      </div>
-    </section>
-
-    <!-- Optional advanced stuff: sentence insights, vocab, etc. -->
-    <section class="ec-block ec-block--advanced">
-      <header class="ec-block__header">
-        <button type="button" class="ec-toggle-advanced" data-ec-advanced-toggle>
-          Show advanced details ▼
+      <!-- Toolbar -->
+      <section class="toolbar toolbar-row">
+        <button id="btnCorrect" class="btn-primary"
+                data-i18n="buttons.correct"
+                title="Correct the essay"
+                data-i18n-title="tooltips.correct">
+          Correct
         </button>
-      </header>
 
-      <div class="ec-advanced-body" data-ec-advanced-body hidden>
-        <!-- Here you can place sentence insights, vocab options, AI debug info, etc. -->
-        <!-- Example placeholder containers (use your existing IDs): -->
-        <section class="ec-subblock">
-          <h4 class="ec-subblock__title">Sentence insights</h4>
-          <div id="sentence-insights"></div>
-        </section>
+        <button id="btnClear" class="btn-ghost"
+                data-i18n="buttons.clear"
+                title="Clear all fields"
+                data-i18n-title="tooltips.clear">
+          Clear
+        </button>
 
-        <section class="ec-subblock">
-          <h4 class="ec-subblock__title">Useful vocabulary</h4>
-          <div id="vocab-suggestions"></div>
-        </section>
+        <!-- Word counters -->
+        <div id="inWC"  class="pill" data-i18n="io.input_words">Input: {n} words</div>
+        <div id="outWC" class="pill" data-i18n="io.output_words">Output: {n} words</div>
+      </section>
+
+      <!-- Advanced debug toggle -->
+      <div class="debug-toggle-row">
+        <button
+          type="button"
+          id="btnToggleDebug"
+          class="btn-ghost debug-toggle"
+          data-i18n="debug.show">
+          Show advanced AI details
+        </button>
       </div>
-    </section>
 
-  </section>
+      <!-- Feedback + edits -->
+      <section class="grid-2">
+        <div class="card">
+          <div class="card-title card-title--feedback" data-i18n="labels.feedback">
+            Feedback
+          </div>
+          <div id="feedback" class="prose">—</div>
+        </div>
 
-</main>
+        <div class="card">
+          <div class="card-title" data-i18n="labels.edits">Edits</div>
+          <ul id="edits" class="list"></ul>
+        </div>
+      </section>
 
+      <section class="feedback-panel">
+        <h2 class="feedback-panel__title">Course Book Help</h2>
+        <div id="feedback-card">
+          <!-- JS will render the card in here -->
+        </div>
+      </section>
+
+      <!-- Cambridge band estimate -->
+      <section class="card" id="bandsCard" hidden>
+        <div class="card-title" data-i18n="bands.title">Estimated Cambridge band</div>
+
+        <div class="row" style="gap:8px; align-items:center; flex-wrap:wrap;">
+          <div class="pill">
+            <strong data-i18n="bands.overall_score">Estimated score</strong>:
+            <span id="bandsOverallScore">—</span>
+          </div>
+          <div class="pill">
+            <strong data-i18n="bands.level_label">Exam level</strong>:
+            <span id="bandsLevel">B2</span>
+          </div>
+        </div>
+
+        <div style="margin-top:8px;">
+          <strong data-i18n="bands.category_title">By criteria</strong>
+          <ul id="bandsCategories" class="list"></ul>
+        </div>
+
+        <div style="margin-top:8px;">
+          <strong data-i18n="bands.improvement_title">What to improve to go up a band</strong>
+          <ul id="bandsImprovements" class="list"></ul>
+        </div>
+
+        <p style="margin-top:8px; font-size:0.85rem; opacity:0.8;" data-i18n="bands.disclaimer">
+          This score is an estimate based on the Cambridge English Scale and not an official exam grade.
+        </p>
+      </section>
+
+      <!-- Sentence insights (simple version) -->
+      <section class="card" id="sentenceCard" hidden>
+        <div class="card-title" data-i18n="sentences.title">
+          Sentence insights from your essay
+        </div>
+        <p style="margin-top:4px; font-size:0.9rem; color:#2563eb;">
+          💡 Read the unit in the Course Book that explains how this type of sentence works.
+        </p>
+        <ul id="sentenceList" class="list sentence-list"></ul>
+      </section>
+
+      <!-- Next draft -->
+      <section class="card">
+        <div class="card-title" data-i18n="labels.next_draft">Next draft</div>
+        <textarea id="nextDraft" rows="10" data-i18n-ph="placeholders.next_draft"></textarea>
+      </section>
+
+      <!-- Vocabulary -->
+      <section class="card" id="vocabCard" hidden>
+        <div class="card-title" data-i18n="labels.vocab_options">Vocabulary options</div>
+        <ul id="vocab" class="list"></ul>
+      </section>
+
+      <!-- Sentence insights (new structure card) -->
+      <section class="card" id="sentencesCard" hidden>
+        <div class="card-title" data-i18n="sentence.title">
+          How your sentences are built
+        </div>
+        <ul id="sentencesList" class="list list--compact"></ul>
+      </section>
+
+      <!-- Paragraph insights -->
+      <section class="card" id="paragraphCard" hidden>
+        <div class="card-title" data-i18n="paragraph.title">
+          Paragraph logic & structure
+        </div>
+        <ul id="paragraphInsights" class="list"></ul>
+      </section>
+
+      <!-- JSON debug viewer (advanced users) -->
+      <section class="card" id="debugCard" hidden>
+        <div class="card-title" data-i18n="debug.title">
+          AI response (advanced details)
+        </div>
+        <pre id="debugJson" class="debug-json"></pre>
+      </section>
+
+    </main>
 
     <!-- Open the course book in a new tab -->
     <script>
@@ -476,3 +427,4 @@
 
 </body>
 </html>
+
