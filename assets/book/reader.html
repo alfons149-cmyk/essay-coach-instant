@@ -155,33 +155,7 @@
   })();
 </script>
 
-  <script>
-  (function () {
-    const btn = document.getElementById("back-to-essay-fab");
-    if (!btn) return;
-
-    btn.addEventListener("click", () => {
-      const params = new URLSearchParams(window.location.search);
-      const ret = params.get("return");
-
-      // 1) Best case: this tab was opened from EssayCoach → just close it
-      if (window.opener && !window.opener.closed) {
-        window.close();
-        return;
-      }
-
-      // 2) If we have a return URL, go there
-      if (ret) {
-        window.location.href = ret;
-        return;
-      }
-
-      // 3) Last fallback: go to the app home
-      window.location.href =
-        "https://alfons149-cmyk.github.io/essay-coach-instant/";
-    });
-  })();
-</script>
+  
 
 
 
