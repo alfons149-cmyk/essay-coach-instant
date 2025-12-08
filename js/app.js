@@ -10,7 +10,7 @@
   console.log("[EC] API_BASE =", API_BASE || "(mock)", "DEV?", DEV);
 
    // ---- Element refs ----
-  const el = {
+   const el = {
     task:       $("#task"),
     essay:      $("#essay"),
     nextDraft:  $("#nextDraft"),
@@ -20,10 +20,9 @@
     outWC:      $("#outWC"),
     btnCorrect: $("#btnCorrect"),
     btnClear:   $("#btnClear"),
-    statusLine: document.getElementById("statusLine") // small status line in the UI
+    statusLine: document.getElementById("statusLine")
   };
 
-  // ---- Status helper (shows "Correcting your essay…" etc.) ----
   function setStatus(keyOrText) {
     if (!el.statusLine) return;
 
@@ -32,13 +31,13 @@
       return;
     }
 
-    // If i18n is available, treat it as a key; otherwise use raw text
     if (window.I18N && typeof window.I18N.t === "function") {
       el.statusLine.textContent = window.I18N.t(keyOrText) || "";
     } else {
       el.statusLine.textContent = keyOrText;
     }
   }
+
 
   // Optionally expose to other scripts if needed
   window.EC.setStatus = setStatus;
