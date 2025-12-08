@@ -44,7 +44,7 @@
   "bands.band.mid": "Middenband",
   "bands.band.high": "Hogere band",
   "bands.improvement_title": "Wat je kunt verbeteren om een band omhoog te gaan",
-  "bands.disclaimer": "Deze score is een schatting op basis van de Cambridge English Scale en geen officiële examencijfer.",
+  "bands.disclaimer": "Deze score is een schatting op basis van de Cambridge English Scale en geen officieel examencijfer.",
 
   "sentence.title": "Hoe je zinnen zijn opgebouwd",
   "sentence.read_unit": "Lees de unit in het cursusboek.",
@@ -58,29 +58,11 @@
 
   "debug.show": "Geavanceerde AI-details tonen",
   "debug.hide": "Geavanceerde AI-details verbergen",
-  "debug.title": "AI-respons (geavanceerde details)"
-}
-{
-  "sections": {
-    "task_title": "Opdracht",
-    "task_hint": "Plak hier de examenopdracht zodat de coach weet wat je beantwoordt.",
-    "essay_title": "Je essay",
-    "essay_hint": "Probeer het volledige woordenaantal te halen. Je kunt zo vaak herschrijven als je wilt."
-  },
-  "labels": {
-    "task_prompt": "Opdrachttekst",
-    "essay_prompt": "Schrijf je antwoord",
-    "wordcount_input_prefix": "Invoer:",
-    "wordcount_words": "woorden"
-  },
-  "placeholders": {
-    "task_prompt": "Kopieer hier de vraag van het examen...",
-    "essay_prompt": "Schrijf je antwoord hier..."
-  }
-}
+  "debug.title": "AI-respons (geavanceerde details)",
+
   "sections.task_title": "Opdracht",
-  "sections.task_hint": "Plak hier de examenvraag zodat de coach weet wat je beantwoordt.",
-  "sections.essay_title": "Je schrijfopdracht",
+  "sections.task_hint": "Plak hier de examenopdracht zodat de coach weet wat je beantwoordt.",
+  "sections.essay_title": "Je essay",
   "sections.essay_hint": "Probeer het volledige aantal woorden te halen. Je kunt zo vaak herschrijven als je wilt.",
 
   "labels.task_prompt": "Opdrachttekst",
@@ -90,4 +72,4 @@
 
   "placeholders.task_prompt": "Kopieer hier de vraag van het examen...",
   "placeholders.essay_prompt": "Schrijf hier je antwoord..."
-
+}
