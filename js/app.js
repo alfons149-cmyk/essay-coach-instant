@@ -149,27 +149,30 @@ function setFeedbackAndCourseHelp(feedbackHtml) {
 
 
   // ---- Main click handler ----
-  document.addEventListener("click", async (e) => {
-    const langBtn  = e.target.closest("[data-lang]");
-    const levelBtn = e.target.closest("[data-level]");
+  el.btnCorrect.addEventListener("click", async () => {
+  // guard clauses, etc.
 
-    // Language switch (visual + i18n)
-    if (langBtn) {
-      const lang = langBtn.getAttribute("data-lang");
-      try {
-        localStorage.setItem("ec.lang", lang);
-        document.documentElement.lang = lang;
-        if (window.I18N && typeof I18N.load === "function") {
-          await I18N.load(lang);
-        }
-        reflectLangButtons(lang);
-        clearCounterTemplates();
-        updateCounters();
-      } catch (err) {
-        console.error("[i18n] load error", err);
-      }
-      return;
-    }
+  try {
+    // start busy state
+    el.btnCorrect.classList.add("is-busy");
+    setStatus("status.correcting");  // <- uses your i18n key
+
+    // === your existing API call logic here ===
+    // const response = await fetch(...);
+    // const data = await response.json();
+    // update feedback, edits, bands, etc.
+
+  } catch (err) {
+    console.error(err);
+    setStatus("");  // or an error message if you like
+  } finally {
+    // stop busy state
+    el.btnCorrect.classList.remove("is-busy");
+    // clear status once finished
+    setStatus("");
+  }
+});
+
 
     // Level switch
     if (levelBtn) {
