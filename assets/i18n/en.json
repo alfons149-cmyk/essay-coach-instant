@@ -54,27 +54,23 @@
   "paragraph.role.body": "Body paragraph",
   "paragraph.role.conclusion": "Conclusion",
 
-    "debug.show": "Show advanced AI details",
+  "debug.show": "Show advanced AI details",
   "debug.hide": "Hide advanced AI details",
   "debug.title": "AI response (advanced details)",
 
-  "status.correcting": "Correcting your essay… this may take a little while."
-}
-{
-  "sections": {
-    "task_title": "Task",
-    "task_hint": "Paste the exam task here so the coach knows what you are answering.",
-    "essay_title": "Your essay",
-    "essay_hint": "Aim for the full word limit. You can revise as many times as you like."
-  },
-  "labels": {
-    "task_prompt": "Task prompt",
-    "essay_prompt": "Write your answer",
-    "wordcount_input_prefix": "Input:",
-    "wordcount_words": "words"
-  },
-  "placeholders": {
-    "task_prompt": "Copy the question from the exam paper here...",
-    "essay_prompt": "Write your answer here..."
-  }
+  "status.correcting": "Correcting your essay… this may take a little while.",
+
+  /* 🔹 NEW: keys your HTML is using now */
+  "sections.task_title": "Task",
+  "sections.task_hint": "Paste the exam task here so the coach knows what you are answering.",
+  "sections.essay_title": "Your essay",
+  "sections.essay_hint": "Aim for the full word limit. You can revise as many times as you like.",
+
+  "labels.task_prompt": "Task prompt",
+  "labels.essay_prompt": "Write your answer",
+  "labels.wordcount_input_prefix": "Input:",
+  "labels.wordcount_words": "words",
+
+  "placeholders.task_prompt": "Copy the question from the exam paper here...",
+  "placeholders.essay_prompt": "Write your answer here..."
 }
