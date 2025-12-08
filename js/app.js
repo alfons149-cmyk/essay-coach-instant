@@ -15,16 +15,35 @@
 
   // ---- Element refs ----
   const el = {
-    task:       $("#task"),
-    essay:      $("#essay"),
-    nextDraft:  $("#nextDraft"),
-    feedback:   $("#feedback"),
-    edits:      $("#edits"),
-    inWC:       $("#inWC"),
-    outWC:      $("#outWC"),
-    btnCorrect: $("#btnCorrect"),
-    btnClear:   $("#btnClear")
-  };
+  task:       $("#task"),
+  essay:      $("#essay"),
+  nextDraft:  $("#nextDraft"),
+  feedback:   $("#feedback"),
+  edits:      $("#edits"),
+  inWC:       $("#inWC"),
+  outWC:      $("#outWC"),
+  btnCorrect: $("#btnCorrect"),
+  btnClear:   $("#btnClear"),
+  statusLine: $("#ecStatusLine")   // <-- add this line
+};
+
+// Helper to set status text using i18n
+function setStatus(keyOrText) {
+  if (!el.statusLine) return;
+
+  if (!keyOrText) {
+    el.statusLine.textContent = "";
+    return;
+  }
+
+  // If it's an i18n key, translate; otherwise use raw text
+  if (window.I18N && typeof I18N.t === "function") {
+    el.statusLine.textContent = I18N.t(keyOrText) || "";
+  } else {
+    el.statusLine.textContent = keyOrText;
+  }
+}
+
 
     // ---- Course Book helper bridge ----
 function setFeedbackAndCourseHelp(feedbackHtml) {
