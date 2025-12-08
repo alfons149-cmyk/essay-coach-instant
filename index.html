@@ -233,23 +233,33 @@
 
     <!-- Task prompt -->
     <section class="app-block">
-      <header class="app-block__header">
-        <h2 class="app-block__title">Task</h2>
-        <p class="app-block__hint">
-          Paste the exam task here so the coach knows what you are answering.
-        </p>
-      </header>
+  <header class="app-block__header">
+    <h2 class="app-block__title"
+        data-i18n="sections.task_title">
+      Task
+    </h2>
+    <p class="app-block__hint"
+       data-i18n="sections.task_hint">
+      Paste the exam task here so the coach knows what you are answering.
+    </p>
+  </header>
 
-      <div class="app-field">
-        <label class="app-field__label" for="task">Task prompt</label>
-        <textarea
-          id="task"
-          class="app-textarea app-textarea--task"
-          rows="4"
-          placeholder="Copy the question from the exam paper here..."
-        ></textarea>
-      </div>
-    </section>
+  <div class="app-field">
+    <label class="app-field__label"
+           for="task"
+           data-i18n="labels.task_prompt">
+      Task prompt
+    </label>
+    <textarea
+      id="task"
+      class="app-textarea app-textarea--task"
+      rows="4"
+      data-i18n-placeholder="placeholders.task_prompt"
+      placeholder="Copy the question from the exam paper here..."
+    ></textarea>
+  </div>
+</section>
+
 
     <!-- Essay -->
     <section class="app-block">
