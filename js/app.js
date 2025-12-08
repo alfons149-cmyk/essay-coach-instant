@@ -149,29 +149,36 @@ function setFeedbackAndCourseHelp(feedbackHtml) {
 
 
   // ---- Main click handler ----
-  el.btnCorrect.addEventListener("click", async () => {
-  // guard clauses, etc.
+ // ---- Main click handler ----
+el.btnCorrect.addEventListener("click", async () => {
+  // guard clauses – keep whatever you had (empty essay check, etc.)
 
   try {
-    // start busy state
+    // Start busy state
     el.btnCorrect.classList.add("is-busy");
-    setStatus("status.correcting");  // <- uses your i18n key
+    setStatus("status.correcting");   // i18n key
 
-    // === your existing API call logic here ===
-    // const response = await fetch(...);
-    // const data = await response.json();
-    // update feedback, edits, bands, etc.
+    // === YOUR EXISTING CORRECTION LOGIC GOES HERE ===
+    // Example (this is just illustrative):
+    //
+    // const taskText  = (el.task.value || "").trim();
+    // const essayText = (el.essay.value || "").trim();
+    // const result    = await correctEssay(taskText, essayText);
+    // renderFeedback(result);
+    // renderEdits(result);
+    // updateWordCounts(result);
 
   } catch (err) {
     console.error(err);
-    setStatus("");  // or an error message if you like
+    // optional: show an error message instead of empty
+    setStatus(""); 
   } finally {
-    // stop busy state
+    // Stop busy state & clear status
     el.btnCorrect.classList.remove("is-busy");
-    // clear status once finished
     setStatus("");
   }
 });
+
 
 
     // Level switch
