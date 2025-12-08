@@ -1460,3 +1460,9 @@ body {
   padding: 12px;
   font-size: 1rem;
 }
+.ec-status-line {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--ec-muted, #666);
+  font-style: italic;
+}
