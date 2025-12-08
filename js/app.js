@@ -140,34 +140,48 @@
   }
 
   // ---- Initial setup ----
+   // ---- Initial setup ----
   document.addEventListener("DOMContentLoaded", () => {
+    // Paint initial state
     reflectLangButtons();
     reflectLevelButtons();
     updateCounters();
+
+    // 1) Language buttons (EN / ES / NL)
+    const langButtons = $$("[data-lang]");
+    langButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const lang = btn.getAttribute("data-lang") || "en";
+
+        // remember choice
+        localStorage.setItem("ec.lang", lang);
+
+        // update button styles
+        reflectLangButtons(lang);
+
+        // tell i18n engine to actually switch language
+        if (window.I18N) {
+          if (typeof I18N.setLanguage === "function") {
+            I18N.setLanguage(lang);
+          } else if (typeof I18N.loadLanguage === "function") {
+            I18N.loadLanguage(lang);
+          }
+        }
+      });
+    });
+
+    // 2) Level buttons (B2 / C1 / C2)
+    const levelButtons = $$("[data-level]");
+    levelButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const level = btn.getAttribute("data-level") || "C1";
+
+        localStorage.setItem("ec.level", level);
+        reflectLevelButtons(level);
+      });
+    });
   });
 
-  // ---- Main click handler (delegated) ----
-  document.addEventListener("click", async (e) => {
-    // Language buttons
-    const langBtn = e.target.closest("[data-lang]");
-    if (langBtn) {
-      const lang = langBtn.getAttribute("data-lang") || "en";
-      localStorage.setItem("ec.lang", lang);
-      reflectLangButtons(lang);
-      if (window.I18N && typeof window.I18N.setLang === "function") {
-        window.I18N.setLang(lang);
-      }
-      return;
-    }
-
-    // Level buttons
-    const levelBtn = e.target.closest("[data-level]");
-    if (levelBtn) {
-      const level = levelBtn.getAttribute("data-level");
-      localStorage.setItem("ec.level", level);
-      reflectLevelButtons(level);
-      return;
-    }
 
     // Clear button
     if (e.target === el.btnClear) {
