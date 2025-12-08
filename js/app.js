@@ -9,8 +9,12 @@
 
   console.log("[EC] API_BASE =", API_BASE || "(mock)", "DEV?", DEV);
 
-   // ---- Element refs ----
-   const el = {
+  // ---- DOM helpers ----
+  const $  = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+  // ---- Element refs ----
+  const el = {
     task:       $("#task"),
     essay:      $("#essay"),
     nextDraft:  $("#nextDraft"),
@@ -20,9 +24,10 @@
     outWC:      $("#outWC"),
     btnCorrect: $("#btnCorrect"),
     btnClear:   $("#btnClear"),
-    statusLine: document.getElementById("statusLine")
+    statusLine: document.getElementById("statusLine") // <p id="statusLine">
   };
 
+  // ---- Status helper (shows "Correcting your essay…" etc.) ----
   function setStatus(keyOrText) {
     if (!el.statusLine) return;
 
@@ -38,69 +43,46 @@
     }
   }
 
-
   // Optionally expose to other scripts if needed
   window.EC.setStatus = setStatus;
 
+  // ---- Course Book helper bridge ----
+  function setFeedbackAndCourseHelp(feedbackHtml) {
+    if (!el.feedback) return;
 
+    // Show feedback in the normal panel
+    el.feedback.innerHTML = feedbackHtml || "—";
 
-  // If i18n is available, translate the key. Otherwise just show the key.
-  if (window.I18N && typeof window.I18N.t === "function") {
-    statusEl.textContent = window.I18N.t(i18nKey);
-  } else {
-    statusEl.textContent = i18nKey;
-  }
-}
+    try {
+      const feedbackText =
+        el.feedback.innerText || el.feedback.textContent || "";
 
+      const essayText = el.essay ? (el.essay.value || "") : "";
 
-  // If it's an i18n key, translate; otherwise use raw text
-  if (window.I18N && typeof I18N.t === "function") {
-    el.statusLine.textContent = I18N.t(keyOrText) || "";
-  } else {
-    el.statusLine.textContent = keyOrText;
-  }
-}
-
-
-    // ---- Course Book helper bridge ----
-function setFeedbackAndCourseHelp(feedbackHtml) {
-  if (!el.feedback) return;
-
-  // Show feedback in the normal panel
-  el.feedback.innerHTML = feedbackHtml || "—";
-
-  try {
-    const feedbackText =
-      el.feedback.innerText || el.feedback.textContent || "";
-
-    const essayText = el.essay ? (el.essay.value || "") : "";
-
-    if (
-      window.FeedbackEngine &&
-      typeof window.FeedbackEngine.detectMistakesWithLocations === "function" &&
-      window.FeedbackUI &&
-      typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
-    ) {
-      const result = window.FeedbackEngine.detectMistakesWithLocations(
-        feedbackText,
-        essayText
-      );
-      window.FeedbackUI.renderFeedbackCardWithLocations(result);
-    } else if (
-      window.FeedbackEngine &&
-      typeof window.FeedbackEngine.detectMistakes === "function" &&
-      window.FeedbackUI &&
-      typeof window.FeedbackUI.renderFeedbackCard === "function"
-    ) {
-      const ids = window.FeedbackEngine.detectMistakes(feedbackText);
-      window.FeedbackUI.renderFeedbackCard(ids);
+      if (
+        window.FeedbackEngine &&
+        typeof window.FeedbackEngine.detectMistakesWithLocations === "function" &&
+        window.FeedbackUI &&
+        typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
+      ) {
+        const result = window.FeedbackEngine.detectMistakesWithLocations(
+          feedbackText,
+          essayText
+        );
+        window.FeedbackUI.renderFeedbackCardWithLocations(result);
+      } else if (
+        window.FeedbackEngine &&
+        typeof window.FeedbackEngine.detectMistakes === "function" &&
+        window.FeedbackUI &&
+        typeof window.FeedbackUI.renderFeedbackCard === "function"
+      ) {
+        const ids = window.FeedbackEngine.detectMistakes(feedbackText);
+        window.FeedbackUI.renderFeedbackCard(ids);
+      }
+    } catch (err) {
+      console.error("[EC] setFeedbackAndCourseHelp error:", err);
     }
-  } catch (err) {
-    console.error("[EC] setFeedbackAndCourseHelp error:", err);
   }
-}
-
-
 
   // ---- Corrector (live API or mock) ----
   async function correctEssay(payload) {
@@ -164,41 +146,22 @@ function setFeedbackAndCourseHelp(feedbackHtml) {
     updateCounters();
   });
 
+  // ---- Main click handler (delegated) ----
+  document.addEventListener("click", async (e) => {
+    // Language buttons
+    const langBtn = e.target.closest("[data-lang]");
+    if (langBtn) {
+      const lang = langBtn.getAttribute("data-lang") || "en";
+      localStorage.setItem("ec.lang", lang);
+      reflectLangButtons(lang);
+      if (window.I18N && typeof window.I18N.setLang === "function") {
+        window.I18N.setLang(lang);
+      }
+      return;
+    }
 
-  // ---- Main click handler ----
- // ---- Main click handler ----
-el.btnCorrect.addEventListener("click", async () => {
-  // guard clauses – keep whatever you had (empty essay check, etc.)
-
-  try {
-    // Start busy state
-    el.btnCorrect.classList.add("is-busy");
-    setStatus("status.correcting");   // i18n key
-
-    // === YOUR EXISTING CORRECTION LOGIC GOES HERE ===
-    // Example (this is just illustrative):
-    //
-    // const taskText  = (el.task.value || "").trim();
-    // const essayText = (el.essay.value || "").trim();
-    // const result    = await correctEssay(taskText, essayText);
-    // renderFeedback(result);
-    // renderEdits(result);
-    // updateWordCounts(result);
-
-  } catch (err) {
-    console.error(err);
-    // optional: show an error message instead of empty
-    setStatus(""); 
-  } finally {
-    // Stop busy state & clear status
-    el.btnCorrect.classList.remove("is-busy");
-    setStatus("");
-  }
-});
-
-
-
-    // Level switch
+    // Level buttons
+    const levelBtn = e.target.closest("[data-level]");
     if (levelBtn) {
       const level = levelBtn.getAttribute("data-level");
       localStorage.setItem("ec.level", level);
@@ -206,7 +169,7 @@ el.btnCorrect.addEventListener("click", async () => {
       return;
     }
 
-        // Clear button
+    // Clear button
     if (e.target === el.btnClear) {
       if (el.task)      el.task.value = "";
       if (el.essay)     el.essay.value = "";
@@ -235,17 +198,10 @@ el.btnCorrect.addEventListener("click", async () => {
         dbgBtn.textContent = I18N.t("debug.show");
       }
 
+      setStatus("");
       updateCounters();
       return;
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btnCourseBook');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    window.open('assets/book/index.html', '_blank', 'noopener');
-  });
-});
 
     // Correct button
     if (e.target === el.btnCorrect) {
@@ -271,22 +227,15 @@ el.btnCorrect.addEventListener("click", async () => {
         e.target.classList.add("is-busy");
         e.target.setAttribute("aria-busy", "true");
 
-        if (el.feedback) {
-          if (window.I18N && typeof I18N.t === "function") {
-            el.feedback.textContent = I18N.t("status.correcting");
-          } else {
-            el.feedback.textContent =
-              "Correcting your essay… this may take a little while.";
-          }
-        }
+        // Show status line while correcting
+        setStatus("status.correcting");
 
         // Call Worker / mock
         res = await correctEssay(payload);
 
-                // Render main results
+        // Render main results
         setFeedbackAndCourseHelp(res.feedback || "—");
         if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
-
 
         if (el.edits) {
           el.edits.innerHTML = (res.edits || [])
@@ -330,6 +279,7 @@ el.btnCorrect.addEventListener("click", async () => {
         e.target.disabled = false;
         e.target.classList.remove("is-busy");
         e.target.removeAttribute("aria-busy");
+        setStatus("");
       }
 
       return;
@@ -370,6 +320,15 @@ el.btnCorrect.addEventListener("click", async () => {
       }
       return;
     }
+  });
+
+  // Separate handler for Course Book button
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("btnCourseBook");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      window.open("assets/book/index.html", "_blank", "noopener");
+    });
   });
 
   // Live word count while typing
@@ -445,8 +404,8 @@ el.btnCorrect.addEventListener("click", async () => {
       catList.appendChild(li);
     });
 
-    impList.innerHTML = "";
     const uniqImprovements = Array.from(new Set(res.improvement_summary));
+    impList.innerHTML = "";
     uniqImprovements.forEach((text) => {
       const li = document.createElement("li");
       li.textContent = text;
@@ -524,10 +483,10 @@ el.btnCorrect.addEventListener("click", async () => {
         : "";
 
       const linkHtml = linkHint
-  ? `<button class="si-link-btn" data-unit-link="${escapeHTML(linkHint)}">
-       ${escapeHTML(linkHint)}
-     </button>`
-  : "";
+        ? `<button class="si-link-btn" data-unit-link="${escapeHTML(linkHint)}">
+             ${escapeHTML(linkHint)}
+           </button>`
+        : "";
 
       return `
         <li class="si-item">
@@ -641,42 +600,41 @@ el.btnCorrect.addEventListener("click", async () => {
   }
 
   // =====================
-// SentenceInsight → open unit
-// =====================
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest(".si-link-btn");
-  if (!btn) return;
+  // SentenceInsight → open unit
+  // =====================
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".si-link-btn");
+    if (!btn) return;
 
-  const text = btn.getAttribute("data-unit-link")?.toLowerCase() || "";
+    const text = btn.getAttribute("data-unit-link")?.toLowerCase() || "";
 
-  // Unit lookup table (matches "unit 5", "unit 3", etc.)
-  const UNIT_LINKS = {
-    "unit 1": "assets/book/units/unit01.html",
-    "unit 2": "assets/book/units/unit02.html",
-    "unit 3": "assets/book/units/unit03.html",
-    "unit 4": "assets/book/units/unit04.html",
-    "unit 5": "assets/book/units/unit05.html",
-    "unit 6": "assets/book/units/unit06.html",
-    "unit 7": "assets/book/units/unit07.html",
-  };
+    // Unit lookup table (matches "unit 5", "unit 3", etc.)
+    const UNIT_LINKS = {
+      "unit 1": "assets/book/units/unit01.html",
+      "unit 2": "assets/book/units/unit02.html",
+      "unit 3": "assets/book/units/unit03.html",
+      "unit 4": "assets/book/units/unit04.html",
+      "unit 5": "assets/book/units/unit05.html",
+      "unit 6": "assets/book/units/unit06.html",
+      "unit 7": "assets/book/units/unit07.html"
+    };
 
-  // Find which unit number appears in the linkHint text
-  let match = null;
-  for (const key of Object.keys(UNIT_LINKS)) {
-    if (text.includes(key)) {
-      match = UNIT_LINKS[key];
-      break;
+    // Find which unit number appears in the linkHint text
+    let match = null;
+    for (const key of Object.keys(UNIT_LINKS)) {
+      if (text.includes(key)) {
+        match = UNIT_LINKS[key];
+        break;
+      }
     }
-  }
 
-  if (!match) {
-    console.warn("No matching unit found for linkHint:", text);
-    return;
-  }
+    if (!match) {
+      console.warn("No matching unit found for linkHint:", text);
+      return;
+    }
 
-  window.open(match, "_blank", "noopener");
-});
-
+    window.open(match, "_blank", "noopener");
+  });
 
   function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, (m) =>
