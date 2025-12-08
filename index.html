@@ -304,41 +304,31 @@
 
 
     <!-- Actions -->
-   <footer class="ec-actions">
-  <button id="btnClear" type="button"
-          class="ec-btn ec-btn--ghost"
-          data-i18n="buttons.clear"
-          data-i18n-title="tooltips.clear"
-          title="Clear">
-    Clear
-  </button>
+    <!-- Actions -->
+  <footer class="ec-actions">
+    <button id="btnClear" type="button"
+            class="ec-btn ec-btn--ghost"
+            data-i18n="buttons.clear"
+            data-i18n-title="tooltips.clear"
+            title="Clear">
+      Clear
+    </button>
 
-  <button id="btnCorrect" type="button"
-          class="ec-btn ec-btn--primary"
-          data-i18n="buttons.correct"
-          data-i18n-title="tooltips.correct"
-          title="Correct">
-    Correct
-  </button>
-</footer>
+    <button id="btnCorrect" type="button"
+            class="ec-btn ec-btn--primary"
+            data-i18n="buttons.correct"
+            data-i18n-title="tooltips.correct"
+            title="Correct">
+      Correct
+    </button>
+  </footer>
 
-<!-- Add this once, just after the footer -->
-<p id="statusLine" class="status-line"></p>
+  <!-- Status line under the buttons -->
+  <p id="statusLine"
+     class="ec-status-line"
+     aria-live="polite"
+     aria-atomic="true"></p>
 
-
-
-<!-- Status line under the buttons -->
-<p id="ecStatusLine"
-   class="ec-status-line"
-   aria-live="polite"
-   aria-atomic="true"></p>
-
-
-  </section>
-
-
-  <!-- RIGHT: FEEDBACK / OUTPUT -->
-  <section class="app-column app-column--right">
 
     <!-- Summary -->
     <section class="app-block app-block--summary">
