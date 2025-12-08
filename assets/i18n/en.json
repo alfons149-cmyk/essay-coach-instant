@@ -60,7 +60,6 @@
 
   "status.correcting": "Correcting your essay… this may take a little while.",
 
-  /* 🔹 NEW: keys your HTML is using now */
   "sections.task_title": "Task",
   "sections.task_hint": "Paste the exam task here so the coach knows what you are answering.",
   "sections.essay_title": "Your essay",
