@@ -60,3 +60,22 @@
   "debug.hide": "Geavanceerde AI-details verbergen",
   "debug.title": "AI-respons (geavanceerde details)"
 }
+{
+  "sections": {
+    "task_title": "Opdracht",
+    "task_hint": "Plak hier de examenopdracht zodat de coach weet wat je beantwoordt.",
+    "essay_title": "Je essay",
+    "essay_hint": "Probeer het volledige woordenaantal te halen. Je kunt zo vaak herschrijven als je wilt."
+  },
+  "labels": {
+    "task_prompt": "Opdrachttekst",
+    "essay_prompt": "Schrijf je antwoord",
+    "wordcount_input_prefix": "Invoer:",
+    "wordcount_words": "woorden"
+  },
+  "placeholders": {
+    "task_prompt": "Kopieer hier de vraag van het examen...",
+    "essay_prompt": "Schrijf je antwoord hier..."
+  }
+}
+
