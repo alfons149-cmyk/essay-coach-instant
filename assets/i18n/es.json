@@ -52,36 +52,18 @@
   "paragraph.title": "Lógica y estructura de los párrafos",
   "paragraph.role.intro": "Introducción",
   "paragraph.role.body": "Párrafo de desarrollo",
-   "paragraph.role.conclusion": "Conclusion",
+  "paragraph.role.conclusion": "Conclusión",
 
-    "debug.show": "Mostrar detalles avanzados de la IA",
+  "debug.show": "Mostrar detalles avanzados de la IA",
   "debug.hide": "Ocultar detalles avanzados de la IA",
   "debug.title": "Respuesta de la IA (detalles avanzados)",
 
-  "status.correcting": "Corrigiendo tu redacción… esto puede tardar un poco."
-}
-{
-  "sections": {
-    "task_title": "Tarea",
-    "task_hint": "Pega aquí la tarea del examen para que el entrenador sepa qué estás respondiendo.",
-    "essay_title": "Tu redacción",
-    "essay_hint": "Intenta llegar al límite completo de palabras. Puedes revisar el texto tantas veces como quieras."
-  },
-  "labels": {
-    "task_prompt": "Enunciado de la tarea",
-    "essay_prompt": "Escribe tu respuesta",
-    "wordcount_input_prefix": "Entrada:",
-    "wordcount_words": "palabras"
-  },
-  "placeholders": {
-    "task_prompt": "Copia aquí la pregunta del examen...",
-    "essay_prompt": "Escribe tu respuesta aquí..."
-  }
-}
+  "status.correcting": "Corrigiendo tu redacción… esto puede tardar un poco.",
+
   "sections.task_title": "Tarea",
-  "sections.task_hint": "Pega aquí la tarea del examen para que el coach sepa qué estás contestando.",
+  "sections.task_hint": "Pega aquí la tarea del examen para que el coach sepa qué estás respondiendo.",
   "sections.essay_title": "Tu redacción",
-  "sections.essay_hint": "Intenta llegar al límite máximo de palabras. Puedes revisarla tantas veces como quieras.",
+  "sections.essay_hint": "Intenta llegar al límite completo de palabras. Puedes revisar el texto tantas veces como quieras.",
 
   "labels.task_prompt": "Enunciado de la tarea",
   "labels.essay_prompt": "Escribe tu respuesta",
@@ -90,4 +72,4 @@
 
   "placeholders.task_prompt": "Copia aquí la pregunta del examen...",
   "placeholders.essay_prompt": "Escribe tu respuesta aquí..."
-
+}
