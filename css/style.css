@@ -1380,3 +1380,83 @@ body {
 .app-block {
   margin-bottom: 2.5rem;
 }
+/* =====================================
+   GLOBAL HARMONISED TITLES (ALL BLOCKS)
+   ===================================== */
+
+.app-block__title,
+.ec-block__title,
+.summary-item .summary-label,
+.feedback-panel__title {
+  font-family: "IBM Plex Serif", serif;
+  font-size: 1.55rem;
+  font-weight: 600;
+  color: var(--ec-accent-active);
+  margin-bottom: 0.35rem;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+}
+.app-block__hint {
+  font-size: 1rem;
+  color: var(--ec-muted);
+  margin-bottom: 1.2rem;
+  line-height: 1.45;
+}
+.app-block,
+.ec-block {
+  margin-bottom: 2.6rem;
+}
+/* Shared card styling */
+.app-box,
+.ec-box {
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: 12px;
+  padding: 1.3rem 1.4rem;
+  box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.05);
+}
+.summary-label {
+  font-family: "IBM Plex Serif", serif;
+  font-size: 1rem;
+  color: var(--ec-accent-active);
+}
+
+.summary-value {
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-top: 4px;
+}
+#feedback p,
+#edits p {
+  font-size: 1rem;
+  line-height: 1.45;
+  margin-bottom: 0.65rem;
+}
+
+#feedback strong,
+#edits strong {
+  color: var(--ec-accent-active);
+  font-weight: 600;
+}
+.app-box--coursebook {
+  background: #fff8f5;
+  border: 1px solid var(--ec-border);
+  padding: 1.4rem 1.6rem;
+}
+
+.app-box--coursebook a {
+  color: var(--ec-accent-active);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-box--coursebook a:hover {
+  text-decoration: underline;
+}
+.app-textarea--draft {
+  background: #fefefe;
+  border: 1px solid var(--ec-border);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 1rem;
+}
