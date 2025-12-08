@@ -1466,3 +1466,10 @@ body {
   color: var(--ec-muted, #666);
   font-style: italic;
 }
+.status-line {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--ec-muted, #555);
+  font-style: italic;
+  min-height: 1.2em; /* keeps space even when empty */
+}
