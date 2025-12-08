@@ -35,6 +35,24 @@ function setStatus(keyOrText) {
     el.statusLine.textContent = "";
     return;
   }
+  // ---- Status helper (shows "Correcting your essay…" etc.) ----
+function setStatus(i18nKey) {
+  const statusEl = document.getElementById("statusLine");
+  if (!statusEl) return;
+
+  if (!i18nKey) {
+    statusEl.textContent = "";
+    return;
+  }
+
+  // If i18n is available, translate the key. Otherwise just show the key.
+  if (window.I18N && typeof window.I18N.t === "function") {
+    statusEl.textContent = window.I18N.t(i18nKey);
+  } else {
+    statusEl.textContent = i18nKey;
+  }
+}
+
 
   // If it's an i18n key, translate; otherwise use raw text
   if (window.I18N && typeof I18N.t === "function") {
