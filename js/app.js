@@ -9,10 +9,6 @@
 
   console.log("[EC] API_BASE =", API_BASE || "(mock)", "DEV?", DEV);
 
-  // ---- DOM helpers ----
-  const $  = (s) => document.querySelector(s);
-  const $$ = (s) => Array.from(document.querySelectorAll(s));
-
    // ---- Element refs ----
   const el = {
     task:       $("#task"),
@@ -24,39 +20,29 @@
     outWC:      $("#outWC"),
     btnCorrect: $("#btnCorrect"),
     btnClear:   $("#btnClear"),
-    statusLine: $("#statusLine")      // matches <p id="statusLine">
+    statusLine: document.getElementById("statusLine") // small status line in the UI
   };
 
   // ---- Status helper (shows "Correcting your essay…" etc.) ----
-  function setStatus(i18nKey) {
-    // prefer the cached ref, fall back to a fresh query
-    const statusEl = el.statusLine || document.getElementById("statusLine");
-    if (!statusEl) return;
+  function setStatus(keyOrText) {
+    if (!el.statusLine) return;
 
-    // clear
-    if (!i18nKey) {
-      statusEl.textContent = "";
+    if (!keyOrText) {
+      el.statusLine.textContent = "";
       return;
     }
 
-    // Use i18n if available; otherwise just show the key/text
+    // If i18n is available, treat it as a key; otherwise use raw text
     if (window.I18N && typeof window.I18N.t === "function") {
-      statusEl.textContent = window.I18N.t(i18nKey) || "";
+      el.statusLine.textContent = window.I18N.t(keyOrText) || "";
     } else {
-      statusEl.textContent = i18nKey;
+      el.statusLine.textContent = keyOrText;
     }
   }
 
-  // expose globally in case something outside this file wants it
-  window.setStatus = setStatus;
+  // Optionally expose to other scripts if needed
+  window.EC.setStatus = setStatus;
 
-  // If i18n is available, translate the key. Otherwise just show the key.
-  if (window.I18N && typeof window.I18N.t === "function") {
-    statusEl.textContent = window.I18N.t(i18nKey);
-  } else {
-    statusEl.textContent = i18nKey;
-  }
-};
 
 
   // If i18n is available, translate the key. Otherwise just show the key.
