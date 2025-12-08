@@ -450,41 +450,27 @@
     </section>
 
     <!-- Next draft -->
-    <section class="app-block">
-      <header class="app-block__header">
-        <h2 class="app-block__title">Next draft</h2>
-        <p class="app-block__hint">
-          Rewrite your answer using the feedback and course book help.
-        </p>
-      </header>
+    <!-- Advanced stuff: sentence insights, vocab, etc. (always visible) -->
+<section class="ec-block ec-block--advanced">
+  <header class="ec-block__header">
+    <h3 class="ec-block__title">Advanced details</h3>
+    <p class="ec-block__hint">
+      Sentence-level insights, vocabulary ideas, and other AI details.
+    </p>
+  </header>
 
-      <div class="app-field">
-        <textarea
-          id="nextDraft"
-          class="app-textarea app-textarea--draft"
-          rows="8"
-          placeholder="Rewrite your answer here..."
-        ></textarea>
-      </div>
+  <div class="ec-advanced-body">
+    <section class="ec-subblock">
+      <h4 class="ec-subblock__title">Sentence insights</h4>
+      <div id="sentence-insights"></div>
     </section>
 
-    <!-- Advanced: sentence insights, vocab, debug -->
-    <section class="ec-block ec-block--advanced">
-      <header class="ec-block__header">
-        <button type="button" class="ec-toggle-advanced" data-ec-advanced-toggle>
-          Show advanced details ▼
-        </button>
-      </header>
-
-      <div class="ec-advanced-body" data-ec-advanced-body hidden>
-
-        <!-- Sentence insights -->
-        <section class="ec-subblock">
-          <h4 class="ec-subblock__title">Sentence insights</h4>
-          <div id="sentence-insights">
-            <!-- JS will populate with insight items -->
-          </div>
-        </section>
+    <section class="ec-subblock">
+      <h4 class="ec-subblock__title">Useful vocabulary</h4>
+      <div id="vocab-suggestions"></div>
+    </section>
+  </div>
+</section>
 
         <!-- Useful vocabulary (extra view) -->
         <section class="ec-subblock">
