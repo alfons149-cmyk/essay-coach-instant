@@ -13,46 +13,42 @@
   const $  = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
 
-  // ---- Element refs ----
+   // ---- Element refs ----
   const el = {
-  task:       $("#task"),
-  essay:      $("#essay"),
-  nextDraft:  $("#nextDraft"),
-  feedback:   $("#feedback"),
-  edits:      $("#edits"),
-  inWC:       $("#inWC"),
-  outWC:      $("#outWC"),
-  btnCorrect: $("#btnCorrect"),
-  btnClear:   $("#btnClear"),
-  statusLine: $("#ecStatusLine")   // <-- add this line
-};
+    task:       $("#task"),
+    essay:      $("#essay"),
+    nextDraft:  $("#nextDraft"),
+    feedback:   $("#feedback"),
+    edits:      $("#edits"),
+    inWC:       $("#inWC"),
+    outWC:      $("#outWC"),
+    btnCorrect: $("#btnCorrect"),
+    btnClear:   $("#btnClear"),
+    statusLine: $("#statusLine")      // matches <p id="statusLine">
+  };
 
-// Helper to set status text using i18n
-function setStatus(keyOrText) {
-  if (!el.statusLine) return;
-
-  if (!keyOrText) {
-    el.statusLine.textContent = "";
-    return;
-  }
   // ---- Status helper (shows "Correcting your essay…" etc.) ----
-function setStatus(i18nKey) {
-  const statusEl = document.getElementById("statusLine");
-  if (!statusEl) return;
+  function setStatus(i18nKey) {
+    // prefer the cached ref, fall back to a fresh query
+    const statusEl = el.statusLine || document.getElementById("statusLine");
+    if (!statusEl) return;
 
-  if (!i18nKey) {
-    statusEl.textContent = "";
-    return;
-  }
-  // ---- Status helper (shows "Correcting your essay…" etc.) ----
-window.setStatus = function (i18nKey) {
-  const statusEl = document.getElementById("statusLine");
-  if (!statusEl) return;
+    // clear
+    if (!i18nKey) {
+      statusEl.textContent = "";
+      return;
+    }
 
-  if (!i18nKey) {
-    statusEl.textContent = "";
-    return;
+    // Use i18n if available; otherwise just show the key/text
+    if (window.I18N && typeof window.I18N.t === "function") {
+      statusEl.textContent = window.I18N.t(i18nKey) || "";
+    } else {
+      statusEl.textContent = i18nKey;
+    }
   }
+
+  // expose globally in case something outside this file wants it
+  window.setStatus = setStatus;
 
   // If i18n is available, translate the key. Otherwise just show the key.
   if (window.I18N && typeof window.I18N.t === "function") {
