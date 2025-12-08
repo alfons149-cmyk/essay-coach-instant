@@ -78,3 +78,16 @@
     "essay_prompt": "Escribe tu respuesta aquí..."
   }
 }
+  "sections.task_title": "Tarea",
+  "sections.task_hint": "Pega aquí la tarea del examen para que el coach sepa qué estás contestando.",
+  "sections.essay_title": "Tu redacción",
+  "sections.essay_hint": "Intenta llegar al límite máximo de palabras. Puedes revisarla tantas veces como quieras.",
+
+  "labels.task_prompt": "Enunciado de la tarea",
+  "labels.essay_prompt": "Escribe tu respuesta",
+  "labels.wordcount_input_prefix": "Entrada:",
+  "labels.wordcount_words": "palabras",
+
+  "placeholders.task_prompt": "Copia aquí la pregunta del examen...",
+  "placeholders.essay_prompt": "Escribe tu respuesta aquí..."
+
