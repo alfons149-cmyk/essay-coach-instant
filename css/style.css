@@ -1354,3 +1354,29 @@ body {
     height: 28px;
   }
 }
+/* =====================================
+   Premium Section Title Styling
+   ===================================== */
+
+.app-block__title {
+  font-family: "IBM Plex Serif", serif;  /* elegant exam-book vibe */
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--ec-accent-active);
+  margin-bottom: 0.35rem;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+}
+
+/* Subtitle / hint */
+.app-block__hint {
+  font-size: 1rem;
+  color: var(--ec-muted);
+  margin-bottom: 1.2rem;
+  line-height: 1.45;
+}
+
+/* Optional: lighten the whole block top spacing so the page breathes */
+.app-block {
+  margin-bottom: 2.5rem;
+}
