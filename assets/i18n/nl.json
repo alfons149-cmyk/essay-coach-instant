@@ -78,4 +78,16 @@
     "essay_prompt": "Schrijf je antwoord hier..."
   }
 }
+  "sections.task_title": "Opdracht",
+  "sections.task_hint": "Plak hier de examenvraag zodat de coach weet wat je beantwoordt.",
+  "sections.essay_title": "Je schrijfopdracht",
+  "sections.essay_hint": "Probeer het volledige aantal woorden te halen. Je kunt zo vaak herschrijven als je wilt.",
+
+  "labels.task_prompt": "Opdrachttekst",
+  "labels.essay_prompt": "Schrijf je antwoord",
+  "labels.wordcount_input_prefix": "Invoer:",
+  "labels.wordcount_words": "woorden",
+
+  "placeholders.task_prompt": "Kopieer hier de vraag van het examen...",
+  "placeholders.essay_prompt": "Schrijf hier je antwoord..."
 
