@@ -60,3 +60,21 @@
 
   "status.correcting": "Corrigiendo tu redacción… esto puede tardar un poco."
 }
+{
+  "sections": {
+    "task_title": "Tarea",
+    "task_hint": "Pega aquí la tarea del examen para que el entrenador sepa qué estás respondiendo.",
+    "essay_title": "Tu redacción",
+    "essay_hint": "Intenta llegar al límite completo de palabras. Puedes revisar el texto tantas veces como quieras."
+  },
+  "labels": {
+    "task_prompt": "Enunciado de la tarea",
+    "essay_prompt": "Escribe tu respuesta",
+    "wordcount_input_prefix": "Entrada:",
+    "wordcount_words": "palabras"
+  },
+  "placeholders": {
+    "task_prompt": "Copia aquí la pregunta del examen...",
+    "essay_prompt": "Escribe tu respuesta aquí..."
+  }
+}
