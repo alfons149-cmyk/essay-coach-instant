@@ -60,3 +60,21 @@
 
   "status.correcting": "Correcting your essay… this may take a little while."
 }
+{
+  "sections": {
+    "task_title": "Task",
+    "task_hint": "Paste the exam task here so the coach knows what you are answering.",
+    "essay_title": "Your essay",
+    "essay_hint": "Aim for the full word limit. You can revise as many times as you like."
+  },
+  "labels": {
+    "task_prompt": "Task prompt",
+    "essay_prompt": "Write your answer",
+    "wordcount_input_prefix": "Input:",
+    "wordcount_words": "words"
+  },
+  "placeholders": {
+    "task_prompt": "Copy the question from the exam paper here...",
+    "essay_prompt": "Write your answer here..."
+  }
+}
