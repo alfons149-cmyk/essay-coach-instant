@@ -139,7 +139,7 @@
     };
   }
 
-    // ---- Initial setup ----
+     // ---- Initial setup ----
   document.addEventListener("DOMContentLoaded", () => {
     // Paint initial state
     reflectLangButtons();
@@ -298,8 +298,6 @@
     }
   });
 
-     });
-
   // Global click handler for debug toggle + vocab replacements
   document.addEventListener("click", (e) => {
     // Debug toggle button
@@ -338,6 +336,7 @@
       return;
     }
   });
+
 
   // Separate handler for Course Book button
   document.addEventListener("DOMContentLoaded", () => {
