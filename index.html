@@ -191,31 +191,49 @@
           class="logo-inline" />
       </h1>
 
-      <div class="topbar-right">
-        <!-- Language buttons -->
-        <button class="btn-ghost" data-lang="en" title="English" data-i18n-title="tooltips.lang_en">EN</button>
-        <button class="btn-ghost" data-lang="es" title="Español" data-i18n-title="tooltips.lang_es">ES</button>
-        <button class="btn-ghost" data-lang="nl" title="Nederlands" data-i18n-title="tooltips.lang_nl">NL</button>
+     <div class="topbar-right">
+  <!-- Language buttons -->
+  <button
+    class="btn-ghost"
+    data-lang="en"
+    data-i18n="tooltips.lang_en"         <!-- if you want the label to be from i18n -->
+    title="English"
+    data-i18n-title="tooltips.lang_en">
+    EN
+  </button>
 
-        <!-- Open the Course Book -->
-        <button class="btn-ghost" id="btnCourseBook" type="button">
-          📘 <span data-i18n="labels.course_book">Read the Course Book</span>
-        </button>
+  <button
+    class="btn-ghost"
+    data-lang="es"
+    data-i18n="tooltips.lang_es"
+    title="Español"
+    data-i18n-title="tooltips.lang_es">
+    ES
+  </button>
 
-        <!-- API/dev badges -->
-        <span class="badge" id="apiMode" style="margin-left:8px"></span>
-        <span class="badge" id="devBadge" style="display:none">DEV</span>
-      </div>
-    </div>
-  </header>
+  <button
+    class="btn-ghost"
+    data-lang="nl"
+    data-i18n="tooltips.lang_nl"
+    title="Nederlands"
+    data-i18n-title="tooltips.lang_nl">
+    NL
+  </button>
 
-  <!-- 🔸 everything else in your app (expert-tagline, level row, main, etc.)
-       stays exactly as it was, inside this same <div id="app-root"> -->
+  <!-- Open the Course Book -->
+  <button class="btn-ghost" id="btnCourseBook" type="button">
+    📘 <span data-i18n="labels.course_book">Read the Course Book</span>
+  </button>
 
+  <!-- API/dev badges -->
+  <span class="badge" id="apiMode" style="margin-left:8px"></span>
+  <span class="badge" id="devBadge" style="display:none">DEV</span>
+</div>
+</div>
+</header>
 
-
-    <!-- Expertise tagline -->
-   <div class="expert-tagline" data-i18n="app.tagline">
+<!-- Expertise tagline -->
+<div class="expert-tagline" data-i18n="app.tagline">
   Built on 25 years of Cambridge exam classroom experience.
 </div>
 
@@ -226,53 +244,53 @@
   <button type="button" class="pill" data-level="C2">C2</button>
 </div>
 
-        <main class="app-main">
+<main class="app-main">
 
   <!-- LEFT: INPUT / WRITING -->
   <section class="app-column app-column--left">
 
     <!-- Task prompt -->
     <section class="app-block">
-  <header class="app-block__header">
-    <h2 class="app-block__title"
-        data-i18n="sections.task_title">
-      Task
-    </h2>
-    <p class="app-block__hint"
-       data-i18n="sections.task_hint">
-      Paste the exam task here so the coach knows what you are answering.
-    </p>
-  </header>
+      <header class="app-block__header">
+        <h2 class="app-block__title"
+            data-i18n="sections.task_title">
+          Task
+        </h2>
+        <p class="app-block__hint"
+           data-i18n="sections.task_hint">
+          Paste the exam task here so the coach knows what you are answering.
+        </p>
+      </header>
 
-  <div class="app-field">
-    <label class="app-field__label"
-           for="task"
-           data-i18n="labels.task_prompt">
-      Task prompt
-    </label>
-    <textarea
-      id="task"
-      class="app-textarea app-textarea--task"
-      rows="4"
-      data-i18n-placeholder="placeholders.task_prompt"
-      placeholder="Copy the question from the exam paper here..."
-    ></textarea>
-  </div>
-</section>
-
+      <div class="app-field">
+        <label class="app-field__label"
+               for="task"
+               data-i18n="labels.task_prompt">
+          Task prompt
+        </label>
+        <textarea
+          id="task"
+          class="app-textarea app-textarea--task"
+          rows="4"
+          data-i18n-placeholder="placeholders.task_prompt"
+          placeholder="Copy the question from the exam paper here..."
+        ></textarea>
+      </div>
+    </section>
 
     <!-- Essay -->
     <section class="app-block">
-  <header class="app-block__header">
-    <h2 class="app-block__title"
-        data-i18n="sections.essay_title">
-      Your essay
-    </h2>
-    <p class="app-block__hint"
-       data-i18n="sections.essay_hint">
-      Aim for the full word limit. You can revise as many times as you like.
-    </p>
-  </header>
+      <header class="app-block__header">
+        <h2 class="app-block__title"
+            data-i18n="sections.essay_title">
+          Your essay
+        </h2>
+        <p class="app-block__hint"
+           data-i18n="sections.essay_hint">
+          Aim for the full word limit. You can revise as many times as you like.
+        </p>
+      </header>
+      ...
 
   <div class="app-field">
     <label class="app-field__label"
