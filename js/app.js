@@ -158,14 +158,19 @@
         // update button styles
         reflectLangButtons(lang);
 
-        // tell i18n engine to actually switch language
-        if (window.I18N) {
-          if (typeof I18N.setLanguage === "function") {
-            I18N.setLanguage(lang);
-          } else if (typeof I18N.loadLanguage === "function") {
-            I18N.loadLanguage(lang);
-          }
-        }
+            // tell i18n engine to actually switch language
+    if (window.I18N) {
+      if (typeof I18N.setLanguage === "function") {
+        I18N.setLanguage(lang);
+      } else if (typeof I18N.loadLanguage === "function") {
+        I18N.loadLanguage(lang);
+      } else if (typeof I18N.load === "function") {
+        // fallback for your current i18n implementation
+        I18N.load(lang);
+      } else {
+        console.warn("[i18n] No language switch function found");
+      }
+    }
       });
     });
 
