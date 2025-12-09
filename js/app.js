@@ -139,7 +139,7 @@
     };
   }
 
-     // ---- Initial setup ----
+  // ---- Initial setup ----
   document.addEventListener("DOMContentLoaded", () => {
     // Paint initial state
     reflectLangButtons();
@@ -336,7 +336,6 @@
       return;
     }
   });
-
 
   // Separate handler for Course Book button
   document.addEventListener("DOMContentLoaded", () => {
