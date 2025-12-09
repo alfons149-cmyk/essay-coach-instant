@@ -298,6 +298,10 @@
     }
   });
 
+     });
+
+  // Global click handler for debug toggle + vocab replacements
+  document.addEventListener("click", (e) => {
     // Debug toggle button
     const debugBtn = e.target.closest("#btnToggleDebug");
     if (debugBtn) {
