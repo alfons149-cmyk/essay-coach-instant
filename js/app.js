@@ -139,8 +139,7 @@
     };
   }
 
-  // ---- Initial setup ----
-   // ---- Initial setup ----
+    // ---- Initial setup ----
   document.addEventListener("DOMContentLoaded", () => {
     // Paint initial state
     reflectLangButtons();
@@ -180,124 +179,124 @@
         reflectLevelButtons(level);
       });
     });
-  });
 
+    // 3) Clear button
+    if (el.btnClear) {
+      el.btnClear.addEventListener("click", () => {
+        if (el.task)      el.task.value = "";
+        if (el.essay)     el.essay.value = "";
+        if (el.nextDraft) el.nextDraft.value = "";
+        if (el.feedback)  el.feedback.textContent = "—";
+        if (el.edits)     el.edits.innerHTML = "";
+        renderVocabSuggestions({});
+        renderSentenceInsights([]);
+        renderDebugJson(null);
+        window.EC_LAST_RESPONSE = null;
 
-    // Clear button
-    if (e.target === el.btnClear) {
-      if (el.task)      el.task.value = "";
-      if (el.essay)     el.essay.value = "";
-      if (el.nextDraft) el.nextDraft.value = "";
-      if (el.feedback)  el.feedback.textContent = "—";
-      if (el.edits)     el.edits.innerHTML = "";
-      renderVocabSuggestions({});
-      renderSentenceInsights([]);
-      renderDebugJson(null);
-      window.EC_LAST_RESPONSE = null;
-
-      // Optional: clear Course Book help card
-      try {
-        if (
-          window.FeedbackUI &&
-          typeof window.FeedbackUI.renderFeedbackCard === "function"
-        ) {
-          window.FeedbackUI.renderFeedbackCard("");
-        }
-      } catch (err) {
-        console.warn("[FeedbackUI] could not clear card:", err);
-      }
-
-      const dbgBtn = $("#btnToggleDebug");
-      if (dbgBtn && window.I18N && I18N.t) {
-        dbgBtn.textContent = I18N.t("debug.show");
-      }
-
-      setStatus("");
-      updateCounters();
-      return;
-    }
-
-    // Correct button
-    if (e.target === el.btnCorrect) {
-      const level = localStorage.getItem("ec.level") || "C1";
-      const payload = {
-        level,
-        task:  el.task ? el.task.value || "" : "",
-        essay: el.essay ? el.essay.value || "" : ""
-      };
-
-      if (!payload.essay.trim()) {
-        if (el.feedback) {
-          el.feedback.textContent = "Please write or paste your essay first.";
-        }
-        return;
-      }
-
-      let res;
-
-      try {
-        // Busy state ON
-        e.target.disabled = true;
-        e.target.classList.add("is-busy");
-        e.target.setAttribute("aria-busy", "true");
-
-        // Show status line while correcting
-        setStatus("status.correcting");
-
-        // Call Worker / mock
-        res = await correctEssay(payload);
-
-        // Render main results
-        setFeedbackAndCourseHelp(res.feedback || "—");
-        if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
-
-        if (el.edits) {
-          el.edits.innerHTML = (res.edits || [])
-            .map((x) =>
-              `<li><strong>${escapeHTML(x.from)}</strong> → ` +
-              `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
-            )
-            .join("");
+        // Optional: clear Course Book help card
+        try {
+          if (
+            window.FeedbackUI &&
+            typeof window.FeedbackUI.renderFeedbackCard === "function"
+          ) {
+            window.FeedbackUI.renderFeedbackCard("");
+          }
+        } catch (err) {
+          console.warn("[FeedbackUI] could not clear card:", err);
         }
 
-        // Word counters
-        setCounter(el.inWC,  "io.input_words",  res.inputWords  ?? 0);
-        setCounter(el.outWC, "io.output_words", res.outputWords ?? 0);
-
-        // Extra cards
-        renderVocabSuggestions(res.vocabularySuggestions || {});
-        renderSentenceInsights(res.sentenceInsights || []);
-
-        // Debug JSON
-        window.EC_LAST_RESPONSE = res;
-        renderDebugJson(res);
-
-        // Bands (if scoreEssay exists)
-        if (typeof window.scoreEssay === "function") {
-          const scores = {
-            content: 0.7,
-            communicative: 0.6,
-            organisation: 0.8,
-            language: 0.55
-          };
-          renderBands(level, scores);
+        const dbgBtn = $("#btnToggleDebug");
+        if (dbgBtn && window.I18N && I18N.t) {
+          dbgBtn.textContent = I18N.t("debug.show");
         }
-      } catch (err) {
-        console.error("[EC] UI or API error:", err);
-        if (!res && el.feedback) {
-          el.feedback.textContent =
-            "⚠️ Correction failed. Check API, CORS, or dev mode.";
-        }
-      } finally {
-        // Busy state OFF
-        e.target.disabled = false;
-        e.target.classList.remove("is-busy");
-        e.target.removeAttribute("aria-busy");
+
         setStatus("");
-      }
-
-      return;
+        updateCounters();
+      });
     }
+
+    // 4) Correct button
+    if (el.btnCorrect) {
+      el.btnCorrect.addEventListener("click", async (e) => {
+        const level = localStorage.getItem("ec.level") || "C1";
+        const payload = {
+          level,
+          task:  el.task ? el.task.value || "" : "",
+          essay: el.essay ? el.essay.value || "" : ""
+        };
+
+        if (!payload.essay.trim()) {
+          if (el.feedback) {
+            el.feedback.textContent = "Please write or paste your essay first.";
+          }
+          return;
+        }
+
+        let res;
+
+        try {
+          // Busy state ON
+          e.target.disabled = true;
+          e.target.classList.add("is-busy");
+          e.target.setAttribute("aria-busy", "true");
+
+          // Show status line while correcting
+          setStatus("status.correcting");
+
+          // Call Worker / mock
+          res = await correctEssay(payload);
+
+          // Render main results
+          setFeedbackAndCourseHelp(res.feedback || "—");
+          if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
+
+          if (el.edits) {
+            el.edits.innerHTML = (res.edits || [])
+              .map((x) =>
+                `<li><strong>${escapeHTML(x.from)}</strong> → ` +
+                `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
+              )
+              .join("");
+          }
+
+          // Word counters
+          setCounter(el.inWC,  "io.input_words",  res.inputWords  ?? 0);
+          setCounter(el.outWC, "io.output_words", res.outputWords ?? 0);
+
+          // Extra cards
+          renderVocabSuggestions(res.vocabularySuggestions || {});
+          renderSentenceInsights(res.sentenceInsights || []);
+
+          // Debug JSON
+          window.EC_LAST_RESPONSE = res;
+          renderDebugJson(res);
+
+          // Bands (if scoreEssay exists)
+          if (typeof window.scoreEssay === "function") {
+            const scores = {
+              content: 0.7,
+              communicative: 0.6,
+              organisation: 0.8,
+              language: 0.55
+            };
+            renderBands(level, scores);
+          }
+        } catch (err) {
+          console.error("[EC] UI or API error:", err);
+          if (!res && el.feedback) {
+            el.feedback.textContent =
+              "⚠️ Correction failed. Check API, CORS, or dev mode.";
+          }
+        } finally {
+          // Busy state OFF
+          e.target.disabled = false;
+          e.target.classList.remove("is-busy");
+          e.target.removeAttribute("aria-busy");
+          setStatus("");
+        }
+      });
+    }
+  });
 
     // Debug toggle button
     const debugBtn = e.target.closest("#btnToggleDebug");
