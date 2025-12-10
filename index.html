@@ -322,28 +322,29 @@
 
 
     <!-- Actions -->
-  <div class="action-buttons">
- <button id="btnCorrect"
-          class="btn btn-primary"
-          type="button"
-          data-i18n="buttons.correct">
-    Correct
-    
-    <button id="btnClear"
-          class="btn btn-ghost"
-          type="button"
-          data-i18n="buttons.clear">
-    Clear
+  <div class="action-row">
+  <button
+    id="btnCorrect"
+    type="button"
+    class="btn btn-primary"
+    data-i18n="buttons.correct"
+  >
+    <span class="btn-icon">✨</span>
+    <span class="btn-label">Correct</span>
+  </button>
+
+  <button
+    id="btnClear"
+    type="button"
+    class="btn btn-ghost"
+    data-i18n="buttons.clear"
+  >
+    <span class="btn-icon">🧹</span>
+    <span class="btn-label">Clear</span>
   </button>
 </div>
 
-
-  <!-- Status line under the buttons -->
-  <p id="statusLine"
-     class="ec-status-line"
-     aria-live="polite"
-     aria-atomic="true"></p>
-
+<p id="statusLine" class="status-line" aria-live="polite"></p>
 
     <!-- Summary -->
     <section class="app-block app-block--summary">
