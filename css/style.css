@@ -231,6 +231,20 @@ button,
   color: var(--ec-accent-active);
 }
 
+.status-line {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--ec-accent-active);
+  font-style: italic;
+  opacity: 0.95;
+}
+
+/* Slightly softer when empty (browser still reserves the space nicely) */
+.status-line:empty {
+  margin-top: 0;
+}
+
+
 /* Safety: any old HTML with .lang-btn behaves like ghost */
 .lang-btn {
   background: #fff;
