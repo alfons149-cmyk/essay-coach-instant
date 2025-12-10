@@ -145,6 +145,66 @@ button,
   color: var(--ec-text);
 }
 
+/* Layout for the two buttons side-by-side */
+.action-row {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Slightly bolder buttons */
+.btn {
+  font-size: 0.95rem;
+  padding: 9px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Icons inside buttons */
+.btn-icon {
+  font-size: 1.05em;
+}
+
+/* Primary action (Correct) – keep your colours, add a bit of depth */
+.btn-primary {
+  background: var(--ec-accent);
+  border: 1px solid var(--ec-accent-active);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+.btn-primary:hover {
+  background: var(--ec-accent-hover);
+  border-color: var(--ec-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+.btn-primary:active {
+  background: var(--ec-accent-active);
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+
+/* Ghost button (Clear) – keep your look but match the feel */
+.btn-ghost {
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  color: var(--ec-text);
+}
+.btn-ghost:hover {
+  background: var(--ec-accent-bg);
+  border-color: var(--ec-accent);
+  color: var(--ec-accent-active);
+}
+
+/* Optional: keyboard focus outline for accessibility */
+.btn:focus-visible {
+  outline: 2px solid var(--ec-accent);
+  outline-offset: 2px;
+}
+
+
 /* Primary action (Correct) */
 .btn-primary {
   background: var(--ec-accent);
