@@ -1473,3 +1473,36 @@ body {
   font-style: italic;
   min-height: 1.2em; /* keeps space even when empty */
 }
+.action-buttons {
+  margin-top: 1.2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-primary {
+  background: #0a66c2;
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #084c91;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #444;
+  border: 1px solid #ccc;
+}
+
+.btn-ghost:hover {
+  background: #f3f3f3;
+}
