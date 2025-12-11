@@ -424,6 +424,60 @@ function makeFriendlyKeyFocus(raw, lang = "en") {
     setCounter(el.outWC, "io.output_words", wc);
   }
 
+  // ======================================================
+// Detect UI language (en / es / nl)
+// ======================================================
+function detectUILang() {
+  let code =
+    localStorage.getItem("ec.lang") ||
+    document.documentElement.lang ||
+    "en";
+
+  code = String(code).toLowerCase();
+
+  if (code.startsWith("es")) return "es";
+  if (code.startsWith("nl")) return "nl";
+  return "en";
+}
+
+// ======================================================
+// Turn raw improvement text into friendly “Key focus”
+// ======================================================
+function makeFriendlyKeyFocus(raw, lang = "en") {
+  if (!raw || typeof raw !== "string") return "—";
+  const text = raw.trim();
+
+  // Already friendly?
+  const alreadyFriendly = {
+    en: [/^your top priority/i, /^focus on/i, /^you should/i],
+    es: [/^tu prioridad/i, /^enfócate en/i, /^deberías/i],
+    nl: [/^je belangrijkste/i, /^richt je op/i, /^je zou/i]
+  };
+
+  const rules = alreadyFriendly[lang] || alreadyFriendly.en;
+  if (rules.some((r) => r.test(text))) return text;
+
+  // Language-specific rewrite
+  switch (lang) {
+    case "es": {
+      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
+      return `Tu prioridad principal es ${lowered}`;
+    }
+    case "nl": {
+      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
+      return `Je belangrijkste aandachtspunt is ${lowered}`;
+    }
+    default:
+    case "en": {
+      let phr = text;
+      if (!phr.match(/^to\s+/i)) {
+        phr = "to " + phr.charAt(0).toLowerCase() + phr.slice(1);
+      }
+      return `Your top priority is ${phr}`;
+    }
+  }
+}
+
  // ---- Bands card ----
 function renderBands(level, scores) {
   if (typeof window.scoreEssay !== "function") {
