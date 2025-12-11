@@ -435,20 +435,34 @@ function renderBands(level, scores) {
 
   card.hidden = false;
 
-  // ✅ NEW: update the compact "Summary" panel
+    // ✅ Update the compact "Summary" panel
   const miniBand  = document.getElementById("band-estimate");
   const miniFocus = document.getElementById("key-area");
 
   if (miniBand) {
-    miniBand.textContent = res.overall_scale || "—";
+    const levelLabel = res.level || "";              // e.g. "C1"
+    const scale      = res.overall_scale || "";      // e.g. "187"
+
+    if (levelLabel && scale) {
+      miniBand.textContent =
+        `${levelLabel} level – around ${scale} on the Cambridge English Scale`;
+    } else if (levelLabel) {
+      miniBand.textContent = `${levelLabel} level`;
+    } else if (scale) {
+      miniBand.textContent =
+        `Around ${scale} on the Cambridge English Scale`;
+    } else {
+      miniBand.textContent = "—";
+    }
   }
 
   if (miniFocus) {
     const firstImprovement =
       (res.improvement_summary && res.improvement_summary[0]) || "";
-    miniFocus.textContent = firstImprovement || "—";
+    miniFocus.textContent =
+      firstImprovement || "—";
   }
-}
+
 
   // ---- Vocabulary suggestions ----
   function renderVocabSuggestions(vs) {
