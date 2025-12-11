@@ -138,7 +138,41 @@
       }]
     };
   }
+// ---- Key Focus phrasing helper (EN / ES / NL) ----
+function makeFriendlyKeyFocus(raw, lang = "en") {
+  if (!raw || typeof raw !== "string") return "—";
+  const text = raw.trim();
 
+  // Check if already in teacher tone
+  const alreadyFriendly = {
+    en: [/^your top priority/i, /^focus on/i, /^you should/i],
+    es: [/^tu prioridad/i, /^enfócate en/i, /^deberías/i],
+    nl: [/^je belangrijkste/i, /^richt je op/i, /^je zou/i]
+  };
+
+  const rules = alreadyFriendly[lang] || alreadyFriendly.en;
+  if (rules.some(r => r.test(text))) return text;
+
+  // Language-specific rewrite
+  switch (lang) {
+    case "es": {
+      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
+      return `Tu prioridad principal es ${lowered}`;
+    }
+    case "nl": {
+      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
+      return `Je belangrijkste aandachtspunt is ${lowered}`;
+    }
+    default:
+    case "en": {
+      let phr = text;
+      if (!phr.match(/^to\s+/i)) {
+        phr = "to " + phr.charAt(0).toLowerCase() + phr.slice(1);
+      }
+      return `Your top priority is ${phr}`;
+    }
+  }
+}  
   // ---- Initial setup ----
   document.addEventListener("DOMContentLoaded", () => {
     // Paint initial state
@@ -341,48 +375,6 @@
       return;
     }
   });
-
-  function makeFriendlyKeyFocus(raw, lang = "en") {
-  if (!raw || typeof raw !== "string") return "—";
-  const text = raw.trim();
-
-  // 1) If already friendly, return unchanged
-  const alreadyFriendly = {
-    en: [/^your top priority/i, /^focus on/i, /^you should/i],
-    es: [/^tu prioridad/i, /^deberías/i, /^enfócate en/i],
-    nl: [/^je belangrijkste/i, /^je zou/i, /^richt je op/i]
-  };
-
-  const rules = alreadyFriendly[lang] || alreadyFriendly.en;
-  if (rules.some(r => r.test(text))) return text;
-
-  // 2) Language-specific teacher-tone rewrites
-  switch (lang) {
-    case "es": {
-      // Spanish: “Tu prioridad principal es …”
-      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
-      return `Tu prioridad principal es ${lowered}`;
-    }
-
-    case "nl": {
-      // Dutch: “Je belangrijkste aandachtspunt is …”
-      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
-      return `Je belangrijkste aandachtspunt is ${lowered}`;
-    }
-
-    default:
-    case "en": {
-      // English: “Your top priority is to …”
-      // Add “to” only if not already there
-      let phr = text;
-      if (!phr.match(/^to\s+/i)) {
-        phr = "to " + phr.charAt(0).toLowerCase() + phr.slice(1);
-      }
-      return `Your top priority is ${phr}`;
-    }
-  }
-}
-
 
   // Separate handler for Course Book button
   document.addEventListener("DOMContentLoaded", () => {
