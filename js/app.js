@@ -175,6 +175,25 @@
     };
   }
 
+function makeFriendlyKeyFocus(raw) {
+  if (!raw || typeof raw !== "string") return "—";
+
+  const trimmed = raw.trim();
+
+  // If AI already starts with friendly wording, keep it
+  if (
+    trimmed.match(/^your top priority/i) ||
+    trimmed.match(/^focus on/i) ||
+    trimmed.match(/^you should/i)
+  ) {
+    return trimmed;
+  }
+
+  // Otherwise rewrite into student-friendly language
+  return `Your top priority is to ${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
+}
+
+  
 // ---- Initial setup ----
 document.addEventListener("DOMContentLoaded", () => {
   // Paint initial state
