@@ -462,7 +462,7 @@ function renderBands(level, scores) {
     miniFocus.textContent =
       firstImprovement || "—";
   }
-
+}
 
   // ---- Vocabulary suggestions ----
   function renderVocabSuggestions(vs) {
