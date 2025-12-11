@@ -279,6 +279,7 @@
     </section>
 
     <!-- Essay -->
+        <!-- Essay -->
     <section class="app-block">
       <header class="app-block__header">
         <h2 class="app-block__title"
@@ -290,32 +291,33 @@
           Aim for the full word limit. You can revise as many times as you like.
         </p>
       </header>
-      ...
 
-  <div class="app-field">
-    <label class="app-field__label"
-           for="essay"
-           data-i18n="labels.essay_prompt">
-      Write your answer
-    </label>
-    <textarea
-      id="essay"
-      class="app-textarea app-textarea--essay"
-      rows="12"
-      data-i18n-placeholder="placeholders.essay_prompt"
-      placeholder="Write your answer here..."
-    ></textarea>
+      <div class="app-field">
+        <label class="app-field__label"
+               for="essay"
+               data-i18n="labels.essay_prompt">
+          Write your answer
+        </label>
 
-  <div class="app-field__meta">
-  <span class="app-wordcount">
-    <span id="inWC">
-      Input: {n} words
-    </span>
-  </span>
-</div>
+        <textarea
+          id="essay"
+          class="app-textarea app-textarea--essay"
+          rows="12"
+          data-i18n-placeholder="placeholders.essay_prompt"
+          placeholder="Write your answer here..."
+        ></textarea>
 
-  </div>
-</section>
+        <!-- ✅ This is the ONLY place we define inWC -->
+        <div class="app-field__meta">
+          <span class="app-wordcount">
+            <span id="inWC">
+              Input: {n} words
+            </span>
+          </span>
+        </div>
+      </div>
+    </section>
+
 
 
     <!-- Actions -->
