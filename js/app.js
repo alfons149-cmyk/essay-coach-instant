@@ -460,7 +460,9 @@ function renderBands(level, scores) {
   const firstImprovement =
     (res.improvement_summary && res.improvement_summary[0]) || "";
 
-  miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement);
+  const lang = localStorage.getItem("ec.lang") || "en";
+miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement, lang);
+
 
 }
 
