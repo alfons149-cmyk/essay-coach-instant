@@ -84,41 +84,106 @@
     }
   }
 
+  // --------------------------------------------------
+  // i18n helpers
+  // --------------------------------------------------
   function applyI18nToDom() {
-  if (!window.I18N || typeof I18N.t !== "function") return;
+    if (!window.I18N || typeof I18N.t !== "function") return;
 
-  // Plain text nodes
-  document.querySelectorAll("[data-i18n]").forEach((node) => {
-    const key = node.getAttribute("data-i18n");
-    const val = I18N.t(key);
-    if (typeof val === "string" && val) {
-      node.textContent = val;
+    // Plain text nodes
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      const key = node.getAttribute("data-i18n");
+      const val = I18N.t(key);
+      if (typeof val === "string" && val) {
+        node.textContent = val;
+      }
+    });
+
+    // Placeholders
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+      const key = node.getAttribute("data-i18n-placeholder");
+      const val = I18N.t(key);
+      if (typeof val === "string" && val) {
+        node.setAttribute("placeholder", val);
+      }
+    });
+
+    // Title attributes (tooltips)
+    document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+      const key = node.getAttribute("data-i18n-title");
+      const val = I18N.t(key);
+      if (typeof val === "string" && val) {
+        node.setAttribute("title", val);
+      }
+    });
+
+    // Refresh word-counter templates for the new language
+    clearCounterTemplates();
+    updateCounters();
+  }
+
+  function detectUILang() {
+    // Prefer whatever the i18n engine thinks
+    if (window.I18N) {
+      if (typeof I18N.getLanguage === "function") {
+        const v = I18N.getLanguage();
+        if (v) return String(v).slice(0, 2).toLowerCase();
+      }
+      if (typeof I18N.lang === "string") {
+        return I18N.lang.slice(0, 2).toLowerCase();
+      }
+      if (typeof I18N.language === "string") {
+        return I18N.language.slice(0, 2).toLowerCase();
+      }
     }
-  });
 
-  // Placeholders
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
-    const key = node.getAttribute("data-i18n-placeholder");
-    const val = I18N.t(key);
-    if (typeof val === "string" && val) {
-      node.setAttribute("placeholder", val);
+    // Fallbacks
+    let code =
+      localStorage.getItem("ec.lang") ||
+      document.documentElement.lang ||
+      "en";
+
+    code = String(code).toLowerCase();
+    if (code.startsWith("es")) return "es";
+    if (code.startsWith("nl")) return "nl";
+    return "en";
+  }
+
+  // ---- Key Focus phrasing helper (EN / ES / NL) ----
+  function makeFriendlyKeyFocus(raw, lang = "en") {
+    if (!raw || typeof raw !== "string") return "—";
+    const text = raw.trim();
+
+    // Already friendly?
+    const alreadyFriendly = {
+      en: [/^your top priority/i, /^focus on/i, /^you should/i],
+      es: [/^tu prioridad/i, /^enfócate en/i, /^deberías/i],
+      nl: [/^je belangrijkste/i, /^richt je op/i, /^je zou/i]
+    };
+
+    const rules = alreadyFriendly[lang] || alreadyFriendly.en;
+    if (rules.some((r) => r.test(text))) return text;
+
+    // Language-specific rewrite
+    switch (lang) {
+      case "es": {
+        const lowered = text.charAt(0).toLowerCase() + text.slice(1);
+        return `Tu prioridad principal es ${lowered}`;
+      }
+      case "nl": {
+        const lowered = text.charAt(0).toLowerCase() + text.slice(1);
+        return `Je belangrijkste aandachtspunt is ${lowered}`;
+      }
+      default:
+      case "en": {
+        let phr = text;
+        if (!phr.match(/^to\s+/i)) {
+          phr = "to " + phr.charAt(0).toLowerCase() + phr.slice(1);
+        }
+        return `Your top priority is ${phr}`;
+      }
     }
-  });
-
-  // Title attributes (tooltips)
-  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
-    const key = node.getAttribute("data-i18n-title");
-    const val = I18N.t(key);
-    if (typeof val === "string" && val) {
-      node.setAttribute("title", val);
-    }
-  });
-
-  // Refresh word-counter templates for the new language
-  clearCounterTemplates();
-  updateCounters();
-}
-
+  }
 
   // ---- Corrector (live API or mock) ----
   async function correctEssay(payload) {
@@ -175,199 +240,182 @@
     };
   }
 
-function makeFriendlyKeyFocus(raw) {
-  if (!raw || typeof raw !== "string") return "—";
+  // ---- Initial setup ----
+  document.addEventListener("DOMContentLoaded", () => {
+    // Paint initial state
+    reflectLangButtons();
+    reflectLevelButtons();
+    updateCounters();
 
-  const trimmed = raw.trim();
+    // 1) Language buttons (EN / ES / NL)
+    const langButtons = $$("[data-lang]");
+    langButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const lang = btn.getAttribute("data-lang") || "en";
 
-  // If AI already starts with friendly wording, keep it
-  if (
-    trimmed.match(/^your top priority/i) ||
-    trimmed.match(/^focus on/i) ||
-    trimmed.match(/^you should/i)
-  ) {
-    return trimmed;
-  }
+        // remember choice
+        localStorage.setItem("ec.lang", lang);
 
-  // Otherwise rewrite into student-friendly language
-  return `Your top priority is to ${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
-}
+        // update button styles
+        reflectLangButtons(lang);
 
-  
-// ---- Initial setup ----
-document.addEventListener("DOMContentLoaded", () => {
-  // Paint initial state
-  reflectLangButtons();
-  reflectLevelButtons();
-  updateCounters();
+        // tell i18n engine to actually switch language
+        if (window.I18N) {
+          let p = null;
+          if (typeof I18N.setLanguage === "function") {
+            p = I18N.setLanguage(lang);
+          } else if (typeof I18N.loadLanguage === "function") {
+            p = I18N.loadLanguage(lang);
+          } else if (typeof I18N.load === "function") {
+            p = I18N.load(lang);
+          }
 
-  // 1) Language buttons (EN / ES / NL)
-const langButtons = $$("[data-lang]");
-langButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const lang = btn.getAttribute("data-lang") || "en";
+          if (p && typeof p.then === "function") {
+            p.then(() => applyI18nToDom());
+          } else {
+            setTimeout(applyI18nToDom, 150);
+          }
+        } else {
+          applyI18nToDom();
+        }
+      });
+    });
 
-    // remember choice
-    localStorage.setItem("ec.lang", lang);
+    // 2) Level buttons (B2 / C1 / C2)
+    const levelButtons = $$("[data-level]");
+    levelButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const level = btn.getAttribute("data-level") || "C1";
+        localStorage.setItem("ec.level", level);
+        reflectLevelButtons(level);
+      });
+    });
 
-    // update button styles
-    reflectLangButtons(lang);
+    // 3) Clear button
+    if (el.btnClear) {
+      el.btnClear.addEventListener("click", () => {
+        if (el.task)      el.task.value = "";
+        if (el.essay)     el.essay.value = "";
+        if (el.nextDraft) el.nextDraft.value = "";
+        if (el.feedback)  el.feedback.textContent = "—";
+        if (el.edits)     el.edits.innerHTML = "";
+        renderVocabSuggestions({});
+        renderSentenceInsights([]);
+        renderDebugJson(null);
+        window.EC_LAST_RESPONSE = null;
 
-    // tell i18n engine to actually switch language
-    if (window.I18N) {
-      // Try all known APIs, but don't depend on any single one
-      if (typeof I18N.setLanguage === "function") {
-        I18N.setLanguage(lang);
-      }
-      if (typeof I18N.loadLanguage === "function") {
-        I18N.loadLanguage(lang);
-      }
-      if (typeof I18N.load === "function") {
-        I18N.load(lang);
-      }
+        // Optional: clear Course Book help card
+        try {
+          if (
+            window.FeedbackUI &&
+            typeof window.FeedbackUI.renderFeedbackCard === "function"
+          ) {
+            window.FeedbackUI.renderFeedbackCard("");
+          }
+        } catch (err) {
+          console.warn("[FeedbackUI] could not clear card:", err);
+        }
 
-      // Hard-set common “current language” properties so I18N.t() can see it
-      I18N.lang = lang;
-      I18N.language = lang;
-      I18N.current = lang;
+        const dbgBtn = $("#btnToggleDebug");
+        if (dbgBtn && window.I18N && I18N.t) {
+          dbgBtn.textContent = I18N.t("debug.show");
+        }
+
+        setStatus("");
+        updateCounters();
+      });
     }
 
-    // Re-apply translations after a short tick
-    setTimeout(applyI18nToDom, 80);
+    // 4) Correct button
+    if (el.btnCorrect) {
+      el.btnCorrect.addEventListener("click", async (e) => {
+        const level = localStorage.getItem("ec.level") || "C1";
+        const payload = {
+          level,
+          task:  el.task ? el.task.value || "" : "",
+          essay: el.essay ? el.essay.value || "" : ""
+        };
+
+        if (!payload.essay.trim()) {
+          if (el.feedback) {
+            el.feedback.textContent = "Please write or paste your essay first.";
+          }
+          return;
+        }
+
+        let res;
+
+        try {
+          // Busy state ON
+          e.target.disabled = true;
+          e.target.classList.add("is-busy");
+          e.target.setAttribute("aria-busy", "true");
+
+          // Show status line while correcting
+          setStatus("status.correcting");
+
+          // Call Worker / mock
+          res = await correctEssay(payload);
+
+          // Render main results
+          setFeedbackAndCourseHelp(res.feedback || "—");
+          if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
+
+          if (el.edits) {
+            el.edits.innerHTML = (res.edits || [])
+              .map((x) =>
+                `<li><strong>${escapeHTML(x.from)}</strong> → ` +
+                `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
+              )
+              .join("");
+          }
+
+          // Word counters
+          setCounter(el.inWC,  "io.input_words",  res.inputWords  ?? 0);
+          setCounter(el.outWC, "io.output_words", res.outputWords ?? 0);
+
+          // Extra cards
+          renderVocabSuggestions(res.vocabularySuggestions || {});
+          renderSentenceInsights(res.sentenceInsights || []);
+
+          // Debug JSON
+          window.EC_LAST_RESPONSE = res;
+          renderDebugJson(res);
+
+          // Bands (if scoreEssay exists)
+          if (typeof window.scoreEssay === "function") {
+            const scores = {
+              content: 0.7,
+              communicative: 0.6,
+              organisation: 0.8,
+              language: 0.55
+            };
+            renderBands(level, scores);
+          }
+        } catch (err) {
+          console.error("[EC] UI or API error:", err);
+          if (!res && el.feedback) {
+            el.feedback.textContent =
+              "⚠️ Correction failed. Check API, CORS, or dev mode.";
+          }
+        } finally {
+          // Busy state OFF
+          e.target.disabled = false;
+          e.target.classList.remove("is-busy");
+          e.target.removeAttribute("aria-busy");
+          setStatus("");
+        }
+      });
+    }
+
+    // Apply translations once on initial load
+    setTimeout(applyI18nToDom, 150);
+
+    // Live word count while typing
+    if (el.essay) {
+      el.essay.addEventListener("input", updateCounters);
+    }
   });
-});
-
-  // 2) Level buttons (B2 / C1 / C2)
-  const levelButtons = $$("[data-level]");
-  levelButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const level = btn.getAttribute("data-level") || "C1";
-
-      localStorage.setItem("ec.level", level);
-      reflectLevelButtons(level);
-    });
-  });
-
-  // 3) Clear button
-  if (el.btnClear) {
-    el.btnClear.addEventListener("click", () => {
-      if (el.task)      el.task.value = "";
-      if (el.essay)     el.essay.value = "";
-      if (el.nextDraft) el.nextDraft.value = "";
-      if (el.feedback)  el.feedback.textContent = "—";
-      if (el.edits)     el.edits.innerHTML = "";
-      renderVocabSuggestions({});
-      renderSentenceInsights([]);
-      renderDebugJson(null);
-      window.EC_LAST_RESPONSE = null;
-
-      // Optional: clear Course Book help card
-      try {
-        if (
-          window.FeedbackUI &&
-          typeof window.FeedbackUI.renderFeedbackCard === "function"
-        ) {
-          window.FeedbackUI.renderFeedbackCard("");
-        }
-      } catch (err) {
-        console.warn("[FeedbackUI] could not clear card:", err);
-      }
-
-      const dbgBtn = $("#btnToggleDebug");
-      if (dbgBtn && window.I18N && I18N.t) {
-        dbgBtn.textContent = I18N.t("debug.show");
-      }
-
-      setStatus("");
-      updateCounters();
-    });
-  }
-
-  // 4) Correct button
-  if (el.btnCorrect) {
-    el.btnCorrect.addEventListener("click", async (e) => {
-      const level = localStorage.getItem("ec.level") || "C1";
-      const payload = {
-        level,
-        task:  el.task ? el.task.value || "" : "",
-        essay: el.essay ? el.essay.value || "" : ""
-      };
-
-      if (!payload.essay.trim()) {
-        if (el.feedback) {
-          el.feedback.textContent = "Please write or paste your essay first.";
-        }
-        return;
-      }
-
-      let res;
-
-      try {
-        // Busy state ON
-        e.target.disabled = true;
-        e.target.classList.add("is-busy");
-        e.target.setAttribute("aria-busy", "true");
-
-        // Show status line while correcting
-        setStatus("status.correcting");
-
-        // Call Worker / mock
-        res = await correctEssay(payload);
-
-        // Render main results
-        setFeedbackAndCourseHelp(res.feedback || "—");
-        if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
-
-        if (el.edits) {
-          el.edits.innerHTML = (res.edits || [])
-            .map((x) =>
-              `<li><strong>${escapeHTML(x.from)}</strong> → ` +
-              `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
-            )
-            .join("");
-        }
-
-        // Word counters
-        setCounter(el.inWC,  "io.input_words",  res.inputWords  ?? 0);
-        setCounter(el.outWC, "io.output_words", res.outputWords ?? 0);
-
-        // Extra cards
-        renderVocabSuggestions(res.vocabularySuggestions || {});
-        renderSentenceInsights(res.sentenceInsights || []);
-
-        // Debug JSON
-        window.EC_LAST_RESPONSE = res;
-        renderDebugJson(res);
-
-        // Bands (if scoreEssay exists)
-        if (typeof window.scoreEssay === "function") {
-          const scores = {
-            content: 0.7,
-            communicative: 0.6,
-            organisation: 0.8,
-            language: 0.55
-          };
-          renderBands(level, scores);
-        }
-      } catch (err) {
-        console.error("[EC] UI or API error:", err);
-        if (!res && el.feedback) {
-          el.feedback.textContent =
-            "⚠️ Correction failed. Check API, CORS, or dev mode.";
-        }
-      } finally {
-        // Busy state OFF
-        e.target.disabled = false;
-        e.target.classList.remove("is-busy");
-        e.target.removeAttribute("aria-busy");
-        setStatus("");
-      }
-    });
-  }
-
-  // ✅ Apply translations once on initial load
-  setTimeout(applyI18nToDom, 150);
-});
 
   // Global click handler for debug toggle + vocab replacements
   document.addEventListener("click", (e) => {
@@ -416,12 +464,6 @@ langButtons.forEach((btn) => {
       window.open("assets/book/index.html", "_blank", "noopener");
     });
   });
- 
-
-  // Live word count while typing
-  if (el.essay) {
-    el.essay.addEventListener("input", updateCounters);
-  }
 
   // ---- Counters ----
   function setCounter(node, i18nKey, n) {
@@ -457,111 +499,80 @@ langButtons.forEach((btn) => {
     setCounter(el.outWC, "io.output_words", wc);
   }
 
-// ======================================================
-// Detect UI language (en / es / nl)
-// ======================================================
-function detectUILang() {
-  // Prefer whatever the i18n engine thinks
-  if (window.I18N) {
-    if (typeof I18N.getLanguage === "function") {
-      const v = I18N.getLanguage();
-      if (v) return String(v).slice(0, 2).toLowerCase();
+  // ---- Bands card ----
+  function renderBands(level, scores) {
+    if (typeof window.scoreEssay !== "function") {
+      console.warn("[bands] scoreEssay is not available");
+      return;
     }
-    if (typeof I18N.lang === "string") {
-      return I18N.lang.slice(0, 2).toLowerCase();
-    }
-    if (typeof I18N.language === "string") {
-      return I18N.language.slice(0, 2).toLowerCase();
-    }
-    if (typeof I18N.current === "string") {
-      return I18N.current.slice(0, 2).toLowerCase();
-    }
-  }
+    const res = scoreEssay(level, scores);
+    if (!res) return;
 
-  // Fallback to stored preference or <html lang="">
-  const stored = localStorage.getItem("ec.lang");
-  if (stored) return stored.slice(0, 2).toLowerCase();
+    const card      = $("#bandsCard");
+    const overallEl = $("#bandsOverallScore");
+    const levelEl   = $("#bandsLevel");
+    const catList   = $("#bandsCategories");
+    const impList   = $("#bandsImprovements");
 
-  const htmlLang = document.documentElement.lang || "en";
-  return htmlLang.slice(0, 2).toLowerCase();
-}
+    if (!card || !overallEl || !levelEl || !catList || !impList) return;
 
-  
- // ---- Bands card ----
-function renderBands(level, scores) {
-  if (typeof window.scoreEssay !== "function") {
-    console.warn("[bands] scoreEssay is not available");
-    return;
-  }
-  const res = scoreEssay(level, scores);
-  if (!res) return;
+    // Detailed bands card
+    overallEl.textContent = res.overall_scale || "—";
+    levelEl.textContent   = res.level;
 
-  const card      = $("#bandsCard");
-  const overallEl = $("#bandsOverallScore");
-  const levelEl   = $("#bandsLevel");
-  const catList   = $("#bandsCategories");
-  const impList   = $("#bandsImprovements");
+    catList.innerHTML = "";
+    res.category_results.forEach((cr) => {
+      const li   = document.createElement("li");
+      const key  = `bands.category.${cr.category}`;
+      const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
+      const bandKey   = `bands.band.${cr.band}`;
+      const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
 
-  if (!card || !overallEl || !levelEl || !catList || !impList) return;
+      li.innerHTML =
+        `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
+        `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
+      catList.appendChild(li);
+    });
 
-  // Detailed bands card
-  overallEl.textContent = res.overall_scale || "—";
-  levelEl.textContent   = res.level;
+    const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
+    impList.innerHTML = "";
+    uniqImprovements.forEach((text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      impList.appendChild(li);
+    });
 
-  catList.innerHTML = "";
-  res.category_results.forEach((cr) => {
-    const li   = document.createElement("li");
-    const key  = `bands.category.${cr.category}`;
-    const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
-    const bandKey   = `bands.band.${cr.band}`;
-    const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
-
-    li.innerHTML =
-      `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
-      `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
-    catList.appendChild(li);
-  });
-
-  const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
-  impList.innerHTML = "";
-  uniqImprovements.forEach((text) => {
-    const li = document.createElement("li");
-    li.textContent = text;
-    impList.appendChild(li);
-  });
-
-  card.hidden = false;
+    card.hidden = false;
 
     // ✅ Update the compact "Summary" panel
-  const miniBand  = document.getElementById("band-estimate");
-  const miniFocus = document.getElementById("key-area");
+    const miniBand  = document.getElementById("band-estimate");
+    const miniFocus = document.getElementById("key-area");
 
-  if (miniBand) {
-    const levelLabel = res.level || "";              // e.g. "C1"
-    const scale      = res.overall_scale || "";      // e.g. "187"
+    if (miniBand) {
+      const levelLabel = res.level || "";         // e.g. "C1"
+      const scale      = res.overall_scale || ""; // e.g. "187"
 
-    if (levelLabel && scale) {
-      miniBand.textContent =
-        `${levelLabel} level – around ${scale} on the Cambridge English Scale`;
-    } else if (levelLabel) {
-      miniBand.textContent = `${levelLabel} level`;
-    } else if (scale) {
-      miniBand.textContent =
-        `Around ${scale} on the Cambridge English Scale`;
-    } else {
-      miniBand.textContent = "—";
+      if (levelLabel && scale) {
+        miniBand.textContent =
+          `${levelLabel} level – around ${scale} on the Cambridge English Scale`;
+      } else if (levelLabel) {
+        miniBand.textContent = `${levelLabel} level`;
+      } else if (scale) {
+        miniBand.textContent =
+          `Around ${scale} on the Cambridge English Scale`;
+      } else {
+        miniBand.textContent = "—";
+      }
+    }
+
+    if (miniFocus) {
+      const firstImprovement =
+        (res.improvement_summary && res.improvement_summary[0]) || "";
+
+      const lang = detectUILang();
+      miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement, lang);
     }
   }
-
-  if (miniFocus) {
-  const firstImprovement =
-    (res.improvement_summary && res.improvement_summary[0]) || "";
-
-  const lang = detectUILang();
-  miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement, lang);
-}
-  
-}
 
   // ---- Vocabulary suggestions ----
   function renderVocabSuggestions(vs) {
@@ -689,48 +700,6 @@ function renderBands(level, scores) {
       b.classList.toggle("pill--active", active);
       b.setAttribute("aria-pressed", String(active));
     });
-  }
-
-  // ---- Replace nearest occurrence ----
-  function replaceNearest(textarea, needle, replacement) {
-    const value = textarea.value;
-    const n = String(needle);
-    if (!n) return false;
-
-    const re = new RegExp(escapeForRegExp(n), "gi");
-    let match;
-    const matches = [];
-
-    while ((match = re.exec(value)) !== null) {
-      matches.push({ start: match.index, end: match.index + match[0].length });
-      if (re.lastIndex === match.index) re.lastIndex++;
-    }
-    if (!matches.length) return false;
-
-    const caret = textarea.selectionStart ?? 0;
-    let target = matches.find((m) => caret >= m.start && caret <= m.end);
-    if (!target) {
-      target = matches
-        .map((m) => ({
-          m,
-          d: Math.min(
-            Math.abs(caret - m.start),
-            Math.abs(caret - m.end)
-          )
-        }))
-        .sort((a, b) => a.d - b.d)[0].m;
-    }
-
-    const before = value.slice(0, target.start);
-    const after  = value.slice(target.end);
-    const next   = before + replacement + after;
-
-    textarea.value = next;
-    const newCaret = before.length + replacement.length;
-    textarea.setSelectionRange(newCaret, newCaret);
-    textarea.dispatchEvent(new Event("input", { bubbles: true }));
-
-    return true;
   }
 
   // ---- Utils ----
