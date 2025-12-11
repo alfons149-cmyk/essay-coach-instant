@@ -456,6 +456,9 @@ langButtons.forEach((btn) => {
       applyI18nToDom();
     }
   });
+      // Apply translations once on initial load
+    applyI18nToDom();
+
 });
 
 
