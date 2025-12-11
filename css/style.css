@@ -1541,3 +1541,51 @@ body {
   margin-bottom: 4px;
   font-style: italic;
 }
+/* ===== Key focus "sticky note" in Summary ===== */
+
+.summary-item--focus {
+  /* optional: let it span full width on wider grids */
+  grid-column: 1 / -1;
+}
+
+.summary-focus-card {
+  position: relative;
+  background: #fff9d6;                 /* soft sticky-note yellow */
+  border-radius: 10px;
+  border: 1px solid #f4d58a;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.07);
+  margin-top: 0.25rem;
+}
+
+/* little "tape" effect at the top */
+.summary-focus-card::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 24px;
+  width: 62px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+  transform: rotate(-3deg);
+}
+
+/* label text: small, teacher-ish */
+.summary-focus-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #a26b1f;
+  margin-bottom: 0.2rem;
+}
+
+/* main focus sentence */
+.summary-focus-text {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #3a2a13;
+  line-height: 1.4;
+}
