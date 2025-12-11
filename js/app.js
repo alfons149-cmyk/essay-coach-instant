@@ -459,8 +459,10 @@ function renderBands(level, scores) {
   if (miniFocus) {
     const firstImprovement =
       (res.improvement_summary && res.improvement_summary[0]) || "";
-    miniFocus.textContent =
-      firstImprovement || "—";
+    miniFocus.textContent = firstImprovement
+  ? `Your top priority: ${firstImprovement}`
+  : "—";
+
   }
 }
 
