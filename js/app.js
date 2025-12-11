@@ -420,6 +420,39 @@ function makeFriendlyKeyFocus(raw, lang = "en") {
       window.open("assets/book/index.html", "_blank", "noopener");
     });
   });
+  // 1) Language buttons (EN / ES / NL)
+const langButtons = $$("[data-lang]");
+langButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const lang = btn.getAttribute("data-lang") || "en";
+
+    // remember choice
+    localStorage.setItem("ec.lang", lang);
+
+    // update button styles
+    reflectLangButtons(lang);
+
+    // tell i18n engine to actually switch language
+    if (window.I18N) {
+      let p = null;
+      if (typeof I18N.setLanguage === "function") {
+        p = I18N.setLanguage(lang);
+      } else if (typeof I18N.loadLanguage === "function") {
+        p = I18N.loadLanguage(lang);
+      }
+
+      // If it returns a Promise, wait for it; otherwise, just wait a tick
+      if (p && typeof p.then === "function") {
+        p.then(() => applyI18nToDom());
+      } else {
+        setTimeout(applyI18nToDom, 150);
+      }
+    } else {
+      applyI18nToDom();
+    }
+  });
+});
+
 
   // Live word count while typing
   if (el.essay) {
@@ -460,9 +493,6 @@ function makeFriendlyKeyFocus(raw, lang = "en") {
     setCounter(el.outWC, "io.output_words", wc);
   }
 
- // ======================================================
-// Detect UI language (en / es / nl) – robust version
-// ======================================================
 // ======================================================
 // Detect UI language (en / es / nl)
 // ======================================================
