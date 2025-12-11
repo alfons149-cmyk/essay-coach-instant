@@ -454,6 +454,36 @@ document.addEventListener("DOMContentLoaded", () => {
     setCounter(el.outWC, "io.output_words", wc);
   }
 
+// ======================================================
+// Detect UI language (en / es / nl)
+// ======================================================
+function detectUILang() {
+  // Prefer whatever the i18n engine thinks
+  if (window.I18N) {
+    if (typeof I18N.getLanguage === "function") {
+      const v = I18N.getLanguage();
+      if (v) return String(v).slice(0, 2).toLowerCase();
+    }
+    if (typeof I18N.lang === "string") {
+      return I18N.lang.slice(0, 2).toLowerCase();
+    }
+    if (typeof I18N.language === "string") {
+      return I18N.language.slice(0, 2).toLowerCase();
+    }
+    if (typeof I18N.current === "string") {
+      return I18N.current.slice(0, 2).toLowerCase();
+    }
+  }
+
+  // Fallback to stored preference or <html lang="">
+  const stored = localStorage.getItem("ec.lang");
+  if (stored) return stored.slice(0, 2).toLowerCase();
+
+  const htmlLang = document.documentElement.lang || "en";
+  return htmlLang.slice(0, 2).toLowerCase();
+}
+
+  
  // ---- Bands card ----
 function renderBands(level, scores) {
   if (typeof window.scoreEssay !== "function") {
