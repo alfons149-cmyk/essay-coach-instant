@@ -1652,3 +1652,59 @@ body {
   50%  { transform: rotate(-1.2deg) translateY(-3px); }
   100% { transform: rotate(-1.2deg) translateY(0); }
 }
+/* ===========================================
+   KEY FOCUS — Sticky Note Style (matches
+   .summary-item--focus markup)
+   =========================================== */
+
+.summary-item--focus .summary-focus-card {
+  position: relative;
+  background: #fff7d1; /* soft sticky-note yellow */
+  border: 1px solid #e6d28a;
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 5px 12px rgba(0,0,0,0.08);
+  margin-top: 0.4rem;
+  max-width: 100%;
+  transform: rotate(-1.2deg);
+  animation: floatNote 3.4s ease-in-out infinite;
+}
+
+/* Tape on top */
+.summary-item--focus .summary-focus-card::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 74px;
+  height: 20px;
+  background: rgba(255, 255, 200, 0.7);
+  border-radius: 3px;
+  transform: translateX(-50%) rotate(3deg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.16);
+}
+
+/* Tiny all-caps label inside the card */
+.summary-focus-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a26b1f;
+  margin-bottom: 4px;
+}
+
+/* Main Key Focus text */
+.summary-focus-text {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #3a2a13;
+  line-height: 1.4;
+}
+
+/* Floating animation (locked to -1.2deg) */
+@keyframes floatNote {
+  0%   { transform: rotate(-1.2deg) translateY(0); }
+  50%  { transform: rotate(-1.2deg) translateY(-3px); }
+  100% { transform: rotate(-1.2deg) translateY(0); }
+}
