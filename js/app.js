@@ -390,50 +390,65 @@
     setCounter(el.outWC, "io.output_words", wc);
   }
 
-  // ---- Bands card ----
-  function renderBands(level, scores) {
-    if (typeof window.scoreEssay !== "function") {
-      console.warn("[bands] scoreEssay is not available");
-      return;
-    }
-    const res = scoreEssay(level, scores);
-    if (!res) return;
-
-    const card      = $("#bandsCard");
-    const overallEl = $("#bandsOverallScore");
-    const levelEl   = $("#bandsLevel");
-    const catList   = $("#bandsCategories");
-    const impList   = $("#bandsImprovements");
-
-    if (!card || !overallEl || !levelEl || !catList || !impList) return;
-
-    overallEl.textContent = res.overall_scale || "—";
-    levelEl.textContent   = res.level;
-
-    catList.innerHTML = "";
-    res.category_results.forEach((cr) => {
-      const li   = document.createElement("li");
-      const key  = `bands.category.${cr.category}`;
-      const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
-      const bandKey   = `bands.band.${cr.band}`;
-      const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
-
-      li.innerHTML =
-        `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
-        `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
-      catList.appendChild(li);
-    });
-
-    const uniqImprovements = Array.from(new Set(res.improvement_summary));
-    impList.innerHTML = "";
-    uniqImprovements.forEach((text) => {
-      const li = document.createElement("li");
-      li.textContent = text;
-      impList.appendChild(li);
-    });
-
-    card.hidden = false;
+ // ---- Bands card ----
+function renderBands(level, scores) {
+  if (typeof window.scoreEssay !== "function") {
+    console.warn("[bands] scoreEssay is not available");
+    return;
   }
+  const res = scoreEssay(level, scores);
+  if (!res) return;
+
+  const card      = $("#bandsCard");
+  const overallEl = $("#bandsOverallScore");
+  const levelEl   = $("#bandsLevel");
+  const catList   = $("#bandsCategories");
+  const impList   = $("#bandsImprovements");
+
+  if (!card || !overallEl || !levelEl || !catList || !impList) return;
+
+  // Detailed bands card
+  overallEl.textContent = res.overall_scale || "—";
+  levelEl.textContent   = res.level;
+
+  catList.innerHTML = "";
+  res.category_results.forEach((cr) => {
+    const li   = document.createElement("li");
+    const key  = `bands.category.${cr.category}`;
+    const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
+    const bandKey   = `bands.band.${cr.band}`;
+    const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
+
+    li.innerHTML =
+      `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
+      `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
+    catList.appendChild(li);
+  });
+
+  const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
+  impList.innerHTML = "";
+  uniqImprovements.forEach((text) => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    impList.appendChild(li);
+  });
+
+  card.hidden = false;
+
+  // ✅ NEW: update the compact "Summary" panel
+  const miniBand  = document.getElementById("band-estimate");
+  const miniFocus = document.getElementById("key-area");
+
+  if (miniBand) {
+    miniBand.textContent = res.overall_scale || "—";
+  }
+
+  if (miniFocus) {
+    const firstImprovement =
+      (res.improvement_summary && res.improvement_summary[0]) || "";
+    miniFocus.textContent = firstImprovement || "—";
+  }
+}
 
   // ---- Vocabulary suggestions ----
   function renderVocabSuggestions(vs) {
