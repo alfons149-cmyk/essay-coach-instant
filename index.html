@@ -462,13 +462,34 @@
         </p>
       </header>
 
-      <div id="feedback-card" class="app-box app-box--coursebook">
-        <!-- feedback-ui.js renders “Improve this essay” card here -->
-      </div>
-    </section>
+        <div id="feedback-card" class="app-box app-box--coursebook">
+    <!-- feedback-ui.js renders “Improve this essay” card here -->
+  </div>
+</section>
 
-    <!-- Next draft -->
-    <!-- Advanced stuff: sentence insights, vocab, etc. (always visible) -->
+<!-- Next draft / corrected essay -->
+<section class="app-block">
+  <header class="app-block__header">
+    <h2 class="app-block__title" data-i18n="labels.next_draft">
+      Corrected essay
+    </h2>
+    <p class="app-block__hint" data-i18n="sections.next_draft_hint">
+      Start your improved version here. You can still edit it freely.
+    </p>
+  </header>
+
+  <div class="app-field">
+    <textarea
+      id="nextDraft"
+      class="app-textarea app-textarea--draft"
+      rows="10"
+      data-i18n-placeholder="placeholders.next_draft"
+      placeholder="Start your next draft here..."
+    ></textarea>
+  </div>
+</section>
+
+<!-- Advanced stuff: sentence insights, vocab, etc. (always visible) -->
 <section class="ec-block ec-block--advanced">
   <header class="ec-block__header">
     <h3 class="ec-block__title">Advanced details</h3>
@@ -482,6 +503,7 @@
       <h4 class="ec-subblock__title">Sentence insights</h4>
       <div id="sentence-insights"></div>
     </section>
+
 
     <section class="ec-subblock">
       <h4 class="ec-subblock__title">Useful vocabulary</h4>
