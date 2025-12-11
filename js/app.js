@@ -202,37 +202,40 @@ document.addEventListener("DOMContentLoaded", () => {
   updateCounters();
 
   // 1) Language buttons (EN / ES / NL)
-  const langButtons = $$("[data-lang]");
-  langButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const lang = btn.getAttribute("data-lang") || "en";
+const langButtons = $$("[data-lang]");
+langButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const lang = btn.getAttribute("data-lang") || "en";
 
-      // remember choice
-      localStorage.setItem("ec.lang", lang);
+    // remember choice
+    localStorage.setItem("ec.lang", lang);
 
-      // update button styles
-      reflectLangButtons(lang);
+    // update button styles
+    reflectLangButtons(lang);
 
-      // tell i18n engine to actually switch language
-      if (window.I18N) {
-        if (typeof I18N.setLanguage === "function") {
-          I18N.setLanguage(lang);
-        } else if (typeof I18N.loadLanguage === "function") {
-          I18N.loadLanguage(lang);
-        } else if (typeof I18N.load === "function") {
-          I18N.load(lang);
-        } else {
-          console.warn("[i18n] No language switch function found");
-        }
-
-        // Give the i18n engine a tiny moment to swap dictionaries,
-        // then re-apply all [data-i18n] labels.
-        setTimeout(applyI18nToDom, 150);
-      } else {
-        applyI18nToDom();
+    // tell i18n engine to actually switch language
+    if (window.I18N) {
+      // Try all known APIs, but don't depend on any single one
+      if (typeof I18N.setLanguage === "function") {
+        I18N.setLanguage(lang);
       }
-    });
+      if (typeof I18N.loadLanguage === "function") {
+        I18N.loadLanguage(lang);
+      }
+      if (typeof I18N.load === "function") {
+        I18N.load(lang);
+      }
+
+      // Hard-set common “current language” properties so I18N.t() can see it
+      I18N.lang = lang;
+      I18N.language = lang;
+      I18N.current = lang;
+    }
+
+    // Re-apply translations after a short tick
+    setTimeout(applyI18nToDom, 80);
   });
+});
 
   // 2) Level buttons (B2 / C1 / C2)
   const levelButtons = $$("[data-level]");
