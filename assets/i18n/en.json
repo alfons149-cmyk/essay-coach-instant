@@ -73,3 +73,5 @@
   "placeholders.task_prompt": "Copy the question from the exam paper here...",
   "placeholders.essay_prompt": "Write your answer here..."
 }
+  "summary.key_focus_title": "Key focus",
+  "summary.key_focus_label": "Most important thing to fix",
