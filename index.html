@@ -340,43 +340,54 @@
 
 <p id="statusLine" class="status-line" aria-live="polite"></p>
 
-    <!-- Summary -->
+   <!-- Quick exam summary -->
 <section class="app-block app-block--summary">
   <header class="app-block__header">
-    <h2 class="app-block__title">Quick exam summary</h2>
-    <p class="app-block__hint">
+    <h2 class="app-block__title" data-i18n="summary.title">
+      Quick exam summary
+    </h2>
+    <p class="app-block__hint" data-i18n="summary.hint">
       A short snapshot of how this draft would score in the exam and what to improve first.
     </p>
   </header>
 
-      <div class="summary-grid">
-        <div class="summary-item">
-          <p class="summary-label">Estimated band</p>
-          <p class="summary-value" id="band-estimate">–</p>
-        </div>
-       <div class="summary-item summary-item--focus">
-  <p class="summary-label" data-i18n="summary.key_focus_title">
-    Key focus
-  </p>
-  <div class="summary-focus-card">
-    <div class="summary-focus-label" data-i18n="summary.key_focus_label">
-      Most important thing to fix
+  <div class="summary-grid">
+    <!-- Estimated band -->
+    <div class="summary-item">
+      <p class="summary-label" data-i18n="summary.estimated_band">
+        Estimated band
+      </p>
+      <p class="summary-value" id="band-estimate">–</p>
     </div>
-    <p class="summary-focus-text" id="key-area">–</p>
-  </div>
-</div>
 
+    <!-- Key focus (sticky note) -->
+    <div class="summary-item summary-item--focus">
+      <p class="summary-label" data-i18n="summary.key_focus">
+        Key focus
+      </p>
 
-        <div class="summary-item">
-          <p class="summary-label">Output length</p>
-       <p class="summary-value">
-  <span id="outWC" data-i18n-template="Output: {n} words">
-    Output: {n} words
-  </span>
-</p>
+      <div class="summary-focus-card">
+        <div class="summary-focus-label" data-i18n="summary.key_focus_label">
+          Most important thing to fix
         </div>
+        <p class="summary-focus-text" id="key-area">–</p>
       </div>
-    </section>
+    </div>
+
+    <!-- Output length -->
+    <div class="summary-item">
+      <p class="summary-label" data-i18n="summary.output_length">
+        Output length
+      </p>
+      <p class="summary-value">
+        <span id="outWC" data-i18n-template="Output: {n} words">
+          Output: {n} words
+        </span>
+      </p>
+    </div>
+  </div>
+</section>
+
 
     <!-- Feedback -->
     <section class="app-block">
