@@ -424,59 +424,44 @@ function makeFriendlyKeyFocus(raw, lang = "en") {
     setCounter(el.outWC, "io.output_words", wc);
   }
 
-  // ======================================================
-// Detect UI language (en / es / nl)
+ // ======================================================
+// Detect UI language (en / es / nl) – robust version
 // ======================================================
 function detectUILang() {
-  let code =
-    localStorage.getItem("ec.lang") ||
-    document.documentElement.lang ||
-    "en";
+  let code = null;
 
-  code = String(code).toLowerCase();
+  // 1) Try the i18n engine, if present
+  if (window.I18N) {
+    code =
+      I18N.currentLang ||
+      I18N.language ||
+      I18N.lang ||
+      I18N._currentLang ||
+      I18N._lang ||
+      null;
+  }
 
+  // 2) Fallback to our own stored preference
+  if (!code) {
+    code = localStorage.getItem("ec.lang");
+  }
+
+  // 3) Fallback to <html lang="...">
+  if (!code) {
+    code = document.documentElement.getAttribute("lang");
+  }
+
+  // 4) Final fallback
+  code = (code || "en").toString().toLowerCase().trim();
+
+  // Normalise to short codes
   if (code.startsWith("es")) return "es";
   if (code.startsWith("nl")) return "nl";
+  if (code.startsWith("en")) return "en";
+
   return "en";
 }
 
-// ======================================================
-// Turn raw improvement text into friendly “Key focus”
-// ======================================================
-function makeFriendlyKeyFocus(raw, lang = "en") {
-  if (!raw || typeof raw !== "string") return "—";
-  const text = raw.trim();
-
-  // Already friendly?
-  const alreadyFriendly = {
-    en: [/^your top priority/i, /^focus on/i, /^you should/i],
-    es: [/^tu prioridad/i, /^enfócate en/i, /^deberías/i],
-    nl: [/^je belangrijkste/i, /^richt je op/i, /^je zou/i]
-  };
-
-  const rules = alreadyFriendly[lang] || alreadyFriendly.en;
-  if (rules.some((r) => r.test(text))) return text;
-
-  // Language-specific rewrite
-  switch (lang) {
-    case "es": {
-      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
-      return `Tu prioridad principal es ${lowered}`;
-    }
-    case "nl": {
-      const lowered = text.charAt(0).toLowerCase() + text.slice(1);
-      return `Je belangrijkste aandachtspunt is ${lowered}`;
-    }
-    default:
-    case "en": {
-      let phr = text;
-      if (!phr.match(/^to\s+/i)) {
-        phr = "to " + phr.charAt(0).toLowerCase() + phr.slice(1);
-      }
-      return `Your top priority is ${phr}`;
-    }
-  }
-}
 
  // ---- Bands card ----
 function renderBands(level, scores) {
