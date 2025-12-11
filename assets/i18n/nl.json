@@ -75,3 +75,9 @@
 }
   "summary.key_focus_title": "Belangrijkste aandachtspunt",
   "summary.key_focus_label": "Belangrijkste punt om te verbeteren",
+  "summary.title": "Korte examensamenvatting",
+  "summary.hint": "Een korte momentopname van hoe deze versie zou scoren in het examen en wat je eerst moet verbeteren.",
+  "summary.estimated_band": "Geschatte band",
+  "summary.key_focus": "Belangrijkste focus",
+  "summary.key_focus_label": "Belangrijkste punt om te verbeteren",
+  "summary.output_length": "Lengte van het antwoord",
