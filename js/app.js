@@ -460,9 +460,8 @@ function renderBands(level, scores) {
   const firstImprovement =
     (res.improvement_summary && res.improvement_summary[0]) || "";
 
-  miniFocus.textContent = firstImprovement
-    ? `Your top priority in this draft: ${firstImprovement}`
-    : "—";
+  miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement);
+
 }
 
 }
