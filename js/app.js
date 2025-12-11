@@ -84,6 +84,42 @@
     }
   }
 
+  function applyI18nToDom() {
+  if (!window.I18N || typeof I18N.t !== "function") return;
+
+  // Plain text nodes
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const key = node.getAttribute("data-i18n");
+    const val = I18N.t(key);
+    if (typeof val === "string" && val) {
+      node.textContent = val;
+    }
+  });
+
+  // Placeholders
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-placeholder");
+    const val = I18N.t(key);
+    if (typeof val === "string" && val) {
+      node.setAttribute("placeholder", val);
+    }
+  });
+
+  // Title attributes (tooltips)
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-title");
+    const val = I18N.t(key);
+    if (typeof val === "string" && val) {
+      node.setAttribute("title", val);
+    }
+  });
+
+  // Refresh word-counter templates for the new language
+  clearCounterTemplates();
+  updateCounters();
+}
+
+
   // ---- Corrector (live API or mock) ----
   async function correctEssay(payload) {
     if (!DEV && API_BASE) {
