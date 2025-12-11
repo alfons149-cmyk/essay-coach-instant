@@ -420,7 +420,8 @@ function makeFriendlyKeyFocus(raw, lang = "en") {
       window.open("assets/book/index.html", "_blank", "noopener");
     });
   });
-  // 1) Language buttons (EN / ES / NL)
+ 
+// 1) Language buttons (EN / ES / NL)
 const langButtons = $$("[data-lang]");
 langButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -435,13 +436,17 @@ langButtons.forEach((btn) => {
     // tell i18n engine to actually switch language
     if (window.I18N) {
       let p = null;
+
       if (typeof I18N.setLanguage === "function") {
         p = I18N.setLanguage(lang);
       } else if (typeof I18N.loadLanguage === "function") {
         p = I18N.loadLanguage(lang);
+      } else if (typeof I18N.load === "function") {
+        p = I18N.load(lang);
       }
 
-      // If it returns a Promise, wait for it; otherwise, just wait a tick
+      // If your i18n loader is async, wait for it;
+      // otherwise just apply after a tiny delay.
       if (p && typeof p.then === "function") {
         p.then(() => applyI18nToDom());
       } else {
