@@ -1589,3 +1589,66 @@ body {
   color: #3a2a13;
   line-height: 1.4;
 }
+/* ===========================================
+   KEY FOCUS — Sticky Note Style (Final Version)
+   Rotation calibrated to -1.2deg
+   =========================================== */
+
+/* Summary layout: ensures the sticky note has space */
+.summary-item {
+  position: relative;
+}
+
+/* Sticky note container */
+.summary-item .summary-value {
+  background: #fff7d1; /* soft yellow sticky-note colour */
+  border: 1px solid #e6d28a;
+  padding: 12px 14px;
+  border-radius: 8px;
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: #5a4a00;
+
+  /* Your exact rotation */
+  transform: rotate(-1.2deg);
+
+  /* Layering so the tape sits nicely */
+  position: relative;
+
+  /* Gentle floating animation */
+  animation: floatNote 3.4s ease-in-out infinite;
+}
+
+/* Tape on the top */
+.summary-item .summary-value::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 74px;
+  height: 22px;
+  background: rgba(255, 255, 200, 0.65);
+  border-radius: 3px;
+  transform: translateX(-50%) rotate(3deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Small label: “Most important thing to fix:” */
+.summary-mini-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #7c6a00;
+  display: block;
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+
+/* Floating animation — locked to your -1.2deg rotation */
+@keyframes floatNote {
+  0%   { transform: rotate(-1.2deg) translateY(0); }
+  50%  { transform: rotate(-1.2deg) translateY(-3px); }
+  100% { transform: rotate(-1.2deg) translateY(0); }
+}
