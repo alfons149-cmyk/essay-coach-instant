@@ -75,3 +75,9 @@
 }
   "summary.key_focus_title": "Key focus",
   "summary.key_focus_label": "Most important thing to fix",
+  "summary.title": "Quick exam summary",
+  "summary.hint": "A short snapshot of how this draft would score in the exam and what to improve first.",
+  "summary.estimated_band": "Estimated band",
+  "summary.key_focus": "Key focus",
+  "summary.key_focus_label": "Most important thing to fix",
+  "summary.output_length": "Output length",
