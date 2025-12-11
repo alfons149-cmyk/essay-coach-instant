@@ -494,12 +494,10 @@ function renderBands(level, scores) {
   const firstImprovement =
     (res.improvement_summary && res.improvement_summary[0]) || "";
 
-  const lang = localStorage.getItem("ec.lang") || "en";
-miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement, lang);
-
-
+  const lang = detectUILang();
+  miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement, lang);
 }
-
+  
 }
 
   // ---- Vocabulary suggestions ----
