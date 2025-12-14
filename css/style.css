@@ -1708,3 +1708,9 @@ body {
   50%  { transform: rotate(-1.2deg) translateY(-3px); }
   100% { transform: rotate(-1.2deg) translateY(0); }
 }
+.btn-lang .icon {
+  font-size: 0.9em;
+  margin-right: 4px;
+  display: inline-block;
+  transform: translateY(-1px);
+}
