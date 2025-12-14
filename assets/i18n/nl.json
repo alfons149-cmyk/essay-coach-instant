@@ -70,16 +70,18 @@
   "labels.wordcount_input_prefix": "Invoer:",
   "labels.wordcount_words": "woorden",
 
-  "placeholders.task_prompt": "Kopieer hier de vraag van het examen...",
+    "placeholders.task_prompt": "Kopieer hier de vraag van het examen...",
   "placeholders.essay_prompt": "Schrijf hier je antwoord...",
 
- "summary.title": "Korte examensamenvatting",
-"summary.hint": "Een korte momentopname van hoe deze versie zou scoren in het examen en wat je eerst moet verbeteren.",
-"summary.estimated_band": "Geschatte band",
-"summary.key_focus": "Belangrijkste focus",
-"summary.key_focus_label": "Belangrijkste punt om te verbeteren",
-"summary.output_length": "Lengte van het antwoord",
-"summary.key_focus_prefix": "Je hoogste prioriteit:",
-"summary.teacher_note_title": "Docentennotitie:"
+  "summary.title": "Korte examensamenvatting",
+  "summary.hint": "Een korte momentopname van hoe deze versie zou scoren in het examen en wat je eerst moet verbeteren.",
+  "summary.estimated_band": "Geschatte band",
+  "summary.key_focus": "Belangrijkste focus",
+  "summary.key_focus_label": "Belangrijkste punt om te verbeteren",
+  "summary.output_length": "Lengte van het antwoord",
+  "summary.key_focus_prefix": "Je hoogste prioriteit:",
+  "summary.teacher_note_title": "Docentennotitie:"
+}
+
 }
 
