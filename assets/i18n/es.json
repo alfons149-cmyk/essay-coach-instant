@@ -73,16 +73,14 @@
   "placeholders.task_prompt": "Copia aquí la pregunta del examen...",
   "placeholders.essay_prompt": "Escribe tu respuesta aquí..."
 }
-  "summary.key_focus_title": "Punto clave",
-  "summary.key_focus_label": "Lo más importante que debes mejorar",
+ 
   "summary.title": "Resumen rápido del examen",
-  "summary.hint": "Una visión rápida de cómo se evaluaría este borrador en el examen y qué mejorar primero.",
+  "summary.hint": "Una vista rápida de cómo rendiría este borrador en el examen y qué mejorar primero.",
   "summary.estimated_band": "Banda estimada",
-  "summary.key_focus": "En qué centrarte",
-  "summary.key_focus_label": "Lo más importante a mejorar",
-  "summary.output_length": "Longitud de la respuesta",
-"summary.key_focus_label": "Lo más importante a mejorar",
-"summary.key_focus_prefix": "Tu prioridad principal:",
-"summary.teacher_note_title": "Nota del profesor:"
+  "summary.key_focus": "Enfoque clave",
+  "summary.key_focus_label": "Lo más importante a corregir",
+  "summary.output_length": "Longitud del texto",
+  "summary.key_focus_prefix": "Tu prioridad:"
 }
+
 
