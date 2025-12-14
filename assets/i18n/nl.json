@@ -81,3 +81,6 @@
   "summary.key_focus": "Belangrijkste focus",
   "summary.key_focus_label": "Belangrijkste punt om te verbeteren",
   "summary.output_length": "Lengte van het antwoord",
+  "summary.key_focus_label": "Belangrijkste om te verbeteren",
+"summary.key_focus_prefix": "Jouw topprioriteit:",
+"summary.teacher_note_title": "Docentennotitie:"
