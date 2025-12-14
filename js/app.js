@@ -150,39 +150,32 @@
   }
 
   // ---- Key Focus phrasing helper (EN / ES / NL) ----
-  function makeFriendlyKeyFocus(raw, lang = "en") {
-    if (!raw || typeof raw !== "string") return "—";
-    const text = raw.trim();
+  function makeKeyFocusAction(raw, lang = "en") {
+  if (!raw || typeof raw !== "string") return "—";
+  let t = raw.trim();
 
-    // Already friendly?
-    const alreadyFriendly = {
-      en: [/^your top priority/i, /^focus on/i, /^you should/i],
-      es: [/^tu prioridad/i, /^enfócate en/i, /^deberías/i],
-      nl: [/^je belangrijkste/i, /^richt je op/i, /^je zou/i]
-    };
+  // Strip trailing punctuation
+  t = t.replace(/[.!\s]+$/, "");
 
-    const rules = alreadyFriendly[lang] || alreadyFriendly.en;
-    if (rules.some((r) => r.test(text))) return text;
+  // If it already starts like an instruction, keep it
+  const alreadyAction = {
+    en: [/^(focus on|make sure|work on|improve|add|avoid|use|reduce|increase)/i],
+    es: [/^(enfócate|asegúrate|trabaja|mejora|añade|evita|usa|reduce|aumenta)/i],
+    nl: [/^(richt je|zorg dat|werk aan|verbeter|voeg toe|vermijd|gebruik|verminder|verhoog)/i]
+  };
+  if ((alreadyAction[lang] || alreadyAction.en).some(r => r.test(t))) return t;
 
-    // Language-specific rewrite
-    switch (lang) {
-      case "es": {
-        const lowered = text.charAt(0).toLowerCase() + text.slice(1);
-        return `Tu prioridad principal es ${lowered}`;
-      }
-      case "nl": {
-        const lowered = text.charAt(0).toLowerCase() + text.slice(1);
-        return `Je belangrijkste aandachtspunt is ${lowered}`;
-      }
-      default:
-      case "en": {
-        let phr = text;
-        if (!phr.match(/^to\s+/i)) {
-          phr = "to " + phr.charAt(0).toLowerCase() + phr.slice(1);
-        }
-        return `Your top priority is ${phr}`;
-      }
-    }
+  // Convert “X needs improvement” → “Improve X…”
+  // Keep this simple and teacher-like.
+  switch (lang) {
+    case "es":
+      return `Mejora ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
+    case "nl":
+      return `Verbeter ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
+    default:
+      return `Improve ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
+  }
+}
   }
 
   // ---- Corrector (live API or mock) ----
