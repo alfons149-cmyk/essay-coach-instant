@@ -80,6 +80,7 @@
   "summary.key_focus_label": "Most important thing to fix",
   "summary.output_length": "Output length"
   "summary.key_focus_label": "Most important thing to fix",
-"summary.key_focus_prefix": "Your top priority:",
-"summary.teacher_note_title": "Teacher’s note:",
+  "summary.key_focus_prefix": "Your top priority:",
+  "summary.teacher_note_title": "Teacher’s note:",
+  "summary.key_focus_prefix": "Your top priority:"
 }
