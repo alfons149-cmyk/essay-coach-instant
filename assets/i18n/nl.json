@@ -79,10 +79,8 @@
   "summary.hint": "Een korte momentopname van hoe deze versie zou scoren in het examen en wat je eerst moet verbeteren.",
   "summary.estimated_band": "Geschatte band",
   "summary.key_focus": "Belangrijkste focus",
-  "summary.key_focus_label": "Belangrijkste punt om te verbeteren",
   "summary.output_length": "Lengte van het antwoord",
-  "summary.key_focus_label": "Belangrijkste om te verbeteren",
 "summary.key_focus_prefix": "jouw hoogste prioriteit:",
-"summary.teacher_note_title": "Docentennotitie:",
+"summary.teacher_note_title": "Docentennotitie:"
 }
 
