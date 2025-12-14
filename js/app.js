@@ -1,7 +1,9 @@
-// js/app.js — EssayCoach UI (busy state + vocab + sentence insights + debug)
+// js/app.js — EssayCoach UI (stable single-file version: i18n + buttons + counters + summary + bands)
 
 (() => {
-  // ---- Global config / API ----
+  // -----------------------------
+  // Global config / API
+  // -----------------------------
   window.EC = window.EC || {};
   const qs  = new URLSearchParams(location.search);
   const DEV = (typeof EC.DEV === "boolean") ? EC.DEV : (qs.get("dev") === "1");
@@ -9,11 +11,15 @@
 
   console.log("[EC] API_BASE =", API_BASE || "(mock)", "DEV?", DEV);
 
-  // ---- DOM helpers ----
+  // -----------------------------
+  // DOM helpers
+  // -----------------------------
   const $  = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
 
-  // ---- Element refs ----
+  // -----------------------------
+  // Element refs
+  // -----------------------------
   const el = {
     task:       $("#task"),
     essay:      $("#essay"),
@@ -24,10 +30,12 @@
     outWC:      $("#outWC"),
     btnCorrect: $("#btnCorrect"),
     btnClear:   $("#btnClear"),
-    statusLine: document.getElementById("statusLine") // <p id="statusLine">
+    statusLine: $("#statusLine")
   };
 
-  // ---- Status helper (shows "Correcting your essay…" etc.) ----
+  // -----------------------------
+  // Status helper
+  // -----------------------------
   function setStatus(keyOrText) {
     if (!el.statusLine) return;
 
@@ -42,21 +50,68 @@
       el.statusLine.textContent = keyOrText;
     }
   }
-
-  // Optionally expose to other scripts if needed
   window.EC.setStatus = setStatus;
 
-  // ---- Course Book helper bridge ----
+  // -----------------------------
+  // i18n helpers
+  // -----------------------------
+  function applyI18nToDom() {
+    if (!window.I18N || typeof I18N.t !== "function") return;
+
+    // Optional: page title
+    const title = I18N.t("meta.title");
+    if (typeof title === "string" && title) document.title = title;
+
+    // Plain text nodes
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      const key = node.getAttribute("data-i18n");
+      const val = I18N.t(key);
+      if (typeof val === "string" && val) node.textContent = val;
+    });
+
+    // Placeholders
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+      const key = node.getAttribute("data-i18n-placeholder");
+      const val = I18N.t(key);
+      if (typeof val === "string" && val) node.setAttribute("placeholder", val);
+    });
+
+    // Title attributes (tooltips)
+    document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+      const key = node.getAttribute("data-i18n-title");
+      const val = I18N.t(key);
+      if (typeof val === "string" && val) node.setAttribute("title", val);
+    });
+
+    // Refresh counters for new language
+    clearCounterTemplates();
+    updateCounters();
+  }
+
+  function detectUILang() {
+    // Prefer i18n engine if available
+    if (window.I18N) {
+      if (typeof I18N.getLanguage === "function") {
+        const v = I18N.getLanguage();
+        if (v) return String(v).slice(0, 2).toLowerCase();
+      }
+      if (typeof I18N.lang === "string") return I18N.lang.slice(0, 2).toLowerCase();
+      if (typeof I18N.language === "string") return I18N.language.slice(0, 2).toLowerCase();
+    }
+
+    return (localStorage.getItem("ec.lang") || "en").slice(0, 2).toLowerCase();
+  }
+
+  // -----------------------------
+  // Course Book helper bridge
+  // -----------------------------
   function setFeedbackAndCourseHelp(feedbackHtml) {
     if (!el.feedback) return;
 
-    // Show feedback in the normal panel
     el.feedback.innerHTML = feedbackHtml || "—";
 
     try {
-      const feedbackText =
-        el.feedback.innerText || el.feedback.textContent || "";
-
+      const feedbackText = el.feedback.innerText || el.feedback.textContent || "";
       const essayText = el.essay ? (el.essay.value || "") : "";
 
       if (
@@ -65,10 +120,7 @@
         window.FeedbackUI &&
         typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
       ) {
-        const result = window.FeedbackEngine.detectMistakesWithLocations(
-          feedbackText,
-          essayText
-        );
+        const result = window.FeedbackEngine.detectMistakesWithLocations(feedbackText, essayText);
         window.FeedbackUI.renderFeedbackCardWithLocations(result);
       } else if (
         window.FeedbackEngine &&
@@ -84,101 +136,9 @@
     }
   }
 
-  // --------------------------------------------------
-  // i18n helpers
-  // --------------------------------------------------
-  function applyI18nToDom() {
-    if (!window.I18N || typeof I18N.t !== "function") return;
-
-    // Plain text nodes
-    document.querySelectorAll("[data-i18n]").forEach((node) => {
-      const key = node.getAttribute("data-i18n");
-      const val = I18N.t(key);
-      if (typeof val === "string" && val) {
-        node.textContent = val;
-      }
-    });
-
-    // Placeholders
-    document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
-      const key = node.getAttribute("data-i18n-placeholder");
-      const val = I18N.t(key);
-      if (typeof val === "string" && val) {
-        node.setAttribute("placeholder", val);
-      }
-    });
-
-    // Title attributes (tooltips)
-    document.querySelectorAll("[data-i18n-title]").forEach((node) => {
-      const key = node.getAttribute("data-i18n-title");
-      const val = I18N.t(key);
-      if (typeof val === "string" && val) {
-        node.setAttribute("title", val);
-      }
-    });
-
-    // Refresh word-counter templates for the new language
-    clearCounterTemplates();
-    updateCounters();
-  }
-
-  function detectUILang() {
-    // Prefer whatever the i18n engine thinks
-    if (window.I18N) {
-      if (typeof I18N.getLanguage === "function") {
-        const v = I18N.getLanguage();
-        if (v) return String(v).slice(0, 2).toLowerCase();
-      }
-      if (typeof I18N.lang === "string") {
-        return I18N.lang.slice(0, 2).toLowerCase();
-      }
-      if (typeof I18N.language === "string") {
-        return I18N.language.slice(0, 2).toLowerCase();
-      }
-    }
-
-    // Fallbacks
-    let code =
-      localStorage.getItem("ec.lang") ||
-      document.documentElement.lang ||
-      "en";
-
-    code = String(code).toLowerCase();
-    if (code.startsWith("es")) return "es";
-    if (code.startsWith("nl")) return "nl";
-    return "en";
-  }
-
-  // ---- Key Focus phrasing helper (EN / ES / NL) ----
-  function makeKeyFocusAction(raw, lang = "en") {
-  if (!raw || typeof raw !== "string") return "—";
-  let t = raw.trim();
-
-  // Strip trailing punctuation
-  t = t.replace(/[.!\s]+$/, "");
-
-  // If it already starts like an instruction, keep it
-  const alreadyAction = {
-    en: [/^(focus on|make sure|work on|improve|add|avoid|use|reduce|increase)/i],
-    es: [/^(enfócate|asegúrate|trabaja|mejora|añade|evita|usa|reduce|aumenta)/i],
-    nl: [/^(richt je|zorg dat|werk aan|verbeter|voeg toe|vermijd|gebruik|verminder|verhoog)/i]
-  };
-  if ((alreadyAction[lang] || alreadyAction.en).some(r => r.test(t))) return t;
-
-  // Convert “X needs improvement” → “Improve X…”
-  // Keep this simple and teacher-like.
-  switch (lang) {
-    case "es":
-      return `Mejora ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
-    case "nl":
-      return `Verbeter ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
-    default:
-      return `Improve ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
-  }
-}
-  }
-
-  // ---- Corrector (live API or mock) ----
+  // -----------------------------
+  // Corrector (live API or mock)
+  // -----------------------------
   async function correctEssay(payload) {
     if (!DEV && API_BASE) {
       const url = `${API_BASE}/correct`;
@@ -194,9 +154,7 @@
       const text = await res.text();
       console.log("[EC] /correct", res.status, text);
 
-      if (!res.ok) {
-        throw new Error(`API ${res.status}: ${text}`);
-      }
+      if (!res.ok) throw new Error(`API ${res.status}: ${text}`);
       return JSON.parse(text);
     }
 
@@ -204,6 +162,7 @@
     await sleep(300);
     const txt = payload.essay || "";
     const wc  = wcCount(txt);
+
     const edits = /\ba lot\b/i.test(txt)
       ? [{
           from: "a lot",
@@ -233,232 +192,9 @@
     };
   }
 
-  // ---- Initial setup ----
-  document.addEventListener("DOMContentLoaded", () => {
-    // Paint initial state
-    reflectLangButtons();
-    reflectLevelButtons();
-    updateCounters();
-
-    // 1) Language buttons (EN / ES / NL)
-    const langButtons = $$("[data-lang]");
-    langButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const lang = btn.getAttribute("data-lang") || "en";
-
-        // remember choice
-        localStorage.setItem("ec.lang", lang);
-
-        // update button styles
-        reflectLangButtons(lang);
-
-        // tell i18n engine to actually switch language
-        if (window.I18N) {
-          let p = null;
-          if (typeof I18N.setLanguage === "function") {
-            p = I18N.setLanguage(lang);
-          } else if (typeof I18N.loadLanguage === "function") {
-            p = I18N.loadLanguage(lang);
-          } else if (typeof I18N.load === "function") {
-            p = I18N.load(lang);
-          }
-
-          if (p && typeof p.then === "function") {
-            p.then(() => applyI18nToDom());
-          } else {
-            setTimeout(applyI18nToDom, 150);
-          }
-        } else {
-          applyI18nToDom();
-        }
-      });
-    });
-
-    // 2) Level buttons (B2 / C1 / C2)
-    const levelButtons = $$("[data-level]");
-    levelButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const level = btn.getAttribute("data-level") || "C1";
-        localStorage.setItem("ec.level", level);
-        reflectLevelButtons(level);
-      });
-    });
-
-    // 3) Clear button
-    if (el.btnClear) {
-      el.btnClear.addEventListener("click", () => {
-        if (el.task)      el.task.value = "";
-        if (el.essay)     el.essay.value = "";
-        if (el.nextDraft) el.nextDraft.value = "";
-        if (el.feedback)  el.feedback.textContent = "—";
-        if (el.edits)     el.edits.innerHTML = "";
-        renderVocabSuggestions({});
-        renderSentenceInsights([]);
-        renderDebugJson(null);
-        window.EC_LAST_RESPONSE = null;
-
-        // Optional: clear Course Book help card
-        try {
-          if (
-            window.FeedbackUI &&
-            typeof window.FeedbackUI.renderFeedbackCard === "function"
-          ) {
-            window.FeedbackUI.renderFeedbackCard("");
-          }
-        } catch (err) {
-          console.warn("[FeedbackUI] could not clear card:", err);
-        }
-
-        const dbgBtn = $("#btnToggleDebug");
-        if (dbgBtn && window.I18N && I18N.t) {
-          dbgBtn.textContent = I18N.t("debug.show");
-        }
-
-        setStatus("");
-        updateCounters();
-      });
-    }
-
-    // 4) Correct button
-    if (el.btnCorrect) {
-      el.btnCorrect.addEventListener("click", async (e) => {
-        const level = localStorage.getItem("ec.level") || "C1";
-        const payload = {
-          level,
-          task:  el.task ? el.task.value || "" : "",
-          essay: el.essay ? el.essay.value || "" : ""
-        };
-
-        if (!payload.essay.trim()) {
-          if (el.feedback) {
-            el.feedback.textContent = "Please write or paste your essay first.";
-          }
-          return;
-        }
-
-        let res;
-
-        try {
-          // Busy state ON
-          e.target.disabled = true;
-          e.target.classList.add("is-busy");
-          e.target.setAttribute("aria-busy", "true");
-
-          // Show status line while correcting
-          setStatus("status.correcting");
-
-          // Call Worker / mock
-          res = await correctEssay(payload);
-
-          // Render main results
-          setFeedbackAndCourseHelp(res.feedback || "—");
-          if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
-
-          if (el.edits) {
-            el.edits.innerHTML = (res.edits || [])
-              .map((x) =>
-                `<li><strong>${escapeHTML(x.from)}</strong> → ` +
-                `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
-              )
-              .join("");
-          }
-
-          // Word counters
-          setCounter(el.inWC,  "io.input_words",  res.inputWords  ?? 0);
-          setCounter(el.outWC, "io.output_words", res.outputWords ?? 0);
-
-          // Extra cards
-          renderVocabSuggestions(res.vocabularySuggestions || {});
-          renderSentenceInsights(res.sentenceInsights || []);
-
-          // Debug JSON
-          window.EC_LAST_RESPONSE = res;
-          renderDebugJson(res);
-
-          // Bands (if scoreEssay exists)
-          if (typeof window.scoreEssay === "function") {
-            const scores = {
-              content: 0.7,
-              communicative: 0.6,
-              organisation: 0.8,
-              language: 0.55
-            };
-            renderBands(level, scores);
-          }
-        } catch (err) {
-          console.error("[EC] UI or API error:", err);
-          if (!res && el.feedback) {
-            el.feedback.textContent =
-              "⚠️ Correction failed. Check API, CORS, or dev mode.";
-          }
-        } finally {
-          // Busy state OFF
-          e.target.disabled = false;
-          e.target.classList.remove("is-busy");
-          e.target.removeAttribute("aria-busy");
-          setStatus("");
-        }
-      });
-    }
-
-    // Apply translations once on initial load
-    setTimeout(applyI18nToDom, 150);
-
-    // Live word count while typing
-    if (el.essay) {
-      el.essay.addEventListener("input", updateCounters);
-    }
-  });
-
-  // Global click handler for debug toggle + vocab replacements
-  document.addEventListener("click", (e) => {
-    // Debug toggle button
-    const debugBtn = e.target.closest("#btnToggleDebug");
-    if (debugBtn) {
-      const card = $("#debugCard");
-      if (!card) return;
-
-      const willShow = card.hidden;
-      card.hidden = !card.hidden;
-
-      if (window.I18N && I18N.t) {
-        debugBtn.textContent = I18N.t(willShow ? "debug.hide" : "debug.show");
-      } else {
-        debugBtn.textContent = willShow
-          ? "Hide advanced AI details"
-          : "Show advanced AI details";
-      }
-      return;
-    }
-
-    // One-click vocab replacement
-    const altBtn = e.target.closest(".vocab-alt");
-    if (altBtn) {
-      const key = altBtn.getAttribute("data-key") || "";
-      const to  = altBtn.getAttribute("data-to")  || "";
-      const targetTA = $("#nextDraft") || $("#essay");
-      if (!targetTA) return;
-
-      const ok = replaceNearest(targetTA, key, to);
-      if (el.feedback) {
-        el.feedback.textContent = ok
-          ? `Replaced “${key}” → “${to}”.`
-          : `Could not find "${key}" to replace.`;
-      }
-      return;
-    }
-  });
-
-  // Separate handler for Course Book button
-  document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("btnCourseBook");
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      window.open("assets/book/index.html", "_blank", "noopener");
-    });
-  });
-
-  // ---- Counters ----
+  // -----------------------------
+  // Counters
+  // -----------------------------
   function setCounter(node, i18nKey, n) {
     if (!node) return;
     const ATTR = "data-i18n-template";
@@ -471,8 +207,8 @@
           node.textContent && /\{n\}/.test(node.textContent)
             ? node.textContent
             : i18nKey === "io.input_words"
-            ? "Input: {n} words"
-            : "Output: {n} words";
+              ? "Input: {n} words"
+              : "Output: {n} words";
       }
       node.setAttribute(ATTR, tpl);
     }
@@ -486,20 +222,64 @@
   }
 
   function updateCounters() {
-    if (!el.essay || !el.inWC || !el.outWC) return;
+    if (!el.essay) return;
+
     const wc = wcCount(el.essay.value);
-    setCounter(el.inWC,  "io.input_words",  wc);
-    setCounter(el.outWC, "io.output_words", wc);
+
+    // inWC can be either:
+    // - a "number only" span in your new layout, or
+    // - a templated "Input: {n} words" span in the old layout.
+    if (el.inWC) {
+      const hasTemplate = el.inWC.getAttribute("data-i18n-template") || /\{n\}/.test(el.inWC.textContent || "");
+      if (hasTemplate) setCounter(el.inWC, "io.input_words", wc);
+      else el.inWC.textContent = String(wc);
+    }
+
+    if (el.outWC) {
+      const hasTemplate = el.outWC.getAttribute("data-i18n-template") || /\{n\}/.test(el.outWC.textContent || "");
+      if (hasTemplate) setCounter(el.outWC, "io.output_words", wc);
+      else el.outWC.textContent = String(wc);
+    }
   }
 
-  // ---- Bands card ----
+  // -----------------------------
+  // Summary Key Focus (teacher-style action)
+  // -----------------------------
+  function makeKeyFocusAction(raw, lang = "en") {
+    if (!raw || typeof raw !== "string") return "—";
+    let text = raw.trim().replace(/[.!\s]+$/, "");
+
+    const already = {
+      en: [/^(focus on|improve|work on|make sure|add|avoid|use|reduce|increase)/i],
+      es: [/^(enfócate|mejora|trabaja|asegúrate|añade|evita|usa|reduce|aumenta)/i],
+      nl: [/^(richt je|verbeter|werk aan|zorg dat|voeg toe|vermijd|gebruik|verminder|verhoog)/i]
+    };
+
+    if ((already[lang] || already.en).some(r => r.test(text))) return text;
+
+    switch (lang) {
+      case "es":
+        return `Mejora ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+      case "nl":
+        return `Verbeter ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+      default:
+        return `Improve ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+    }
+  }
+
+  // -----------------------------
+  // Bands card + Summary updates
+  // -----------------------------
   function renderBands(level, scores) {
     if (typeof window.scoreEssay !== "function") {
       console.warn("[bands] scoreEssay is not available");
       return;
     }
+
     const res = scoreEssay(level, scores);
     if (!res) return;
+
+    const lang = detectUILang();
 
     const card      = $("#bandsCard");
     const overallEl = $("#bandsOverallScore");
@@ -509,26 +289,28 @@
 
     if (!card || !overallEl || !levelEl || !catList || !impList) return;
 
-    // Detailed bands card
     overallEl.textContent = res.overall_scale || "—";
-    levelEl.textContent   = res.level;
+    levelEl.textContent   = res.level || "—";
 
     catList.innerHTML = "";
-    res.category_results.forEach((cr) => {
-      const li   = document.createElement("li");
-      const key  = `bands.category.${cr.category}`;
-      const label = (window.I18N && I18N.t) ? I18N.t(key) : cr.category;
-      const bandKey   = `bands.band.${cr.band}`;
-      const bandLabel = (window.I18N && I18N.t) ? I18N.t(bandKey) : cr.band;
+    (res.category_results || []).forEach((cr) => {
+      const li = document.createElement("li");
+      const label = (window.I18N && I18N.t)
+        ? I18N.t(`bands.category.${cr.category}`)
+        : cr.category;
+
+      const bandLabel = (window.I18N && I18N.t)
+        ? I18N.t(`bands.band.${cr.band}`)
+        : cr.band;
 
       li.innerHTML =
-        `<strong>${label}</strong>: ${bandLabel} (${cr.score_range})<br>` +
-        `<span style="font-size:0.9em;opacity:0.9;">${cr.descriptor}</span>`;
+        `<strong>${escapeHTML(label)}</strong>: ${escapeHTML(bandLabel)} (${escapeHTML(cr.score_range || "")})<br>` +
+        `<span style="font-size:0.9em;opacity:0.9;">${escapeHTML(cr.descriptor || "")}</span>`;
       catList.appendChild(li);
     });
 
-    const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
     impList.innerHTML = "";
+    const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
     uniqImprovements.forEach((text) => {
       const li = document.createElement("li");
       li.textContent = text;
@@ -537,44 +319,39 @@
 
     card.hidden = false;
 
-    // ✅ Update the compact "Summary" panel
+    // ---- Compact Summary panel ----
     const miniBand  = document.getElementById("band-estimate");
     const miniFocus = document.getElementById("key-area");
 
     if (miniBand) {
-      const levelLabel = res.level || "";         // e.g. "C1"
-      const scale      = res.overall_scale || ""; // e.g. "187"
+      const levelLabel = res.level || "";
+      const scale      = res.overall_scale || "";
 
-      if (levelLabel && scale) {
-        miniBand.textContent =
-          `${levelLabel} level – around ${scale} on the Cambridge English Scale`;
-      } else if (levelLabel) {
-        miniBand.textContent = `${levelLabel} level`;
-      } else if (scale) {
-        miniBand.textContent =
-          `Around ${scale} on the Cambridge English Scale`;
-      } else {
-        miniBand.textContent = "—";
-      }
+      const fallback = (levelLabel && scale)
+        ? `${levelLabel} level – around ${scale} on the Cambridge English Scale`
+        : (levelLabel || scale || "—");
+
+      // If you add an i18n key later, you can swap this easily.
+      miniBand.textContent = fallback;
     }
 
     if (miniFocus) {
-  const firstImprovement =
-    (res.improvement_summary && res.improvement_summary[0]) || "";
+      const first = (res.improvement_summary && res.improvement_summary[0]) || "";
+      const prefix =
+        (window.I18N && typeof I18N.t === "function")
+          ? (I18N.t("summary.key_focus_prefix") || "Your top priority:")
+          : "Your top priority:";
 
-  const lang = detectUILang();
-
-  const prefix =
-    (window.I18N && typeof I18N.t === "function")
-      ? I18N.t("summary.key_focus_prefix")
-      : "Your top priority:";
-
-  miniFocus.textContent =
-    `${prefix} ${makeKeyFocusAction(firstImprovement, lang)}`;
-}
+      // IMPORTANT:
+      // Your HTML now uses:
+      // <p class="summary-focus-text" id="key-area">–</p>
+      miniFocus.textContent = `${prefix} ${makeKeyFocusAction(first, lang)}`;
+    }
   }
 
-  // ---- Vocabulary suggestions ----
+  // -----------------------------
+  // Vocabulary suggestions
+  // -----------------------------
   function renderVocabSuggestions(vs) {
     const card = $("#vocabCard");
     const list = $("#vocab");
@@ -605,14 +382,12 @@
     card.hidden = false;
   }
 
-  // ---- Sentence insights ----
+  // -----------------------------
+  // Sentence insights
+  // -----------------------------
   function renderSentenceInsights(list) {
-    const card = $("#sentenceInsightsCard") ||
-                 $("#sentencesCard") ||
-                 $("#sentenceCard");
-    const ul   = $("#sentenceInsightsList") ||
-                 $("#sentencesList") ||
-                 $("#sentenceList");
+    const card = $("#sentenceInsightsCard") || $("#sentencesCard") || $("#sentenceCard");
+    const ul   = $("#sentenceInsightsList") || $("#sentencesList") || $("#sentenceList");
     if (!card || !ul) return;
 
     const items = Array.isArray(list) ? list : [];
@@ -642,7 +417,7 @@
         : "";
 
       const linkHtml = linkHint
-        ? `<button class="si-link-btn" data-unit-link="${escapeHTML(linkHint)}">
+        ? `<button type="button" class="si-link-btn" data-unit-link="${escapeHTML(linkHint)}">
              ${escapeHTML(linkHint)}
            </button>`
         : "";
@@ -662,7 +437,9 @@
     card.hidden = false;
   }
 
-  // ---- Debug JSON ----
+  // -----------------------------
+  // Debug JSON
+  // -----------------------------
   function renderDebugJson(data) {
     const card = $("#debugCard");
     const pre  = $("#debugJson");
@@ -676,17 +453,19 @@
 
     try {
       pre.textContent = JSON.stringify(data, null, 2);
-    } catch (e) {
+    } catch {
       pre.textContent = String(data);
     }
     // visibility controlled by toggle button
   }
 
-  // ---- Button highlight helpers ----
+  // -----------------------------
+  // Button highlight helpers
+  // -----------------------------
   function reflectLangButtons(lang) {
     const current = lang || localStorage.getItem("ec.lang") || "en";
     $$("[data-lang]").forEach((b) => {
-      const active = b.getAttribute("data-lang") === current;
+      const active = (b.getAttribute("data-lang") || "en") === current;
       b.classList.toggle("btn-primary", active);
       b.classList.toggle("btn-ghost", !active);
       b.setAttribute("aria-pressed", String(active));
@@ -696,36 +475,60 @@
   function reflectLevelButtons(level) {
     const current = level || localStorage.getItem("ec.level") || "C1";
     $$("[data-level]").forEach((b) => {
-      const active = b.getAttribute("data-level") === current;
+      const active = (b.getAttribute("data-level") || "C1") === current;
       b.classList.toggle("pill--active", active);
       b.setAttribute("aria-pressed", String(active));
     });
   }
 
-  // ---- Utils ----
-  function wcCount(s) {
-    const m = String(s || "").trim().match(/\S+/g);
-    return m ? m.length : 0;
+  // -----------------------------
+  // Replace nearest occurrence (vocab one-click)
+  // -----------------------------
+  function replaceNearest(textarea, needle, replacement) {
+    const value = textarea.value;
+    const n = String(needle);
+    if (!n) return false;
+
+    const re = new RegExp(escapeForRegExp(n), "gi");
+    let match;
+    const matches = [];
+
+    while ((match = re.exec(value)) !== null) {
+      matches.push({ start: match.index, end: match.index + match[0].length });
+      if (re.lastIndex === match.index) re.lastIndex++;
+    }
+    if (!matches.length) return false;
+
+    const caret = textarea.selectionStart ?? 0;
+    let target = matches.find((m) => caret >= m.start && caret <= m.end);
+
+    if (!target) {
+      target = matches
+        .map((m) => ({
+          m,
+          d: Math.min(Math.abs(caret - m.start), Math.abs(caret - m.end))
+        }))
+        .sort((a, b) => a.d - b.d)[0].m;
+    }
+
+    const before = value.slice(0, target.start);
+    const after  = value.slice(target.end);
+    const next   = before + replacement + after;
+
+    textarea.value = next;
+    const newCaret = before.length + replacement.length;
+    textarea.setSelectionRange(newCaret, newCaret);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+
+    return true;
   }
 
-  function escapeForRegExp(x) {
-    return String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  // =====================
+  // -----------------------------
   // SentenceInsight → open unit
-  // =====================
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".si-link-btn");
-    if (!btn) return;
-
+  // -----------------------------
+  function handleSentenceUnitOpen(btn) {
     const text = btn.getAttribute("data-unit-link")?.toLowerCase() || "";
 
-    // Unit lookup table (matches "unit 5", "unit 3", etc.)
     const UNIT_LINKS = {
       "unit 1": "assets/book/units/unit01.html",
       "unit 2": "assets/book/units/unit02.html",
@@ -736,7 +539,6 @@
       "unit 7": "assets/book/units/unit07.html"
     };
 
-    // Find which unit number appears in the linkHint text
     let match = null;
     for (const key of Object.keys(UNIT_LINKS)) {
       if (text.includes(key)) {
@@ -751,11 +553,236 @@
     }
 
     window.open(match, "_blank", "noopener");
-  });
+  }
+
+  // -----------------------------
+  // Utils
+  // -----------------------------
+  function wcCount(s) {
+    const m = String(s || "").trim().match(/\S+/g);
+    return m ? m.length : 0;
+  }
+
+  function escapeForRegExp(x) {
+    return String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, (m) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])
     );
   }
+
+  // -----------------------------
+  // Initial setup
+  // -----------------------------
+  document.addEventListener("DOMContentLoaded", () => {
+    // initial paint
+    reflectLangButtons();
+    reflectLevelButtons();
+    updateCounters();
+
+    // Language buttons (EN/ES/NL) — single, reliable handler
+    $$("[data-lang]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const lang = btn.getAttribute("data-lang") || "en";
+        localStorage.setItem("ec.lang", lang);
+        reflectLangButtons(lang);
+
+        if (window.I18N) {
+          let p = null;
+          if (typeof I18N.setLanguage === "function") p = I18N.setLanguage(lang);
+          else if (typeof I18N.loadLanguage === "function") p = I18N.loadLanguage(lang);
+          else if (typeof I18N.load === "function") p = I18N.load(lang);
+
+          if (p && typeof p.then === "function") p.then(() => applyI18nToDom());
+          else setTimeout(applyI18nToDom, 120);
+        } else {
+          applyI18nToDom();
+        }
+      });
+    });
+
+    // Level buttons
+    $$("[data-level]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const level = btn.getAttribute("data-level") || "C1";
+        localStorage.setItem("ec.level", level);
+        reflectLevelButtons(level);
+      });
+    });
+
+    // Clear
+    if (el.btnClear) {
+      el.btnClear.addEventListener("click", () => {
+        if (el.task)      el.task.value = "";
+        if (el.essay)     el.essay.value = "";
+        if (el.nextDraft) el.nextDraft.value = "";
+        if (el.feedback)  el.feedback.textContent = "—";
+        if (el.edits)     el.edits.innerHTML = "";
+
+        renderVocabSuggestions({});
+        renderSentenceInsights([]);
+        renderDebugJson(null);
+        window.EC_LAST_RESPONSE = null;
+
+        try {
+          if (window.FeedbackUI && typeof window.FeedbackUI.renderFeedbackCard === "function") {
+            window.FeedbackUI.renderFeedbackCard("");
+          }
+        } catch (err) {
+          console.warn("[FeedbackUI] could not clear card:", err);
+        }
+
+        const dbgBtn = $("#btnToggleDebug");
+        if (dbgBtn && window.I18N && I18N.t) dbgBtn.textContent = I18N.t("debug.show");
+
+        setStatus("");
+        updateCounters();
+      });
+    }
+
+    // Correct
+    if (el.btnCorrect) {
+      el.btnCorrect.addEventListener("click", async (e) => {
+        const level = localStorage.getItem("ec.level") || "C1";
+        const payload = {
+          level,
+          task:  el.task ? (el.task.value || "") : "",
+          essay: el.essay ? (el.essay.value || "") : ""
+        };
+
+        if (!payload.essay.trim()) {
+          if (el.feedback) el.feedback.textContent = "Please write or paste your essay first.";
+          return;
+        }
+
+        let res;
+
+        try {
+          // Busy ON
+          e.target.disabled = true;
+          e.target.classList.add("is-busy");
+          e.target.setAttribute("aria-busy", "true");
+
+          setStatus("status.correcting");
+
+          res = await correctEssay(payload);
+
+          setFeedbackAndCourseHelp(res.feedback || "—");
+          if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
+
+          if (el.edits) {
+            el.edits.innerHTML = (res.edits || [])
+              .map((x) =>
+                `<li><strong>${escapeHTML(x.from)}</strong> → ` +
+                `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
+              )
+              .join("");
+          }
+
+          // Word counters (both styles supported)
+          if (typeof res.inputWords === "number" && el.inWC) {
+            const hasTemplate = el.inWC.getAttribute("data-i18n-template") || /\{n\}/.test(el.inWC.textContent || "");
+            if (hasTemplate) setCounter(el.inWC, "io.input_words", res.inputWords);
+            else el.inWC.textContent = String(res.inputWords);
+          }
+          if (typeof res.outputWords === "number" && el.outWC) {
+            const hasTemplate = el.outWC.getAttribute("data-i18n-template") || /\{n\}/.test(el.outWC.textContent || "");
+            if (hasTemplate) setCounter(el.outWC, "io.output_words", res.outputWords);
+            else el.outWC.textContent = String(res.outputWords);
+          }
+
+          renderVocabSuggestions(res.vocabularySuggestions || {});
+          renderSentenceInsights(res.sentenceInsights || []);
+
+          window.EC_LAST_RESPONSE = res;
+          renderDebugJson(res);
+
+          if (typeof window.scoreEssay === "function") {
+            const scores = {
+              content: 0.7,
+              communicative: 0.6,
+              organisation: 0.8,
+              language: 0.55
+            };
+            renderBands(level, scores);
+          }
+        } catch (err) {
+          console.error("[EC] UI or API error:", err);
+          if (el.feedback) el.feedback.textContent = "⚠️ Correction failed. Check API, CORS, or dev mode.";
+        } finally {
+          // Busy OFF
+          e.target.disabled = false;
+          e.target.classList.remove("is-busy");
+          e.target.removeAttribute("aria-busy");
+          setStatus("");
+        }
+      });
+    }
+
+    // Course Book button
+    const courseBtn = document.getElementById("btnCourseBook");
+    if (courseBtn) {
+      courseBtn.addEventListener("click", () => {
+        window.open("assets/book/index.html", "_blank", "noopener");
+      });
+    }
+
+    // Word count while typing
+    if (el.essay) el.essay.addEventListener("input", updateCounters);
+
+    // Apply translations once i18n has loaded (defer scripts)
+    setTimeout(applyI18nToDom, 120);
+  });
+
+  // -----------------------------
+  // Global delegated click handlers (single)
+  // -----------------------------
+  document.addEventListener("click", (e) => {
+    // Debug toggle
+    const debugBtn = e.target.closest("#btnToggleDebug");
+    if (debugBtn) {
+      const card = $("#debugCard");
+      if (!card) return;
+
+      const willShow = card.hidden;
+      card.hidden = !card.hidden;
+
+      if (window.I18N && I18N.t) {
+        debugBtn.textContent = I18N.t(willShow ? "debug.hide" : "debug.show");
+      } else {
+        debugBtn.textContent = willShow ? "Hide advanced AI details" : "Show advanced AI details";
+      }
+      return;
+    }
+
+    // Vocab alt replacement
+    const altBtn = e.target.closest(".vocab-alt");
+    if (altBtn) {
+      const key = altBtn.getAttribute("data-key") || "";
+      const to  = altBtn.getAttribute("data-to")  || "";
+      const targetTA = $("#nextDraft") || $("#essay");
+      if (!targetTA) return;
+
+      const ok = replaceNearest(targetTA, key, to);
+      if (el.feedback) {
+        el.feedback.textContent = ok
+          ? `Replaced “${key}” → “${to}”.`
+          : `Could not find "${key}" to replace.`;
+      }
+      return;
+    }
+
+    // Sentence unit open
+    const unitBtn = e.target.closest(".si-link-btn");
+    if (unitBtn) {
+      handleSentenceUnitOpen(unitBtn);
+      return;
+    }
+  });
 })();
