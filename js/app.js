@@ -559,12 +559,19 @@
     }
 
     if (miniFocus) {
-      const firstImprovement =
-        (res.improvement_summary && res.improvement_summary[0]) || "";
+  const firstImprovement =
+    (res.improvement_summary && res.improvement_summary[0]) || "";
 
-      const lang = detectUILang();
-      miniFocus.textContent = makeFriendlyKeyFocus(firstImprovement, lang);
-    }
+  const lang = detectUILang();
+
+  const prefix =
+    (window.I18N && typeof I18N.t === "function")
+      ? I18N.t("summary.key_focus_prefix")
+      : "Your top priority:";
+
+  miniFocus.textContent =
+    `${prefix} ${makeKeyFocusAction(firstImprovement, lang)}`;
+}
   }
 
   // ---- Vocabulary suggestions ----
