@@ -1,14 +1,4 @@
-name = "essaycoach"                # Worker name
-main = "src/worker.js"             # Entry file relative to this toml
+name = "essaycoach"
+main = "apps/worker/src/worker.js"
 compatibility_date = "2025-01-01"
-
-# Add your Cloudflare account ID (find it in the CF dashboard, right top / Overview)
-account_id = "YOUR_ACCOUNT_ID"
-
-# Use workers.dev for now (no custom routes needed yet)
 workers_dev = true
-
-# If later you want a custom route, uncomment and edit:
-# routes = [
-#   { pattern = "api.your-domain.com/*", zone_name = "your-domain.com" }
-# ]
