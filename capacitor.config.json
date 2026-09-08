@@ -1,0 +1,8 @@
+{
+  "appId": "com.alfonssergeant.essaycoach",
+  "appName": "EssayCoach",
+  "webDir": "dist-mobile",
+  "server": {
+    "androidScheme": "https"
+  }
+}
