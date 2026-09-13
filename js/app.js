@@ -529,23 +529,10 @@
   function handleSentenceUnitOpen(btn) {
     const text = btn.getAttribute("data-unit-link")?.toLowerCase() || "";
 
-    const UNIT_LINKS = {
-      "unit 1": "assets/book/units/unit01.html",
-      "unit 2": "assets/book/units/unit02.html",
-      "unit 3": "assets/book/units/unit03.html",
-      "unit 4": "assets/book/units/unit04.html",
-      "unit 5": "assets/book/units/unit05.html",
-      "unit 6": "assets/book/units/unit06.html",
-      "unit 7": "assets/book/units/unit07.html"
-    };
-
-    let match = null;
-    for (const key of Object.keys(UNIT_LINKS)) {
-      if (text.includes(key)) {
-        match = UNIT_LINKS[key];
-        break;
-      }
-    }
+    const unitNumber = Number(text.match(/\bunit\s+(\d{1,2})\b/i)?.[1]);
+    const match = Number.isInteger(unitNumber) && unitNumber >= 1 && unitNumber <= 20
+      ? `assets/book/reader.html?unit=${unitNumber}`
+      : null;
 
     if (!match) {
       console.warn("No matching unit found for linkHint:", text);
