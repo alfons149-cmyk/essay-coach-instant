@@ -201,16 +201,16 @@ const UNIT_ANCHORS = {
   u1_final:           { unit: 1, id: "u1-final",           title: "Final Thoughts" },
 
   // ===== UNIT 2 – Word Order and Sentence Structure =====
-  u2_word_order:      { unit: 2, id: "u2-word-order",      title: "Word Order Basics" },
+  u2_word_order:      { unit: 2, id: "basic-pattern", title: "Default Word Order" },
   u2_adverbs:         { unit: 2, id: "u2-adverbs",         title: "Adverbs and Position" },
-  u2_time_place:      { unit: 2, id: "u2-time-place",      title: "Time, Place, and Manner" },
+  u2_time_place:      { unit: 2, id: "time-place-manner", title: "Time, Place and Manner" },
   u2_questions:       { unit: 2, id: "u2-questions",       title: "Question Word Order" },
-  u2_final:           { unit: 2, id: "u2-final",           title: "Final Thoughts" },
+  u2_final:           { unit: 2, id: "final-thoughts", title: "Final Thoughts" },
   u2_summary:         { unit: 2, id: "u2-summary",         title: "Summary & Quick Reference" },
 
   // ===== UNIT 3 – Types of Sentences and Connectors =====
-  u3_sentence_types:  { unit: 3, id: "u3-sentence-types",  title: "Sentence Types" },
-  u3_linking:         { unit: 3, id: "u3-linking",         title: "Basic Linking Words" },
+  u3_sentence_types:  { unit: 3, id: "u3-types", title: "Sentence Types" },
+  u3_linking:         { unit: 3, id: "u3-connectors", title: "Choosing Connectors" },
   u3_connectors:      { unit: 3, id: "u3-connectors",      title: "Using Connectors" },
   u3_final:           { unit: 3, id: "u3-final",           title: "Final Thoughts" },
   u3_summary:         { unit: 3, id: "u3-summary",         title: "Summary & Quick Reference" },
@@ -247,25 +247,25 @@ const UNIT_ANCHORS = {
   u7_summary:         { unit: 7, id: "u7-summary",         title: "Summary & Quick Reference" },
 
   // ===== UNIT 8 – Argument & Opinion =====
-  u8_opinion:         { unit: 8, id: "u8-opinion",         title: "Stating Your Opinion" },
-  u8_arguments:       { unit: 8, id: "u8-arguments",       title: "Developing Arguments" },
+  u8_opinion:         { unit: 7, id: "u7-intro", title: "A Position in the Introduction" },
+  u8_arguments:       { unit: 5, id: "u5-support", title: "Developing a Reason" },
   u8_final:           { unit: 8, id: "u8-final",           title: "Final Thoughts" },
   u8_summary:         { unit: 8, id: "u8-summary",         title: "Summary & Quick Reference" },
 
   // ===== UNIT 9 – Examples & Development =====
-  u9_examples:        { unit: 9, id: "u9-examples",        title: "Using Examples" },
-  u9_development:     { unit: 9, id: "u9-development",     title: "Developing Paragraphs" },
-  u9_final:           { unit: 9, id: "u9-final",           title: "Final Thoughts" },
+  u9_examples:        { unit: 9, id: "u9-body-paragraphs", title: "Examples and Development" },
+  u9_development:     { unit: 9, id: "u9-body-paragraphs", title: "Developing B2 Points" },
+  u9_final:           { unit: 9, id: "u9-success", title: "Review the Model" },
 
   // ===== UNIT 10 – Planning B2 Essays =====
-  u10_plan:           { unit: 10, id: "u10-plan",          title: "Planning B2 Essays" },
-  u10_outline:        { unit: 10, id: "u10-outline",       title: "Building an Outline" },
+  u10_plan:           { unit: 10, id: "u10-why-planning", title: "Planning Decisions" },
+  u10_outline:        { unit: 10, id: "u10-step5", title: "A B2 Outline" },
   u10_final:          { unit: 10, id: "u10-final",         title: "Final Thoughts" },
 
   // ===== UNIT 11 – Editing B2 Essays =====
-  u11_editing:        { unit: 11, id: "u11-editing",       title: "Editing B2 Essays" },
-  u11_grammar:        { unit: 11, id: "u11-grammar",       title: "Grammar and Accuracy" },
-  u11_style:          { unit: 11, id: "u11-style",         title: "Style and Clarity" },
+  u11_editing:        { unit: 11, id: "u11-levels", title: "Levels of Editing" },
+  u11_grammar:        { unit: 11, id: "u11-level2", title: "Grammar and Accuracy" },
+  u11_style:          { unit: 11, id: "u11-level3", title: "Vocabulary and Clarity" },
   u11_final:          { unit: 11, id: "u11-final",         title: "Final Thoughts" },
 
   // ===== UNIT 12 – Confidence & Timing =====
@@ -276,39 +276,39 @@ const UNIT_ANCHORS = {
   u12_final:          { unit: 12, id: "u12-final",         title: "Final Thoughts" },
 
   // ===== UNIT 13 – Understanding the C1 Essay Task =====
-  u13_overview:       { unit: 13, id: "u13-overview",      title: "Understanding the C1 Essay Task" },
-  u13_scale:          { unit: 13, id: "u13-scale",         title: "What’s Being Tested" },
+  u13_overview:       { unit: 13, id: "u13-what-is-c1-essay", title: "The C1 Essay Task" },
+  u13_scale:          { unit: 13, id: "u13-assessment", title: "A Reasoned Comparison" },
   u13_structure:      { unit: 13, id: "u13-structure",     title: "Recommended Structure" },
-  u13_language:       { unit: 13, id: "u13-language",      title: "Language and Register" },
+  u13_language:       { unit: 13, id: "u13-register", title: "Language and Register" },
   u13_final:          { unit: 13, id: "u13-final",         title: "Final Reflection" },
 
   // ===== UNIT 14 – Planning and Developing C1 Essays =====
-  u14_balance:        { unit: 14, id: "u14-balance",       title: "Balancing Two Opinions" },
+  u14_balance:        { unit: 14, id: "u14-balance", title: "Comparing Selected Points" },
   u14_evaluation:     { unit: 14, id: "u14-evaluation",    title: "Planning with Evaluation" },
   u14_outline:        { unit: 14, id: "u14-outline",       title: "Building a C1 Outline" },
   u14_final:          { unit: 14, id: "u14-final",         title: "Final Reflection" },
 
   // ===== UNIT 15 – Writing and Linking C1 Paragraphs =====
-  u15_paragraphs:     { unit: 15, id: "u15-paragraphs",    title: "C1 Paragraph Structure" },
-  u15_flow:           { unit: 15, id: "u15-flow",          title: "Linking Within Paragraphs" },
-  u15_linking:        { unit: 15, id: "u15-linking",       title: "Linking Between Paragraphs" },
+  u15_paragraphs:     { unit: 15, id: "u15-deep-peel", title: "Developing and Evaluating" },
+  u15_flow:           { unit: 15, id: "u15-linking-within", title: "Linking Within Paragraphs" },
+  u15_linking:        { unit: 15, id: "u15-linking-between", title: "Linking Between Paragraphs" },
   u15_final:          { unit: 15, id: "u15-final",         title: "Final Reflection" },
 
   // ===== UNIT 16 – Style, Tone, and Natural Formality =====
   u16_style:          { unit: 16, id: "u16-style",         title: "Style and Tone" },
-  u16_formality:      { unit: 16, id: "u16-formality",     title: "Natural Formality" },
+  u16_formality:      { unit: 16, id: "u16-formal", title: "Natural Formality" },
   u16_grammar:        { unit: 16, id: "u16-grammar",       title: "Formal Grammar Tools" },
   u16_final:          { unit: 16, id: "u16-final",         title: "Final Reflection" },
 
   // ===== UNIT 17 – Editing for Style and Precision =====
   u17_structure:      { unit: 17, id: "u17-structure",     title: "Structure-Level Editing" },
-  u17_sentence:       { unit: 17, id: "u17-sentence",      title: "Sentence-Level Editing" },
-  u17_word:           { unit: 17, id: "u17-word",          title: "Word-Level Precision" },
+  u17_sentence:       { unit: 17, id: "u17-sentences", title: "Sentence-Level Editing" },
+  u17_word:           { unit: 17, id: "u17-words", title: "Word-Level Precision" },
   u17_checklist:      { unit: 17, id: "u17-checklist",     title: "Editing Checklist" },
   u17_final:          { unit: 17, id: "u17-final",         title: "Final Reflection" },
 
   // ===== UNIT 18 – Writing for Impact — Academic Voice =====
-  u18_voice:          { unit: 18, id: "u18-voice",         title: "What Is Academic Voice?" },
+  u18_voice:          { unit: 18, id: "u18-academic-voice", title: "Academic Voice" },
   u18_tone:           { unit: 18, id: "u18-tone",          title: "Tone and Perspective" },
   u18_presence:       { unit: 18, id: "u18-presence",      title: "Writing with Presence" },
   u18_final:          { unit: 18, id: "u18-final",         title: "Final Reflection" },
@@ -323,8 +323,8 @@ const UNIT_ANCHORS = {
   // ===== UNIT 20 – Refining the C2 Essay =====
   u20_elegance:       { unit: 20, id: "u20-elegance",      title: "Elegance in Writing" },
   u20_depth:          { unit: 20, id: "u20-depth",         title: "Depth and Nuance" },
-  u20_style:          { unit: 20, id: "u20-style",         title: "Refined Style and Rhythm" },
-  u20_model:          { unit: 20, id: "u20-model",         title: "Refined C2 Example" },
+  u20_style:          { unit: 20, id: "u20-sentences", title: "Sentence Rhythm" },
+  u20_model:          { unit: 20, id: "u20-example", title: "Short Style Illustration" },
   u20_final:          { unit: 20, id: "u20-final",         title: "Final Reflection" },
 };
 
@@ -406,7 +406,7 @@ const RAW_MISTAKES = [
   {
     id: "repeatingSameConnector",
     message:
-      "Try to use a wider range of linking words instead of repeating the same one.",
+      "Check whether each linking word expresses the intended relationship; vary it only when meaning and clarity benefit.",
     unit: 3,
     anchor: "u3_connectors",
   },
@@ -515,7 +515,7 @@ const RAW_MISTAKES = [
   // ===== UNIT 13 – C1 essay task =====
   {
     id: "onlyOneOpinion",
-    message: "You need to discuss both given opinions in a C1 essay task.",
+    message: "Check that you discuss two selected points and justify the priority requested by your C1 task.",
     unit: 13,
     anchor: "u13_overview",
   },
@@ -524,7 +524,7 @@ const RAW_MISTAKES = [
   {
     id: "unbalancedArguments",
     message:
-      "One side of the argument is much more developed than the other.",
+      "Check that both selected points are developed enough to support the comparison; they do not need identical lengths.",
     unit: 14,
     anchor: "u14_balance",
   },
