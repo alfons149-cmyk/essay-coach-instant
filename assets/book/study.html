@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PDF &amp; Course Book | Alfons Sergeant</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f8f4;color:#243e43;font:16px/1.5 system-ui,sans-serif}header,main{max-width:1200px;margin:auto;padding:20px}h1{margin:0;font-size:1.6rem}a{color:#146b65}nav,.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0}button,select,input{font:inherit;max-width:100%;padding:8px}button{cursor:pointer;border:1px solid #146b65;border-radius:6px;background:white;color:#146b65}button[aria-pressed=true]{background:#146b65;color:white}iframe{width:100%;height:75vh;border:1px solid #bacbc6;background:white}section[hidden],iframe[hidden]{display:none}#message{padding:12px;background:white}small{display:block}label{display:grid;gap:4px}:focus-visible{outline:3px solid #bd671e;outline-offset:3px}
+</style></head><body><header><h1>Your PDF &amp; Course Book</h1><small>Alfons Sergeant · English Straightforward</small>
+<p>Choose your course part and open the PDF supplied with your course. Switch between the PDF and its book explanation below.</p>
+<nav aria-label="Other course tools"><a href="index.html" target="_blank" rel="noopener">Course route ↗</a><a href="../../index.html" target="_blank" rel="noopener">Open EssayCoach ↗</a></nav>
+<p>EssayCoach opens in another tab. Keep this study tab open and return to it after writing.</p></header>
+<main><div class="controls"><label>Course part<select id="part"><option value="1">Part 1</option><option value="2">Part 2</option><option value="3">Part 3</option><option value="4">Part 4</option></select></label><label>Choose your PDF<input id="file" type="file" accept=".pdf,application/pdf"></label></div>
+<p id="route"></p><p id="message" role="status">No PDF selected. Choose the matching file from your device.</p>
+<p>Your selected PDF stays on your device; this page does not upload it. Choose it again if you reload or close this page.</p>
+<nav aria-label="Study view"><button id="show-pdf" aria-pressed="true" aria-controls="pdf-pane">Read PDF</button><button id="show-book" aria-pressed="false" aria-controls="book-pane">Read matching book unit</button></nav>
+<section id="pdf-pane" aria-label="Course PDF"><p id="fallback" hidden>If the preview does not work on your device, <a id="open-pdf" target="_blank" rel="noopener">open the selected PDF in a separate tab</a>. Use its page controls to find the page listed above.</p><iframe id="pdf" title="Your selected course PDF" hidden></iframe></section>
+<section id="book-pane" aria-label="Course book" hidden><label>Related book unit<select id="unit"></select></label><p id="reference"></p><p><a id="open-book" target="_blank" rel="noopener">Open this unit in a separate tab ↗</a></p><iframe id="book" title="Matching course book explanation"></iframe></section>
+<noscript>This study page needs JavaScript. Open your PDF in your usual reader and use the Course route link above to find the matching book unit.</noscript></main><script type="module" src="study.js?v=1"></script></body></html>

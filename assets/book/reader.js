@@ -33,6 +33,7 @@ function scrollToTarget() {
 async function loadUnit(number) {
   const request = ++requestNumber;
   select.value = String(number);
+  document.getElementById('course-pdf').href = 'study.html?unit=' + number;
   status.textContent = `Loading Unit ${number}…`;
   content.setAttribute('aria-busy', 'true');
   try {
