@@ -37,7 +37,7 @@ async function loadUnit(number) {
   status.textContent = `Loading Unit ${number}…`;
   content.setAttribute('aria-busy', 'true');
   try {
-    const response = await fetch(`units/unit${String(number).padStart(2, '0')}.html?v=bridge-1`);
+    const response = await fetch(`units/unit${String(number).padStart(2, '0')}.html?v=cpe-route-1`);
     if (!response.ok) throw new Error('Unable to load unit');
     const markup = await response.text();
     if (request !== requestNumber) return;
