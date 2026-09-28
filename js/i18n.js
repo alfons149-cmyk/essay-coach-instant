@@ -81,6 +81,9 @@
       "summary.hint": "A short snapshot of how this draft would score in the exam and what to improve first.",
       "summary.estimated_band": "Estimated band",
       "summary.key_focus_title": "Key focus",
+      "summary.key_focus": "Key focus",
+      "summary.key_focus_prefix": "Your top priority: ",
+      "sections.next_draft_hint": "Compare this corrected version with your original essay.",
       "summary.key_focus_label": "Most important thing to fix",
       "summary.output_length": "Output length"
     },
@@ -165,6 +168,9 @@
       "summary.hint": "Una foto rápida de cómo puntuaría este borrador y qué mejorar primero.",
       "summary.estimated_band": "Banda estimada",
       "summary.key_focus_title": "En qué centrarte",
+      "summary.key_focus": "En qué centrarte",
+      "summary.key_focus_prefix": "Tu prioridad principal: ",
+      "sections.next_draft_hint": "Compara esta versión corregida con tu redacción original.",
       "summary.key_focus_label": "Lo más importante a mejorar",
       "summary.output_length": "Longitud del texto"
     },
@@ -249,6 +255,9 @@
       "summary.hint": "Een korte momentopname van hoe dit concept zou scoren en wat je als eerste kunt verbeteren.",
       "summary.estimated_band": "Geschatte band",
       "summary.key_focus_title": "Belangrijkste aandachtspunt",
+      "summary.key_focus": "Belangrijkste aandachtspunt",
+      "summary.key_focus_prefix": "Je belangrijkste aandachtspunt: ",
+      "sections.next_draft_hint": "Vergelijk deze gecorrigeerde versie met je oorspronkelijke essay.",
       "summary.key_focus_label": "Belangrijkste om te verbeteren",
       "summary.output_length": "Lengte van de output"
     }
