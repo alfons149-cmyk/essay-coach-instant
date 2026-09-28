@@ -86,6 +86,12 @@
     // Refresh counters for new language
     clearCounterTemplates();
     updateCounters();
+    assessmentLabels();
+    if (latestAssessment) {
+      const {response,level,essay} = latestAssessment;
+      renderAssessment(response,level,essay);
+      setFeedbackAndCourseHelp(response,essay);
+    }
   }
 
   function detectUILang() {
@@ -105,34 +111,34 @@
   // -----------------------------
   // Course Book helper bridge
   // -----------------------------
-  function setFeedbackAndCourseHelp(feedbackHtml) {
-    if (!el.feedback) return;
-
-    el.feedback.innerHTML = feedbackHtml || "—";
-
-    try {
-      const feedbackText = el.feedback.innerText || el.feedback.textContent || "";
-      const essayText = el.essay ? (el.essay.value || "") : "";
-
-      if (
-        window.FeedbackEngine &&
-        typeof window.FeedbackEngine.detectMistakesWithLocations === "function" &&
-        window.FeedbackUI &&
-        typeof window.FeedbackUI.renderFeedbackCardWithLocations === "function"
-      ) {
-        const result = window.FeedbackEngine.detectMistakesWithLocations(feedbackText, essayText);
-        window.FeedbackUI.renderFeedbackCardWithLocations(result);
-      } else if (
-        window.FeedbackEngine &&
-        typeof window.FeedbackEngine.detectMistakes === "function" &&
-        window.FeedbackUI &&
-        typeof window.FeedbackUI.renderFeedbackCard === "function"
-      ) {
-        const ids = window.FeedbackEngine.detectMistakes(feedbackText);
-        window.FeedbackUI.renderFeedbackCard(ids);
-      }
-    } catch (err) {
-      console.error("[EC] setFeedbackAndCourseHelp error:", err);
+  // Recommendations come only from structured, quoted evidence, never keyword matches.
+  function setFeedbackAndCourseHelp(response, essay) {
+    if (el.feedback) el.feedback.textContent = response.feedback || "—";
+    const container = $("#feedback-card");
+    if (!container) return;
+    container.innerHTML = "";
+    const insights = response.schemaVersion === 2 && Array.isArray(response.sentenceInsights)
+      ? response.sentenceInsights.filter(si => typeof si.example === "string" && si.example.length >= 8 &&
+          essay.includes(si.example) && si.explanation && Number.isInteger(si.unit) && si.unit >= 1 && si.unit <= 20)
+      : [];
+    const intro = document.createElement("p");
+    intro.textContent = insights.length ? copy("courseIntro") : copy("noCourse");
+    container.appendChild(intro);
+    for (const si of insights) {
+      const item = document.createElement("section");
+      item.className = "ec-feedback-item";
+      const title = document.createElement("h3");
+      title.textContent = `${copy(si.kind === "correction" ? "correction" : "suggestion")}: ${si.issue}`;
+      const quote = document.createElement("blockquote");
+      quote.textContent = si.example;
+      const explanation = document.createElement("p");
+      explanation.textContent = si.explanation;
+      const link = document.createElement("a");
+      link.textContent = `${copy("study")} ${si.unit}`;
+      link.href = `assets/book/reader.html?unit=${si.unit}`;
+      link.target = "_blank"; link.rel = "noopener noreferrer";
+      item.append(title, quote, explanation, link);
+      container.appendChild(item);
     }
   }
 
@@ -142,7 +148,7 @@
   async function correctEssay(payload) {
     if (!DEV && API_BASE) {
       const url = `${API_BASE}/correct`;
-      console.log("[EC] POST", url, payload);
+
 
       const res = await fetch(url, {
         method: "POST",
@@ -152,7 +158,7 @@
       });
 
       const text = await res.text();
-      console.log("[EC] /correct", res.status, text);
+
 
       if (!res.ok) throw new Error(`API ${res.status}: ${text}`);
       return JSON.parse(text);
@@ -237,116 +243,111 @@
 
     if (el.outWC) {
       const hasTemplate = el.outWC.getAttribute("data-i18n-template") || /\{n\}/.test(el.outWC.textContent || "");
-      if (hasTemplate) setCounter(el.outWC, "io.output_words", wc);
-      else el.outWC.textContent = String(wc);
+      if (hasTemplate) setCounter(el.outWC, "io.output_words", wcCount(el.nextDraft?.value || ""));
+      else el.outWC.textContent = String(wcCount(el.nextDraft?.value || ""));
     }
   }
 
   // -----------------------------
   // Summary Key Focus (teacher-style action)
   // -----------------------------
-  function makeKeyFocusAction(raw, lang = "en") {
-    if (!raw || typeof raw !== "string") return "—";
-    let text = raw.trim().replace(/[.!\s]+$/, "");
-
-    const already = {
-      en: [/^(focus on|improve|work on|make sure|add|avoid|use|reduce|increase)/i],
-      es: [/^(enfócate|mejora|trabaja|asegúrate|añade|evita|usa|reduce|aumenta)/i],
-      nl: [/^(richt je|verbeter|werk aan|zorg dat|voeg toe|vermijd|gebruik|verminder|verhoog)/i]
-    };
-
-    if ((already[lang] || already.en).some(r => r.test(text))) return text;
-
-    switch (lang) {
-      case "es":
-        return `Mejora ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
-      case "nl":
-        return `Verbeter ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
-      default:
-        return `Improve ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+  // Practice criteria are not Cambridge English Scale scores.
+  let latestAssessment = null;
+  let requestSequence = 0;
+  const COPY = {
+    en: {
+      title: "AI practice assessment", score: "Estimated task marks", summary: "Practice assessment",
+      pending: "No assessment available", incomplete: "Partial assessment — see criteria below",
+      unavailable: "Not assessed", priority: "Your top priority:", noFocus: "No supported priority returned.",
+      improvements: "Your next step", disclaimer: "AI practice estimate for this essay, not an official Cambridge grade or Cambridge English Scale score. Review the evidence with your teacher.",
+      courseIntro: "Targeted study suggestions, supported by quotations from your essay.",
+      noCourse: "No targeted course-book recommendation is available for this response.",
+      study: "Study Unit", correction: "Correction", suggestion: "Optional suggestion",
+      corrected: "Only the listed corrections are applied below. Optional suggestions are not applied automatically.",
+      criteria: ["Content", "Communicative achievement", "Organisation", "Language"],
+      legacy: "This response has no supported assessment. Update the correction service to use the new assessment.",
+      rejected: "Some edits could not be verified against the original and were omitted. Review the feedback before using it."
+    },
+    nl: {
+      title: "AI-oefenbeoordeling", score: "Geschatte taakpunten", summary: "Oefenbeoordeling",
+      pending: "Nog geen beoordeling beschikbaar", incomplete: "Gedeeltelijke beoordeling — zie de criteria hieronder",
+      unavailable: "Niet beoordeeld", priority: "Je belangrijkste aandachtspunt:", noFocus: "Geen onderbouwd aandachtspunt ontvangen.",
+      improvements: "Je volgende stap", disclaimer: "AI-oefeninschatting voor dit essay, geen officieel Cambridge-cijfer of Cambridge English Scale-score. Bespreek de onderbouwing met je docent.",
+      courseIntro: "Gerichte studietips met citaten uit je essay.", noCourse: "Voor dit resultaat is geen gericht cursusboekadvies beschikbaar.",
+      study: "Bestudeer Unit", correction: "Correctie", suggestion: "Optionele suggestie",
+      corrected: "Hieronder zijn alleen de vermelde correcties toegepast. Optionele suggesties worden niet automatisch toegepast.",
+      criteria: ["Inhoud", "Communicatieve werking", "Organisatie", "Taal"],
+      legacy: "Dit resultaat bevat geen onderbouwde beoordeling. Werk de correctieservice bij voor de nieuwe beoordeling.",
+      rejected: "Enkele wijzigingen waren niet te controleren in het origineel en zijn weggelaten. Controleer de feedback voor gebruik."
+    },
+    es: {
+      title: "Evaluación de práctica con IA", score: "Puntos estimados de la tarea", summary: "Evaluación de práctica",
+      pending: "Evaluación no disponible", incomplete: "Evaluación parcial — consulta los criterios",
+      unavailable: "Sin evaluar", priority: "Tu prioridad principal:", noFocus: "No se ha recibido una prioridad fundamentada.",
+      improvements: "Tu próximo paso", disclaimer: "Estimación de práctica con IA para este ensayo, no una nota oficial ni una puntuación de Cambridge English Scale. Revisa las pruebas con tu profesor.",
+      courseIntro: "Sugerencias de estudio con citas de tu ensayo.", noCourse: "No hay una recomendación específica del libro para esta respuesta.",
+      study: "Estudia la unidad", correction: "Corrección", suggestion: "Sugerencia opcional",
+      corrected: "Solo se aplican las correcciones indicadas. Las sugerencias opcionales no se aplican automáticamente.",
+      criteria: ["Contenido", "Eficacia comunicativa", "Organización", "Lengua"],
+      legacy: "Esta respuesta no contiene una evaluación fundamentada. Actualiza el servicio de corrección.",
+      rejected: "Se omitieron cambios que no se pudieron verificar en el original. Revisa los comentarios antes de usarlos."
     }
+  };
+  function copy(key) { return (COPY[detectUILang()] || COPY.en)[key]; }
+  function assessmentLabels() {
+    const keys = {"bands.title":"title", "bands.overall_score":"score", "summary.estimated_band":"summary",
+      "bands.improvement_title":"improvements", "bands.disclaimer":"disclaimer",
+      "sections.next_draft_hint":"corrected"};
+    for (const [key,value] of Object.entries(keys))
+      document.querySelectorAll(`[data-i18n="${key}"]`).forEach(n => n.textContent = copy(value));
   }
-
-  // -----------------------------
-  // Bands card + Summary updates
-  // -----------------------------
-  function renderBands(level, scores) {
-    if (typeof window.scoreEssay !== "function") {
-      console.warn("[bands] scoreEssay is not available");
-      return;
-    }
-
-    const res = scoreEssay(level, scores);
-    if (!res) return;
-
-    const lang = detectUILang();
-
-    const card      = $("#bandsCard");
-    const overallEl = $("#bandsOverallScore");
-    const levelEl   = $("#bandsLevel");
-    const catList   = $("#bandsCategories");
-    const impList   = $("#bandsImprovements");
-
-    if (!card || !overallEl || !levelEl || !catList || !impList) return;
-
-    overallEl.textContent = res.overall_scale || "—";
-    levelEl.textContent   = res.level || "—";
-
-    catList.innerHTML = "";
-    (res.category_results || []).forEach((cr) => {
+  function resetResults() {
+    latestAssessment = null;
+    window.EC_LAST_RESPONSE = null;
+    for (const id of ["bandsCard", "vocabCard", "sentenceInsightsCard", "sentencesCard", "sentenceCard", "debugCard"])
+      if (document.getElementById(id)) document.getElementById(id).hidden = true;
+    for (const id of ["key-area", "band-estimate"])
+      if (document.getElementById(id)) document.getElementById(id).textContent = copy("pending");
+    if (el.nextDraft) el.nextDraft.value = "";
+    if (el.feedback) el.feedback.textContent = "—";
+    if (el.edits) el.edits.innerHTML = "";
+    if ($("#feedback-card")) $("#feedback-card").innerHTML = "";
+    if (el.outWC) el.outWC.textContent = "0";
+    if ($("#debugJson")) $("#debugJson").textContent = "";
+  }
+  function renderAssessment(response, level, essay) {
+    latestAssessment = {response, level, essay};
+    assessmentLabels();
+    const card = $("#bandsCard"), list = $("#bandsCategories"), improvements = $("#bandsImprovements");
+    if (!card || !list || !improvements) return;
+    list.innerHTML = ""; improvements.innerHTML = "";
+    const criteria = response.schemaVersion === 2 ? response.assessment?.criteria : null;
+    const scores = [];
+    ["content", "communicative", "organisation", "language"].forEach((key,i) => {
+      const c = criteria?.[key];
+      const evidence = Array.isArray(c?.evidence) ? c.evidence.filter(q => typeof q === "string" && q.length >= 8 && essay.includes(q)) : [];
+      const missingTask = ["content", "communicative"].includes(key) && response.assessment?.taskSufficient !== true;
+      const valid = !missingTask && Number.isInteger(c?.score) && c.score >= 0 && c.score <= 5 && evidence.length && c.reason;
+      if (valid) scores.push(c.score);
       const li = document.createElement("li");
-      const label = (window.I18N && I18N.t)
-        ? I18N.t(`bands.category.${cr.category}`)
-        : cr.category;
-
-      const bandLabel = (window.I18N && I18N.t)
-        ? I18N.t(`bands.band.${cr.band}`)
-        : cr.band;
-
-      li.innerHTML =
-        `<strong>${escapeHTML(label)}</strong>: ${escapeHTML(bandLabel)} (${escapeHTML(cr.score_range || "")})<br>` +
-        `<span style="font-size:0.9em;opacity:0.9;">${escapeHTML(cr.descriptor || "")}</span>`;
-      catList.appendChild(li);
+      const label = document.createElement("strong");
+      label.textContent = `${copy("criteria")[i]}: ${valid ? c.score + " / 5" : copy("unavailable")}`;
+      const reason = document.createElement("p"); reason.textContent = c?.reason || copy("legacy");
+      li.append(label, reason);
+      evidence.forEach(q => { const node = document.createElement("blockquote"); node.textContent = q; li.appendChild(node); });
+      list.appendChild(li);
     });
-
-    impList.innerHTML = "";
-    const uniqImprovements = Array.from(new Set(res.improvement_summary || []));
-    uniqImprovements.forEach((text) => {
-      const li = document.createElement("li");
-      li.textContent = text;
-      impList.appendChild(li);
-    });
-
-    card.hidden = false;
-
-    // ---- Compact Summary panel ----
-    const miniBand  = document.getElementById("band-estimate");
-    const miniFocus = document.getElementById("key-area");
-
-    if (miniBand) {
-      const levelLabel = res.level || "";
-      const scale      = res.overall_scale || "";
-
-      const fallback = (levelLabel && scale)
-        ? `${levelLabel} level – around ${scale} on the Cambridge English Scale`
-        : (levelLabel || scale || "—");
-
-      // If you add an i18n key later, you can swap this easily.
-      miniBand.textContent = fallback;
-    }
-
-    if (miniFocus) {
-      const first = (res.improvement_summary && res.improvement_summary[0]) || "";
-      const prefix =
-        (window.I18N && typeof I18N.t === "function")
-          ? (I18N.t("summary.key_focus_prefix") || "Your top priority:")
-          : "Your top priority:";
-
-      // IMPORTANT:
-      // Your HTML now uses:
-      // <p class="summary-focus-text" id="key-area">–</p>
-      miniFocus.textContent = `${prefix} ${makeKeyFocusAction(first, lang)}`;
-    }
+    const total = scores.length === 4 ? `${scores.reduce((a,b)=>a+b,0)} / 20` : copy("incomplete");
+    if ($("#bandsOverallScore")) $("#bandsOverallScore").textContent = total;
+    if ($("#bandsLevel")) $("#bandsLevel").textContent = level;
+    if ($("#band-estimate")) $("#band-estimate").textContent = criteria ? total : copy("pending");
+    const f = response.schemaVersion === 2 ? response.keyFocus : null;
+    const validFocus = typeof f?.evidence === "string" && f.evidence.length >= 8 && essay.includes(f.evidence) && f.action && f.explanation;
+    if ($("#key-area")) $("#key-area").textContent = validFocus ? `${copy("priority")} ${f.action}` : copy("noFocus");
+    const li = document.createElement("li");
+    li.textContent = validFocus ? f.explanation : copy("noFocus");
+    if (validFocus) { const q=document.createElement("blockquote"); q.textContent=f.evidence; li.appendChild(q); }
+    improvements.appendChild(li); card.hidden = false;
   }
 
   // -----------------------------
@@ -600,12 +601,14 @@
         const level = btn.getAttribute("data-level") || "C1";
         localStorage.setItem("ec.level", level);
         reflectLevelButtons(level);
+        requestSequence++; resetResults();
       });
     });
 
     // Clear
     if (el.btnClear) {
       el.btnClear.addEventListener("click", () => {
+        requestSequence++; resetResults();
         if (el.task)      el.task.value = "";
         if (el.essay)     el.essay.value = "";
         if (el.nextDraft) el.nextDraft.value = "";
@@ -616,14 +619,6 @@
         renderSentenceInsights([]);
         renderDebugJson(null);
         window.EC_LAST_RESPONSE = null;
-
-        try {
-          if (window.FeedbackUI && typeof window.FeedbackUI.renderFeedbackCard === "function") {
-            window.FeedbackUI.renderFeedbackCard("");
-          }
-        } catch (err) {
-          console.warn("[FeedbackUI] could not clear card:", err);
-        }
 
         const dbgBtn = $("#btnToggleDebug");
         if (dbgBtn && window.I18N && I18N.t) dbgBtn.textContent = I18N.t("debug.show");
@@ -649,6 +644,8 @@
         }
 
         let res;
+        const sequence = ++requestSequence;
+        resetResults();
 
         try {
           // Busy ON
@@ -660,13 +657,14 @@
 
           res = await correctEssay(payload);
 
-          setFeedbackAndCourseHelp(res.feedback || "—");
-          if (el.nextDraft) el.nextDraft.value = res.nextDraft || "";
+          if (sequence !== requestSequence) return;
+          setFeedbackAndCourseHelp(res, payload.essay);
+          if (el.nextDraft) el.nextDraft.value = res.schemaVersion === 2 ? (res.nextDraft || "") : "";
 
           if (el.edits) {
-            el.edits.innerHTML = (res.edits || [])
+            el.edits.innerHTML = (res.schemaVersion === 2 && Array.isArray(res.edits) ? res.edits : [])
               .map((x) =>
-                `<li><strong>${escapeHTML(x.from)}</strong> → ` +
+                `<li><strong>${escapeHTML(copy(x.kind === "correction" ? "correction" : "suggestion"))}</strong>: ${escapeHTML(x.from)} → ` +
                 `<em>${escapeHTML(x.to)}</em> — ${escapeHTML(x.reason)}</li>`
               )
               .join("");
@@ -685,23 +683,22 @@
           }
 
           renderVocabSuggestions(res.vocabularySuggestions || {});
-          renderSentenceInsights(res.sentenceInsights || []);
+          renderSentenceInsights([]);
 
           window.EC_LAST_RESPONSE = res;
           renderDebugJson(res);
 
-          if (typeof window.scoreEssay === "function") {
-            const scores = {
-              content: 0.7,
-              communicative: 0.6,
-              organisation: 0.8,
-              language: 0.55
-            };
-            renderBands(level, scores);
+          renderAssessment(res, level, payload.essay);
+          if (res.schemaVersion !== 2 && el.feedback) {
+            const note=document.createElement("p"); note.textContent=copy("legacy"); el.feedback.appendChild(note);
+          }
+          if (res.validationWarnings?.length && el.feedback) {
+            const warning = document.createElement("p"); warning.textContent = copy("rejected");
+            el.feedback.appendChild(warning);
           }
         } catch (err) {
           console.error("[EC] UI or API error:", err);
-          if (el.feedback) el.feedback.textContent = "⚠️ Correction failed. Check API, CORS, or dev mode.";
+          if (sequence === requestSequence && el.feedback) el.feedback.textContent = "Correction could not be completed. Please try again.";
         } finally {
           // Busy OFF
           e.target.disabled = false;
@@ -721,7 +718,11 @@
     }
 
     // Word count while typing
-    if (el.essay) el.essay.addEventListener("input", updateCounters);
+    for (const input of [el.essay, el.task]) if (input) input.addEventListener("input", () => {
+      requestSequence++; resetResults(); updateCounters();
+    });
+
+    resetResults();
 
     // Apply translations once i18n has loaded (defer scripts)
     setTimeout(applyI18nToDom, 120);
