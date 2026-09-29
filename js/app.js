@@ -91,6 +91,7 @@
       const {response,level,essay} = latestAssessment;
       renderAssessment(response,level,essay);
       setFeedbackAndCourseHelp(response,essay);
+      renderExtras(response);
     }
   }
 
@@ -137,7 +138,9 @@
       link.textContent = `${copy("study")} ${si.unit}`;
       link.href = `assets/book/reader.html?unit=${si.unit}`;
       link.target = "_blank"; link.rel = "noopener noreferrer";
-      item.append(title, quote, explanation, link);
+      item.append(title, quote, explanation);
+      if(si.betterVersion) {const p=document.createElement('p');p.textContent=si.betterVersion;item.appendChild(p);}
+      item.appendChild(link);
       container.appendChild(item);
     }
   }
@@ -256,6 +259,13 @@
   let requestSequence = 0;
   const COPY = {
     en: {
+      noEdits: "No specific corrections or optional rewrites were returned for this text.",
+      quick: "Practice summary",
+      hint: "Feedback on this draft and a practical next step. A full assessment needs the task prompt.",
+      feedbackHint: "AI writing feedback, with supporting examples from your essay.",
+      target: "Target level",
+      partial: "Task prompt missing or incomplete — only Organisation and Language assessed.",
+
       title: "AI practice assessment", score: "Estimated task marks", summary: "Practice assessment",
       pending: "No assessment available", incomplete: "Partial assessment — see criteria below",
       unavailable: "Not assessed", priority: "Your top priority:", noFocus: "No supported priority returned.",
@@ -269,6 +279,13 @@
       rejected: "Some edits could not be verified against the original and were omitted. Review the feedback before using it."
     },
     nl: {
+      noEdits: "Voor deze tekst zijn geen concrete correcties of optionele herschrijvingen teruggegeven.",
+      quick: "Samenvatting van je oefening",
+      hint: "Feedback en een praktische volgende stap. Voor een volledige beoordeling is de opdracht nodig.",
+      feedbackHint: "AI-schrijfadvies met voorbeelden uit je essay.",
+      target: "Doelniveau",
+      partial: "Opdracht ontbreekt of is onvolledig — alleen Organisatie en Taal beoordeeld.",
+
       title: "AI-oefenbeoordeling", score: "Geschatte taakpunten", summary: "Oefenbeoordeling",
       pending: "Nog geen beoordeling beschikbaar", incomplete: "Gedeeltelijke beoordeling — zie de criteria hieronder",
       unavailable: "Niet beoordeeld", priority: "Je belangrijkste aandachtspunt:", noFocus: "Geen onderbouwd aandachtspunt ontvangen.",
@@ -281,6 +298,13 @@
       rejected: "Enkele wijzigingen waren niet te controleren in het origineel en zijn weggelaten. Controleer de feedback voor gebruik."
     },
     es: {
+      noEdits: "No se han devuelto correcciones concretas ni reformulaciones opcionales para este texto.",
+      quick: "Resumen de práctica",
+      hint: "Comentarios y un próximo paso práctico. La evaluación completa requiere el enunciado.",
+      feedbackHint: "Comentarios de escritura con IA y ejemplos de tu ensayo.",
+      target: "Nivel objetivo",
+      partial: "Falta el enunciado completo — solo se evalúan Organización y Lengua.",
+
       title: "Evaluación de práctica con IA", score: "Puntos estimados de la tarea", summary: "Evaluación de práctica",
       pending: "Evaluación no disponible", incomplete: "Evaluación parcial — consulta los criterios",
       unavailable: "Sin evaluar", priority: "Tu prioridad principal:", noFocus: "No se ha recibido una prioridad fundamentada.",
@@ -295,9 +319,11 @@
   };
   function copy(key) { return (COPY[detectUILang()] || COPY.en)[key]; }
   function assessmentLabels() {
+    const hint=el.feedback?.closest('section')?.querySelector('.app-block__hint');
+    if(hint) hint.textContent=copy('feedbackHint');
     const keys = {"bands.title":"title", "bands.overall_score":"score", "summary.estimated_band":"summary",
       "bands.improvement_title":"improvements", "bands.disclaimer":"disclaimer",
-      "sections.next_draft_hint":"corrected"};
+      "sections.next_draft_hint":"corrected", "summary.title":"quick", "summary.hint":"hint", "sections.feedback_hint":"feedbackHint", "bands.level_label":"target"};
     for (const [key,value] of Object.entries(keys))
       document.querySelectorAll(`[data-i18n="${key}"]`).forEach(n => n.textContent = copy(value));
   }
@@ -314,6 +340,7 @@
     if ($("#feedback-card")) $("#feedback-card").innerHTML = "";
     if (el.outWC) el.outWC.textContent = "0";
     if ($("#debugJson")) $("#debugJson").textContent = "";
+    refreshAdvancedVisibility();
   }
   function renderAssessment(response, level, essay) {
     latestAssessment = {response, level, essay};
@@ -337,7 +364,7 @@
       evidence.forEach(q => { const node = document.createElement("blockquote"); node.textContent = q; li.appendChild(node); });
       list.appendChild(li);
     });
-    const total = scores.length === 4 ? `${scores.reduce((a,b)=>a+b,0)} / 20` : copy("incomplete");
+    const total = scores.length === 4 ? `${scores.reduce((a,b)=>a+b,0)} / 20` : (response.assessment?.taskSufficient === false ? copy("partial") : copy("incomplete"));
     if ($("#bandsOverallScore")) $("#bandsOverallScore").textContent = total;
     if ($("#bandsLevel")) $("#bandsLevel").textContent = level;
     if ($("#band-estimate")) $("#band-estimate").textContent = criteria ? total : copy("pending");
@@ -463,6 +490,42 @@
   // -----------------------------
   // Button highlight helpers
   // -----------------------------
+
+  function repairResultLayout() {
+    const vocabNodes=$$('[id="vocab-suggestions"]');
+    vocabNodes.slice(1).forEach(n=>n.closest('section')?.remove());
+    for(const [oldId,cardId,listId] of [['vocab-suggestions','vocabCard','vocab'],['sentence-insights','sentenceInsightsCard','sentenceInsightsList']]) {
+      const n=document.getElementById(oldId);
+      if(n) { const oldCard=document.getElementById(cardId); if(oldCard && !oldCard.contains(n)) oldCard.remove(); n.id=listId; const section=n.closest('section'); if(section) {section.id=cardId;section.hidden=true;} }
+    }
+    const debug=$('#debug-info');
+    if(debug) debug.closest('section')?.remove();
+  }
+  function refreshAdvancedVisibility() {
+    const advanced=$('.ec-block--advanced');
+    if(advanced) advanced.hidden=!['vocabCard','sentenceInsightsCard'].some(id=>{const n=document.getElementById(id);return n && !n.hidden;});
+  }
+  function renderExtras(response) {
+    renderSentenceInsights(response.sentenceInsights || []);
+    const list=$('#vocab'),card=$('#vocabCard');
+    if(list && card) {
+      list.replaceChildren();
+      const details=Array.isArray(response.vocabularyDetails)?response.vocabularyDetails:[];
+      for(const v of details) {
+        const p=document.createElement('p');
+        p.textContent=v.original+' → '+(v.alternatives || []).join(' / ');
+        const q=document.createElement('blockquote');q.textContent=v.example || '';
+        const why=document.createElement('p');why.textContent=v.explanation || '';
+        list.append(p,q,why);
+      }
+      card.hidden=!details.length;
+    }
+    if(el.edits && !response.edits?.length) {
+      const p=document.createElement('li');p.textContent=copy('noEdits');el.edits.replaceChildren(p);
+    }
+    refreshAdvancedVisibility();
+  }
+
   function reflectLangButtons(lang) {
     const current = lang || localStorage.getItem("ec.lang") || "en";
     $$("[data-lang]").forEach((b) => {
@@ -569,6 +632,7 @@
   // Initial setup
   // -----------------------------
   document.addEventListener("DOMContentLoaded", () => {
+    repairResultLayout();
     // initial paint
     reflectLangButtons();
     reflectLevelButtons();
@@ -683,7 +747,7 @@
           }
 
           renderVocabSuggestions(res.vocabularySuggestions || {});
-          renderSentenceInsights([]);
+          renderExtras(res);
 
           window.EC_LAST_RESPONSE = res;
           renderDebugJson(res);
