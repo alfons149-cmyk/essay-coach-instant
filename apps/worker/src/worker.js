@@ -1,6 +1,6 @@
 // EssayCoach Worker v5.2 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-15-tense-context-v5.2";
+const VERSION = "2026-10-15-tense-context-v5.2.1";
 const TIME_FRAMES = ['present', 'past', 'future', 'mixed', 'uncertain'];
 const TENSE_STATUS = ['correct', 'correction', 'context_needed'];
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
@@ -123,6 +123,11 @@ corrected form. For correct entries describe the original forms. For context_nee
 what information is missing and valid alternatives without marking uncertainty as an error.
 If a tense correction is a high-value learning need, also explain it in feedback or an insight
 (Unit 12 for grammar); never deduct marks simply for an allowed alternative.
+The supplied tenseTeachingTargets identify sentences that MUST appear in tenseAnalysis for
+suitable writing, even if correct. They select teaching examples, NOT grammatical verdicts.
+Explain each target's actual time frame and marker scope. Retain these entries during review;
+do not reduce the timeline to only the erroneous sentence. Add other important corrections
+or distinctions up to the eight-entry limit, keeping all entries in original text order.
 
 TASK AND SCORES
 Decide whether there is connected English writing to assess (sampleSuitable). An incomplete or short
@@ -232,6 +237,17 @@ export function numberSentences(essay) {
     }
   }
   return entries;
+}
+
+// Select evidence for teaching, never choose a tense or make an edit by regex.
+// Reserve two of eight analysis slots for other context or correction examples.
+export function tenseTeachingTargets(sentences) {
+  const eligible=sentences.filter(s=>s.text.length>=8);
+  const opening=eligible.find(s=>/[.!?]["'”’)]*$/.test(s.text)) || eligible[0];
+  if(!opening) return [];
+  const signals=/\b(?:ago|yesterday|so now|tomorrow|this morning|last (?:night|week|month|year)|next (?:week|month|year))\b/i;
+  return [opening,...eligible.filter(s=>s.id!==opening.id && signals.test(s.text))]
+    .slice(0,6).sort((a,b)=>a.start-b.start).map(s=>s.id);
 }
 
 function shape(properties) { return {type:'object',properties,required:Object.keys(properties),additionalProperties:false}; }
@@ -370,6 +386,10 @@ export function validate(data, payload, sentences) {
       if(entry.status==='correction' && !corrections.some(e=>e.sentenceId===entry.sentenceId))
         issues.push('A tenseAnalysis correction must have a matching correction edit for that sentence.');
     }
+    if(data.sampleSuitable===true) {
+      const missing=tenseTeachingTargets(sentences).filter(id=>!seenTenses.has(id));
+      if(missing.length) issues.push(`Explain the opening and selected time signals, not only errors. Add tenseAnalysis entries for: ${missing.join(', ')}. These may be correct or context_needed; do not invent corrections.`);
+    }
   }
   const languageReason=text(data.assessment?.criteria?.language?.reason);
   if(!corrections.length && /\b(?:with (?:some |a few )?(?:minor |grammatical |language )?errors|contains? (?:some |minor )?errors|errors that do not|there are (?:some |minor )?errors)\b/i.test(languageReason+' '+text(data.feedback)))
@@ -447,7 +467,7 @@ export default {
     if(!env.OPENAI_API_KEY) return fail('CONFIG','The correction service is not configured.',503,origin);
     const model=env.OPENAI_MODEL || 'gpt-4o-mini';
     const messages=[{role:'system',content:SYSTEM + `\nWrite tenseAnalysis explanations in ${FEEDBACK_LANGUAGES[feedbackLanguage]}. Keep quotes, verb-form labels and corrected sentences in English.`},{role:'user',content:JSON.stringify({
-      ...payload,sentences:sentences.map(({id,text})=>({id,text}))
+      ...payload,sentences:sentences.map(({id,text})=>({id,text})),tenseTeachingTargets:tenseTeachingTargets(sentences)
     })}];
     const deadline=Date.now()+125000;
     let reviewRequested=false;

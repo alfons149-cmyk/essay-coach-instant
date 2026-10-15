@@ -1,6 +1,6 @@
 # Time frames and signal words
 
-EssayCoach v5.2 adds Alfons' context-based tense teaching to both model passes and exposes `tenseAnalysis` as an additive field in response schema version 2. The existing assessment, correction-only next draft, evidence checks, source review and vocabulary fields are preserved.
+EssayCoach v5.2.1 adds Alfons' context-based tense teaching to both model passes and exposes `tenseAnalysis` as an additive field in response schema version 2. The existing assessment, correction-only next draft, evidence checks, source review and vocabulary fields are preserved.
 
 The Worker source is based on the standalone v5.1 source (`2026-09-29-assessment-v5.1`), whose version matches the service checked on 15 October 2026. The older Worker previously in this repository did not contain that assessment contract. The build entry point and deployment workflow now use the actual JavaScript Worker, rather than the missing `src/index.ts` entry point.
 
@@ -16,7 +16,7 @@ Important examples covered in the instructions:
 - Consistent coordinated past actions, legitimate mixed tenses and subordinate-clause scope.
 - Future arrangements, timetables, future time clauses and indirect questions.
 
-For suitable writing, the model returns 1–8 selected teaching entries in text order. Each entry references a supplied sentence ID and optionally up to three context IDs. Signal excerpts must occur literally in those sentences. `status=correction` requires a corresponding correction edit. The server attaches original quotations and the corrected sentence. It does not mechanically infer grammar errors from keyword matches.
+For suitable writing, the model returns 1–8 selected teaching entries in text order. The opening anchor and up to five sentences containing major time expressions are mandatory teaching targets, including correct sentences. These lexical selectors require an explanation, never impose a tense or correction. Each entry references a supplied sentence ID and optionally up to three context IDs. Signal excerpts must occur literally in those sentences. `status=correction` requires a corresponding correction edit. The server attaches original quotations and the corrected sentence. It does not mechanically infer grammar errors from keyword matches.
 
 The client presents the entries in a separate card, highlights literal signals, and offers expandable context. All content uses text nodes. Unsupported quotations and corrections are omitted. Older responses without `tenseAnalysis` leave the card hidden. Clear, edits to the input and level changes clear stale results.
 

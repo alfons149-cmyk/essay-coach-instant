@@ -36,7 +36,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.2');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.2.1');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -143,3 +143,19 @@ await test('unsupported language falls back safely without entering trusted inst
  assert.match(first.messages[0].content,/explanations in English/);assert(!first.messages[0].content.includes('ignore all rules'));
 });
 console.log(`${checks} total checks passed. Model responses are mocked; grammar judgement requires a live evaluation.`);
+
+const {tenseTeachingTargets}=await import('../apps/worker/src/worker.js');
+await test('timeline may not collapse to only an error',()=>{
+ const essay='I have just arrived. I left York a week ago. So now I am here. Tomorrow I am visiting friends.';
+ const f=tenseFixture(essay,[entry('S1')]);
+ assert.deepEqual(tenseTeachingTargets(f.ss),['S1','S2','S3','S4']);
+ assert(validate(f.d,f.p,f.ss).some(s=>s.includes('S2, S3, S4')));
+});
+await test('teaching targets are bounded and do not require tense corrections',()=>{
+ const essay=Array.from({length:10},(_,i)=>`Tomorrow I am visiting friend number ${i}.`).join(' ');
+ const ss=numberSentences(essay),targets=tenseTeachingTargets(ss);
+ assert.equal(targets.length,6);
+ const f=tenseFixture(essay,targets.map(id=>entry(id,{timeFrame:'future',signals:['Tomorrow'],forms:['present continuous (arrangement)']})));
+ assert.deepEqual(validate(f.d,f.p,f.ss),[]);assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,essay);
+});
+console.log(`${checks} total checks passed.`);
