@@ -1,4 +1,37 @@
-> Current behaviour: v5.5.4 retains the v5.5 UI, source IDs, bounded task reclassification, word metrics and independent review. It adds a narrow safeguard for valid British school-role wording and actionable learning-point source-quotation diagnostics. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+> Current behaviour: v5.5.5 retains the v5.5 UI, source IDs, bounded task reclassification, word metrics, independent review and correction safeguards. The word-length guard now matches direct affirmative claims and reports their field and wording. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
+## v5.5.5: narrow the word-length guard after v5.5.4 testing
+
+The deployed health endpoint confirmed v5.5.4. Three targeted live tests were run:
+
+- C1 tense email, Dutch feedback: HTTP 200 in ~50s, two calls. Only eat -> ate was applied;
+  past read, the valid perfect forms and as soon as were preserved. Morning advice was conditional.
+  The earlier generic learning-point failure did not recur in this test.
+- Homeschooling with full CPE instructions, Dutch feedback: HTTP 200 in ~166s, six calls. The
+  corrected draft retained a head and causal for, repaired although and punctuation, and the
+  coaching identified the source-2 reversal with a concrete rewrite exercise. Latency remains high.
+- Homeschooling sources only, Spanish feedback: HTTP 502 in ~100s after five calls and task
+  reclassification. The final diagnostic was the in-range word-count guard. No candidate or
+  corrected draft was returned, so the exact rejected AI wording is unavailable.
+
+Investigation reproduced a separate, definite validation bug: the old wildcard expression
+matched "The essay is not too short" as an under-length claim. It also bridged from "essay" to
+"its conclusion is too short". That does not prove this caused the live Spanish failure, but it
+can reject valid feedback and waste the limited repair attempts.
+
+The replacement only recognises a direct essay/text/response subject, an affirmative linking
+verb, bounded intensifiers and an explicit length claim in EN/NL/ES. It no longer skips arbitrary
+words or negation. It still rejects the previously captured false whole-essay length criticism.
+Diagnostics now identify the field, matched wording, actual count and expected range, enabling
+a targeted repair and distinguishing future false positives from incorrect model claims.
+This is intentionally a narrow heuristic, not a complete multilingual semantic checker.
+No grading prompt, model, attempt budget, deadline or frontend behaviour changes in this patch.
+
+Verification: the new negation test failed against v5.5.4 and passes after the fix. All 76 Worker,
+38 coaching, 8 writing-coach DOM and 6 tense DOM checks pass (128). Added cases cover negations,
+short conclusions, real affirmative claims, precise diagnostics and a mocked successful pipeline.
+Live Spanish retesting is required after deployment; success is not inferred from mocked calls.
+Standalone file: downloads/essaycoach-worker-v5.5.5.txt, identical to Worker source.
 
 ## v5.5.4: findings from live v5.5.3 tests
 

@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.5.4 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.5.5 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-16-coaching-v5.5.4";
+const VERSION = "2026-10-16-coaching-v5.5.5";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const CATEGORIES = ["content", "communicative", "organisation", "language"];
 const UNITS = {
@@ -348,15 +348,31 @@ export function writingMetrics(payload,reading=null) {
   return {inputWords,expectedRange,lengthStatus:!expectedRange?'unspecified':inputWords<expectedRange.min?'below_range':inputWords>expectedRange.max?'above_range':'within_range'};
 }
 function lengthClaimIssues(data,payload) {
-  if(writingMetrics(payload,payload.sourceReading).lengthStatus!=='within_range') return [];
-  const statements=[data.feedback,...Object.values(data.assessment?.criteria||{}).map(c=>c?.reason),
-    data.taskReview?.explanation,...(Array.isArray(data.taskReview?.checks)?data.taskReview.checks:[]).map(c=>c?.explanation)];
-  // Narrow explicit claims about the whole response's length; not judgements about
-  // an underdeveloped argument or a short individual sentence/paragraph.
-  const falseLength=/\b(?:essay|text|response|answer)\b[^.!?\n]{0,65}\b(?:too short|too long|shorter than (?:required|requested)|longer than (?:required|requested)|(?:below|above|under|over) (?:the )?(?:required |requested )?(?:word (?:count|limit|range)|length))\b|\b(?:essay|tekst|antwoord)\b[^.!?\n]{0,65}\b(?:te kort(?! ontwikkeld)|te lang|korter dan gevraagd|langer dan gevraagd|(?:onder|boven) de (?:gevraagde|vereiste) (?:lengte|woordlimiet))\b|\b(?:ensayo|texto|respuesta)\b[^.!?\n]{0,65}\b(?:demasiado corto|demasiado breve|demasiado largo|m[aá]s corto de lo (?:pedido|requerido)|por (?:debajo|encima) (?:del|de la) (?:l[ií]mite|extensi[oó]n))\b/i;
-  return statements.some(s=>typeof s==='string'&&falseLength.test(s))
-    ? ['The server word count is within the stated task range. Remove false too-short/too-long or under/over-length claims and dependent penalties. Evaluate argument development separately from word count.'] : [];
+  const metrics=writingMetrics(payload,payload.sourceReading);
+  if(metrics.lengthStatus!=='within_range') return [];
+  const statements=[['feedback',data.feedback],
+    ...Object.entries(data.assessment?.criteria||{}).map(([key,c])=>['assessment.criteria.'+key+'.reason',c?.reason]),
+    ['taskReview.explanation',data.taskReview?.explanation],
+    ...(Array.isArray(data.taskReview?.checks)?data.taskReview.checks:[]).map((c,i)=>['taskReview.checks['+i+'].explanation',c?.explanation])];
+  // Match only direct affirmative whole-response length claims. Never bridge arbitrary
+  // words: that incorrectly joined 'essay' to a negated claim or a short conclusion.
+  // This is deliberately narrow, not a multilingual semantic classifier.
+  const claims=[
+    /\b(?:essay|text|response|answer)\s+(?:is|seems|appears|remains|looks|falls)\s+(?:(?:clearly|really|much|far|slightly|still|simply)\s+){0,3}(?:too short|too long|shorter than (?:required|requested)|longer than (?:required|requested)|(?:below|above|under|over) (?:the )?(?:required |requested )?(?:word (?:count|limit|range)|length))\b/i,
+    /\b(?:essay|tekst|antwoord)\s+(?:is|lijkt|blijft|valt)\s+(?:(?:wel|duidelijk|nog|veel|echt|erg)\s+){0,3}(?:te kort(?! ontwikkeld)|te lang|korter dan gevraagd|langer dan gevraagd|(?:onder|boven) de (?:gevraagde|vereiste) (?:lengte|woordlimiet))\b/i,
+    /\b(?:ensayo|texto|respuesta)\s+(?:es|est[aá]|resulta|parece|queda|se queda)\s+(?:(?:claramente|todav[ií]a|a[uú]n|realmente)\s+){0,3}(?:demasiado corto|demasiado breve|demasiado largo|m[aá]s corto de lo (?:pedido|requerido)|por (?:debajo|encima) (?:del|de la) (?:l[ií]mite|extensi[oó]n))\b/i
+  ];
+  const issues=[];
+  for(const [field,statement] of statements) {
+    if(typeof statement!=='string') continue;
+    for(const claim of claims) {
+      const match=claim.exec(statement);
+      if(match) issues.push('The server word count is within the stated task range ('+metrics.inputWords+' words; '+metrics.expectedRange.min+'–'+metrics.expectedRange.max+'). '+field+' contains this conflicting length claim: '+JSON.stringify(match[0])+'. Remove false too-short/too-long or under/over-length claims and dependent penalties. Evaluate argument development separately from word count.');
+    }
+  }
+  return issues;
 }
+
 const isScore = v => Number.isInteger(v) && v >= 0 && v <= 5;
 const isKind = v => v === 'correction' || v === 'suggestion';
 

@@ -333,3 +333,39 @@ await test('each AI call has at most 60 seconds and cannot exceed the remaining 
  } finally {Date.now=oldNow;AbortSignal.timeout=oldTimeout;}
 });
 console.log(`${checks} coaching checks passed; captured edits and request flow tested with mocked model calls.`);
+
+await test('word-length guard does not mistake negation or a short conclusion for an under-length essay',()=>{
+ for(const feedback of [
+  'The essay is not too short.',
+  'Your response is not too long and fits the word limit.',
+  'The essay is clear, but its conclusion is too short.',
+  'De tekst is niet te kort.',
+  'Je essay heeft een conclusie die te kort is uitgewerkt.',
+  'El ensayo no es demasiado corto.',
+  'El texto no es demasiado largo.',
+  'El ensayo está bien, pero la conclusión es demasiado breve.'
+ ]) {
+  const d=assessment();d.feedback=feedback;
+  assert(!validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('server word count')),feedback);
+ }
+});
+await test('direct false length claims still identify the exact field and wording in EN, NL and ES',()=>{
+ for(const claim of ['The essay is too short.','De tekst is wel duidelijk te kort voor een C2-bronessay.','El ensayo es demasiado corto.','La respuesta se queda por debajo del límite.']) {
+  const d=assessment();d.assessment.criteria.content.reason=claim;
+  const issues=validate(d,{...payload,sourceReading:plan},ss).filter(s=>s.includes('server word count'));
+  assert.equal(issues.length,1,claim);assert(issues[0].includes('assessment.criteria.content.reason'));
+  assert(issues[0].includes('256 words; 240–280'));assert(issues[0].includes('conflicting length claim:'));
+ }
+ const d=assessment();d.feedback='The essay is not too short. However, the response is too long.';
+ assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('response is too long')));
+});
+await test('a correct in-range assessment with negated length advice completes without repair calls',async()=>{
+ let calls=0;globalThis.fetch=async()=>{
+  calls++;const d=assessment();d.feedback='El ensayo no es demasiado corto, pero la conclusión necesita una evaluación más concreta.';
+  return completion(calls===1?plan:d);
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,3);
+ assert.equal(result.diagnostics.reviewCompleted,true);assert(result.feedback.includes('no es demasiado corto'));
+});
+console.log(`${checks} coaching checks passed; model calls mocked, including negation and field-specific length repair.`);
