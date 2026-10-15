@@ -33,3 +33,13 @@ const unsafe=structuredClone(response);unsafe.contextNotes[0].explanation='<img 
 window.ECTenseFeedback.render(card,unsafe,original,'nl');
 assert(box.textContent.includes('<img'));assert(box.children.every(n=>n.tagName!=='img'));
 console.log('PASS model text is rendered as text, not HTML');
+const {buildSignalHints}=await import('../apps/worker/src/worker.js');
+const focused={schemaVersion:2,feedbackMode:'focused',contextNotes:notes,signalHints:buildSignalHints({essay:original,feedbackLanguage:'nl'},numberSentences(original)),tenseAnalysis:[{example:original,timeFrame:'present',status:'correct',explanation:'STALE ANALYSIS',forms:['OLD FORM'],signals:['This morning']}]};
+window.ECTenseFeedback.render(card,focused,original,'nl');
+assert.equal(card.hidden,false);assert(card.textContent.includes('Signaalwoorden — korte uitleg'));
+assert(!card.textContent.includes('STALE ANALYSIS'));assert(!card.textContent.includes('OLD FORM'));assert(!card.textContent.includes('Correct gebruik'));
+assert(card.textContent.includes('This morning I had a coffee.'));assert.equal(box.hidden,false);
+console.log('PASS focused mode shows fixed reminders and never old tense labels or approval badges');
+window.ECTenseFeedback.render(card,{schemaVersion:2,feedbackMode:'focused',signalHints:[],contextNotes:[]},original,'nl');
+assert.equal(card.hidden,true);assert.equal(box.hidden,true);
+console.log('PASS no signals means no empty analysis card');

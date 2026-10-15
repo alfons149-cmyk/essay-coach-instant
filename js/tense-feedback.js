@@ -48,11 +48,38 @@
     box.hidden=!seen.size;
   }
 
+  function renderSignalHints(card,response,essay,language) {
+    const copy={
+      nl:{title:'Signaalwoorden — korte uitleg',hint:'Enkele aanwijzingen uit je tekst. Ze bepalen niet automatisch de werkwoordvorm.'},
+      es:{title:'Palabras clave — explicación breve',hint:'Algunas pistas de tu texto. No determinan automáticamente la forma verbal.'},
+      en:{title:'Signal words — brief reminders',hint:'A few clues from your text. They do not automatically determine the verb form.'}
+    }[language] || {title:'Signal words — brief reminders',hint:'A few clues from your text. They do not automatically determine the verb form.'};
+    const hints=(Array.isArray(response.signalHints)?response.signalHints:[]).filter(h=>h && typeof h.example==='string' && h.example && essay.includes(h.example) &&
+      typeof h.explanation==='string' && h.explanation.trim() && Array.isArray(h.signals) && h.signals.length &&
+      h.signals.every(s=>typeof s==='string' && s && h.example.includes(s))).slice(0,3);
+    if(!hints.length) return;
+    const doc=card.ownerDocument;
+    const node=(tag,text)=>{const n=doc.createElement(tag);n.textContent=text;return n;};
+    const title=node('h2',copy.title);title.id='tenseAnalysisTitle';title.className='app-block__title';
+    const list=doc.createElement('ol');list.className='tense-list';
+    for(const hint of hints) {
+      const item=doc.createElement('li');item.className='tense-entry';
+      item.append(node('strong',hint.signals.join(' · ')),node('p',hint.explanation),node('blockquote',hint.example));
+      list.append(item);
+    }
+    const guide=node('a',(COPY[language]||COPY.en).guide);
+    guide.href=`tenses.html?lang=${Object.hasOwn(COPY,language)?language:'en'}`;
+    card.append(title,node('p',copy.hint),list,guide);card.hidden=false;
+  }
+
   function render(card, response, essay, language = 'en') {
     renderContextNotes(response,typeof essay==='string'?essay:'');
     if (!card) return;
     card.replaceChildren();
     card.hidden = true;
+    if(response?.schemaVersion===2 && response.feedbackMode==='focused') {
+      renderSignalHints(card,response,typeof essay==='string'?essay:'',language);return;
+    }
     if (response?.schemaVersion !== 2 || !Array.isArray(response.tenseAnalysis)) return;
     const original = typeof essay === 'string' ? essay : '';
     const entries = response.tenseAnalysis.filter(e => e && typeof e.example === 'string' &&

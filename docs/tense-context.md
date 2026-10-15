@@ -1,3 +1,5 @@
+> Current behaviour: v5.4 uses focused feedback and server-generated brief signal reminders. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
 # Time frames and signal words
 
 EssayCoach v5.2.1 adds Alfons' context-based tense teaching to both model passes and exposes `tenseAnalysis` as an additive field in response schema version 2. The existing assessment, correction-only next draft, evidence checks, source review and vocabulary fields are preserved.
@@ -181,3 +183,37 @@ outputs are captured in `tests/fixtures/tense-v532-feedback.json`.
 The website changes are published through GitHub Pages. Deploy the complete standalone
 `downloads/essaycoach-worker-v5.3.3.txt` into the existing Cloudflare Worker to activate
 server policy and `contextNotes`. No key or model change is required.
+
+
+## v5.4: focused feedback by user request (15 October 2026)
+
+The user requested less depth to reduce incorrect explanations and failures. The
+model no longer generates `tenseAnalysis`, clause quotations, tense labels, an
+exhaustive timeline, or mandatory teaching-target entries. Their schema fields,
+validator dependencies and prompt requirements have been removed. This is a
+feature reduction, not acceptance of previously rejected analysis: obsolete
+analysis is discarded and never shown.
+
+- The core assessment, one key focus, justified corrections, evidence checks,
+  source comparison when needed, and independent review remain. General feedback
+  is requested in 50–90 words, with at most one optional insight and vocabulary item.
+- `feedbackMode: focused` and `signalHints` are returned. Up to three brief fixed
+  EN/ES/NL reminders reference real detected words. The server selects these without
+  classifying the student's clauses or inventing explanations. They never select
+  or apply a verb correction. Context warnings and corrected sentences get priority.
+- The fixed morning explanation, `contextNotes`, and protection against unsupported
+  perfect-to-past changes remain. Optional invented rewritten sentences remain excluded.
+- `tenseAnalysis: []` preserves the v2 client contract. The frontend shows simple
+  reminders without tense badges, per-clause labels or blanket correctness verdicts.
+  The full tenses reference guide remains available as a separate study resource.
+- The old exported clause-analysis helpers and tests specifically requiring the removed
+  feature have been retired. Core validation, correction preservation, evidence,
+  review, timeout, truncation and provider-error tests remain. New tests confirm that
+  stale invalid clause data neither blocks nor leaks into focused output, while bad
+  correction IDs still fail. There are 55 backend checks and six DOM-harness checks.
+  The mobile build also passes. These are mocked-model/renderer tests, not live proof.
+
+Deploy `downloads/essaycoach-worker-v5.4.txt`. Health should report
+`2026-10-15-tense-context-v5.4`. Repeat the NL correction passage, isolated morning
+sentence and ES passage after deployment. Reduced depth reduces failure surfaces;
+it does not guarantee error-free model judgements. No model or API key change.
