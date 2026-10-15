@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.5 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.5.1 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-15-coaching-v5.5";
+const VERSION = "2026-10-15-coaching-v5.5.1";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const CATEGORIES = ["content", "communicative", "organisation", "language"];
 const UNITS = {
@@ -64,6 +64,9 @@ Use source_essay only for two identifiable source passages intended for synthesi
 short ordinary task prompt, an informal email, a quotation used as a topic, or two instructions.
 Copy each source body as one exact contiguous sourceQuote (without inventing or correcting words).
 For each source select one or two central keyPoints with exact short quotes and a paraphrased meaning.
+Always include the author's overall position as a key point. Supporting numbers or examples are
+not separate central arguments unless they are essential to the position. Prefer the statement
+of what the author argues over an incidental statistic.
 instructionStatus is explicit when the writing instructions are supplied; assumed when two source
 texts imply the usual C2 summary/evaluation essay but instructions are absent; missing when the
 writing task cannot be determined. For other tasks use sources=[] and follow their actual genre.
@@ -87,6 +90,8 @@ sources are supplied, state any assumed summary/evaluation task in feedback and 
 Populate sourceReview with up to six central points, exact short quotations from TASK,
 essayEvidenceIds (empty for an absent idea), coverage and a specific explanation.
 Use [] if there are no identifiable source passages. Never quote invented source material.
+For taskType other/unclear, sourceReview is empty and the source_accuracy check is not applicable.
+Task instructions are assessed under task_coverage, not as the position of a source author.
 When discussing missing source ideas, include that finding in the Content reason or feedback
 as well as the sourceReview shown beside the learner's evidence.
 
@@ -94,7 +99,10 @@ TASK RESPONSE AND LEARNING — REQUIRED
 The server may supply sourceReading, produced before seeing this essay. Independently check it
 against the original TASK; it is provisional evidence, not an authority. Never copy a misleading
 heading as the author's position when the paragraph challenges that heading. For each keyPoint
-in sourceReading.sources return a sourceReview using that EXACT keyPoint quote as sourceQuote.
+in sourceReading.sources assess the corresponding ID in sourceCatalog. When the schema has
+sourceReviewById, fill EVERY required ID with coverage and essay evidence; never type source quotes.
+In learningPoints use sourcePointId from sourceCatalog, or an empty string for a non-source point.
+The server attaches the exact source quotation. Otherwise use the sourceReview/sourceQuote fields.
 Do not put ordinary task instructions in sourceReview or treat them as source passages.
 For a C2 two-source essay, assess accurate summary, evaluation of the arguments, and the writer's
 own developed ideas within a coherent 240–280-word essay. Assess the actual task first: other C2
@@ -121,12 +129,14 @@ practice estimates, not official marks. Do not deduct twice mechanically or forc
 
 Return 1–3 prioritised learningPoints for an assessable essay. Each has category
 (source_interpretation/task_response/language/organisation/style), kind
-(correction/development/optional), evidenceId, sourceQuote (exact TASK quote or empty), issue,
+(correction/development/optional), evidenceId, a source reference, issue,
 explanation, improvedExample, practiceInstruction and checkQuestion. Explanations and instructions
 use the requested feedback language; improvedExample is short English, not a whole model essay.
 For language corrections, improvedExample MUST match the corresponding edit replacement.
-For source misreading, quote evidence from the SOURCE BODY and show a faithful alternative reading.
-Its sourceQuote must exactly match the corresponding sourceReview.sourceQuote.
+For source misreading, select evidence from the SOURCE BODY and show a faithful alternative reading.
+If the schema uses sourcePointId, choose the matching ID from sourceCatalog, never a quote or label.
+Otherwise sourceQuote must exactly match the corresponding sourceReview.sourceQuote or be empty
+for a learning point that does not use a source. Never leave the explanation/example/practice blank.
 Development examples are labelled teaching examples and are NOT inserted into nextDraft: do not
 write the learner's opinions or invented experiences for them. A strong essay can have an optional
 extension exercise; never fabricate a fault. Each practiceInstruction asks for a concrete rewrite
@@ -183,6 +193,8 @@ TASK AND SCORES
 Decide whether there is connected English writing to assess (sampleSuitable). An incomplete or short
 English essay is still assessable, with limitations; gibberish or unrelated instructions are not.
 An empty TASK does NOT prevent language, organisation, keyFocus or sentence advice.
+A single understandable English sentence is a suitable practice sample. Do not reject it merely
+because it is too short to be an essay: assess the limited evidence and explain that limitation.
 Set taskSufficient=false if the actual task or required C2 sources are missing or inadequate.
 In that case set ONLY content and communicative scores to null, with explanations. Still assess
 organisation and language with individual integer scores 0-5 and supporting evidenceIds.
@@ -448,7 +460,57 @@ export function validateTaskReading(data,task) {
   }
   return issues;
 }
-export function responseSchema(sentences) {
+export function sourceCatalog(reading) {
+  return (reading?.sources||[]).flatMap((source,index)=>source.keyPoints.map((point,i)=>({
+    id:`T${index+1}P${i+1}`,quote:point.quote,meaning:point.meaning,sourceLabel:source.label,position:source.position
+  })));
+}
+// Resolve only known identifiers. No fuzzy quote matching and no inferred coverage.
+export function resolveSourceReferences(data,reading) {
+  if(reading?.taskType!=='source_essay') return [];
+  const catalog=sourceCatalog(reading),byId=new Map(catalog.map(p=>[p.id,p])),issues=[];
+  if(!obj(data?.sourceReviewById)) return ['Return sourceReviewById with every supplied source point ID.'];
+  for(const id of Object.keys(data.sourceReviewById)) if(!byId.has(id)) issues.push('Unknown source point ID: '+id);
+  data.sourceReview=[];
+  for(const point of catalog) {
+    const review=data.sourceReviewById[point.id];
+    if(!obj(review)) {issues.push('Missing source review for '+point.id);continue;}
+    data.sourceReview.push({...review,sourcePointId:point.id,sourceQuote:point.quote});
+  }
+  for(const point of Array.isArray(data.learningPoints)?data.learningPoints:[]) {
+    if(!obj(point)) continue;
+    if(point.sourcePointId==='') point.sourceQuote='';
+    else if(byId.has(point.sourcePointId)) point.sourceQuote=byId.get(point.sourcePointId).quote;
+    else {point.sourceQuote='';issues.push('Learning point has an unknown sourcePointId.');}
+  }
+  delete data.sourceReviewById;
+  return issues;
+}
+
+// Reconcile presentation order using already supplied, valid evidence. Never repair an
+// invented sentence ID or silently remove an unrecognised source interpretation.
+export function normaliseCoaching(data,sentences) {
+  if(!obj(data)) return data;
+  const ids=new Set(sentences.filter(s=>s.text.length>=8).map(s=>s.id));
+  const points=Array.isArray(data.learningPoints)?data.learningPoints:[];
+  const distortions=(Array.isArray(data.sourceReview)?data.sourceReview:[]).filter(s=>s?.coverage==='distorted');
+  const sourcePoint=points.find(p=>p?.category==='source_interpretation'&&ids.has(p.evidenceId)&&
+    distortions.some(s=>s.sourceQuote===p.sourceQuote&&s.essayEvidenceIds?.includes(p.evidenceId)));
+  const focusPoint=sourcePoint||points.find(p=>p?.evidenceId===data.keyFocus?.evidenceId)||points[0];
+  if(focusPoint&&ids.has(focusPoint.evidenceId)&&ids.has(data.keyFocus?.evidenceId)) {
+    data.learningPoints=[focusPoint,...points.filter(p=>p!==focusPoint)];
+    if(sourcePoint||data.keyFocus.evidenceId!==focusPoint.evidenceId)
+      data.keyFocus={action:focusPoint.practiceInstruction,explanation:focusPoint.explanation,evidenceId:focusPoint.evidenceId};
+  }
+  // A non-source task uses task coverage, not source fidelity, for its instructions.
+  if(['other','unclear'].includes(data.taskReview?.taskType)&&!distortions.length) {
+    data.sourceReview=[];
+    if(Array.isArray(data.taskReview.checks)) data.taskReview.checks=data.taskReview.checks.filter(c=>c?.requirement!=='source_accuracy');
+  }
+  return data;
+}
+
+export function responseSchema(sentences,reading=null,language='en') {
   const eligible=sentences.filter(s=>s.text.length>=8);
   const sentenceId={type:'string',enum:eligible.map(s=>s.id)};
   const id={$ref:'#/$defs/sentenceId'};
@@ -474,6 +536,29 @@ export function responseSchema(sentences) {
     vocabularySuggestions:arr(shape({sentenceId:id,original:str,alternatives:arr(str,3,1),explanation:str}),4)
   });
   schema.$defs={sentenceId};
+  const catalog=sourceCatalog(reading);
+  if(reading?.taskType==='source_essay') {
+    delete schema.properties.sourceReview;
+    schema.properties.sourceReviewById=shape(Object.fromEntries(catalog.map(point=>[point.id,
+      shape({point:str,coverage:choice(['covered','partial','missing','distorted']),essayEvidenceIds:arr(id),explanation:str})])));
+    const learning=schema.properties.learningPoints.items;
+    delete learning.properties.sourceQuote;
+    learning.properties.sourcePointId=choice(['',...catalog.map(p=>p.id)]);
+    learning.required=Object.keys(learning.properties);
+    schema.required=Object.keys(schema.properties);
+  }
+  if(ambiguousMorningIds(sentences).length&&sentences.filter(s=>s.text.length>=8).length===1)
+    schema.properties.sampleSuitable={type:'boolean',enum:[true],description:'This is an understandable English practice sentence. Assess it with limitations; its short length is not grounds for rejection.'};
+  const translated=new Set(['feedback','reason','action','explanation','issue','practiceInstruction','checkQuestion','expectedResponse','point']);
+  function describe(s) {
+    if(s.properties) for(const [name,field] of Object.entries(s.properties)) {
+      if(translated.has(name)&&field.type==='string') s.properties[name]={...field,description:`Write this learner-facing text in ${FEEDBACK_LANGUAGES[language]||'English'}. English quotations may remain English.`};
+      else if(['replacement','improvedExample','betterVersion'].includes(name)) s.properties[name]={...field,description:'Write the example or replacement in English.'};
+      describe(s.properties[name]);
+    }
+    if(s.items) describe(s.items);
+  }
+  describe(schema);
   return schema;
 }
 
@@ -599,6 +684,11 @@ function coachingIssues(data,payload,byId) {
        (point.sourceQuote&&!payload.task.includes(point.sourceQuote))||
        ['issue','explanation','improvedExample','practiceInstruction','checkQuestion'].some(k=>!text(point[k])))
       issues.push('Every learning point needs what/why/how, an English example, practice, a check question and exact source/essay evidence.');
+    if(obj(point)) {
+      const missing=['issue','explanation','improvedExample','practiceInstruction','checkQuestion'].filter(k=>!text(point[k]));
+      if(missing.length) issues.push('Learning point '+String(point.evidenceId)+': supply non-empty '+missing.join(', ')+'.');
+      if(!byId.has(point.evidenceId)) issues.push('Learning point evidenceId must be one of the supplied sentence IDs.');
+    }
     if(point?.category==='language'&&point.kind==='correction'&&!(Array.isArray(data.edits)&&data.edits.some(e=>e?.kind==='correction'&&e.sentenceId===point.evidenceId&&text(e.replacement)===text(point.improvedExample))))
       issues.push('A language correction learning point must match an actual edit and its complete replacement.');
     if(point?.category==='source_interpretation'&&(!text(point.sourceQuote)||!sourceList.some(s=>s?.sourceQuote===point.sourceQuote)))
@@ -615,6 +705,8 @@ export function validate(data, payload, sentences) {
   if(!obj(data)) return ['Response must be an object.'];
   issues.push(...coachingIssues(data,payload,byId));
   if(typeof data.sampleSuitable!=='boolean') issues.push('sampleSuitable must be boolean.');
+  if(data.sampleSuitable===false&&ambiguousMorningIds(sentences).length&&sentences.filter(s=>s.text.length>=8).length===1)
+    issues.push('This is an understandable English practice sentence: sampleSuitable must be true. Assess the limited evidence rather than rejecting it for length.');
   if(!text(data.feedback)) issues.push('Provide specific feedback.');
   if(!obj(data.assessment) || typeof data.assessment.taskSufficient!=='boolean') issues.push('Provide assessment.taskSufficient.');
   if(!text(payload.task) && data.assessment?.taskSufficient===true) issues.push('TASK is empty: taskSufficient must be false.');
@@ -695,7 +787,7 @@ export function validate(data, payload, sentences) {
 }
 
 export function toClient(data, payload, sentences, attempts) {
-  data=applyFeedbackPolicy(data,payload,sentences);
+  data=normaliseCoaching(applyFeedbackPolicy(data,payload,sentences),sentences);
   const notes=contextNotes(payload,sentences);
   const problems=validate(data,payload,sentences);
   if(problems.length) throw new Error(problems.join(' '));
@@ -758,7 +850,7 @@ export default {
     if(!sentences.some(s=>s.text.length>=8)) return fail('TOO_SHORT','Please enter connected English writing to assess.',422,origin);
     if(!env.OPENAI_API_KEY) return fail('CONFIG','The correction service is not configured.',503,origin);
     const model=env.OPENAI_MODEL || 'gpt-4o-mini';
-    const languageCheck=`Write feedback, correction reasons, keyFocus and insights in ${FEEDBACK_LANGUAGES[feedbackLanguage]}. Keep original quotations and corrected English in English.`;
+    const languageCheck=`Write ALL learner-facing explanations in ${FEEDBACK_LANGUAGES[feedbackLanguage]}, including taskReview expectedResponse/explanation/checks, learningPoints issue/explanation/practiceInstruction/checkQuestion, sourceReview point/explanation, feedback, correction reasons, keyFocus and insights. Only original quotations and English examples/replacements stay in English. Do not default the new teaching fields to English.`;
     const protectedMorningIds=ambiguousMorningIds(sentences);
     const preservationRule=protectedMorningIds.length
       ? ` Ambiguous morning sentence IDs: ${protectedMorningIds.join(', ')}. The text supplies no recognised closed-morning evidence. Preserve their present-perfect time reading. Other genuine errors may be corrected. Never approve these sentences without the finished/open-morning distinction and a past-simple example. Explain the missing context rather than inventing a tense fault; do not penalise a defensible tense or attach a correction insight to it.` : '';
@@ -774,7 +866,6 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
     // Repairs have their own bounded budgets, so a valid third
     // assessment always gets a review. Every network call shares one overall deadline.
     const deadline=Date.now()+180000;
-    const schema=responseSchema(sentences);
     let attempts=0, candidate=null, latestRaw='', validationIssues=[];
     const readTask=payload.level==='C2'&&Boolean(text(payload.task));
     const phaseAttempts={...(readTask?{task:0}:{}),assessment:0,review:0}, completions=[];
@@ -800,7 +891,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
           const response=await fetch('https://api.openai.com/v1/chat/completions',{
             method:'POST',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},
             body:JSON.stringify({model,temperature:0.2,max_completion_tokens:maxCompletionTokens,
-              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema():schema}},messages}),
+              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema():responseSchema(sentences,payload.sourceReading,feedbackLanguage)}},messages}),
             signal:AbortSignal.timeout(timeout)
           });
           if(!response.ok) {
@@ -831,12 +922,13 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                 validationIssues=validateTaskReading(parsed,payload.task);
                 if(!validationIssues.length) {
                   payload.sourceReading=parsed;
-                  baseMessages[1]={role:'user',content:JSON.stringify({...JSON.parse(baseMessages[1].content),sourceReading:parsed})};
+                  baseMessages[1]={role:'user',content:JSON.stringify({...JSON.parse(baseMessages[1].content),sourceReading:parsed,sourceCatalog:sourceCatalog(parsed)})};
                   latestRaw='';break;
                 }
               } else {
-                parsed=applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences);
-                validationIssues=validate(parsed,payload,sentences);
+                const referenceIssues=resolveSourceReferences(parsed,payload.sourceReading);
+                parsed=normaliseCoaching(applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences),sentences);
+                validationIssues=[...referenceIssues,...validate(parsed,payload,sentences)];
                 if(!validationIssues.length && parsed.sampleSuitable===false)
                   return fail('UNSUITABLE_SAMPLE','Please enter connected English writing suitable for an essay assessment.',422,origin);
                 if(!validationIssues.length) {
@@ -845,7 +937,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                     Object.assign(output.diagnostics,{reviewCompleted:true,phaseAttempts,completions});
                     return json(output,200,origin);
                   }
-                  candidate=parsed;latestRaw=JSON.stringify(parsed);break;
+                  candidate=parsed;latestRaw=raw;break;
                 }
               }
             }

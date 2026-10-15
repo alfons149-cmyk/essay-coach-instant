@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints} from '../apps/worker/src/worker.js';
+import worker,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching} from '../apps/worker/src/worker.js';
 const input=JSON.parse(await readFile(new URL('./fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
 const {sourceBodies,...payload}=input,ss=numberSentences(payload.essay);
 const id=part=>ss.find(s=>s.text.includes(part)).id;
@@ -78,7 +78,21 @@ await test('for beneficiary/conjunction and causal since get no duration reminde
  for(const signal of ['for over a century','for two weeks','for years','since 2010']) assert(teachingSignals('Homeschooling has existed '+signal+'.').includes(signal),signal);
 });
 const request=()=>new Request('https://worker.test/api/correct',{method:'POST',body:JSON.stringify(payload)});
-const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+function wire(d) {
+ const copy=structuredClone(d);
+ if(copy.taskReview?.taskType!=='source_essay') return copy;
+ const catalog=sourceCatalog(plan);
+ copy.sourceReviewById=Object.fromEntries(catalog.map(p=>{
+  const review=copy.sourceReview.find(s=>s.sourceQuote===p.quote);
+  const {sourceQuote,...entry}=review;return [p.id,entry];
+ }));
+ delete copy.sourceReview;
+ for(const point of copy.learningPoints) {
+  point.sourcePointId=catalog.find(p=>p.quote===point.sourceQuote)?.id||'';delete point.sourceQuote;
+ }
+ return copy;
+}
+const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(wire(d))}}]}));
 const env={OPENAI_API_KEY:'mock-not-a-key'};
 await test('C2 source reading precedes essay assessment and never sees the learner interpretation',async()=>{
  const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));return completion(bodies.length===1?plan:assessment());};
@@ -127,3 +141,47 @@ await test('source-only phase shares the overall deadline rather than extending 
  } finally {Date.now=oldNow;}
 });
 console.log(`${checks} final coaching checks passed; model calls mocked.`);
+
+await test('source IDs are required by the schema, and exact quotations are attached only by the server',()=>{
+ const catalog=sourceCatalog(plan),schema=responseSchema(ss,plan,'nl'),d=wire(assessment());
+ assert(!('sourceReview' in schema.properties));
+ assert.deepEqual(schema.properties.sourceReviewById.required,catalog.map(p=>p.id));
+ assert(!('sourceQuote' in schema.properties.learningPoints.items.properties));
+ assert(schema.properties.learningPoints.items.properties.sourcePointId.enum.includes(catalog[1].id));
+ assert.deepEqual(resolveSourceReferences(d,plan),[]);
+ assert.deepEqual(d.sourceReview.map(s=>s.sourceQuote),catalog.map(p=>p.quote));
+ assert.equal(d.learningPoints[0].sourceQuote,plan.sources[1].keyPoints[0].quote);
+ assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+});
+await test('missing and invented source IDs are rejected, never fuzzily matched or silently approved',()=>{
+ const d=wire(assessment());delete d.sourceReviewById.T1P1;d.sourceReviewById.UNKNOWN={};d.learningPoints[0].sourcePointId='UNKNOWN';
+ const issues=resolveSourceReferences(d,plan);
+ assert(issues.some(x=>x.includes('Missing source review')));assert(issues.some(x=>x.includes('Unknown source point')));
+ assert(issues.some(x=>x.includes('unknown sourcePointId')));assert(!d.sourceReview.some(r=>r.sourcePointId==='UNKNOWN'));
+});
+await test('focus and first learning point are reconciled using valid existing source evidence',()=>{
+ const d=assessment();d.learningPoints.reverse();d.keyFocus={action:'Fix a comma.',evidenceId:punctuation,explanation:'Punctuation first.'};
+ normaliseCoaching(d,ss);assert.equal(d.learningPoints[0].evidenceId,mistaken);assert.equal(d.keyFocus.evidenceId,mistaken);
+ assert.equal(d.keyFocus.action,d.learningPoints[0].practiceInstruction);assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+ d.keyFocus.evidenceId='S999';normaliseCoaching(d,ss);assert.equal(d.keyFocus.evidenceId,'S999');assert(validate(d,payload,ss).length);
+});
+await test('new learner-facing fields carry explicit language instructions in their schemas',()=>{
+ for(const lang of ['nl','es']) {
+  const schema=responseSchema(ss,plan,lang),name=lang==='nl'?'Dutch':'Spanish';
+  assert(schema.properties.taskReview.properties.explanation.description.includes(name));
+  assert(schema.properties.learningPoints.items.properties.practiceInstruction.description.includes(name));
+  assert(schema.properties.sourceReviewById.properties.T1P1.properties.explanation.description.includes(name));
+  assert(schema.properties.learningPoints.items.properties.improvedExample.description.includes('English'));
+ }
+});
+await test('ordinary tasks do not display task instructions as an author source',()=>{
+ const d=assessment();d.taskReview.taskType='other';d.sourceReview=[{coverage:'covered',sourceQuote:'Write an email.',essayEvidenceIds:[ss[0].id]}];
+ normaliseCoaching(d,ss);assert.deepEqual(d.sourceReview,[]);assert(!d.taskReview.checks.some(c=>c.requirement==='source_accuracy'));
+});
+await test('a recognised short English practice sentence cannot be rejected solely as unsuitable',()=>{
+ const p={level:'C1',task:'Describe your morning.',essay:'This morning I have had a coffee.'},sentences=numberSentences(p.essay);
+ assert.deepEqual(responseSchema(sentences).properties.sampleSuitable.enum,[true]);
+ const d=assessment();d.sampleSuitable=false;
+ assert(validate(d,p,sentences).some(s=>s.includes('understandable English practice sentence')));
+});
+console.log(`${checks} source-reference and coaching checks passed; model calls mocked.`);

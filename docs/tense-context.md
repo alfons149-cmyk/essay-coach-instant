@@ -1,4 +1,43 @@
-> Current behaviour: v5.5 adds source-only C2 reading, visible task achievement and concrete learning steps to the focused v5.4.1 feedback. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+> Current behaviour: v5.5.1 retains the v5.5 coaching UI and replaces fragile repeated source quotations with server-resolved source point IDs. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
+## v5.5.1: repair the failures observed after v5.5 deployment
+
+The actual homeschooling requests in EN, NL and ES returned HTTP 502 after three assessment
+attempts. Diagnostics identified missing exact key-point quotes, unmatched learning source quotes
+and mismatched keyFocus/first learning-point evidence. The standalone morning sentence was
+incorrectly rejected as unsuitable (422). A C1 email request succeeded but returned English
+teaching fields for a Dutch request and treated task instructions as a source author.
+Captured error diagnostics are in `tests/fixtures/v55-live-failures.json`; these records do not
+contain the raw model assessments, which the production endpoint does not expose.
+
+- After the source-only reading, the server assigns stable IDs such as `T1P1` to its key points.
+  The assessment schema requires a `sourceReviewById` object with EVERY point ID as a required
+  property. Learning points use a constrained `sourcePointId`, or an empty string for no source.
+  The server resolves exact quotations from the already validated source reading. Unknown/missing
+  IDs still fail; there is no fuzzy quote matching and no fabricated coverage. The public response
+  retains the existing sourceReview/learningPoints quotes, so no frontend change is required.
+- The review receives the model's original ID-based answer in the same wire schema. Source reading
+  now prioritises the author's actual position over incidental statistics as a central key point.
+- Presentation order is normalised from valid existing evidence. A supported source-misreading
+  lesson is first, and its exercise/explanation supplies keyFocus. Otherwise an existing lesson
+  matching keyFocus is first. Invalid sentence IDs are never silently repaired.
+- Each learner-facing explanation field in the schema explicitly names the requested language;
+  English examples and original quotations remain English. This guides generation but is not a
+  deterministic language detector or a guarantee that every output field will comply.
+- A recognised single English morning/perfect practice sentence is constrained to sampleSuitable
+  true. The validator requests reassessment if the model nevertheless rejects it. Limited length
+  must be explained, not treated as non-English. This is deliberately narrow, not a universal
+  language recogniser. Existing morning context guidance and tense preservation remain in place.
+- For a declared non-source task without a distortion finding, instruction-only sourceReview
+  entries and source_accuracy checks are removed; task_coverage remains the appropriate check.
+  Missing learning-point fields now receive field-specific repair diagnostics.
+
+Verification: 68 Worker, 20 coaching, 8 writing-coach renderer and 6 tense renderer checks pass
+(102 total). Model calls are mocked; the new live pipeline and teaching quality must be checked
+after deployment. All original source/correction consistency gates remain active. These changes
+fix evidence plumbing and demonstrated rejection paths; they do not prove semantic correctness.
+
+Standalone deployment file: `downloads/essaycoach-worker-v5.5.1.txt`, identical to Worker source.
 
 ## v5.5: task achievement and learning feedback
 

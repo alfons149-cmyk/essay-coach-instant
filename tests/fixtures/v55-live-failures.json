@@ -1,0 +1,161 @@
+{
+  "home-en": {
+    "error": "The AI could not complete a consistent assessment. Please try again.",
+    "code": "ASSESSMENT_INCOMPLETE",
+    "version": "2026-10-15-coaching-v5.5",
+    "diagnostics": {
+      "attempts": 4,
+      "phase": "assessment",
+      "phaseAttempts": {
+        "task": 1,
+        "assessment": 3,
+        "review": 0
+      },
+      "reviewRequested": false,
+      "reviewCompleted": false,
+      "completions": [
+        {
+          "phase": "task",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 502
+        },
+        {
+          "phase": "assessment",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1440
+        },
+        {
+          "phase": "assessment",
+          "attempt": 2,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1399
+        },
+        {
+          "phase": "assessment",
+          "attempt": 3,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1401
+        }
+      ],
+      "issues": [
+        "Assess each source-only key point with its exact sourceQuote: your family may suffer a loss in income",
+        "Every learning point needs what/why/how, an English example, practice, a check question and exact source/essay evidence.",
+        "Source interpretation learning points need a matching sourceReview quotation.",
+        "keyFocus and the first learning point must address the same evidence sentence."
+      ]
+    }
+  },
+  "home-nl": {
+    "error": "The AI could not complete a consistent assessment. Please try again.",
+    "code": "ASSESSMENT_INCOMPLETE",
+    "version": "2026-10-15-coaching-v5.5",
+    "diagnostics": {
+      "attempts": 4,
+      "phase": "assessment",
+      "phaseAttempts": {
+        "task": 1,
+        "assessment": 3,
+        "review": 0
+      },
+      "reviewRequested": false,
+      "reviewCompleted": false,
+      "completions": [
+        {
+          "phase": "task",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 505
+        },
+        {
+          "phase": "assessment",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1336
+        },
+        {
+          "phase": "assessment",
+          "attempt": 2,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1210
+        },
+        {
+          "phase": "assessment",
+          "attempt": 3,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1280
+        }
+      ],
+      "issues": [
+        "Assess each source-only key point with its exact sourceQuote: the number of children homeschooling is estimated to be between 1.8 million and 2.5 million",
+        "Source interpretation learning points need a matching sourceReview quotation.",
+        "keyFocus and the first learning point must address the same evidence sentence."
+      ]
+    }
+  },
+  "home-es": {
+    "error": "The AI could not complete a consistent assessment. Please try again.",
+    "code": "ASSESSMENT_INCOMPLETE",
+    "version": "2026-10-15-coaching-v5.5",
+    "diagnostics": {
+      "attempts": 4,
+      "phase": "assessment",
+      "phaseAttempts": {
+        "task": 1,
+        "assessment": 3,
+        "review": 0
+      },
+      "reviewRequested": false,
+      "reviewCompleted": false,
+      "completions": [
+        {
+          "phase": "task",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 554
+        },
+        {
+          "phase": "assessment",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1403
+        },
+        {
+          "phase": "assessment",
+          "attempt": 2,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1547
+        },
+        {
+          "phase": "assessment",
+          "attempt": 3,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1549
+        }
+      ],
+      "issues": [
+        "Every learning point needs what/why/how, an English example, practice, a check question and exact source/essay evidence.",
+        "Source interpretation learning points need a matching sourceReview quotation.",
+        "keyFocus and the first learning point must address the same evidence sentence."
+      ]
+    }
+  },
+  "morning": {
+    "error": "Please enter connected English writing suitable for an essay assessment.",
+    "code": "UNSUITABLE_SAMPLE",
+    "version": "2026-10-15-coaching-v5.5"
+  }
+}
