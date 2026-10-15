@@ -37,7 +37,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v5.5.3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-coaching-v5.5.3');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v5.5.3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-16-coaching-v5.5.4');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -335,3 +335,46 @@ await test('morning policy preserves real corrections and their explanations',()
  assert.equal(result.nextDraft,replacement);assert.equal(result.assessment.criteria.language.reason,reason);
 });
 console.log(`${checks} Worker checks passed; model calls mocked.`);
+
+const observed553=JSON.parse(await readFile(new URL('./fixtures/v553-live-findings.json',import.meta.url),'utf8'));
+await test('all four captured head-to-administrator corrections are rejected with an article explanation',()=>{
+ for(const edit of Object.values(observed553.roleEdits)) {
+  const f=focusedFixture(edit.from,[{kind:'correction',sentenceId:'S1',replacement:edit.to,reason:edit.reason}]);
+  const issues=validate(f.d,f.p,f.ss);
+  assert(issues.some(s=>s.includes('a head has the correct article')));
+  assert.throws(()=>toClient(f.d,f.p,f.ss,2),/unsupported correction/);
+ }
+});
+await test('school-role protection permits real surrounding grammar fixes without applying source wording preferences',()=>{
+ const original='She work as a teacher and a head.',replacement='She works as a teacher and a head.';
+ const f=focusedFixture(original,[{kind:'correction',sentenceId:'S1',replacement,reason:'She takes works in the present simple.'}]);
+ assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,replacement);
+ for(const essay of ['He has a head injury.','She is a teacher and a head gardener.','She works as a teacher and an head.'])
+  assert.deepEqual(correctionPreservations(numberSentences(essay)),[]);
+});
+await test('bad learning-point source quotations get an actionable field-specific diagnosis without losing the lesson',()=>{
+ const f=focusedFixture('Three days ago, I went home and eat a sandwich.');
+ const before=structuredClone(f.d.learningPoints[0]);f.d.learningPoints[0].sourceQuote=f.p.essay;
+ const issues=validate(f.d,f.p,f.ss);
+ assert(issues.some(s=>s.includes('sourceQuote is not an exact quotation from TASK')));
+ assert(issues.some(s=>s.includes('set sourceQuote to ""')));
+ assert.equal(f.d.learningPoints[0].explanation,before.explanation);
+ assert.throws(()=>toClient(f.d,f.p,f.ss,2),/sourceQuote/);
+ f.d.learningPoints[0].sourceQuote='';assert.deepEqual(validate(f.d,f.p,f.ss),[]);
+});
+await test('review can repair a mistaken source quotation using the specific validation instruction',async()=>{
+ const f=focusedFixture('Learning languages matters.'),bodies=[];
+ globalThis.fetch=async(_,o)=>{
+  bodies.push(JSON.parse(o.body));const d=structuredClone(f.d);
+  if(bodies.length===2)d.learningPoints[0].sourceQuote=f.p.essay;
+  return completion(d);
+ };
+ const response=await worker.fetch(request(f.p),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,3);
+ assert.match(bodies[2].messages.at(-1).content,/sourceQuote is not an exact quotation from TASK/);
+ assert.match(bodies[1].messages[0].content,/never from the student's essay/);
+ assert.match(bodies[1].response_format.json_schema.schema.properties.learningPoints.items.properties.sourceQuote.description,/NEVER quote the student essay/);
+ assert.equal(result.learningPoints[0].sourceQuote,'');assert.equal(result.learningPoints[0].explanation,f.d.learningPoints[0].explanation);
+ assert.equal(result.diagnostics.reviewCompleted,true);
+});
+console.log(`${checks} Worker checks passed; role corrections replayed and source-reference repair mocked.`);

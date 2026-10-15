@@ -1,4 +1,43 @@
-> Current behaviour: v5.5.3 retains the v5.5 UI, source IDs, bounded task reclassification and server word metrics. It extends causal-for protection to combined edits, separates the review prompt, and allows up to 60 seconds per AI call within the unchanged 180-second total deadline. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+> Current behaviour: v5.5.4 retains the v5.5 UI, source IDs, bounded task reclassification, word metrics and independent review. It adds a narrow safeguard for valid British school-role wording and actionable learning-point source-quotation diagnostics. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
+## v5.5.4: findings from live v5.5.3 tests
+
+Health confirmed v5.5.3. Initial Python-urllib requests were rejected by Cloudflare (1010) before
+application feedback; the same six cases were then tested with curl. Four homeschooling requests
+succeeded: source-only EN (~126s), ES (~129s), NL (~165s), and explicit CPE instructions NL (~117s).
+All four identified the reversed second-source position, removed the illogical although, and
+preserved causal for. EN/NL added its comma; ES left that punctuation improvement unaddressed.
+The morning sentence succeeded (~42s) with conditional guidance and no invented events.
+The tense email failed HTTP 502 (~81s) after assessment plus two reviews, reporting only the broad
+learning-point validity message. No unchecked corrected draft was returned.
+
+All four essays still changed "a teacher and a head" to "a teacher and an administrator" as a
+necessary language correction. One English explanation incorrectly claimed an article problem.
+"A head" is grammatical British school-role wording; greater fidelity to the source role should
+be taught separately, without inventing an article error or automatically rewriting the role.
+The reviews provide useful source diagnosis and practice, but these samples do not establish
+universal accuracy. Source-only reclassification still added latency, and feedback sometimes asks
+the learner to add evaluation without explaining how to stay within the word limit.
+
+Changes:
+
+- A narrow preservation rule recognises "teacher and a head" at the end of a coordinated role
+  phrase. It rejects automatic replacement while allowing corrections outside that phrase.
+  The reassessment instruction explains British head and the correct article, and directs
+  source-faithfulness/optional wording advice outside automatic language corrections.
+- Review instructions and the ordinary-task schema distinguish sourceQuote (exact original TASK
+  source text, or an empty string) from evidenceId (student essay). A bad sourceQuote now generates
+  a field-specific repair instruction instead of only the broad learning-point error. Nothing is
+  silently discarded or replaced by invented evidence. The failed live review's raw candidate is
+  unavailable: source-quotation confusion is a plausible cause, not a proven reconstruction.
+- Model, attempt counts, 60-second per-call maximum and 180-second shared budget are unchanged.
+
+Captured findings: tests/fixtures/v553-live-findings.json. Verification: 76 Worker + 35 coaching
++ 8 writing-coach DOM + 6 tense DOM checks pass (125). The new tests replay all four role edits,
+allow real surrounding agreement fixes, and exercise explicit quotation repair with mocked calls.
+They do not prove the live tense failure is resolved or guarantee accurate AI feedback.
+Standalone file downloads/essaycoach-worker-v5.5.4.txt matches Worker source. Live testing follows
+manual Cloudflare deployment; GitHub publication alone does not update the running Worker.
 
 ## v5.5.3: repair findings from live v5.5.2 tests
 

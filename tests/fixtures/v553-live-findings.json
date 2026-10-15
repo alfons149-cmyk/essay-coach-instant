@@ -1,0 +1,77 @@
+{
+  "worker": "2026-10-15-coaching-v5.5.3",
+  "configuredModel": "gpt-5.4 (user-confirmed; endpoint does not expose model snapshot)",
+  "roleEdits": {
+    "home-en": {
+      "kind": "correction",
+      "from": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head.",
+      "to": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and an administrator.",
+      "reason": "The article should match the noun, and 'administrator' is the correct word in this context.",
+      "sentenceId": "S5"
+    },
+    "home-es": {
+      "kind": "correction",
+      "from": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head.",
+      "to": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and an administrator.",
+      "reason": "\"a head\" no funciona bien aquí para expresar la idea de la fuente. \"an administrator\" transmite correctamente la función organizativa mencionada.",
+      "sentenceId": "S5"
+    },
+    "home-nl": {
+      "kind": "correction",
+      "from": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head.",
+      "to": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and an administrator.",
+      "reason": "'a head' is hier geen correcte weergave van de rol in de bron en klinkt ook onnatuurlijk in deze context. 'an administrator' past wel grammaticaal en inhoudelijk.",
+      "sentenceId": "S5"
+    },
+    "explicit-nl": {
+      "kind": "correction",
+      "from": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head.",
+      "to": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and an administrator.",
+      "reason": "\"head\" past hier niet bij de betekenis van de bron. \"administrator\" geeft correct weer dat een ouder ook organisatorische en administratieve taken op zich neemt.",
+      "sentenceId": "S5"
+    }
+  },
+  "tenseFailure": {
+    "error": "The AI could not complete a consistent assessment. Please try again.",
+    "code": "ASSESSMENT_INCOMPLETE",
+    "version": "2026-10-15-coaching-v5.5.3",
+    "diagnostics": {
+      "attempts": 3,
+      "phase": "review",
+      "phaseAttempts": {
+        "assessment": 1,
+        "review": 2
+      },
+      "taskRechecks": 0,
+      "taskClassification": null,
+      "reviewRequested": true,
+      "reviewCompleted": false,
+      "completions": [
+        {
+          "phase": "assessment",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1523
+        },
+        {
+          "phase": "review",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1634
+        },
+        {
+          "phase": "review",
+          "attempt": 2,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 1572
+        }
+      ],
+      "issues": [
+        "Every learning point needs what/why/how, an English example, practice, a check question and exact source/essay evidence."
+      ]
+    }
+  }
+}
