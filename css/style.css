@@ -1788,3 +1788,7 @@ body {
 }
 
 .tense-guide-link{margin:0 0 1rem;padding:.85rem 1rem;border:1px solid #cad6e2;border-radius:.7rem;background:#f8fafc}.tense-guide-link a{color:#185c83;font-weight:600;text-underline-offset:.2em}
+
+/* Context-dependent originals must never look like unconditional approval. */
+.ec-context-warning { border-left: 4px solid #946200; background: #fff7df; color: #392b13; padding: 0.9rem 1rem; border-radius: 0.4rem; }
+.ec-context-warning p { margin: 0.4rem 0 0; }

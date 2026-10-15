@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.3.2 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.3.3 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-15-tense-context-v5.3.2";
+const VERSION = "2026-10-15-tense-context-v5.3.3";
 const TIME_FRAMES = ['present', 'past', 'future', 'mixed', 'uncertain'];
 const TENSE_STATUS = ['correct', 'correction', 'context_needed'];
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
@@ -226,9 +226,14 @@ Explain the exact benefit of a suggestion; recognise clear introductions, conclu
 If the task is absent, briefly say content/communicative are not assessed; continue language feedback.
 
 EDITS
-Return 0-8 edits, with NO minimum. kind=correction for a demonstrable error; suggestion for optional style.
+Return 0-8 edits, with NO minimum. Every edit must be kind=correction for a demonstrable error.
+Do not supply optional rewritten sentences. Put optional practice in sentenceInsights as an
+instruction or question, with kind=suggestion and betterVersion="". Never invent what the
+student felt, did, achieved, planned or intended, even as an optional illustration.
+For example, do not add 'which helped me stay on track' or 'I plan to do so later today'.
+Ask the student to supply any genuinely needed detail themselves.
 Use sentenceId to identify the entire original sentence and replacement for the minimally changed full sentence.
-One edit per sentence ID, even if it has several errors. Never return the original unchanged sentence as an edit. Combine only necessary fixes; do not add optional rewrites to a correction.
+One correction edit per sentence ID, even if it has several errors. Never return the original unchanged sentence as an edit. Combine only necessary fixes; do not add optional rewrites to a correction.
 Do not change meaning or add/remove arguments. A grammatical sentence may need no edit at all.
 Keep natural accurate phrasing. 'Help them continue practising' is not an error.
 Read the whole sentence before judging agreement: in 'The overarching theme of the two texts relates to
@@ -236,8 +241,8 @@ cars and transportation', theme is singular and relates is correct. Do not mista
 Preserve consistent American or British spelling; American spelling alone is not an error.
 
 SENTENCE INSIGHTS AND VOCABULARY
-Return 0-3 useful sentenceInsights with sentenceId, kind, issue, explanation, optional betterVersion
-(empty string if none), and an appropriate unit from the catalogue, or null if none fits.
+Return 0-3 useful sentenceInsights with sentenceId, kind, issue, explanation, betterVersion
+(empty string for suggestions; exact matching correction replacement for corrections), and an appropriate unit from the catalogue, or null if none fits.
 An insight may explain a strength as optional practice; never invent a mistake to fill the list.
 Use 0-4 vocabularySuggestions, each with sentenceId, exact original word/phrase, 1-3 contextual
 alternatives, and a short explanation of nuance. These are optional, not mandatory replacements.
@@ -352,6 +357,58 @@ export function ambiguousMorningIds(sentences) {
   return sentences.filter(s=>/\bthis morning\b/i.test(s.text) &&
     /(?:\b(?:have|has)|['’](?:ve|s))\s+(?:(?:already|just|never|not)\s+)?(?:had|been|\w+ed|done|seen|eaten|drunk|written|read)\b/i.test(s.text)).map(s=>s.id);
 }
+const MORNING_GUIDANCE = {
+  nl: {
+    title:'Controleer de tijd vóór je deze zin gebruikt',
+    explanation:'“This morning”: is de ochtend voorbij, of beschrijf je een afgerond moment, dan gebruik je de past simple. Voorbeeld: “This morning I had a coffee.” Dat is de vorm voor een afgesloten ochtend. De present perfect kan passen als de ochtend nog bezig is én er een verbinding met het heden is. Keur de oorspronkelijke zin daarom niet zonder die context goed.',
+    action:'Bepaal eerst of de ochtend voorbij is.'
+  },
+  es: {
+    title:'Comprueba el contexto temporal antes de usar esta frase',
+    explanation:'“This morning”: si la mañana ya ha terminado o describes un momento acabado, utiliza el past simple. Ejemplo: “This morning I had a coffee.” Esa es la forma para una mañana terminada. El present perfect puede encajar si la mañana sigue en curso y existe una conexión con el presente. Por tanto, no des por correcta la frase original sin comprobar ese contexto.',
+    action:'Determina primero si la mañana ya ha terminado.'
+  },
+  en: {
+    title:'Check the time context before using this sentence',
+    explanation:'“This morning”: if the morning is over, or you describe a finished occasion, use the past simple. Example: “This morning I had a coffee.” That is the form for a finished morning. The present perfect can fit if the morning is still in progress and there is a connection to the present. Do not approve the original sentence without checking that context.',
+    action:'First establish whether the morning is over.'
+  }
+};
+export function contextNotes(payload,sentences) {
+  const copy=MORNING_GUIDANCE[payload.feedbackLanguage] || MORNING_GUIDANCE.en;
+  return ambiguousMorningIds(sentences).map(sentenceId=>({sentenceId,example:sentences.find(s=>s.id===sentenceId).text,...copy}));
+}
+export function applyFeedbackPolicy(data,payload,sentences) {
+  if(!obj(data)) return data;
+  // Optional invented experiences must not be offered as ready-made rewrites.
+  // Keep concrete correction evidence and optional practice instructions.
+  if(Array.isArray(data.edits)) data.edits=data.edits.filter(e=>e?.kind!=='suggestion');
+  if(Array.isArray(data.sentenceInsights)) for(const insight of data.sentenceInsights)
+    if(insight?.kind==='suggestion') insight.betterVersion='';
+  const notes=contextNotes(payload,sentences),byId=new Map(notes.map(n=>[n.sentenceId,n]));
+  if(Array.isArray(data.tenseAnalysis)) for(const entry of data.tenseAnalysis) {
+    const note=byId.get(entry?.sentenceId);
+    if(note && ['correct','context_needed'].includes(entry.status)) {
+      entry.status='context_needed';entry.explanation=note.explanation;
+    }
+  }
+  const correctedIds=new Set((Array.isArray(data.edits)?data.edits:[]).filter(e=>e?.kind==='correction').map(e=>e.sentenceId));
+  if(Array.isArray(data.sentenceInsights)) for(const insight of data.sentenceInsights) {
+    const note=byId.get(insight?.sentenceId);
+    if(note && !correctedIds.has(insight.sentenceId)) Object.assign(insight,{kind:'suggestion',issue:note.title,explanation:note.explanation,betterVersion:'',unit:12});
+  }
+  const focusNote=byId.get(data.keyFocus?.evidenceId);
+  if(focusNote && !correctedIds.has(focusNote.sentenceId))
+    data.keyFocus={action:focusNote.action,explanation:focusNote.explanation,evidenceId:focusNote.sentenceId};
+  if(notes.length && sentences.filter(s=>s.text.length>=8).length===1) {
+    // In a one-sentence sample the entire feedback is about this ambiguity.
+    // Replace the model's blanket approval, rather than append a contradictory caveat.
+    data.feedback=notes[0].explanation;
+    data.keyFocus={action:notes[0].action,explanation:notes[0].explanation,evidenceId:notes[0].sentenceId};
+  }
+  return data;
+}
+
 function shape(properties) { return {type:'object',properties,required:Object.keys(properties),additionalProperties:false}; }
 const str = {type:'string'};
 const score = {type:['integer','null'],enum:[0,1,2,3,4,5,null]};
@@ -362,7 +419,7 @@ export function responseSchema(sentences) {
   const sentenceId={type:'string',enum:eligible.map(s=>s.id)};
   const id={$ref:'#/$defs/sentenceId'};
   const criterion=shape({score,reason:str,evidenceIds:arr(id,3)});
-  const edit=shape({kind,sentenceId:id,replacement:str,reason:str});
+  const edit=shape({kind:{type:'string',enum:['correction']},sentenceId:id,replacement:str,reason:str});
   // Keep structural constraints simple. Semantic correction rules are checked by
   // validate(), not by content-dependent regex branches in constrained generation.
   const schema=shape({
@@ -441,6 +498,16 @@ export function clauseFormIssue(clause) {
       return 'future perfect requires will/shall + have in this clause; future TIME alone does not make a verb future perfect. Label the actual verb form (e.g. visits = present simple).';
   }
   return '';
+}
+
+// A narrow, high-confidence boundary for the observed future time-clause case.
+// It does not treat indirect questions (e.g. "I do not know when I will arrive")
+// as future time clauses, and allows present perfect after "as soon as" too.
+export function futureTimeParts(sentence) {
+  const match=sentence.match(/^(.+?)\b(as soon as)\s+((?:I|you|he|she|it|we|they)\b.+)$/i);
+  if(!match || !/\b(?:will|shall|won['’]t)\b|['’]ll\b/i.test(match[1]) ||
+     /\b(?:will|shall|would)\b|['’]ll\b/i.test(match[3])) return null;
+  return {main:match[1].trim(),subordinate:(match[2]+' '+match[3]).trim()};
 }
 
 // Invalid core results must be repaired or rejected, not silently converted into an empty success.
@@ -549,6 +616,14 @@ export function validate(data, payload, sentences) {
           !sentence.text.includes(text(c.quote)) || !['present','past','future','uncertain'].includes(c.timeFrame) || !text(c.form)))
           issues.push(`${entry.sentenceId}: supply 1-4 clauses with exact original quotes, semantic timeFrames and form labels.`);
         else {
+          const timeParts=futureTimeParts(sentence.text);
+          if(timeParts && entry.status!=='correction') {
+            const mainClauses=clauses.filter(c=>timeParts.main.includes(text(c.quote)));
+            const timeClauses=clauses.filter(c=>timeParts.subordinate.includes(text(c.quote)));
+            if(!mainClauses.length || !timeClauses.length || clauses.some(c=>!mainClauses.includes(c)&&!timeClauses.includes(c)) ||
+               !timeClauses.some(c=>/^present\b/.test(formKey(c.form))))
+              issues.push(`${entry.sentenceId}: split the future main clause and the as soon as time clause. Name the actual present form in the time clause (know = present simple; have finished = present perfect), separately from future meaning.`);
+          }
           const missing=uncoveredClauseText(sentence.text,clauses);
           if(missing) issues.push(`${entry.sentenceId}: clause quotes omit part of the sentence: ${JSON.stringify(missing.slice(0,160))}. Include the missing clause/context without changing the original.`);
           const clauseForms=new Set(clauses.map(c=>formKey(c.form)));
@@ -590,6 +665,8 @@ export function validate(data, payload, sentences) {
 }
 
 export function toClient(data, payload, sentences, attempts) {
+  data=applyFeedbackPolicy(data,payload,sentences);
+  const notes=contextNotes(payload,sentences);
   const problems=validate(data,payload,sentences);
   if(problems.length) throw new Error(problems.join(' '));
   const byId=new Map(sentences.map(s=>[s.id,s]));
@@ -607,7 +684,7 @@ export function toClient(data, payload, sentences, attempts) {
   for(const v of data.vocabularySuggestions) vocabularySuggestions[text(v.original)]=v.alternatives.map(text);
   return {
     schemaVersion:2,version:VERSION,level:payload.level,inputWords:countWords(payload.essay),outputWords:countWords(nextDraft),
-    feedback:text(data.feedback),assessment:{taskSufficient:data.assessment.taskSufficient,criteria},
+    contextNotes:notes,feedback:[...new Set([...notes.map(n=>n.explanation),text(data.feedback)])].join('\n\n'),assessment:{taskSufficient:data.assessment.taskSufficient,criteria},
     keyFocus:{action:text(data.keyFocus.action),explanation:text(data.keyFocus.explanation),evidence:byId.get(data.keyFocus.evidenceId).text},
     edits,nextDraft,vocabularySuggestions,
     tenseAnalysis:data.tenseAnalysis.map(entry=>({
@@ -658,7 +735,7 @@ export default {
     const languageCheck=`Write every tenseAnalysis explanation in ${FEEDBACK_LANGUAGES[feedbackLanguage]}. Keep quotations and form labels in English.`;
     const protectedMorningIds=ambiguousMorningIds(sentences);
     const preservationRule=protectedMorningIds.length
-      ? ` Ambiguous morning sentence IDs: ${protectedMorningIds.join(', ')}. The text supplies no recognised closed-morning evidence. Preserve their present-perfect time reading. Other genuine errors may be corrected. Explain context_needed rather than inventing a tense fault; do not penalise a defensible tense or attach a correction insight to it.` : '';
+      ? ` Ambiguous morning sentence IDs: ${protectedMorningIds.join(', ')}. The text supplies no recognised closed-morning evidence. Preserve their present-perfect time reading. Other genuine errors may be corrected. Never approve these sentences without the finished/open-morning distinction and a past-simple example. Use context_needed rather than inventing a tense fault; do not penalise a defensible tense or attach a correction insight to it.` : '';
     const baseMessages=[{role:'system',content:SYSTEM+`
 FINAL REQUIREMENTS: ${languageCheck}${preservationRule}
 Use at most three evidenceIds per criterion. Correction insights must point to a real correction edit. Never invent an edit to satisfy this relationship.`},
@@ -719,7 +796,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
             let parsed;
             try {parsed=JSON.parse(raw);} catch {validationIssues=['Return valid JSON matching the schema.'];}
             if(parsed!==undefined) {
-              parsed=normaliseEvidence(normaliseEdits(parsed,sentences),sentences);
+              parsed=applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences);
               validationIssues=validate(parsed,payload,sentences);
               if(!validationIssues.length && parsed.sampleSuitable===false)
                 return fail('UNSUITABLE_SAMPLE','Please enter connected English writing suitable for an essay assessment.',422,origin);

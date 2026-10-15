@@ -335,7 +335,7 @@
   function resetResults() {
     latestAssessment = null;
     window.EC_LAST_RESPONSE = null;
-    for (const id of ["bandsCard", "vocabCard", "sentenceInsightsCard", "sentencesCard", "sentenceCard", "debugCard", "tenseAnalysisCard"])
+    for (const id of ["bandsCard", "vocabCard", "sentenceInsightsCard", "sentencesCard", "sentenceCard", "debugCard", "tenseAnalysisCard", "nextDraftContext"])
       if (document.getElementById(id)) document.getElementById(id).hidden = true;
     for (const id of ["key-area", "band-estimate"])
       if (document.getElementById(id)) document.getElementById(id).textContent = copy("pending");
@@ -346,6 +346,7 @@
     if (el.outWC) el.outWC.textContent = "0";
     if ($("#debugJson")) $("#debugJson").textContent = "";
     if ($("#tenseAnalysisCard")) $("#tenseAnalysisCard").replaceChildren();
+    if ($("#nextDraftContext")) $("#nextDraftContext").replaceChildren();
     refreshAdvancedVisibility();
   }
   function renderAssessment(response, level, essay) {

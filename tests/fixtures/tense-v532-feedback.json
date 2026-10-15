@@ -1,0 +1,197 @@
+{
+  "morning": {
+    "schemaVersion": 2,
+    "version": "2026-10-15-tense-context-v5.3.2",
+    "level": "C1",
+    "inputWords": 7,
+    "outputWords": 7,
+    "feedback": "Je zin is grammaticaal correct en voldoet aan de opdracht om je ochtend te beschrijven. Het gebruik van de present perfect is passend, omdat het de ervaring van het drinken van koffie in de ochtend benadrukt. Om je beschrijving te verbeteren, kun je meer details toevoegen over hoe je je voelde na het drinken van de koffie of wat je daarna van plan was. Dit zal je antwoord verder verrijken en de lezer meer context geven.",
+    "assessment": {
+      "taskSufficient": true,
+      "criteria": {
+        "content": {
+          "score": 4,
+          "reason": "The essay adequately describes a morning activity, fulfilling the task requirements.",
+          "evidence": [
+            "This morning I have had a coffee."
+          ]
+        },
+        "communicative": {
+          "score": 4,
+          "reason": "The writing effectively communicates the morning experience, though it could be expanded for depth.",
+          "evidence": [
+            "This morning I have had a coffee."
+          ]
+        },
+        "organisation": {
+          "score": 3,
+          "reason": "The sentence is clear, but additional sentences would improve the overall structure.",
+          "evidence": [
+            "This morning I have had a coffee."
+          ]
+        },
+        "language": {
+          "score": 4,
+          "reason": "The language is accurate and appropriate for the level, with correct use of present perfect.",
+          "evidence": [
+            "This morning I have had a coffee."
+          ]
+        }
+      }
+    },
+    "keyFocus": {
+      "action": "Expand your description with more details about your morning.",
+      "explanation": "Adding more context will enhance the reader's understanding and engagement.",
+      "evidence": "This morning I have had a coffee."
+    },
+    "edits": [],
+    "nextDraft": "This morning I have had a coffee.",
+    "vocabularySuggestions": {},
+    "tenseAnalysis": [
+      {
+        "sentenceId": "S1",
+        "example": "This morning I have had a coffee.",
+        "context": [],
+        "signals": [
+          "This morning"
+        ],
+        "timeFrame": "present",
+        "forms": [
+          "present perfect simple"
+        ],
+        "status": "correct",
+        "explanation": "De zin 'This morning I have had a coffee' gebruikt de present perfect om een ervaring in de ochtend te beschrijven. De tijdsaanduiding 'this morning' suggereert dat de ochtend nog niet voorbij is, waardoor de present perfect hier passend is.",
+        "clauses": [
+          {
+            "quote": "This morning I have had a coffee",
+            "timeFrame": "present",
+            "form": "present perfect simple"
+          }
+        ],
+        "correctedVersion": ""
+      }
+    ],
+    "vocabularyDetails": [],
+    "sentenceInsights": [
+      {
+        "kind": "suggestion",
+        "example": "This morning I have had a coffee.",
+        "issue": "Lack of detail",
+        "explanation": "The sentence provides a basic description but lacks additional context or feelings about the experience.",
+        "betterVersion": "This morning I have had a coffee, which made me feel energized and ready to start my day.",
+        "unit": 8,
+        "linkHint": "Study Unit 8"
+      }
+    ],
+    "sourceReview": [
+      {
+        "sourceQuote": "Describe your morning.",
+        "point": "The task requires a description of the morning activities.",
+        "coverage": "covered",
+        "essayEvidenceIds": [
+          "S1"
+        ],
+        "explanation": "The essay directly addresses the task by describing a specific morning activity."
+      }
+    ],
+    "validationWarnings": [],
+    "diagnostics": {
+      "attempts": 2,
+      "evidenceMethod": "server-resolved-sentence-ids",
+      "reviewCompleted": true,
+      "phaseAttempts": {
+        "assessment": 1,
+        "review": 1
+      },
+      "completions": [
+        {
+          "phase": "assessment",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 524
+        },
+        {
+          "phase": "review",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 524
+        }
+      ]
+    }
+  },
+  "nlTimeClause": {
+    "sentenceId": "S9",
+    "example": "I will call you as soon as I know our plans.",
+    "context": [],
+    "signals": [
+      "as soon as"
+    ],
+    "timeFrame": "future",
+    "forms": [
+      "future simple"
+    ],
+    "status": "correct",
+    "explanation": "'I will call you as soon as I know our plans' geeft een toekomstige actie aan die afhankelijk is van een andere toekomstige gebeurtenis.",
+    "clauses": [
+      {
+        "quote": "I will call you as soon as I know our plans",
+        "timeFrame": "future",
+        "form": "future simple"
+      }
+    ],
+    "correctedVersion": ""
+  },
+  "esEdits": [
+    {
+      "kind": "suggestion",
+      "from": "I usually study on Fridays, but this week I have been studying every day.",
+      "to": "I usually study on Fridays; however, this week I have been studying every day.",
+      "reason": "El uso de 'however' mejora la transición entre las ideas.",
+      "sentenceId": "S1"
+    },
+    {
+      "kind": "suggestion",
+      "from": "I have already written three essays today.",
+      "to": "I have already written three essays today, which has helped me stay on track.",
+      "reason": "Agregar una cláusula adicional proporciona más contexto sobre el progreso.",
+      "sentenceId": "S2"
+    },
+    {
+      "kind": "suggestion",
+      "from": "I have just finished my homework, but I have not checked it yet.",
+      "to": "I have just finished my homework, but I have not checked it yet; I plan to do so later today.",
+      "reason": "Incluir un plan para revisar la tarea añade claridad sobre los próximos pasos.",
+      "sentenceId": "S3"
+    },
+    {
+      "kind": "suggestion",
+      "from": "While I was reading yesterday, my tutor called me.",
+      "to": "While I was reading yesterday, my tutor called me, which interrupted my study session.",
+      "reason": "Explicar la interrupción añade contexto a la situación.",
+      "sentenceId": "S4"
+    },
+    {
+      "kind": "suggestion",
+      "from": "I had completed the first exercise before she arrived.",
+      "to": "I had completed the first exercise before she arrived, allowing me to focus on the next tasks.",
+      "reason": "Explicar el resultado de completar el ejercicio primero añade claridad.",
+      "sentenceId": "S5"
+    },
+    {
+      "kind": "suggestion",
+      "from": "By the time she visits tomorrow, I will have finished the project.",
+      "to": "By the time she visits tomorrow, I will have finished the project, ensuring I am prepared for our meeting.",
+      "reason": "Agregar una razón para terminar el proyecto mejora la conexión con el lector.",
+      "sentenceId": "S6"
+    },
+    {
+      "kind": "suggestion",
+      "from": "I have worked with her for five years, and I have been hoping to improve my writing.",
+      "to": "I have worked with her for five years, and I have been hoping to improve my writing skills during this time.",
+      "reason": "Especificar 'writing skills' proporciona más claridad sobre el objetivo.",
+      "sentenceId": "S8"
+    }
+  ]
+}

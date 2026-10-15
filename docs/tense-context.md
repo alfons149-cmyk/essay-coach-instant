@@ -142,3 +142,42 @@ Deploy `downloads/essaycoach-worker-v5.3.2.txt` to Cloudflare, then verify healt
 `2026-10-15-tense-context-v5.3.2`. Repeat the short NL, full NL, isolated morning and
 full ES tests. New live results are required to confirm the repair end to end;
 the synthetic replay and mock tests alone do not establish live quality.
+
+
+## v5.3.3: explicit morning guidance and restrained suggestions (15 October 2026)
+
+Live v5.3.2 completed all three test requests. Remaining failures were a blanket
+approval of the isolated morning sentence, a collapsed `as soon as I know` clause,
+and optional rewrites adding unsupported experiences/plans. The synthetic observed
+outputs are captured in `tests/fixtures/tense-v532-feedback.json`.
+
+- A deterministic EN/ES/NL feedback policy supplies the finished/open-morning
+  distinction and the explicit finished-morning example `This morning I had a coffee.`
+  Protected morning entries cannot retain `status=correct`. For a one-sentence sample,
+  fixed conditional guidance replaces blanket model feedback. Relevant practice
+  insights and key focus use the same guidance unless there is another actual correction.
+  This does not force a past-tense change or deduct marks when the time context is absent.
+- `contextNotes` is added to the v2 response and the same explanation precedes general
+  feedback. The frontend displays it directly above the corrected draft, and before
+  the original quote in context-needed tense entries. Notes are cleared with results;
+  all note content uses text nodes, never HTML. Existing clients still receive the
+  explanation in `feedback`, even without the new adjacent note box.
+- A narrow boundary check requires separate main/time-clause entries for future
+  main clauses followed by `as soon as` + a pronoun clause. It requires a present-form
+  label for that subordinate clause, allowing present perfect as well as simple.
+  This is deliberately not a general parser and excludes indirect questions.
+- The edits schema now allows corrections only. Optional rewritten sentences are
+  removed defensively, and suggestion insights have an empty `betterVersion`.
+  Optional practice instructions/questions and vocabulary alternatives remain.
+  This prevents the observed optional replacement sentences from being displayed;
+  it does not prove that every model-generated claim is grounded.
+- 83 backend regression checks pass, including captured outputs, all three feedback
+  languages, closed-morning corrections, and supported future time clauses.
+  `node tests/tense-feedback.test.mjs` checks rendering order, contextual notes, stale
+  state and text-only insertion using a minimal DOM harness. The mobile build passes.
+  A full visual browser check was not performed: local Chromium installation failed.
+  Real AI calls must be repeated after the new Worker is deployed.
+
+The website changes are published through GitHub Pages. Deploy the complete standalone
+`downloads/essaycoach-worker-v5.3.3.txt` into the existing Cloudflare Worker to activate
+server policy and `contextNotes`. No key or model change is required.

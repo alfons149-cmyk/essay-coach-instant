@@ -36,7 +36,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v5.3.2 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.3.2');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v5.3.3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.3.3');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -212,7 +212,7 @@ await test('clause evidence must come from the actual sentence',()=>{
  f.d.tenseAnalysis[0].clauses[0].quote='I have been knowing her';
  assert.match(validate(f.d,f.p,f.ss).join(' '),/exact original quotes/);
 });
-console.log(`${checks} checks passed; model responses mocked. Live v5.3.2 still requires deployment.`);
+console.log(`${checks} checks passed; model responses mocked. Live v5.3.3 still requires deployment.`);
 
 
 const {normaliseEvidence,ambiguousMorningIds}=await import('../apps/worker/src/worker.js');
@@ -364,4 +364,64 @@ await test('overall deadline limits calls even with an increased output budget',
   assert.equal(result.diagnostics.attempts,2);
  } finally {Date.now=originalNow;}
 });
-console.log(`${checks} checks passed. Model calls mocked; captured live failure replayed. v5.3.2 still needs live deployment.`);
+console.log(`${checks} checks passed. Model calls mocked; captured live failure replayed. v5.3.3 still needs live deployment.`);
+
+const {applyFeedbackPolicy,contextNotes,futureTimeParts}=await import('../apps/worker/src/worker.js');
+const captured532=JSON.parse(await readFile(new URL('./fixtures/tense-v532-feedback.json',import.meta.url),'utf8'));
+function morningFixture(language='nl') {
+ const original=captured532.morning;
+ const f=tenseFixture(original.nextDraft,original.tenseAnalysis.map(e=>({...structuredClone(e),contextIds:[]})));
+ f.p.feedbackLanguage=language;f.d.feedback=original.feedback;return f;
+}
+for(const language of ['nl','es','en']) await test(`morning approval is replaced by conditional guidance in ${language}`,()=>{
+ const f=morningFixture(language),beforeScore=f.d.assessment.criteria.language.score;
+ const r=toClient(f.d,f.p,f.ss,2);
+ assert.equal(r.tenseAnalysis[0].status,'context_needed');assert(r.contextNotes.length);
+ assert.equal(r.tenseAnalysis[0].explanation,r.contextNotes[0].explanation);
+ assert(r.feedback.includes('This morning I had a coffee.'));assert(!r.feedback.includes('Je zin is grammaticaal correct'));
+ assert.equal(r.nextDraft,f.p.essay);assert.equal(r.edits.length,0);assert.equal(r.assessment.criteria.language.score,beforeScore);
+ assert.equal(r.contextNotes[0].example,f.p.essay);
+});
+await test('v5.3.2 morning response completes with deterministic guidance on both passes',async()=>{
+ const f=morningFixture();calls=0;
+ globalThis.fetch=async()=>{calls++;return completion(structuredClone(f.d));};
+ const response=await worker.fetch(request(f.p),env),result=await response.json();
+ assert.equal(response.status,200);assert.equal(calls,2);assert.equal(result.tenseAnalysis[0].status,'context_needed');
+ assert.equal(result.feedback,result.contextNotes[0].explanation);assert.equal(result.diagnostics.reviewCompleted,true);
+});
+await test('finished morning allows the evidenced past correction without an ambiguity note',()=>{
+ const essay='This morning I have had a coffee. It is now evening.';
+ const f=tenseFixture(essay,[entry('S1',{timeFrame:'past',forms:['past simple'],status:'correction'}),entry('S2')],
+ [{kind:'correction',sentenceId:'S1',replacement:'This morning I had a coffee.',reason:'The following sentence explicitly closes the morning.'}]);
+ const r=toClient(f.d,f.p,f.ss,2);assert.deepEqual(r.contextNotes,[]);assert.equal(r.nextDraft,'This morning I had a coffee. It is now evening.');
+});
+await test('context note survives when a long text does not select the morning as a teaching entry',()=>{
+ const f=tenseFixture('I live in Spain. This morning I have had a coffee.',[entry('S1'),entry('S2',{forms:['present perfect simple']})]);
+ const r=toClient(f.d,f.p,f.ss,2);assert.equal(r.contextNotes[0].sentenceId,'S2');assert(r.feedback.startsWith(r.contextNotes[0].explanation));
+ // Notes are independent of the model's selected analysis slots.
+ f.d.tenseAnalysis=[];applyFeedbackPolicy(f.d,f.p,f.ss);assert.equal(contextNotes(f.p,f.ss).length,1);
+});
+await test('captured full-sentence future label is rejected for as soon as I know',()=>{
+ const e={...structuredClone(captured532.nlTimeClause),sentenceId:'S1',contextIds:[]};
+ const f=tenseFixture(e.example,[e]);assert(validate(f.d,f.p,f.ss).some(s=>s.includes('split the future main clause')));
+ e.forms=['future simple','present simple'];e.clauses=[
+  {quote:'I will call you',timeFrame:'future',form:'future simple'},
+  {quote:'as soon as I know our plans.',timeFrame:'future',form:'present simple'}
+ ];
+ assert.deepEqual(validate(f.d,f.p,f.ss),[]);assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,f.p.essay);
+});
+await test('future time clause allows present perfect and excludes indirect questions',()=>{
+ const f=tenseFixture('I will call as soon as I have finished.',[entry('S1',{timeFrame:'future',forms:['future simple','present perfect simple'],clauses:[
+  {quote:'I will call',timeFrame:'future',form:'future simple'},
+  {quote:'as soon as I have finished.',timeFrame:'future',form:'present perfect simple'}
+ ]})]);
+ assert.deepEqual(validate(f.d,f.p,f.ss),[]);assert.equal(futureTimeParts('I do not know when I will arrive.'),null);
+});
+await test('captured invented optional rewrites are not offered as replacement sentences',()=>{
+ const f=liveFixture(true);f.d.edits=structuredClone(captured532.esEdits);
+ f.d.sentenceInsights=[{kind:'suggestion',sentenceId:'S2',issue:'Practice',explanation:'What details can you support from your own experience?',betterVersion:'I have already written three essays today, which has helped me stay on track.',unit:9}];
+ const r=toClient(f.d,f.p,f.ss,2);assert.deepEqual(r.edits,[]);assert.equal(r.sentenceInsights[0].betterVersion,'');
+ assert.equal(r.nextDraft,f.p.essay);assert.equal(r.sentenceInsights[0].explanation,f.d.sentenceInsights[0].explanation);
+ assert.deepEqual(responseSchema(f.ss).properties.edits.items.properties.kind.enum,['correction']);
+});
+console.log(`${checks} checks passed. Captured v5.3.2 feedback regressions covered; model calls mocked.`);

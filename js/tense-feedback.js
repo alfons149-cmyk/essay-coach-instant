@@ -32,7 +32,24 @@
   const FRAMES = ['present', 'past', 'future', 'mixed', 'uncertain'];
   const STATUSES = ['correct', 'correction', 'context_needed'];
 
+  function renderContextNotes(response, essay) {
+    const box=document.getElementById('nextDraftContext');
+    if(!box) return;
+    box.replaceChildren();box.hidden=true;
+    const notes=response?.schemaVersion===2 && Array.isArray(response.contextNotes) ? response.contextNotes : [];
+    const seen=new Set();
+    for(const note of notes) {
+      if(!note || typeof note.example!=='string' || !note.example || !essay.includes(note.example) ||
+         typeof note.title!=='string' || typeof note.explanation!=='string' || !note.explanation.trim() || seen.has(note.explanation)) continue;
+      const title=document.createElement('strong'),p=document.createElement('p');
+      title.textContent=note.title;p.textContent=note.explanation;box.append(title,p);
+      seen.add(note.explanation);
+    }
+    box.hidden=!seen.size;
+  }
+
   function render(card, response, essay, language = 'en') {
+    renderContextNotes(response,typeof essay==='string'?essay:'');
     if (!card) return;
     card.replaceChildren();
     card.hidden = true;
@@ -87,10 +104,12 @@
       const signals = entry.signals.filter(s => sources.some(t => t.includes(s))).slice(0,4);
       const badges = node('p', '', 'tense-badges');
       badges.append(node('strong', copy[entry.timeFrame], 'tense-frame'), node('span', copy[entry.status]));
-      li.append(badges, quote(entry.example, signals));
+      li.append(badges);
+      if(entry.status==='context_needed') li.append(node('p',entry.explanation,'ec-context-warning'));
+      li.append(quote(entry.example, signals));
       li.append(node('p', signals.length ? `${copy.signals}: ${signals.join(' · ')}` : copy.implicit));
       li.append(node('p', `${copy.forms}: ${entry.forms.slice(0,4).join(' · ')}`, 'tense-forms'));
-      li.append(node('p', entry.explanation));
+      if(entry.status!=='context_needed') li.append(node('p', entry.explanation));
       if (Array.isArray(entry.clauses)) {
         const clauses=entry.clauses.filter(c=>c && typeof c.quote==='string' && c.quote && entry.example.includes(c.quote) &&
           ['present','past','future','uncertain'].includes(c.timeFrame) && typeof c.form==='string').slice(0,4);
