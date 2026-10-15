@@ -1,4 +1,37 @@
-> Current behaviour: v5.4 uses focused feedback and server-generated brief signal reminders. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+> Current behaviour: v5.4.1 uses focused feedback, brief fixed signal reminders and narrow correction-preservation checks. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
+## v5.4.1: block the two observed false-correction families
+
+Live v5.4 returned successful HTTP responses but incorrectly replaced past `read` with
+`studied`, and repeated `have been studying` with `have studied`. Both passed the model's
+second review. Request success and review completion are not evidence of grammatical accuracy.
+
+- Both model passes now explicitly distinguish a necessary correction from an alternative
+  interpretation. Past `read` retains its spelling; repeated activity in an open period can
+  use the present perfect continuous. Do not invent completion or penalise a valid time choice.
+- `correctionPreservations` recognises narrow, defensible verb phrases in the ORIGINAL input:
+  pronoun + `read` with a reading object and a local past-time adjunct; correctly agreed present
+  perfect continuous with selected dynamic verbs, an open-period expression and repeated activity.
+  It handles common contractions, ignores explicitly closed times in the same recognised clause,
+  and excludes stative verbs. It is neither an exhaustive tense recogniser nor a grammar parser.
+- The model receives those preservation constraints from the first call. The server also checks
+  them independently before accepting either pass and again before building `nextDraft`.
+  Unsupported changes trigger reassessment of the FULL answer, including dependent criticism,
+  score reasons and insights. The server does not silently delete an edit while retaining its
+  explanation. If bounded retries fail, return an explicit error, never the rejected draft.
+- Only the recognised verb phrase is protected. Other errors in the sentence remain correctable.
+  The whole sentence is not declared correct. Spelling errors, subject disagreement and closed-time
+  problems outside the recogniser still go through the existing assessment and review.
+- No extra routine model call, model change, API credential change or frontend change.
+
+Verification: `node tests/worker.test.mjs` passes 68 checks, including captured v5.4 edits,
+the real `eat` → `ate` correction, variants, contractions, other errors in protected sentences,
+assessment/review retries and refusal to return persistent false corrections. Model calls in
+these tests are mocked; they do not establish live model accuracy. Rerun the original NL and ES
+requests and the ambiguous morning request after deploying the new Worker. The preservation
+rules do not catch every possible false correction or unsupported prose claim.
+
+Standalone deployment file: `downloads/essaycoach-worker-v5.4.1.txt` (identical to Worker source).
 
 # Time frames and signal words
 

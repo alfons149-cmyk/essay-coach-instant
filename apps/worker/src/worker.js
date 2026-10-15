@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.4 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.4.1 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-15-tense-context-v5.4";
+const VERSION = "2026-10-15-tense-context-v5.4.1";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const CATEGORIES = ["content", "communicative", "organisation", "language"];
 const UNITS = {
@@ -85,6 +85,13 @@ Only explain a tense when it is needed to justify a concrete correction or conte
 Keep coordinated past actions consistent: 'I went home and eat' -> 'I went home and ate'.
 Preserve legitimate mixed tenses, future arrangements and present forms in future time clauses:
 'I will call as soon as I know' and 'Tomorrow we are visiting friends' can be correct.
+The past simple and past participle of 'read' are both spelled 'read'. 'Studied' belongs
+to a different verb and is not a tense correction for 'read'. A future plan can explain
+an earlier action: 'I will be taking an exam later today, so I read my textbook last night.'
+Present perfect continuous can describe repeated activity during an open period:
+'I usually study on Fridays, but this week I have been studying every day.' Keep it.
+Present perfect simple is a possible different emphasis, not a necessary correction.
+Never invent a completed-action interpretation to justify removing 'been' and changing -ing.
 For/since do not automatically require continuous; 'I have known her since 2010' is correct.
 Today does not automatically require present perfect. 'This morning' depends on whether the
 morning/event is finished. If finished, use past simple; if still open with a present connection,
@@ -179,6 +186,10 @@ Make course units match the precise teaching point: complete clauses 1, paragrap
 examples 9, counterarguments 15, source synthesis/task fulfilment 19, refinement 20.
 Check corrections against time context without producing a clause analysis. Preserve valid
 mixed tenses, stative simple forms and future time clauses. Keep the requested feedback language.
+For each proposed correction, first check whether the ORIGINAL is already grammatical in
+the supplied context. If it is, remove the edit and every dependent error claim or penalty.
+Do not assume the first pass identified a real error. In particular, past 'read' remains
+'read', and repeated activity in an open period can use present perfect continuous.
 Do not add optional rewritten sentences or invented details. Remove unsupported criticism.
 Return the FULL corrected assessment using the same schema. Preserve supported findings.
 A second pass is a quality check, not proof of accuracy; do not claim examiner certification.`;
@@ -370,6 +381,50 @@ export function normaliseEdits(data, sentences) {
   return data;
 }
 
+// Narrow preservation checks for verified false-positive families, NOT a grammar parser.
+// They never generate corrections or certify a complete sentence. A blocked edit must
+// be reassessed with its dependent feedback; silently dropping it would leave false claims.
+const preservationText = value => value.toLowerCase().replace(/’/g,"'")
+  .replace(/\b(i|you|we|they)'ve\b/g,'$1 have').replace(/\b(he|she|it)'s\s+been\b/g,'$1 has been')
+  .replace(/\s+/g,' ').trim();
+export function correctionPreservations(sentences) {
+  const result=[];
+  for(const sentence of sentences) {
+    const original=preservationText(sentence.text);
+    // A local past-time adjunct and a normal reading object support past 'read'.
+    const reading=/\b((?:i|you|we|they|he|she) read) (?:my |your |our |their |his |her |a |an |the )?(?:textbooks?|books?|newspapers?|articles?|novels?|reports?|emails?|letters?) (?:last (?:night|week|month|year)|yesterday|(?:\d+|one|two|three|four|five|six|seven) (?:days?|weeks?|months?|years?) ago)\b/g;
+    for(const match of original.matchAll(reading)) result.push({sentenceId:sentence.id,span:match[1],
+      rule:'Past read is spelled read. Do not replace this reading action with studied or another verb as a tense correction.'});
+    // Split known clause boundaries so an earlier, separate past action does not
+    // erase an open-period reading. Deliberately exclude stative verbs and closed times.
+    for(const clause of original.split(/\b(?:but|and|so|because|while|when|before|after|although)\b|[;.!?]/)) {
+      if(!/\b(?:this (?:week|month|year)|recently|lately)\b/.test(clause) ||
+         !/\b(?:every (?:day|week|month|morning|evening)|daily|regularly)\b/.test(clause) ||
+         /\b(?:yesterday|ago|last (?:night|week|month|year)|in \d{4}|until|no longer)\b/.test(clause)) continue;
+      const activity=/\b(?:(?:i|you|we|they) have|(?:he|she|it) has) (?:not )?been (?:studying|working|practising|practicing|training|learning|reading|writing)\b/g;
+      for(const match of clause.matchAll(activity)) result.push({sentenceId:sentence.id,span:match[0],
+        rule:'Repeated activity in this open period permits present perfect continuous. Preserve this verb phrase; do not invent completion to force present perfect simple.'});
+    }
+  }
+  return result;
+}
+
+function preservationIssues(edits,sentences) {
+  const rules=correctionPreservations(sentences),issues=[];
+  for(const edit of edits) {
+    const replacement=preservationText(text(edit.replacement));
+    const required=new Map();
+    for(const rule of rules.filter(r=>r.sentenceId===edit.sentenceId)) {
+      const count=(required.get(rule.span)||0)+1;required.set(rule.span,count);
+      // Word boundaries and counts prevent an unrelated duplicate from satisfying a lock.
+      const escaped=rule.span.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      if([...replacement.matchAll(new RegExp('\\b'+escaped+'\\b','g'))].length<count)
+        issues.push(`${edit.sentenceId}: unsupported correction of protected phrase "${rule.span}". ${rule.rule} Reassess the original; remove the unsupported edit and dependent criticism, score penalties and insights. Other demonstrable errors outside this phrase may still be corrected.`);
+    }
+  }
+  return issues;
+}
+
 // Invalid core results must be repaired or rejected, not silently converted into an empty success.
 export function validate(data, payload, sentences) {
   const issues=[];
@@ -439,6 +494,7 @@ export function validate(data, payload, sentences) {
       issues.push('Source review needs an exact TASK quotation, valid coverage and essay IDs for any claimed coverage or distortion.');
   }
   const corrections=Array.isArray(data.edits) ? data.edits.filter(e=>e.kind==='correction') : [];
+  issues.push(...preservationIssues(corrections,sentences));
   const protectedMorningIds=new Set(ambiguousMorningIds(sentences));
   for(const edit of corrections) {
     if(protectedMorningIds.has(edit.sentenceId) && !new RegExp(PERFECT_AUX_PATTERN).test(text(edit.replacement)))
@@ -521,9 +577,11 @@ export default {
       ? ` Ambiguous morning sentence IDs: ${protectedMorningIds.join(', ')}. The text supplies no recognised closed-morning evidence. Preserve their present-perfect time reading. Other genuine errors may be corrected. Never approve these sentences without the finished/open-morning distinction and a past-simple example. Explain the missing context rather than inventing a tense fault; do not penalise a defensible tense or attach a correction insight to it.` : '';
     const baseMessages=[{role:'system',content:SYSTEM+`
 FINAL REQUIREMENTS: ${languageCheck}${preservationRule}
+The supplied correctionPreservations identify narrowly checked verb phrases. Preserve these phrases in edits; they do not certify the rest of a sentence. Do not criticise or penalise their protected tense use.
 Use at most three evidenceIds per criterion. Correction insights must point to a real correction edit. Never invent an edit to satisfy this relationship.`},
       {role:'user',content:JSON.stringify({...payload,
         sentences:sentences.map(({id,text})=>({id,text,detectedSignals:detectSignals(text)})),
+        correctionPreservations:correctionPreservations(sentences),
         ambiguousMorningIds:protectedMorningIds})}];
     // Usually two calls. Repairs have their own bounded budgets, so a valid third
     // assessment always gets a review. Every network call shares one overall deadline.

@@ -36,7 +36,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v5.4 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.4');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v5.4.1 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.4.1');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -217,3 +217,96 @@ await test('captured invented optional rewrites remain excluded',()=>{
  const result=toClient(f.d,f.p,f.ss,2);assert.deepEqual(result.edits,[]);assert.equal(result.sentenceInsights[0].betterVersion,'');assert.equal(result.nextDraft,f.p.essay);
 });
 console.log(`${checks} focused-mode and core checks passed; model calls mocked.`);
+
+const {readFile}=await import('node:fs/promises');
+const {correctionPreservations}=await import('../apps/worker/src/worker.js');
+const falseCorrections=JSON.parse(await readFile(new URL('./fixtures/tense-v54-false-corrections.json',import.meta.url),'utf8'));
+for(const captured of falseCorrections) await test(`captured v5.4 ${captured.feedbackLanguage} edit is ${captured.expected}ed: ${captured.from}`,()=>{
+ const f=focusedFixture(captured.from,[{kind:'correction',sentenceId:'S1',replacement:captured.to,reason:captured.reason}],captured.feedbackLanguage);
+ const issues=validate(f.d,f.p,f.ss);
+ if(captured.expected==='reject') {
+  assert(issues.some(s=>s.includes('unsupported correction of protected phrase')));
+  assert.throws(()=>toClient(f.d,f.p,f.ss,2),/unsupported correction/);
+ } else {
+  assert.deepEqual(issues,[]);assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,captured.to);
+ }
+});
+await test('protection generalises to past reading and repeated dynamic activity, including contractions',()=>{
+ for(const [original,replacement] of [
+  ['She read the newspaper yesterday.','She studied the newspaper yesterday.'],
+  ['They read their books three days ago.','They had read their books three days ago.'],
+  ["This month we've been working every evening.",'This month we have worked every evening.'],
+  ['This week she’s been practising daily.','This week she has practised daily.']
+ ]) {
+  const f=focusedFixture(original,[{kind:'correction',sentenceId:'S1',replacement,reason:'Unsupported tense preference.'}]);
+  assert(validate(f.d,f.p,f.ss).some(s=>s.includes('protected phrase')),original);
+ }
+});
+await test('guards do not lock stative errors, misspellings, wrong agreement or explicitly closed periods',()=>{
+ for(const [original,replacement] of [
+  ['This week I have been knowing the answer every day.','This week I have known the answer every day.'],
+  ['I readed my book last night.','I read my book last night.'],
+  ['This week she have been studying every day.','This week she has been studying every day.'],
+  ['Last year I have been working every day, unlike this week.','Last year I worked every day, unlike this week.']
+ ]) {
+  const f=focusedFixture(original,[{kind:'correction',sentenceId:'S1',replacement,reason:'Repair a demonstrable error.'}]);
+  assert.deepEqual(correctionPreservations(f.ss),[],original);assert.deepEqual(validate(f.d,f.p,f.ss),[]);
+ }
+});
+await test('other errors in the same sentence can be fixed without changing protected verbs',()=>{
+ for(const [original,replacement] of [
+  ['I read a books last night.','I read a book last night.'],
+  ['This week I have been studying every day, but my friend study only on Fridays.','This week I have been studying every day, but my friend studies only on Fridays.'],
+  ["This week I've been studying every day, but he study less.",'This week I have been studying every day, but he studies less.']
+ ]) {
+  const f=focusedFixture(original,[{kind:'correction',sentenceId:'S1',replacement,reason:'Correct agreement outside the valid verb phrase.'}]);
+  assert(correctionPreservations(f.ss).length);assert.deepEqual(validate(f.d,f.p,f.ss),[]);
+  assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,replacement);
+ }
+});
+await test('two protected occurrences cannot be satisfied by leaving only one unchanged',()=>{
+ const f=focusedFixture('I read my book yesterday and I read my textbook last night.',[{kind:'correction',sentenceId:'S1',replacement:'I read my book yesterday and I studied my textbook last night.',reason:'False tense correction.'}]);
+ assert(validate(f.d,f.p,f.ss).some(s=>s.includes('protected phrase')));
+});
+
+function preservationFixture(language='nl') {
+ const essay='I will be taking an exam later today, so I read my textbook last night. I usually study on Fridays, but this week I have been studying every day. Three days ago, I went home and eat a sandwich.';
+ const f=focusedFixture(essay,[],language);
+ f.d.edits=[{kind:'correction',sentenceId:'S3',replacement:'Three days ago, I went home and ate a sandwich.',reason:'Use ate for the coordinated past action.'}];
+ const bad=structuredClone(f.d);
+ bad.edits.unshift(...falseCorrections.filter(e=>e.expected==='reject').map((e,index)=>({kind:'correction',sentenceId:`S${index+1}`,replacement:e.to,reason:e.reason})));
+ bad.feedback="The past of read is studied. The continuous is unnecessary.";
+ bad.assessment.criteria.language.reason="Read must be changed to studied.";
+ bad.sentenceInsights=[{kind:'correction',sentenceId:'S1',issue:'False tense claim',explanation:'The past of read is studied.',betterVersion:bad.edits[0].replacement,unit:12}];
+ f.d.feedback='The two original time choices are preserved. Correct eat to ate.';
+ f.d.assessment.criteria.language.reason='Correct the coordinated past action: eat to ate.';
+ return {...f,bad};
+}
+for(const language of ['nl','es','en']) await test(`reassessment removes both false corrections and dependent criticism in ${language}`,async()=>{
+ const f=preservationFixture(language),bodies=[];
+ globalThis.fetch=async(_,options)=>{bodies.push(JSON.parse(options.body));return completion(structuredClone(bodies.length===1?f.bad:f.d));};
+ const response=await worker.fetch(request(f.p),env),result=await response.json();
+ assert.equal(response.status,200);assert.equal(bodies.length,3);assert.equal(result.diagnostics.reviewCompleted,true);
+ assert.equal(result.nextDraft,f.p.essay.replace('and eat','and ate'));assert.equal(result.edits.length,1);
+ assert.equal(result.assessment.criteria.language.reason,f.d.assessment.criteria.language.reason);
+ assert(!JSON.stringify(result).includes('studied'));assert.deepEqual(result.sentenceInsights,[]);
+ assert.match(bodies[1].messages.at(-1).content,/dependent criticism, score penalties and insights/);
+ const input=JSON.parse(bodies[0].messages.find(m=>m.role==='user').content);
+ assert.equal(input.correctionPreservations.length,2);assert.equal(input.essay,f.p.essay);
+});
+await test('review cannot reintroduce either false correction; its repair preserves the real error fix',async()=>{
+ const f=preservationFixture();calls=0;
+ globalThis.fetch=async()=>completion(structuredClone(++calls===2?f.bad:f.d));
+ const response=await worker.fetch(request(f.p),env),result=await response.json();
+ assert.equal(response.status,200);assert.deepEqual(result.diagnostics.phaseAttempts,{assessment:1,review:2});
+ assert.equal(result.nextDraft,f.p.essay.replace('and eat','and ate'));assert.equal(result.edits.length,1);
+});
+for(const phase of ['assessment','review']) await test(`persistent false corrections during ${phase} never reach the corrected draft`,async()=>{
+ const f=preservationFixture();calls=0;
+ globalThis.fetch=async()=>completion(structuredClone(++calls===1&&phase==='review'?f.d:f.bad));
+ const response=await worker.fetch(request(f.p),env),result=await response.json();
+ assert.equal(response.status,502);assert.equal(calls,3);assert.equal(result.code,'ASSESSMENT_INCOMPLETE');
+ assert.equal(result.diagnostics.phase,phase);assert.equal(result.diagnostics.reviewCompleted,false);
+ assert(result.diagnostics.issues.some(s=>s.includes('protected phrase')));assert(!Object.hasOwn(result,'nextDraft'));
+});
+console.log(`${checks} core and correction-preservation checks passed; model calls mocked.`);

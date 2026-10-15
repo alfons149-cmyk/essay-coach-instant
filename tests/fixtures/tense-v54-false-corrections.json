@@ -1,0 +1,29 @@
+[
+  {
+    "feedbackLanguage": "nl",
+    "expected": "allow",
+    "kind": "correction",
+    "from": "Three days ago, I went home and eat a sandwich.",
+    "to": "Three days ago, I went home and ate a sandwich.",
+    "reason": "Het werkwoord 'eat' moet in de verleden tijd 'ate' zijn.",
+    "sentenceId": "S3"
+  },
+  {
+    "feedbackLanguage": "nl",
+    "expected": "reject",
+    "kind": "correction",
+    "from": "I will be taking an exam later today, so I read my textbook last night.",
+    "to": "I will be taking an exam later today, so I studied my textbook last night.",
+    "reason": "De verleden tijd van 'read' is 'studied' in deze context.",
+    "sentenceId": "S6"
+  },
+  {
+    "feedbackLanguage": "es",
+    "expected": "reject",
+    "kind": "correction",
+    "from": "I usually study on Fridays, but this week I have been studying every day.",
+    "to": "I usually study on Fridays, but this week I have studied every day.",
+    "reason": "El tiempo verbal 'have been studying' no es necesario aquí; 'have studied' es más apropiado para indicar una acción completada.",
+    "sentenceId": "S1"
+  }
+]
