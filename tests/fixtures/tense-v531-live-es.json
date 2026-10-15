@@ -1,0 +1,226 @@
+{
+  "request": {
+    "level": "C1",
+    "feedbackLanguage": "es",
+    "task": "Describe your study routine, recent progress and plans for finishing a project.",
+    "essay": "I usually study on Fridays, but this week I have been studying every day. I have already written three essays today. I have just finished my homework, but I have not checked it yet. While I was reading yesterday, my tutor called me. I had completed the first exercise before she arrived. By the time she visits tomorrow, I will have finished the project. I have known my tutor since 2010. I have worked with her for five years, and I have been hoping to improve my writing."
+  },
+  "tenseAnalysis": [
+    {
+      "sentenceId": "S1",
+      "example": "I usually study on Fridays, but this week I have been studying every day.",
+      "context": [],
+      "signals": [
+        "usually",
+        "on Fridays",
+        "this week",
+        "every day"
+      ],
+      "timeFrame": "present",
+      "forms": [
+        "present simple",
+        "present perfect continuous"
+      ],
+      "status": "correct",
+      "explanation": "La frase comienza con 'I usually study', que establece un marco de tiempo presente para la rutina habitual.",
+      "clauses": [
+        {
+          "quote": "I usually study on Fridays",
+          "timeFrame": "present",
+          "form": "present simple"
+        },
+        {
+          "quote": "this week I have been studying every day",
+          "timeFrame": "present",
+          "form": "present perfect continuous"
+        }
+      ],
+      "correctedVersion": ""
+    },
+    {
+      "sentenceId": "S2",
+      "example": "I have already written three essays today.",
+      "context": [],
+      "signals": [
+        "already",
+        "today"
+      ],
+      "timeFrame": "present",
+      "forms": [
+        "present perfect"
+      ],
+      "status": "correct",
+      "explanation": "El uso de 'I have already written' indica una acción completada en el presente, relevante para el día actual.",
+      "clauses": [
+        {
+          "quote": "I have already written three essays today",
+          "timeFrame": "present",
+          "form": "present perfect"
+        }
+      ],
+      "correctedVersion": ""
+    },
+    {
+      "sentenceId": "S3",
+      "example": "I have just finished my homework, but I have not checked it yet.",
+      "context": [],
+      "signals": [
+        "just",
+        "yet"
+      ],
+      "timeFrame": "present",
+      "forms": [
+        "present perfect"
+      ],
+      "status": "correct",
+      "explanation": "La frase 'I have just finished my homework' muestra una acción reciente completada, mientras que 'I have not checked it yet' indica una acción que aún no ha ocurrido.",
+      "clauses": [
+        {
+          "quote": "I have just finished my homework",
+          "timeFrame": "present",
+          "form": "present perfect"
+        },
+        {
+          "quote": "I have not checked it yet",
+          "timeFrame": "present",
+          "form": "present perfect"
+        }
+      ],
+      "correctedVersion": ""
+    },
+    {
+      "sentenceId": "S4",
+      "example": "While I was reading yesterday, my tutor called me.",
+      "context": [],
+      "signals": [
+        "While",
+        "yesterday"
+      ],
+      "timeFrame": "past",
+      "forms": [
+        "past continuous",
+        "past simple"
+      ],
+      "status": "correct",
+      "explanation": "La frase 'While I was reading yesterday' establece un contexto pasado para la acción de leer, y 'my tutor called me' es una acción que ocurrió en ese contexto.",
+      "clauses": [
+        {
+          "quote": "While I was reading yesterday",
+          "timeFrame": "past",
+          "form": "past continuous"
+        },
+        {
+          "quote": "my tutor called me",
+          "timeFrame": "past",
+          "form": "past simple"
+        }
+      ],
+      "correctedVersion": ""
+    },
+    {
+      "sentenceId": "S5",
+      "example": "I had completed the first exercise before she arrived.",
+      "context": [],
+      "signals": [
+        "before"
+      ],
+      "timeFrame": "past",
+      "forms": [
+        "past perfect",
+        "past simple"
+      ],
+      "status": "correct",
+      "explanation": "La frase 'I had completed the first exercise before she arrived' muestra una acción completada antes de otra acción en el pasado.",
+      "clauses": [
+        {
+          "quote": "I had completed the first exercise",
+          "timeFrame": "past",
+          "form": "past perfect"
+        },
+        {
+          "quote": "before she arrived",
+          "timeFrame": "past",
+          "form": "past simple"
+        }
+      ],
+      "correctedVersion": ""
+    },
+    {
+      "sentenceId": "S6",
+      "example": "By the time she visits tomorrow, I will have finished the project.",
+      "context": [],
+      "signals": [
+        "By the time",
+        "tomorrow"
+      ],
+      "timeFrame": "future",
+      "forms": [
+        "future perfect"
+      ],
+      "status": "correct",
+      "explanation": "La frase 'By the time she visits tomorrow, I will have finished the project' establece un marco de tiempo futuro para la finalización del proyecto.",
+      "clauses": [
+        {
+          "quote": "By the time she visits tomorrow",
+          "timeFrame": "future",
+          "form": "future perfect"
+        }
+      ],
+      "correctedVersion": ""
+    },
+    {
+      "sentenceId": "S7",
+      "example": "I have known my tutor since 2010.",
+      "context": [],
+      "signals": [
+        "since"
+      ],
+      "timeFrame": "present",
+      "forms": [
+        "present perfect"
+      ],
+      "status": "correct",
+      "explanation": "La frase 'I have known my tutor since 2010' indica una acción que comenzó en el pasado y continúa en el presente.",
+      "clauses": [
+        {
+          "quote": "I have known my tutor since 2010",
+          "timeFrame": "present",
+          "form": "present perfect"
+        }
+      ],
+      "correctedVersion": ""
+    },
+    {
+      "sentenceId": "S8",
+      "example": "I have worked with her for five years, and I have been hoping to improve my writing.",
+      "context": [],
+      "signals": [
+        "for"
+      ],
+      "timeFrame": "present",
+      "forms": [
+        "present perfect",
+        "present perfect continuous"
+      ],
+      "status": "correct",
+      "explanation": "La frase 'I have worked with her for five years' muestra una acción que ha estado ocurriendo durante un periodo de tiempo que continúa en el presente.",
+      "clauses": [
+        {
+          "quote": "I have worked with her for five years",
+          "timeFrame": "present",
+          "form": "present perfect"
+        }
+      ],
+      "correctedVersion": ""
+    }
+  ],
+  "diagnostics": {
+    "attempts": 2,
+    "evidenceMethod": "server-resolved-sentence-ids",
+    "reviewCompleted": true,
+    "phaseAttempts": {
+      "assessment": 1,
+      "review": 1
+    }
+  }
+}

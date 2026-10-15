@@ -98,3 +98,47 @@ Deploy the complete `downloads/essaycoach-worker-v5.3.1.txt` into the existing W
 After deployment, `/api/health` should report `2026-10-15-tense-context-v5.3.1`.
 Repeat the NL/ES live examples above before considering live assessment verified.
 Existing model settings and the Cloudflare OpenAI secret are unchanged.
+
+
+## v5.3.2: completion diagnostics and clause evidence (15 October 2026)
+
+Observed on live v5.3.1: the short NL correction succeeded; the ES assessment passed
+review but labelled `By the time she visits tomorrow` as future perfect and omitted
+its main clause. The full NL request failed after three reportedly incomplete
+outputs. An isolated `This morning I have had a coffee.` also failed quickly;
+the full NL passage without that sentence produced complete but invalid outputs.
+This implicates the special schema path, but does NOT establish the upstream cause:
+v5.3.1 discarded the actual finish reason and usage.
+
+Changes:
+
+- Removed content-dependent regex/anyOf branches from the response schema. Array
+  limits and strict structural output remain; the ambiguous-morning server guard
+  and explicit preservation instructions remain. No model/key change.
+- Treat `length`, `content_filter`, refusal and unexpected responses separately.
+  Only `length` enables compact-output instructions and raises the next output
+  ceiling from 6,000 to 10,000 tokens. Attempt limits and the overall deadline remain.
+  Filtering/refusal stops immediately; partial JSON is never returned or continued.
+- Diagnostics records an allowlisted finish reason, token count (when supplied),
+  output ceiling and phase for each completed provider response. No raw provider
+  text, API key, refusal message or arbitrary finish reason is exposed.
+- Clause quotations must cover the selected sentence, allowing conjunctions between
+  quotes. Repeated quotations are assigned to separate occurrences. Forms in the
+  entry and the clause list must agree after normalising simple naming variants.
+- A conservative lexical check rejects a future-perfect label when its quote lacks
+  future + perfect auxiliaries; contracted/negative/question/passive forms are supported.
+  Coordinating ellipsis and corrected-original quotations defer to review. This is
+  an evidence check, not a complete parser or a guarantee of grammatical accuracy.
+- Prompts explicitly distinguish future TIME from present simple FORM, with both
+  clauses of `By the time she visits tomorrow, I will have finished the project`.
+
+`tests/fixtures/tense-v531-live-es.json` captures the synthetic live test input and
+returned tense analysis. Tests reject its observed mistakes and accept the repaired
+analysis without changing the student text. There are 74 passing checks, with mocked
+model calls, including overflow recovery, filter/refusal handling, unknown/malformed
+responses, deadlines, third-attempt review and no unchecked-success fallback.
+
+Deploy `downloads/essaycoach-worker-v5.3.2.txt` to Cloudflare, then verify health version
+`2026-10-15-tense-context-v5.3.2`. Repeat the short NL, full NL, isolated morning and
+full ES tests. New live results are required to confirm the repair end to end;
+the synthetic replay and mock tests alone do not establish live quality.

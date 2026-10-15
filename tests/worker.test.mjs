@@ -36,7 +36,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v5.3.1 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.3.1');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v5.3.2 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.3.2');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -135,7 +135,11 @@ for (const [label,essay,frame,forms] of [
  ['mixed tense sentence','I will be taking an exam later today, so I read my textbook last night.','mixed',['future continuous','past simple']],
  ['completed quantity','I have written three essays today.','present',['present perfect simple']]
 ]) await test(`preserves a supported ${label} fixture without forced edits`,()=>{
- const f=tenseFixture(essay,[entry('S1',{timeFrame:frame,forms})]);
+ const clauses=label==='future time clause' ? [
+  {quote:'I will call',timeFrame:'future',form:'will + infinitive'},
+  {quote:'as soon as I know.',timeFrame:'future',form:'present simple (time clause)'}
+ ] : undefined;
+ const f=tenseFixture(essay,[entry('S1',{timeFrame:frame,forms,...(clauses?{clauses}:{})})]);
  assert.deepEqual(validate(f.d,f.p,f.ss),[]);assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,essay);
 });
 await test('trusted prompts include scoped tense guidance on both passes',async()=>{
@@ -208,7 +212,7 @@ await test('clause evidence must come from the actual sentence',()=>{
  f.d.tenseAnalysis[0].clauses[0].quote='I have been knowing her';
  assert.match(validate(f.d,f.p,f.ss).join(' '),/exact original quotes/);
 });
-console.log(`${checks} checks passed; model responses mocked. Live v5.3.1 still requires deployment.`);
+console.log(`${checks} checks passed; model responses mocked. Live v5.3.2 still requires deployment.`);
 
 
 const {normaliseEvidence,ambiguousMorningIds}=await import('../apps/worker/src/worker.js');
@@ -264,17 +268,100 @@ await test('morning protection allows an article correction and contracted perfe
  assert.deepEqual(ambiguousMorningIds(numberSentences('This morning I’ve had a coffee.')),['S1']);
  assert.deepEqual(ambiguousMorningIds(numberSentences('This morning I have had a coffee. It is now evening.')),[]);
 });
-await test('response schema bounds the observed evidence overflow and protected edits',()=>{
+await test('simple response schema retains limits and morning guard remains server-side',()=>{
  const schema=responseSchema(numberSentences('This morning I have had coffee. Students learns abroad.'));
  assert.equal(schema.properties.assessment.properties.criteria.properties.content.properties.evidenceIds.maxItems,3);
  assert.equal(schema.properties.edits.maxItems,8);assert.equal(schema.properties.tenseAnalysis.maxItems,8);
- const branches=schema.properties.edits.items.anyOf;
- const protectedBranch=branches.find(s=>s.properties.replacement.pattern);
- const pattern=new RegExp(protectedBranch.properties.replacement.pattern);
- assert(!pattern.test('This morning I had coffee.'));assert(pattern.test('This morning I have had a coffee.'));assert(pattern.test('This morning I’ve had coffee.'));
- assert(new RegExp(protectedBranch.properties.sentenceId.pattern).test('S1'));
- const ordinary=branches.find(s=>s.properties.kind.enum[0]==='correction'&&!s.properties.replacement.pattern);
- assert(new RegExp(ordinary.properties.sentenceId.pattern).test('S2'));assert(!new RegExp(ordinary.properties.sentenceId.pattern).test('S1'));
- assert(branches.some(s=>s.properties.kind.enum[0]==='suggestion'&&!s.properties.replacement.pattern));
+ assert.equal(schema.properties.edits.items.type,'object');assert.equal(schema.properties.edits.items.anyOf,undefined);
+ assert.equal(schema.properties.edits.items.properties.replacement.pattern,undefined);
 });
-console.log(`${checks} checks passed; model responses mocked. Live v5.3.1 requires deployment and evaluation.`);
+
+const {readFile}=await import('node:fs/promises');
+const {clauseFormIssue,uncoveredClauseText,formKey}=await import('../apps/worker/src/worker.js');
+const observed=JSON.parse(await readFile(new URL('./fixtures/tense-v531-live-es.json',import.meta.url),'utf8'));
+function liveFixture(repaired=false) {
+ const f=tenseFixture(observed.request.essay,structuredClone(observed.tenseAnalysis).map(e=>({...e,contextIds:e.context.map(c=>c.sentenceId)})));
+ f.p={...observed.request};
+ if(repaired) {
+  const future=f.d.tenseAnalysis.find(e=>e.sentenceId==='S6');
+  future.forms=['present simple','future perfect simple'];
+  future.clauses=[
+   {quote:'By the time she visits tomorrow',timeFrame:'future',form:'present simple'},
+   {quote:'I will have finished the project.',timeFrame:'future',form:'future perfect simple'}
+  ];
+  const duration=f.d.tenseAnalysis.find(e=>e.sentenceId==='S8');
+  duration.clauses.push({quote:'I have been hoping to improve my writing.',timeFrame:'present',form:'present perfect continuous'});
+ }
+ return f;
+}
+await test('captured live response rejects future-perfect mislabelling and omitted clauses',()=>{
+ const f=liveFixture(),issues=validate(f.d,f.p,f.ss);
+ assert(issues.some(s=>s.includes('S6: future perfect requires')));
+ assert(issues.some(s=>s.includes('S6: clause quotes omit')));
+ assert(issues.some(s=>s.includes('S8: clause quotes omit')));
+ assert(issues.some(s=>s.includes('S8: forms and clauses')));
+});
+await test('same live text accepts complete corrected analysis without changing student writing',()=>{
+ const f=liveFixture(true);assert.deepEqual(validate(f.d,f.p,f.ss),[]);
+ const result=toClient(f.d,f.p,f.ss,2);assert.equal(result.nextDraft,f.p.essay);
+ const future=result.tenseAnalysis.find(e=>e.sentenceId==='S6');assert.equal(future.timeFrame,'future');
+ assert.deepEqual(future.clauses.map(c=>c.form),['present simple','future perfect simple']);
+});
+await test('known live clause error is repaired then independently reviewed',async()=>{
+ const bad=liveFixture(),good=liveFixture(true),bodies=[];
+ globalThis.fetch=async(_,options)=>{bodies.push(JSON.parse(options.body));return completion(bodies.length===1?bad.d:good.d);};
+ const r=await worker.fetch(request(good.p),env),result=await r.json();
+ assert.equal(r.status,200);assert.equal(result.diagnostics.attempts,3);assert.equal(result.diagnostics.reviewCompleted,true);
+ assert.match(bodies[1].messages.at(-1).content,/future perfect requires/);
+ assert.match(bodies[2].messages.at(-1).content,/Recheck tenseAnalysis/);
+});
+await test('genuine future-perfect constructions include negatives, contractions and questions',()=>{
+ for(const quote of ['I will have finished.','I shall have finished.','I’ll have finished.','I will not have finished.','I won’t have finished.','Will she have finished?','It will have been finished.','I’ll’ve finished.'])
+  assert.equal(clauseFormIssue({quote,form:'future perfect simple'}),'',quote);
+ assert(clauseFormIssue({quote:'By the time she visits tomorrow',form:'future perfect'}));
+ assert.equal(clauseFormIssue({quote:'By the time she visits tomorrow',form:'present simple'}),'');
+});
+await test('clause coverage preserves repeated text, overlapping quotes and Unicode offsets',()=>{
+ assert.equal(uncoveredClauseText('I left and I left.',[{quote:'I left'}]),'I left');
+ assert.equal(uncoveredClauseText('I left and I left.',[{quote:'I left'},{quote:'I left.'}]),'');
+ assert.equal(uncoveredClauseText('I left and she stayed.',[{quote:'I left'},{quote:'I left and she stayed.'}]),'');
+ assert.equal(uncoveredClauseText('“I’m here 😊 and she is home.”',[{quote:'“I’m here 😊'},{quote:'she is home.”'}]),'');
+ assert.equal(formKey('present perfect simple'),'present perfect');assert.equal(formKey('present perfect continuous'),'present perfect continuous');
+});
+await test('length retries increase capacity once and preserve complete review candidate',async()=>{
+ const bodies=[];globalThis.fetch=async(_,options)=>{bodies.push(JSON.parse(options.body));return bodies.length<3?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{"private-fragment":'}}],usage:{completion_tokens:6000}})):completion(valid());};
+ const r=await worker.fetch(request(payload),env),result=await r.json();assert.equal(r.status,200);
+ assert.deepEqual(bodies.map(b=>b.max_completion_tokens),[6000,10000,10000,10000]);
+ assert.match(bodies[1].messages.at(-1).content,/compact JSON/);
+ assert(!JSON.stringify(bodies).includes('private-fragment'));
+ assert.deepEqual(result.diagnostics.completions.map(c=>c.finishReason),['length','length','stop','stop']);
+ assert.equal(result.diagnostics.completions[0].completionTokens,6000);
+});
+await test('repeated token exhaustion stays bounded and reports actual finish reason',async()=>{
+ calls=0;globalThis.fetch=async()=>{calls++;return new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'secret-fragment'}}]}));};
+ const r=await worker.fetch(request(payload),env),result=await r.json();assert.equal(r.status,502);assert.equal(calls,3);
+ assert.equal(result.diagnostics.completions.length,3);assert(result.diagnostics.issues[0].includes('finish_reason=length'));
+ assert(!JSON.stringify(result).includes('secret-fragment'));
+});
+for(const [reason,code,status] of [['content_filter','AI_FILTERED',422],['tool_calls','AI_RESPONSE',502],['private-unknown-reason','AI_RESPONSE',502]]) {
+ await test(`provider finish reason ${reason} is not misreported as truncation`,async()=>{
+  calls=0;globalThis.fetch=async()=>{calls++;return new Response(JSON.stringify({choices:[{finish_reason:reason,message:{content:'private-output'}}]}));};
+  const r=await worker.fetch(request(payload),env),result=await r.json();assert.equal(r.status,status);assert.equal(result.code,code);assert.equal(calls,1);
+  assert(!JSON.stringify(result).includes('private-output'));assert(!JSON.stringify(result).includes('private-unknown-reason'));
+ });
+}
+await test('missing choices and malformed envelope stop without wasteful retries',async()=>{
+ for(const body of ['null','{}','not JSON']) {
+  calls=0;globalThis.fetch=async()=>{calls++;return new Response(body);};
+  const r=await worker.fetch(request(payload),env);assert.equal(r.status,502);assert.equal((await r.json()).code,'AI_RESPONSE');assert.equal(calls,1);
+ }
+});
+await test('overall deadline limits calls even with an increased output budget',async()=>{
+ const originalNow=Date.now;let elapsed=0;Date.now=()=>elapsed;
+ try {
+  calls=0;globalThis.fetch=async()=>{calls++;elapsed+=100000;return new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]}));};
+  const r=await worker.fetch(request(payload),env),result=await r.json();assert.equal(r.status,504);assert.equal(result.code,'TIMEOUT');assert.equal(calls,2);
+  assert.equal(result.diagnostics.attempts,2);
+ } finally {Date.now=originalNow;}
+});
+console.log(`${checks} checks passed. Model calls mocked; captured live failure replayed. v5.3.2 still needs live deployment.`);
