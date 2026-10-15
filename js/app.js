@@ -335,7 +335,7 @@
   function resetResults() {
     latestAssessment = null;
     window.EC_LAST_RESPONSE = null;
-    for (const id of ["bandsCard", "vocabCard", "sentenceInsightsCard", "sentencesCard", "sentenceCard", "debugCard", "tenseAnalysisCard", "nextDraftContext"])
+    for (const id of ["bandsCard", "vocabCard", "sentenceInsightsCard", "sentencesCard", "sentenceCard", "debugCard", "tenseAnalysisCard", "nextDraftContext", "nextDraftTaskContext", "writingCoachCard"])
       if (document.getElementById(id)) document.getElementById(id).hidden = true;
     for (const id of ["key-area", "band-estimate"])
       if (document.getElementById(id)) document.getElementById(id).textContent = copy("pending");
@@ -347,11 +347,14 @@
     if ($("#debugJson")) $("#debugJson").textContent = "";
     if ($("#tenseAnalysisCard")) $("#tenseAnalysisCard").replaceChildren();
     if ($("#nextDraftContext")) $("#nextDraftContext").replaceChildren();
+    if ($("#writingCoachCard")) $("#writingCoachCard").replaceChildren();
+    if ($("#nextDraftTaskContext")) $("#nextDraftTaskContext").replaceChildren();
     refreshAdvancedVisibility();
   }
   function renderAssessment(response, level, essay) {
     latestAssessment = {response, level, essay};
     assessmentLabels();
+    window.ECWritingCoach?.render($("#writingCoachCard"),response,essay,el.task?.value||'',detectUILang());
     const card = $("#bandsCard"), list = $("#bandsCategories"), improvements = $("#bandsImprovements");
     if (!card || !list || !improvements) return;
     list.innerHTML = ""; improvements.innerHTML = "";

@@ -1,4 +1,73 @@
-> Current behaviour: v5.4.1 uses focused feedback, brief fixed signal reminders and narrow correction-preservation checks. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+> Current behaviour: v5.5 adds source-only C2 reading, visible task achievement and concrete learning steps to the focused v5.4.1 feedback. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
+## v5.5: task achievement and learning feedback
+
+### Basis and scope
+
+Official references checked 15 October 2026:
+
+- [Cambridge C2 Proficiency exam format](https://www.cambridgeenglish.org/exams-and-tests/qualifications/proficiency/format/): Part 1 integrates source summary, evaluation and the writer's own ideas in a coherent 240–280-word essay.
+- [Cambridge teacher writing guide](https://assets.cambridgeenglish.org/schools/CER_6647_V1e_JUL20_Teacher%20Guide%20for%20Writing_C2_Proficiency_FINAL2.pdf): Content, Communicative Achievement, Organisation and Language; the guide's sample discussions connect source use, evaluation, cohesion and language control.
+
+These references inform the instructions; the app is not an official Cambridge assessor. It does
+not impose a particular paragraph count, PEEL, compulsory opposing positions, ornate vocabulary
+or a ban on first person. B2/C1 and C2 non-essay tasks retain their own task requirements.
+
+### Worker and UI contract
+
+- Every C2 request with a nonempty task starts with a source-only model call. It receives TASK,
+  level and feedback language, never the learner essay. It identifies task type, whether writing
+  instructions are explicit/assumed/missing, the actual source positions and one or two central
+  points per source. Exact full-body/point quotes are checked against TASK; source bodies may not
+  overlap. A misleading heading must be read against the whole body, not adopted as its position.
+- The existing assessment and review then compare the ORIGINAL essay against the original sources
+  and provisional source reading. Non-C2 requests and missing-task requests keep the two-pass path.
+  C2 usually takes three calls. Source reading gets at most two attempts, assessment three and
+  review two, sharing the existing 180-second deadline and 45-second per-call timeout.
+- `taskReview` states what response is expected, an explicit/assumed/missing basis, a verdict and
+  evidence-backed requirement checks. Missing tasks cannot receive task scores. Source-only C2
+  prompts can be assessed provisionally, with a visible assumption notice. A central distortion,
+  unmet check or missing central source point cannot coexist with “fully answered”. Declared
+  central distortion cannot coexist with Content 5. This is consistency checking, not a score formula.
+- `sourceReview` is now visible. It compares literal source evidence with server-resolved learner
+  quotations. Misinterpretations are expanded initially. There is no compulsory opposing opinion:
+  accurate alternative readings and genuinely developed evaluations must be credited.
+- `learningPoints` gives at most three prioritised what/why/how explanations, English examples,
+  a specific rewrite instruction and a reasoning question. Central source misreading outranks
+  cosmetic edits. Language correction examples must match an applied edit; source interpretation
+  examples must match sourceReview evidence. Examples of argument development are labelled and
+  never inserted automatically as the learner's own views.
+- `nextDraft` remains a draft with language corrections only. A prominent adjacent notice explains
+  when task/content revision is still needed or task achievement is unknown. It is not silently
+  presented as a fully correct answer. Students rewrite in the existing essay field and resubmit.
+- `js/writing-coach.js` renders the new sections in EN/NL/ES using text nodes. Reset/edit clears
+  stale results. v5.4.1 responses remain usable and simply hide the unavailable new section.
+- `teachingSignals` offers duration/start-time reminders only for recognised duration or date
+  phrases. `for single parents`, `for parents observe` and ambiguous causal `since` do not trigger
+  these reminders. This deliberately conservative recogniser omits some valid time expressions.
+- Instructions distinguish necessary corrections from optional alternatives, including causal
+  `for` versus `as`, and check the meaning of `although` rather than only its punctuation.
+
+### Tests and limitations
+
+Run `node tests/worker.test.mjs` (68), `node tests/coaching.test.mjs` (14),
+`node tests/writing-coach.test.mjs` (8) and `node tests/tense-feedback.test.mjs` (6).
+`npm run mobile:build` includes the new script and markup. The regression input is the supplied
+homeschooling task and original learner essay in `tests/fixtures/homeschooling-c2.json`.
+
+All model calls in these tests are mocked. They verify evidence constraints, contradictions,
+source-first sequencing, bounded failures, preservation of earlier fixes and the rendering
+contract. The DOM harness is not a browser layout test. These tests do NOT establish that a live
+model correctly interprets the sources. No source/essay-specific answer is hardcoded into the
+production Worker. The model can still make semantic mistakes or give weak examples/reasons.
+
+After manual deployment, repeat the homeschooling case in EN/NL/ES and the earlier tense tests.
+Inspect the actual source interpretation, evaluation advice, example accuracy and score reasons,
+not merely HTTP 200. Check that the extra source-reading call stays within the shared timeout.
+
+Standalone deployment file: `downloads/essaycoach-worker-v5.5.txt`, byte-identical to Worker source.
+The existing Cloudflare OpenAI secret and model configuration are retained. Frontend publication
+alone does not update the Worker; manual Worker deployment is still required.
 
 ## v5.4.1: block the two observed false-correction families
 

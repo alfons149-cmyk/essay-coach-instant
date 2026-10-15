@@ -1713,6 +1713,14 @@ body {
 /* Time-frame teaching follows the text order on both desktop and mobile. */
 #tenseAnalysisCard[hidden] { display: none !important; }
 .tense-list { margin: 1rem 0; padding-left: 1.5rem; }
+.coach-verdict { font-weight: 700; padding: .75rem 1rem; background: #f1f5fa; border-left: 4px solid #5674a3; }
+.coach-checks, .coach-steps { padding-left: 1.4rem; }
+.coach-checks > li, .coach-steps > li { margin-bottom: 1rem; }
+.coach-source { padding: .75rem 0; border-bottom: 1px solid #d6dde5; }
+#writingCoachCard blockquote { margin: .5rem 0 1rem; padding: .5rem .8rem; border-left: 3px solid #cbd5e1; overflow-wrap: anywhere; }
+#writingCoachCard h3, #writingCoachCard h4 { margin: 1rem 0 .5rem; }
+#writingCoachCard summary { cursor: pointer; padding: .75rem 0; font-weight: 600; }
+#writingCoachCard .coach-steps > li { padding: 1rem; }
 .tense-entry { margin: 0 0 1rem; padding: 1rem; border-left: 4px solid #5674a3;
   background: #f6f8fc; border-radius: 0 10px 10px 0; overflow-wrap: anywhere; }
 .tense-entry[data-frame="past"] { border-color: #92643a; }
