@@ -63,3 +63,38 @@ The GitHub Worker deployment uses existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLAR
   live semantic evaluation of v5.3 requires Cloudflare deployment.
 - Worker remains a standalone file for Cloudflare's editor. Existing OPENAI_API_KEY
   stays in Secrets. Version: `2026-10-15-tense-context-v5.3`.
+
+
+## v5.3.1: independent assessment and review budgets (15 October 2026)
+
+The live v5.3 checks returned `ASSESSMENT_INCOMPLETE` in both NL and ES. One
+response had no validation issues: the first valid assessment arrived on attempt
+three, queued a review, and then exhausted the shared loop before running it.
+
+- Assessment now has three attempts; review has two separate attempts. A valid
+  third assessment proceeds to review. Normal success still uses two model calls;
+  the maximum is five, subject to a shared 180-second deadline and 45 seconds per
+  request. Provider failures and timeouts remain errors, never unchecked success.
+- Each repair receives the original input, the latest complete candidate and the
+  current defects. Earlier incorrect drafts do not accumulate in the prompt.
+  Truncated review output does not replace the complete assessment.
+- `diagnostics.phaseAttempts` records assessment/review counts. Exhausted validation
+  reports the failing phase and nonempty issues; only valid reviewed output has
+  `reviewCompleted: true`.
+- Structured Outputs now bounds the arrays already limited by server validation,
+  including three evidence IDs per criterion. Redundant valid evidence is deduplicated
+  and capped defensively. Unknown IDs are retained for rejection, not silently hidden.
+- The ambiguous-morning guard is also represented in the response schema. A correction
+  to a protected sentence must retain a present-perfect auxiliary (including contractions).
+  Suggestions remain optional; other sentence corrections remain possible. This is a
+  conservative guard for the observed regression, not a complete grammatical parser.
+  Explicit recognised closed-morning context disables the guard.
+- Regression coverage includes third-attempt assessment success followed by review,
+  review repair on the fifth call, exhausted review, truncated review, evidence overflow,
+  and contracted perfect preservation. All 62 checks use mocked model responses.
+  These tests establish control flow and contracts, not live model assessment quality.
+
+Deploy the complete `downloads/essaycoach-worker-v5.3.1.txt` into the existing Worker.
+After deployment, `/api/health` should report `2026-10-15-tense-context-v5.3.1`.
+Repeat the NL/ES live examples above before considering live assessment verified.
+Existing model settings and the Cloudflare OpenAI secret are unchanged.
