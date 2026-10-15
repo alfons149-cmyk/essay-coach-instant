@@ -37,7 +37,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v5.5.1 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-coaching-v5.5.1');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v5.5.2 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-coaching-v5.5.2');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -312,3 +312,26 @@ for(const phase of ['assessment','review']) await test(`persistent false correct
  assert(result.diagnostics.issues.some(s=>s.includes('protected phrase')));assert(!Object.hasOwn(result,'nextDraft'));
 });
 console.log(`${checks} core and correction-preservation checks passed; model calls mocked.`);
+
+for(const language of ['en','nl','es']) await test(`all morning teaching categories retain the context condition without invented events (${language})`,()=>{
+ for(const category of ['task_response','organisation','style','language']) {
+  const f=focusedFixture('This morning I have had a coffee.',[],language);
+  Object.assign(f.d.learningPoints[0],{category,kind:'development',sourceQuote:'',issue:'Add detail.',
+   improvedExample:'This morning I have had a coffee and checked my emails before leaving home.'});
+  f.d.assessment.criteria.language.reason='The sentence is completely correct.';
+  const result=toClient(f.d,f.p,f.ss,2),point=result.learningPoints[0];
+  assert.equal(point.category,'language');assert.equal(point.kind,'optional');
+  assert.equal(point.improvedExample,'If the morning is over: “This morning I had a coffee.”');
+  assert(!JSON.stringify(result).includes('checked my emails'));assert(!JSON.stringify(result).includes('completely correct'));
+  assert.equal(result.assessment.criteria.language.reason,result.contextNotes[0].explanation);assert.equal(result.nextDraft,f.p.essay);
+ }
+});
+await test('morning policy preserves real corrections and their explanations',()=>{
+ const essay='This morning I have had an coffee.',replacement='This morning I have had a coffee.';
+ const f=focusedFixture(essay,[{kind:'correction',sentenceId:'S1',replacement,reason:'Use a before the consonant sound in coffee.'}]);
+ Object.assign(f.d.learningPoints[0],{category:'language',kind:'correction',improvedExample:replacement});
+ const reason=f.d.assessment.criteria.language.reason,result=toClient(f.d,f.p,f.ss,2);
+ assert.equal(result.edits.length,1);assert.equal(result.learningPoints[0].kind,'correction');
+ assert.equal(result.nextDraft,replacement);assert.equal(result.assessment.criteria.language.reason,reason);
+});
+console.log(`${checks} Worker checks passed; model calls mocked.`);

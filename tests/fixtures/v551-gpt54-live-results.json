@@ -1,0 +1,346 @@
+{
+  "workerVersion": "2026-10-15-coaching-v5.5.1",
+  "configuredModelReportedByUser": "gpt-5.4",
+  "note": "Live API observations, not mocked model outputs. No upstream model identifier was exposed.",
+  "sourceOnlyFailures": {
+    "en": {
+      "error": "The AI could not complete a consistent assessment. Please try again.",
+      "code": "ASSESSMENT_INCOMPLETE",
+      "version": "2026-10-15-coaching-v5.5.1",
+      "diagnostics": {
+        "attempts": 4,
+        "phase": "assessment",
+        "phaseAttempts": {
+          "task": 1,
+          "assessment": 3,
+          "review": 0
+        },
+        "reviewRequested": false,
+        "reviewCompleted": false,
+        "completions": [
+          {
+            "phase": "task",
+            "attempt": 1,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 74
+          },
+          {
+            "phase": "assessment",
+            "attempt": 1,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2377
+          },
+          {
+            "phase": "assessment",
+            "attempt": 2,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2330
+          },
+          {
+            "phase": "assessment",
+            "attempt": 3,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2351
+          }
+        ],
+        "issues": [
+          "Task review must retain the source-only task type and explicit/assumed/missing basis.",
+          "Do not treat writing instructions as source passages."
+        ]
+      }
+    },
+    "nl": {
+      "error": "The AI could not complete a consistent assessment. Please try again.",
+      "code": "ASSESSMENT_INCOMPLETE",
+      "version": "2026-10-15-coaching-v5.5.1",
+      "diagnostics": {
+        "attempts": 4,
+        "phase": "assessment",
+        "phaseAttempts": {
+          "task": 1,
+          "assessment": 3,
+          "review": 0
+        },
+        "reviewRequested": false,
+        "reviewCompleted": false,
+        "completions": [
+          {
+            "phase": "task",
+            "attempt": 1,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 89
+          },
+          {
+            "phase": "assessment",
+            "attempt": 1,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2533
+          },
+          {
+            "phase": "assessment",
+            "attempt": 2,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2505
+          },
+          {
+            "phase": "assessment",
+            "attempt": 3,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2499
+          }
+        ],
+        "issues": [
+          "Task review must retain the source-only task type and explicit/assumed/missing basis.",
+          "Do not treat writing instructions as source passages."
+        ]
+      }
+    },
+    "es": {
+      "error": "The AI could not complete a consistent assessment. Please try again.",
+      "code": "ASSESSMENT_INCOMPLETE",
+      "version": "2026-10-15-coaching-v5.5.1",
+      "diagnostics": {
+        "attempts": 4,
+        "phase": "assessment",
+        "phaseAttempts": {
+          "task": 1,
+          "assessment": 3,
+          "review": 0
+        },
+        "reviewRequested": false,
+        "reviewCompleted": false,
+        "completions": [
+          {
+            "phase": "task",
+            "attempt": 1,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 90
+          },
+          {
+            "phase": "assessment",
+            "attempt": 1,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2661
+          },
+          {
+            "phase": "assessment",
+            "attempt": 2,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2540
+          },
+          {
+            "phase": "assessment",
+            "attempt": 3,
+            "finishReason": "stop",
+            "maxCompletionTokens": 6000,
+            "completionTokens": 2563
+          }
+        ],
+        "issues": [
+          "Task review must retain the source-only task type and explicit/assumed/missing basis.",
+          "Do not treat writing instructions as source passages."
+        ]
+      }
+    }
+  },
+  "morningLesson": {
+    "category": "task_response",
+    "kind": "development",
+    "evidenceId": "S1",
+    "sourceQuote": "",
+    "issue": "Breid je beschrijving uit met nog twee of drie concrete details.",
+    "explanation": "Je zin is begrijpelijk en relevant, maar nog te beperkt om als volledige beschrijving van je ochtend te werken. Op C1-niveau helpt het om meerdere samenhangende handelingen of details te geven, zodat de lezer een duidelijker beeld krijgt.",
+    "improvedExample": "This morning I have had a coffee and checked my emails before leaving home.",
+    "practiceInstruction": "Schrijf 2 extra zinnen over dezelfde ochtend. Voeg alleen concrete details toe, zoals een volgende handeling of een duidelijk moment in de volgorde.",
+    "checkQuestion": "Krijgt de lezer na je uitbreiding een duidelijker beeld van je ochtend, of noem je nog steeds maar één los detail?",
+    "example": "This morning I have had a coffee."
+  },
+  "morningLanguageReason": "De zin is correct en natuurlijk geformuleerd. Bij “This morning” is de gekozen present perfect hier verdedigbaar, omdat zonder extra context niet vaststaat dat de ochtend al afgesloten is. In een afgesloten tijdskader zou ook past simple mogelijk zijn, bijvoorbeeld: “This morning I had a coffee.”",
+  "explicitTask": {
+    "inputWords": 256,
+    "feedback": "Je essay is duidelijk opgebouwd en laat zien dat je de algemene inhoud van beide teksten begrijpt. Sterk is vooral je samenvatting van tekst 1. Het belangrijkste verbeterpunt is broninterpretatie: bij tekst 2 draai je het standpunt van de auteur om. Daarnaast blijft je antwoord vooral samenvattend; voor deze taak moet je de argumenten ook echt evalueren. Er zijn maar enkele concrete taalfouten, maar de tekst is wel duidelijk te kort voor een C2-bronessay.",
+    "edits": [
+      {
+        "kind": "correction",
+        "from": "The two texts express contrasting views on the debated homeschooling.",
+        "to": "The two texts express contrasting views on homeschooling.",
+        "reason": "'the debated homeschooling' is hier geen natuurlijke Engelse formulering. Zonder 'debated' is de zin correct en natuurlijk.",
+        "sentenceId": "S3"
+      },
+      {
+        "kind": "correction",
+        "from": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head.",
+        "to": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and an administrator.",
+        "reason": "'a head' past hier niet bij de betekenis van de bron. 'an administrator' geeft de bedoelde rol correct weer.",
+        "sentenceId": "S5"
+      },
+      {
+        "kind": "correction",
+        "from": "The challenge is even more significant for single parents; however effective budgeting and time management skills will be crucial if you plan to homeschool.",
+        "to": "The challenge is even more significant for single parents; however, effective budgeting and time management skills will be crucial if you plan to homeschool.",
+        "reason": "Na 'however' is hier een komma nodig voor een correcte en duidelijke interpunctie.",
+        "sentenceId": "S9"
+      },
+      {
+        "kind": "correction",
+        "from": "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.",
+        "to": "Homeschooling has existed for over a century; what is more, it existed before our current public education system.",
+        "reason": "'Although' past hier niet, omdat er geen tegenstelling volgt. Ook is een komma nodig na 'what is more'.",
+        "sentenceId": "S11"
+      },
+      {
+        "kind": "correction",
+        "from": "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+        "to": "Minority families are experiencing some of the most rapid growth in homeschooling because parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+        "reason": "De oorspronkelijke zin is grammaticaal onduidelijk opgebouwd. Met 'because' wordt de reden helder en volledig verbonden aan de hoofdzin.",
+        "sentenceId": "S12"
+      }
+    ],
+    "taskReview": {
+      "taskType": "source_essay",
+      "basis": "explicit",
+      "verdict": "partly_answered",
+      "expectedResponse": "Je moest een essay van 240–280 woorden schrijven waarin je de kernpunten uit beide teksten samenvat, die argumenten evalueert, zoveel mogelijk in eigen woorden formuleert en ook je eigen ideeën toevoegt.",
+      "explanation": "Je behandelt beide bronnen en tekst 1 wordt grotendeels correct samengevat. Bij tekst 2 zit echter een belangrijke omkering van het standpunt: de auteur verdedigt homeschooling juist als een gevestigde en legitieme vorm van onderwijs. Daarnaast blijft je antwoord vooral beschrijvend. Je geeft wel een korte eigen mening, maar de evaluatie van de argumenten zelf is nog beperkt. Het essay is ook duidelijk korter dan gevraagd.",
+      "checks": [
+        {
+          "requirement": "task_coverage",
+          "status": "partial",
+          "explanation": "Je bespreekt beide teksten en voegt een kort eigen standpunt toe, maar de evaluatie blijft beperkt en de tekst blijft onder de gevraagde lengte.",
+          "evidenceIds": [
+            "S4",
+            "S10",
+            "S13"
+          ],
+          "evidence": [
+            "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+            "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education.",
+            "To conclude, I believe that homeschooling has both advantages and disadvantages."
+          ]
+        },
+        {
+          "requirement": "source_accuracy",
+          "status": "partial",
+          "explanation": "Tekst 1 wordt overwegend correct weergegeven, maar bij tekst 2 wordt het centrale standpunt verkeerd voorgesteld.",
+          "evidenceIds": [
+            "S4",
+            "S10",
+            "S11"
+          ],
+          "evidence": [
+            "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+            "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education.",
+            "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system."
+          ]
+        },
+        {
+          "requirement": "evaluation",
+          "status": "missing",
+          "explanation": "Je vat vooral samen. Er is nauwelijks uitleg over welk argument overtuigend, beperkt of belangrijk is en waarom.",
+          "evidenceIds": [
+            "S13",
+            "S14"
+          ],
+          "evidence": [
+            "To conclude, I believe that homeschooling has both advantages and disadvantages.",
+            "It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities."
+          ]
+        },
+        {
+          "requirement": "own_position",
+          "status": "partial",
+          "explanation": "Je eigen positie is aanwezig in de conclusie, maar blijft algemeen en wordt niet echt uitgewerkt vanuit de twee bronnen.",
+          "evidenceIds": [
+            "S13",
+            "S14"
+          ],
+          "evidence": [
+            "To conclude, I believe that homeschooling has both advantages and disadvantages.",
+            "It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities."
+          ]
+        },
+        {
+          "requirement": "organisation",
+          "status": "met",
+          "explanation": "De tekst heeft een duidelijke basisstructuur met een inleiding, een alinea over elke tekst en een conclusie.",
+          "evidenceIds": [
+            "S3",
+            "S4",
+            "S13"
+          ],
+          "evidence": [
+            "The two texts express contrasting views on the debated homeschooling.",
+            "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+            "To conclude, I believe that homeschooling has both advantages and disadvantages."
+          ]
+        },
+        {
+          "requirement": "register",
+          "status": "met",
+          "explanation": "De toon is meestal passend voor een formeel essay, ondanks enkele onnatuurlijke formuleringen.",
+          "evidenceIds": [
+            "S1",
+            "S4",
+            "S13"
+          ],
+          "evidence": [
+            "Over these past few years, the concept of homeschooling has gained quite a lot of attention.",
+            "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+            "To conclude, I believe that homeschooling has both advantages and disadvantages."
+          ]
+        }
+      ]
+    },
+    "diagnostics": {
+      "attempts": 4,
+      "evidenceMethod": "server-resolved-sentence-ids",
+      "reviewCompleted": true,
+      "phaseAttempts": {
+        "task": 1,
+        "assessment": 2,
+        "review": 1
+      },
+      "completions": [
+        {
+          "phase": "task",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 639
+        },
+        {
+          "phase": "assessment",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 2440
+        },
+        {
+          "phase": "assessment",
+          "attempt": 2,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 2409
+        },
+        {
+          "phase": "review",
+          "attempt": 1,
+          "finishReason": "stop",
+          "maxCompletionTokens": 6000,
+          "completionTokens": 2356
+        }
+      ]
+    }
+  }
+}

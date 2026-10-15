@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.5.1 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.5.2 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-15-coaching-v5.5.1";
+const VERSION = "2026-10-15-coaching-v5.5.2";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const CATEGORIES = ["content", "communicative", "organisation", "language"];
 const UNITS = {
@@ -62,6 +62,9 @@ state a myth that the body refutes. Read the WHOLE body before deciding the posi
 the author's claim from a quoted/rejected view. Do not assume two sources necessarily disagree.
 Use source_essay only for two identifiable source passages intended for synthesis; not for a
 short ordinary task prompt, an informal email, a quotation used as a topic, or two instructions.
+For C2, two substantial expository passages can be source_essay even when the exam instructions
+are absent: use instructionStatus assumed. Missing instructions do not make the supplied source
+bodies disappear. Other means an identifiable different task; unclear means genuinely indeterminate.
 Copy each source body as one exact contiguous sourceQuote (without inventing or correcting words).
 For each source select one or two central keyPoints with exact short quotes and a paraphrased meaning.
 Always include the author's overall position as a key point. Supporting numbers or examples are
@@ -112,6 +115,10 @@ A relevant introduction, purposeful paragraph progression and a supported conclu
 an introduction/body/conclusion alone does not demonstrate evaluation. 'There are advantages and
 disadvantages' or 'parents should decide' alone is not developed evaluation. Existing evaluation
 must be credited even when the writer takes a different defensible position from yours.
+The supplied writingMetrics contains the server-counted words and any recognised task range.
+Never estimate word count. If lengthStatus is within_range, do not say the essay is too short,
+too long, under/over the requested length, or needs more words. Weak argument development is a
+separate issue: ask the learner to replace repetitive summary with evaluation within the limit.
 Use precise, natural language and register appropriate to audience. Distinguish summary from
 reasoned evaluation (why a claim is convincing, limited, conditional, or important).
 
@@ -292,6 +299,24 @@ A second pass is a quality check, not proof of accuracy; do not claim examiner c
 const text = v => typeof v === 'string' ? v.trim() : '';
 const obj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const countWords = value => (value.trim().match(/\S+/g) || []).length;
+export function writingMetrics(payload,reading=null) {
+  const inputWords=countWords(payload.essay);
+  const match=text(payload.task).match(/\b(\d{2,4})\s*[-–—]\s*(\d{2,4})\s*(?:words|woorden|palabras)\b/i);
+  let expectedRange=null;
+  if(match&&Number(match[1])<=Number(match[2])) expectedRange={min:Number(match[1]),max:Number(match[2]),basis:'explicit'};
+  else if(payload.level==='C2'&&reading?.taskType==='source_essay') expectedRange={min:240,max:280,basis:'assumed'};
+  return {inputWords,expectedRange,lengthStatus:!expectedRange?'unspecified':inputWords<expectedRange.min?'below_range':inputWords>expectedRange.max?'above_range':'within_range'};
+}
+function lengthClaimIssues(data,payload) {
+  if(writingMetrics(payload,payload.sourceReading).lengthStatus!=='within_range') return [];
+  const statements=[data.feedback,...Object.values(data.assessment?.criteria||{}).map(c=>c?.reason),
+    data.taskReview?.explanation,...(Array.isArray(data.taskReview?.checks)?data.taskReview.checks:[]).map(c=>c?.explanation)];
+  // Narrow explicit claims about the whole response's length; not judgements about
+  // an underdeveloped argument or a short individual sentence/paragraph.
+  const falseLength=/\b(?:essay|text|response|answer)\b[^.!?\n]{0,65}\b(?:too short|too long|shorter than (?:required|requested)|longer than (?:required|requested)|(?:below|above|under|over) (?:the )?(?:required |requested )?(?:word (?:count|limit|range)|length))\b|\b(?:essay|tekst|antwoord)\b[^.!?\n]{0,65}\b(?:te kort(?! ontwikkeld)|te lang|korter dan gevraagd|langer dan gevraagd|(?:onder|boven) de (?:gevraagde|vereiste) (?:lengte|woordlimiet))\b|\b(?:ensayo|texto|respuesta)\b[^.!?\n]{0,65}\b(?:demasiado corto|demasiado breve|demasiado largo|m[aá]s corto de lo (?:pedido|requerido)|por (?:debajo|encima) (?:del|de la) (?:l[ií]mite|extensi[oó]n))\b/i;
+  return statements.some(s=>typeof s==='string'&&falseLength.test(s))
+    ? ['The server word count is within the stated task range. Remove false too-short/too-long or under/over-length claims and dependent penalties. Evaluate argument development separately from word count.'] : [];
+}
 const isScore = v => Number.isInteger(v) && v >= 0 && v <= 5;
 const isKind = v => v === 'correction' || v === 'suggestion';
 
@@ -356,8 +381,13 @@ export function applyFeedbackPolicy(data,payload,sentences) {
   const notes=contextNotes(payload,sentences),byId=new Map(notes.map(n=>[n.sentenceId,n]));
   if(Array.isArray(data.learningPoints)) for(const point of data.learningPoints) {
     const note=byId.get(point?.evidenceId);
-    if(note&&point.category==='language'&&!data.edits?.some(e=>e.kind==='correction'&&e.sentenceId===point.evidenceId)) {
-      point.kind='optional';point.issue=note.title;point.explanation=note.explanation;
+    if(note&&['language','task_response','organisation','style'].includes(point.category)&&!text(point.sourceQuote)&&
+       !data.edits?.some(e=>e.kind==='correction'&&e.sentenceId===point.evidenceId)) {
+      // The time-context condition applies to every ready-made example, regardless
+      // of the teaching category. Preserve separate source-interpretation findings.
+      point.category='language';point.kind='optional';point.sourceQuote='';
+      if(Object.hasOwn(point,'sourcePointId')) point.sourcePointId='';
+      point.issue=note.title;point.explanation=note.explanation;
       point.improvedExample='If the morning is over: “This morning I had a coffee.”';
       point.practiceInstruction=note.action;
       point.checkQuestion=({nl:'Is de ochtend afgesloten, of nog bezig met een verbinding met het heden?',es:'¿Ha terminado la mañana o sigue en curso con una conexión con el presente?',en:'Is the morning finished, or still in progress with a connection to the present?'})[payload.feedbackLanguage]||'Is the morning finished, or still in progress?';
@@ -377,6 +407,8 @@ export function applyFeedbackPolicy(data,payload,sentences) {
     // In a one-sentence sample the entire feedback is about this ambiguity.
     // Replace the model's blanket approval, rather than append a contradictory caveat.
     data.feedback=notes[0].explanation;
+    if(!correctedIds.has(notes[0].sentenceId)&&obj(data.assessment?.criteria?.language))
+      data.assessment.criteria.language.reason=notes[0].explanation;
     data.keyFocus={action:notes[0].action,explanation:notes[0].explanation,evidenceId:notes[0].sentenceId};
   }
   return data;
@@ -770,7 +802,18 @@ export function validate(data, payload, sentences) {
       issues.push('Source review needs an exact TASK quotation, valid coverage and essay IDs for any claimed coverage or distortion.');
   }
   const corrections=Array.isArray(data.edits) ? data.edits.filter(e=>e?.kind==='correction') : [];
-  issues.push(...preservationIssues(corrections,sentences));
+  issues.push(...preservationIssues(corrections,sentences),...lengthClaimIssues(data,payload));
+  for(const edit of corrections) {
+    const original=byId.get(edit.sentenceId)?.text||'';
+    // A pure replacement of causal for with because/as/since is not a grammar fix.
+    // Ignore comma differences so a needed comma cannot disguise the optional swap.
+    const clean=s=>s.toLowerCase().replace(/,/g,'').replace(/\s+/g,' ').trim();
+    const causal=/\bfor\s+(?:i|you|we|they|he|she|it|parents|students|teachers|people|children)\s+(?:am|is|are|was|were|have|has|had|do|does|did|can|could|will|would|must|may|might|see|sees|observe|observes|need|needs|want|wants|believe|believes|know|knows|feel|feels|fear|fears)\b/gi;
+    for(const match of original.matchAll(causal)) for(const connector of ['because','as','since']) {
+      const swapped=original.slice(0,match.index)+connector+original.slice(match.index+3);
+      if(clean(swapped)===clean(text(edit.replacement))) issues.push(edit.sentenceId+': replacing causal for with '+connector+' is an optional connector choice, not a necessary grammar correction. Retain for; add a comma before it if required, and explain only the real punctuation change.');
+    }
+  }
   const protectedMorningIds=new Set(ambiguousMorningIds(sentences));
   for(const edit of corrections) {
     if(protectedMorningIds.has(edit.sentenceId) && !new RegExp(PERFECT_AUX_PATTERN).test(text(edit.replacement)))
@@ -859,6 +902,7 @@ FINAL REQUIREMENTS: ${languageCheck}${preservationRule}
 The supplied correctionPreservations identify narrowly checked verb phrases. Preserve these phrases in edits; they do not certify the rest of a sentence. Do not criticise or penalise their protected tense use.
 Use at most three evidenceIds per criterion. Correction insights must point to a real correction edit. Never invent an edit to satisfy this relationship.`},
       {role:'user',content:JSON.stringify({...payload,
+        writingMetrics:writingMetrics(payload),
         sentences:sentences.map(({id,text})=>({id,text,detectedSignals:detectSignals(text)})),
         correctionPreservations:correctionPreservations(sentences),
         ambiguousMorningIds:protectedMorningIds})}];
@@ -869,14 +913,22 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
     let attempts=0, candidate=null, latestRaw='', validationIssues=[];
     const readTask=payload.level==='C2'&&Boolean(text(payload.task));
     const phaseAttempts={...(readTask?{task:0}:{}),assessment:0,review:0}, completions=[];
-    let maxCompletionTokens=6000, compact=false;
-    const diagnostics=phase=>({attempts,phase,phaseAttempts,reviewRequested:phase==='review',reviewCompleted:false,completions});
-    for(const phase of [...(readTask?['task']:[]),'assessment','review']) {
+    let maxCompletionTokens=6000, compact=false, taskRecheck=null, taskRechecks=0;
+    const diagnostics=phase=>({attempts,phase,phaseAttempts,taskRechecks,
+      taskClassification:payload.sourceReading?{taskType:payload.sourceReading.taskType,basis:payload.sourceReading.instructionStatus}:null,
+      reviewRequested:phase==='review',reviewCompleted:false,completions});
+    const phases=[...(readTask?['task']:[]),'assessment','review'];
+    for(let phaseIndex=0;phaseIndex<phases.length;phaseIndex++) {
+      const phase=phases[phaseIndex];
+      let reroute=false;
       const maximum=phase==='assessment' ? 3 : 2;
       validationIssues=[];
-      for(let phaseAttempt=1;phaseAttempt<=maximum;phaseAttempt++) {
+      for(let phaseAttempt=phaseAttempts[phase]+1;phaseAttempt<=maximum;phaseAttempt++) {
         const messages=phase==='task' ? [{role:'system',content:TASK_READING},
           {role:'user',content:JSON.stringify({task:payload.task,level:payload.level,feedbackLanguage:payload.feedbackLanguage})}] : [...baseMessages];
+        if(phase==='task'&&taskRecheck) messages.push({role:'system',content:
+          'Re-read only the original task. Two passes disagreed about its classification: '+JSON.stringify(taskRecheck)+
+          '. Neither classification is authoritative. Decide from the supplied task alone. Two C2 source bodies without instructions can be assessed provisionally as source_essay with basis assumed. Do not require the student essay to identify source passages.'});
         if(latestRaw) messages.push({role:'assistant',content:latestRaw});
         const instructions=[phase==='task'? 'Read the task without assuming a student interpretation. Return the source-only schema.' : phase==='review' ? REVIEW : 'Assess the original writing and return the complete assessment.'];
         if(validationIssues.length) instructions.push('Repair these defects and every dependent criticism, score reason and insight. Do not invent an error to satisfy validation: '+validationIssues.join(' '));
@@ -922,10 +974,29 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                 validationIssues=validateTaskReading(parsed,payload.task);
                 if(!validationIssues.length) {
                   payload.sourceReading=parsed;
-                  baseMessages[1]={role:'user',content:JSON.stringify({...JSON.parse(baseMessages[1].content),sourceReading:parsed,sourceCatalog:sourceCatalog(parsed)})};
+                  baseMessages[1]={role:'user',content:JSON.stringify({...JSON.parse(baseMessages[1].content),sourceReading:parsed,sourceCatalog:sourceCatalog(parsed),writingMetrics:writingMetrics(payload,parsed)})};
                   latestRaw='';break;
                 }
               } else {
+                const reading=payload.sourceReading,review=parsed?.taskReview;
+                const classificationValid=['source_essay','other','unclear'].includes(review?.taskType)&&
+                  ['explicit','assumed','missing'].includes(review?.basis);
+                if(reading&&classificationValid&&(review.taskType!==reading.taskType||review.basis!==reading.instructionStatus)) {
+                  // A provisional reading is not an immutable truth. Re-read TASK without
+                  // exposing the learner essay or the rejected assessment to that reader.
+                  // Reuse the same total phase budgets and overall deadline; no retry loop.
+                  if(phaseAttempts.task<2&&phaseAttempts.assessment<3&&phaseAttempts.review<2) {
+                    taskRecheck={previous:{taskType:reading.taskType,basis:reading.instructionStatus},
+                      alternative:{taskType:review.taskType,basis:review.basis}};
+                    taskRechecks++;latestRaw='';candidate=null;delete payload.sourceReading;
+                    const input=JSON.parse(baseMessages[1].content);delete input.sourceReading;delete input.sourceCatalog;input.writingMetrics=writingMetrics(payload);
+                    baseMessages[1]={role:'user',content:JSON.stringify(input)};
+                    phases.splice(phaseIndex+1,0,'task',...(phase==='review'?['assessment']:[]),phase);
+                    reroute=true;break;
+                  }
+                  return fail('ASSESSMENT_INCOMPLETE','The AI could not consistently identify the writing task. Please include the complete instructions and sources.',502,origin,
+                    {diagnostics:{...diagnostics(phase),issues:['Task classification disagreement remains; the source-reading or assessment/review retry budget is exhausted.']}});
+                }
                 const referenceIssues=resolveSourceReferences(parsed,payload.sourceReading);
                 parsed=normaliseCoaching(applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences),sentences);
                 validationIssues=[...referenceIssues,...validate(parsed,payload,sentences)];
@@ -934,7 +1005,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                 if(!validationIssues.length) {
                   if(phase==='review') {
                     const output=toClient(parsed,payload,sentences,attempts);
-                    Object.assign(output.diagnostics,{reviewCompleted:true,phaseAttempts,completions});
+                    Object.assign(output.diagnostics,{reviewCompleted:true,phaseAttempts,taskRechecks,completions});
                     return json(output,200,origin);
                   }
                   candidate=parsed;latestRaw=raw;break;
@@ -950,6 +1021,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
         // Truncated output never replaces a complete assessment awaiting review.
         if(raw) latestRaw=raw;
       }
+      if(reroute) continue;
       if((phase==='task'&&payload.sourceReading)||(phase==='assessment' && candidate)) continue;
       return fail('ASSESSMENT_INCOMPLETE','The AI could not complete a consistent assessment. Please try again.',502,origin,
         {diagnostics:{...diagnostics(phase),

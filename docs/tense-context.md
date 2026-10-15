@@ -1,4 +1,49 @@
-> Current behaviour: v5.5.1 retains the v5.5 coaching UI and replaces fragile repeated source quotations with server-resolved source point IDs. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+> Current behaviour: v5.5.2 retains the v5.5 UI and v5.5.1 source IDs, adds bounded task reclassification, server word metrics and narrow safeguards for observed false corrections. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
+## v5.5.2: recover task classification and address the GPT-5.4 comparison findings
+
+Live v5.5.1 tests were repeated after the user reported changing OPENAI_MODEL from gpt-4o-mini
+ to gpt-5.4. The endpoint does not expose the upstream model ID; the setting is user-confirmed.
+The short morning sample and tense email returned HTTP 200 (about 36 and 53 seconds). All three
+source-only homeschooling requests (EN/NL/ES) failed after contradictory task classifications.
+With explicit CPE instructions added, the NL request returned HTTP 200 after about 119 seconds
+and correctly diagnosed the reversed source-2 position and weak evaluation. It nevertheless
+called the 256-word essay too short and wrongly treated causal for -> because as a correction.
+The short morning sample also invented checking emails/leaving home in a teaching example.
+Selected real outputs are retained in tests/fixtures/v551-gpt54-live-results.json. The rejected
+raw model candidates are not available, so their exact reasoning is not inferred from diagnostics.
+
+Changes:
+
+- A source-only reading is provisional. If assessment or review disagrees with its task type or
+  explicit/assumed/missing basis, re-read the ORIGINAL TASK without the essay or the rejected
+  feedback. Pass only the two disputed classifications as a neutral recheck hint. Discard the
+  candidate, rebuild its source catalogue/schema and reassess after the new reading. If readers
+  still disagree, return a clear error rather than unchecked feedback. The existing TOTAL budgets
+  remain task 2 / assessment 3 / review 2, sharing 180 seconds and 45 seconds per call. No unbounded
+  retry, forced source interpretation, or task-specific homeschooling answer is introduced.
+- Task reading explicitly allows two C2 source bodies without instructions, with basis assumed.
+  Diagnostic failures expose the classification and recheck count, not provider secrets.
+- The server supplies inputWords, a recognised explicit word range or assumed C2 source-essay
+  range, and lengthStatus. Narrow EN/NL/ES checks reject explicit whole-essay too-short/too-long
+  claims when the count is in range, requesting reconsideration of dependent penalties. This
+  is not a complete multilingual semantic detector. Argument development remains separately
+  assessable, and no automatic word-count mark deduction is introduced.
+- A narrow guard rejects pure causal-for substitutions with because/as/since for recognised
+  subject/finite-verb patterns (ignoring comma differences). A comma-only repair remains allowed,
+  as do independent changes such as adding an infinitive. This is not a complete grammar parser
+  and does not detect every combination of connector substitution plus other simultaneous edits.
+- Ambiguous morning examples without source links receive conditional guidance across language,
+  task-response, organisation and style teaching categories. No personal events are added. Real
+  correction examples and distinct source-interpretation findings remain separate. For a lone
+  ambiguous sentence without a real correction, the language reason also uses the conditional
+  explanation instead of blanket approval. Scores are not fabricated or overridden.
+
+Verification: 72 Worker + 31 coaching + 8 writing-coach DOM + 6 tense DOM checks pass (117).
+These include real-output regression fixtures and mocked model calls. This demonstrates the
+recovery/guard behaviour, not that GPT-5.4 will produce correct feedback after deployment.
+Live retesting remains required. No model setting, API key, or frontend is changed by this patch.
+Standalone deployment file: downloads/essaycoach-worker-v5.5.2.txt, identical to Worker source.
 
 ## v5.5.1: repair the failures observed after v5.5 deployment
 

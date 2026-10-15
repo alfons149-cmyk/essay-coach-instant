@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching} from '../apps/worker/src/worker.js';
+import worker,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics} from '../apps/worker/src/worker.js';
 const input=JSON.parse(await readFile(new URL('./fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
 const {sourceBodies,...payload}=input,ss=numberSentences(payload.essay);
 const id=part=>ss.find(s=>s.text.includes(part)).id;
@@ -185,3 +185,105 @@ await test('a recognised short English practice sentence cannot be rejected sole
  assert(validate(d,p,sentences).some(s=>s.includes('understandable English practice sentence')));
 });
 console.log(`${checks} source-reference and coaching checks passed; model calls mocked.`);
+
+const plainCompletion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+const wrongReading={taskType:'other',instructionStatus:'missing',summary:'No explicit writing instructions identified.',sources:[]};
+await test('classification disagreement triggers an isolated task recheck and rebuilds the source schema',async()=>{
+ const bodies=[];
+ globalThis.fetch=async(_,o)=>{
+  bodies.push(JSON.parse(o.body));
+  return bodies.length===1?plainCompletion(wrongReading):bodies.length===2?plainCompletion(assessment()):completion(bodies.length===3?plan:assessment());
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,5);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:1});assert.equal(result.diagnostics.taskRechecks,1);
+ const recheck=bodies[2];assert.equal(recheck.response_format.json_schema.name,'essaycoach_task_reading');
+ assert(!JSON.stringify(recheck).includes('not widely recognized'));assert(!JSON.stringify(recheck).includes('Over these past few years'));
+ assert(!recheck.messages.some(m=>m.role==='assistant'));
+ assert('sourceReview' in bodies[1].response_format.json_schema.schema.properties);
+ assert('sourceReviewById' in bodies[3].response_format.json_schema.schema.properties);
+ assert(!bodies[3].messages.some(m=>m.role==='assistant'));
+ assert.equal(result.sourceReview[1].coverage,'distorted');
+});
+await test('a disagreement about assumed instructions also gets a source-only recheck',async()=>{
+ let calls=0;globalThis.fetch=async()=>{calls++;return completion(calls===1?{...plan,instructionStatus:'explicit'}:calls===3?plan:assessment());};
+ const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
+ assert.equal(calls,5);assert.equal(result.taskReview.basis,'assumed');
+});
+await test('permanent task disagreement is bounded and returns no provisional feedback',async()=>{
+ let calls=0;globalThis.fetch=async()=>plainCompletion(++calls%2?wrongReading:assessment());
+ const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,4);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:0});
+ assert(result.diagnostics.issues[0].includes('disagreement'));assert(!result.nextDraft);assert(!result.learningPoints);
+});
+await test('a recheck still rejects fabricated source bodies instead of accepting a changed classification',async()=>{
+ let calls=0;globalThis.fetch=async()=>{
+  calls++;const bad=structuredClone(plan);bad.sources[0].sourceQuote='A fabricated source body that is absent from the task.';
+  return plainCompletion(calls===1?wrongReading:calls===2?assessment():bad);
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,3);
+ assert.equal(result.diagnostics.phase,'task');assert(!result.assessment);
+});
+await test('a review-stage classification disagreement discards the candidate and reassesses after re-reading',async()=>{
+ let calls=0;globalThis.fetch=async()=>{
+  calls++;if(calls===3){const d=wire(assessment());d.taskReview.taskType='other';return plainCompletion(d);}
+  return completion([1,4].includes(calls)?plan:assessment());
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,6);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:2});assert.equal(result.diagnostics.reviewCompleted,true);
+});
+await test('task reclassification does not reset the shared deadline',async()=>{
+ const oldNow=Date.now;let elapsed=0,calls=0;Date.now=()=>elapsed;
+ try {
+  globalThis.fetch=async()=>{elapsed+=100000;return plainCompletion(++calls===1?wrongReading:assessment());};
+  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,504);assert.equal(calls,2);
+  assert.equal(result.diagnostics.phase,'task');assert.equal(result.diagnostics.taskRechecks,1);
+ } finally {Date.now=oldNow;}
+});
+console.log(`${checks} coaching checks passed; model calls mocked.`);
+
+const observed=JSON.parse(await readFile(new URL('./fixtures/v551-gpt54-live-results.json',import.meta.url),'utf8'));
+await test('server word metrics distinguish explicit limits, assumed C2 limits, and missing limits',()=>{
+ assert.deepEqual(writingMetrics(payload,plan),{inputWords:256,expectedRange:{min:240,max:280,basis:'assumed'},lengthStatus:'within_range'});
+ assert.equal(writingMetrics(payload).lengthStatus,'unspecified');
+ const explicit={...payload,task:'Write 240–280 words.\n'+payload.task};
+ assert.equal(writingMetrics(explicit).expectedRange.basis,'explicit');
+ assert.equal(writingMetrics({...explicit,essay:'A short response.'}).lengthStatus,'below_range');
+ assert.equal(writingMetrics({...explicit,essay:'word '.repeat(281)}).lengthStatus,'above_range');
+});
+await test('captured false length claims are rejected even when the rest of a C2 assessment is valid',()=>{
+ const d=assessment();d.feedback=observed.explicitTask.feedback;
+ assert.equal(observed.explicitTask.inputWords,256);
+ assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('server word count')));
+ for(const feedback of ['The essay is too short for this task.','De tekst blijft onder de gevraagde lengte.','El ensayo es demasiado corto.']) {
+  d.feedback=feedback;assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('server word count')),feedback);
+ }
+ d.feedback='The argument needs deeper evaluation. De argumentatie is nog onvoldoende ontwikkeld.';
+ assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+});
+await test('word metrics are present in the first assessment and updated after source reading',async()=>{
+ const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));return completion(bodies.length===1?plan:assessment());};
+ const response=await worker.fetch(request(),env);assert.equal(response.status,200);
+ const input=JSON.parse(bodies[1].messages.find(m=>m.role==='user').content);
+ assert.equal(input.writingMetrics.inputWords,256);assert.equal(input.writingMetrics.lengthStatus,'within_range');
+});
+await test('captured causal-for substitution cannot masquerade as a grammar correction; comma-only repair remains valid',()=>{
+ const live=observed.explicitTask.edits.find(e=>e.from.includes('for parents observe'));
+ const d=assessment();d.edits.push({kind:'correction',sentenceId:live.sentenceId,replacement:live.to,reason:live.reason});
+ assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('replacing causal for')));
+ d.edits.at(-1).replacement=live.from.replace('homeschooling for','homeschooling, for');
+ d.edits.at(-1).reason='Add a comma before the coordinating conjunction for.';
+ assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+});
+await test('causal-for guard generalises to other subjects and preserves independent corrections',()=>{
+ for(const [original,replacement] of [
+  ['I stayed home for I was tired.','I stayed home because I was tired.'],
+  ['We should listen, for students need support.','We should listen, as students need support.']]) {
+  const local=numberSentences(original),d=assessment();d.edits=[{kind:'correction',sentenceId:'S1',replacement,reason:'Change the connector.'}];
+  assert(validate(d,{...payload,essay:original},local).some(s=>s.includes('replacing causal for')));
+ }
+ const original='It is important for parents observe their children.',local=numberSentences(original),d=assessment();
+ d.edits=[{kind:'correction',sentenceId:'S1',replacement:'It is important for parents to observe their children.',reason:'Use the infinitive after for parents.'}];
+ assert(!validate(d,{...payload,essay:original},local).some(s=>s.includes('replacing causal for')));
+});
+console.log(`${checks} coaching checks passed; live fixtures replayed without an AI call.`);
