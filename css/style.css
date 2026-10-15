@@ -1709,6 +1709,27 @@ body {
   50%  { transform: rotate(-1.2deg) translateY(-3px); }
   100% { transform: rotate(-1.2deg) translateY(0); }
 }
+
+/* Time-frame teaching follows the text order on both desktop and mobile. */
+#tenseAnalysisCard[hidden] { display: none !important; }
+.tense-list { margin: 1rem 0; padding-left: 1.5rem; }
+.tense-entry { margin: 0 0 1rem; padding: 1rem; border-left: 4px solid #5674a3;
+  background: #f6f8fc; border-radius: 0 10px 10px 0; overflow-wrap: anywhere; }
+.tense-entry[data-frame="past"] { border-color: #92643a; }
+.tense-entry[data-frame="future"] { border-color: #36765b; }
+.tense-entry[data-frame="mixed"], .tense-entry[data-frame="uncertain"] { border-color: #77629b; }
+.tense-badges { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; margin-top: 0; }
+.tense-badges span { font-size: .85rem; color: #475569; }
+.tense-quote { margin: .75rem 0; padding: .6rem .85rem; background: #fff;
+  border-left: 2px solid #cbd5e1; white-space: pre-wrap; }
+.tense-quote mark { background: #fff0ae; color: #332b17; padding: 0 .1em; }
+.tense-forms { font-weight: 600; }
+.tense-revised { padding: .6rem; background: #eaf5ed; color: #23452c; }
+.tense-entry summary { cursor: pointer; font-weight: 600; padding: .3rem 0; }
+@media (max-width: 520px) {
+  .tense-list { padding-left: 1.1rem; }
+  .tense-entry { padding: .7rem; }
+}
 /* ===========================================
    KEY FOCUS — Sticky Note Style (matches
    .summary-item--focus markup)

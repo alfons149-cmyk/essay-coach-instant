@@ -5,8 +5,16 @@ on:
     branches: [ main ]
     paths:
       - "apps/worker/**"
+      - "tests/worker.test.mjs"
       - ".github/workflows/server.yml"
   workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: essaycoach-worker-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -18,11 +26,20 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build
-        working-directory: apps/worker
+      - name: Check Worker and regression tests
         run: |
-          npm ci
-          npm run build
+          node --check apps/worker/src/worker.js
+          node tests/worker.test.mjs
+
+      - name: Verify deployment credentials are configured
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "::error::Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in repository Actions secrets to deploy EssayCoach. Existing OpenAI secrets remain on Cloudflare."
+            exit 1
+          fi
 
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
@@ -30,4 +47,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/worker
-          command: deploy
+          command: deploy --keep-vars
