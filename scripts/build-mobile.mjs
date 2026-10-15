@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = resolve(root, "dist-mobile");
 
-const files = ["book.html", "course-book.pdf", "index.html"];
+const files = ["book.html", "course-book.pdf", "index.html", "tenses.html"];
 const directories = ["assets", "css", "feedback", "js", "pdfjs"];
 
 await rm(output, { recursive: true, force: true });

@@ -56,6 +56,7 @@
   // i18n helpers
   // -----------------------------
   function applyI18nToDom() {
+    window.ECTenseFeedback?.renderGuideLink(detectUILang());
     if (!window.I18N || typeof I18N.t !== "function") return;
 
     // Optional: page title
@@ -638,6 +639,7 @@
   // -----------------------------
   document.addEventListener("DOMContentLoaded", () => {
     repairResultLayout();
+    window.ECTenseFeedback?.renderGuideLink(detectUILang());
     // initial paint
     reflectLangButtons();
     reflectLevelButtons();

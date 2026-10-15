@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import worker,{numberSentences,responseSchema,validate,toClient} from '../apps/worker/src/worker.js';
+import worker,{numberSentences,responseSchema,validate,toClient,detectSignals,obviouslyEnglishExplanation} from '../apps/worker/src/worker.js';
 const payload={essay:"Essay\r\nThe overarching theme of the two texts relates to cars and transportation.\r\nLiving abroad helps students develop their confidence. Students learns abroad.\r\nLiving abroad helps students develop their confidence.",task:'',level:'C1'};
 const sentences=numberSentences(payload.essay);
 const idFor=t=>sentences.find(s=>s.text===t).id;
 const theme=idFor('The overarching theme of the two texts relates to cars and transportation.');
 const incorrect=idFor('Students learns abroad.');
 const repeated=idFor('Living abroad helps students develop their confidence.');
-function valid(){return {tenseAnalysis:[{sentenceId:theme,contextIds:[],signals:[],timeFrame:'present',forms:['present simple'],status:'correct',explanation:'The sentence describes a general relationship in the present.'}],sourceReview:[],sampleSuitable:true,feedback:'Your argument is clear. Correct the agreement in the sentence about students. The task was not supplied, so content and communicative achievement cannot be assessed.',
+function valid(){return {tenseAnalysis:[{clauses:[{quote:sentences.find(s=>s.id===theme).text,timeFrame:'present',form:'present simple'}],sentenceId:theme,contextIds:[],signals:[],timeFrame:'present',forms:['present simple'],status:'correct',explanation:'The sentence describes a general relationship in the present.'}],sourceReview:[],sampleSuitable:true,feedback:'Your argument is clear. Correct the agreement in the sentence about students. The task was not supplied, so content and communicative achievement cannot be assessed.',
  assessment:{taskSufficient:false,criteria:{
  content:{score:null,reason:'Task not supplied.',evidenceIds:[]},communicative:{score:null,reason:'Task not supplied.',evidenceIds:[]},
  organisation:{score:3,reason:'Ideas are linked but some repetition remains.',evidenceIds:[theme,repeated]},
@@ -36,7 +36,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.2.1');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-15-tense-context-v5.3');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -50,7 +50,7 @@ await test('invented source quotations rejected',()=>{const d=valid();d.sourceRe
 await test('missing source idea can have no essay quotation',()=>{const p={...payload,task:'Products should last longer.'};const d=valid();d.sourceReview=[{sourceQuote:p.task,point:'Durability',coverage:'missing',essayEvidenceIds:[],explanation:'The draft does not discuss durability.'}];assert.equal(validate(d,p,sentences).length,0);d.sourceReview[0].coverage='covered';assert(validate(d,p,sentences).length);});
 await test('reviewed result replaces provisional result',async()=>{calls=0;globalThis.fetch=async()=>{calls++;const d=valid();if(calls===2)d.feedback='Reviewed feedback with a checked agreement correction.';return completion(d);};const r=await worker.fetch(request(payload),env);const d=await r.json();assert.equal(d.feedback,'Reviewed feedback with a checked agreement correction.');assert.equal(d.diagnostics.reviewCompleted,true);assert.equal(calls,2);});
 await test('failed review never returns unchecked draft as success',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?completion(valid()):new Response('unavailable',{status:503});const r=await worker.fetch(request(payload),env);assert.equal(r.status,502);assert.equal(calls,2);});
-await test('fragment correction preserves surrounding sentences and paragraphs',()=>{const essay='We can change our lifestyles.\nFor example, reducing disposable waste and increasing the use of reusable items.\nEducation also matters.';const ss=numberSentences(essay),d=valid();const id=ss[1].id;d.assessment.criteria.organisation.evidenceIds=[ss[0].id];d.assessment.criteria.language.evidenceIds=[id];d.keyFocus.evidenceId=id;d.edits=[{kind:'correction',sentenceId:id,replacement:'For example, we can reduce disposable waste and increase the use of reusable items.',reason:'Add a subject and finite verb to complete the sentence.'}];d.sentenceInsights=[];d.vocabularySuggestions=[];d.tenseAnalysis[0].sentenceId=ss[0].id;const r=toClient(d,{...payload,essay},ss,2);assert.equal(r.nextDraft,essay.replace(ss[1].text,d.edits[0].replacement));});
+await test('fragment correction preserves surrounding sentences and paragraphs',()=>{const essay='We can change our lifestyles.\nFor example, reducing disposable waste and increasing the use of reusable items.\nEducation also matters.';const ss=numberSentences(essay),d=valid();const id=ss[1].id;d.assessment.criteria.organisation.evidenceIds=[ss[0].id];d.assessment.criteria.language.evidenceIds=[id];d.keyFocus.evidenceId=id;d.edits=[{kind:'correction',sentenceId:id,replacement:'For example, we can reduce disposable waste and increase the use of reusable items.',reason:'Add a subject and finite verb to complete the sentence.'}];d.sentenceInsights=[];d.vocabularySuggestions=[];d.tenseAnalysis[0].sentenceId=ss[0].id;d.tenseAnalysis[0].clauses[0].quote=ss[0].text;const r=toClient(d,{...payload,essay},ss,2);assert.equal(r.nextDraft,essay.replace(ss[1].text,d.edits[0].replacement));});
 console.log(`${checks} total checks passed. Mocked model responses: these tests do not establish live assessment quality.`);
 
 const {normaliseEdits}=await import('../apps/worker/src/worker.js');
@@ -68,6 +68,16 @@ function tenseFixture(essay, entries, edits=[]) {
   d.assessment.criteria.language={score:4,reason:'The example provides evidence of tense control.',evidenceIds:[first]};
   d.keyFocus={action:'Connect the time signals to the verb forms.',evidenceId:first,explanation:'Explain why each time frame is appropriate.'};
   d.edits=edits;d.sentenceInsights=[];d.vocabularySuggestions=[];d.tenseAnalysis=entries;
+  for(const e of entries) {
+    const sentence=ss.find(s=>s.id===e.sentenceId);if(!sentence)continue;
+    const clues=detectSignals(sentence.text);
+    if(!e.signals.length)e.signals=clues.slice(0,4);
+    if(clues.length)e.explanation += ` Clue: ${clues[0]}.`;
+    e.clauses ||= e.timeFrame==='mixed' ? [
+      {quote:sentence.text.split(/,| who /)[0],timeFrame:'future',form:e.forms[0]},
+      {quote:sentence.text.split(/,| who /).at(-1),timeFrame:sentence.text.includes('last night')?'past':'present',form:e.forms.at(-1)}
+    ] : [{quote:sentence.text,timeFrame:e.timeFrame,form:e.forms[0]}];
+  }
   return {p,ss,d};
 }
 const entry=(sentenceId,overrides={})=>({sentenceId,contextIds:[],signals:[],timeFrame:'present',forms:['present simple'],status:'correct',explanation:'The clause describes the present situation.',...overrides});
@@ -114,7 +124,7 @@ await test('missing analysis triggers repair for suitable writing',()=>{
 });
 await test('ambiguity may use following context without an invented correction',()=>{
  const f=tenseFixture('This morning I have had a coffee. It is still morning.',[
-  entry('S1',{contextIds:['S2'],signals:['This morning','still morning'],forms:['present perfect simple'],status:'context_needed',explanation:'The present perfect can describe an event in an unfinished morning.'})]);
+  entry('S1',{contextIds:['S2'],signals:['This morning','still morning'],forms:['present perfect simple'],status:'context_needed',explanation:'The present perfect can describe an event in an unfinished morning.'}),entry('S2',{signals:['still']})]);
  assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,f.p.essay);
 });
 for (const [label,essay,frame,forms] of [
@@ -129,7 +139,7 @@ for (const [label,essay,frame,forms] of [
  assert.deepEqual(validate(f.d,f.p,f.ss),[]);assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,essay);
 });
 await test('trusted prompts include scoped tense guidance on both passes',async()=>{
- const bodies=[];globalThis.fetch=async(_,options)=>{bodies.push(JSON.parse(options.body));return completion(valid());};
+ const bodies=[];globalThis.fetch=async(_,options)=>{bodies.push(JSON.parse(options.body));const d=valid();d.tenseAnalysis[0].explanation='La frase describe una relación en el presente.';return completion(d);};
  const r=await worker.fetch(request({...payload,feedbackLanguage:'es'}),env);assert.equal(r.status,200);
  assert.match(bodies[0].messages[0].content,/ALFONS' TIME-FRAME/);
  assert.match(bodies[0].messages[0].content,/not a past-time rule/);
@@ -154,8 +164,48 @@ await test('timeline may not collapse to only an error',()=>{
 await test('teaching targets are bounded and do not require tense corrections',()=>{
  const essay=Array.from({length:10},(_,i)=>`Tomorrow I am visiting friend number ${i}.`).join(' ');
  const ss=numberSentences(essay),targets=tenseTeachingTargets(ss);
- assert.equal(targets.length,6);
+ assert.equal(targets.length,1);
  const f=tenseFixture(essay,targets.map(id=>entry(id,{timeFrame:'future',signals:['Tomorrow'],forms:['present continuous (arrangement)']})));
  assert.deepEqual(validate(f.d,f.p,f.ss),[]);assert.equal(toClient(f.d,f.p,f.ss,2).nextDraft,essay);
 });
 console.log(`${checks} total checks passed.`);
+
+await test('full chart signals are recognised without swallowing longer phrases',()=>{
+ const examples=['On Fridays','always','never','usually','already','just','yet','today','this week','this month','this year','for','since','last week','ago','yesterday','this morning','yesterday at 5','when','while','before','until','tomorrow at 5','by the time','hopefully'];
+ for(const word of examples) assert(detectSignals(`Example ${word}.`).includes(word),word);
+ assert.deepEqual(detectSignals('I have been painting for the last two weeks.'),['for the last two weeks']);
+ assert.deepEqual(detectSignals('For example, this is useful.'),[]);
+});
+await test('known live failure: verbs alone cannot replace actual signals',()=>{
+ const f=tenseFixture('Three days ago, I went home.',[entry('S1',{timeFrame:'past',forms:['past simple']})]);
+ f.d.tenseAnalysis[0].signals=['went'];f.d.tenseAnalysis[0].explanation='The past simple describes an earlier event.';
+ const issues=validate(f.d,f.p,f.ss).join(' ');assert.match(issues,/actual time\/connecting clue/);assert.match(issues,/explicitly quote/);
+});
+await test('known live failure: a future and past clause cannot be labelled only future',()=>{
+ const f=tenseFixture('I will be taking an exam later today, so I read my textbook last night.',[entry('S1',{timeFrame:'mixed',forms:['future continuous','past simple']})]);
+ f.d.tenseAnalysis[0].timeFrame='future';assert.match(validate(f.d,f.p,f.ss).join(' '),/must be mixed/);
+});
+await test('known live failure: this morning alone cannot justify changing perfect to past',()=>{
+ const essay='This morning I have had a coffee.';
+ const f=tenseFixture(essay,[entry('S1',{timeFrame:'past',forms:['past simple'],status:'correction'})],[{sentenceId:'S1',kind:'correction',replacement:'This morning I had a coffee.',reason:'Past consistency.'}]);
+ assert.match(validate(f.d,f.p,f.ss).join(' '),/without explicit finished-time evidence/);
+ const ss=numberSentences(essay+' It is now evening.');
+ assert(!validate(f.d,{...f.p,essay:essay+' It is now evening.'},ss).some(s=>s.includes('without explicit finished-time evidence')));
+ const unrelated=numberSentences(essay+' I read last night.');
+ assert(validate(f.d,{...f.p,essay:essay+' I read last night.'},unrelated).some(s=>s.includes('without explicit finished-time evidence')));
+});
+await test('known live failure: obvious English prose rejected for Dutch or Spanish',()=>{
+ const prose="The present continuous 'are visiting' is used for planned future events.";
+ assert(obviouslyEnglishExplanation(prose,'nl'));assert(obviouslyEnglishExplanation(prose,'es'));assert(!obviouslyEnglishExplanation(prose,'en'));
+ assert(!obviouslyEnglishExplanation("Met 'Tomorrow' verwijst deze zin naar een geplande afspraak.",'nl'));
+ assert(!obviouslyEnglishExplanation("La palabra 'Tomorrow' indica un plan para el futuro.",'es'));
+ const f=tenseFixture('Tomorrow we are visiting friends.',[entry('S1',{timeFrame:'future',forms:['present continuous']})]);
+ f.p.feedbackLanguage='nl';f.d.tenseAnalysis[0].explanation=prose+' Tomorrow.';
+ assert.match(validate(f.d,f.p,f.ss).join(' '),/rewrite the explanation in Dutch/);
+});
+await test('clause evidence must come from the actual sentence',()=>{
+ const f=tenseFixture('I have known her since 2010.',[entry('S1')]);
+ f.d.tenseAnalysis[0].clauses[0].quote='I have been knowing her';
+ assert.match(validate(f.d,f.p,f.ss).join(' '),/exact original quotes/);
+});
+console.log(`${checks} checks passed; model responses mocked. Live v5.3 still requires deployment.`);

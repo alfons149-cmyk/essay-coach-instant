@@ -1786,3 +1786,5 @@ body {
   50%  { transform: rotate(-1.2deg) translateY(-3px); }
   100% { transform: rotate(-1.2deg) translateY(0); }
 }
+
+.tense-guide-link{margin:0 0 1rem;padding:.85rem 1rem;border:1px solid #cad6e2;border-radius:.7rem;background:#f8fafc}.tense-guide-link a{color:#185c83;font-weight:600;text-underline-offset:.2em}

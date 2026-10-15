@@ -7,7 +7,7 @@
       present: 'Present', past: 'Past', future: 'Future', mixed: 'Mixed time frames', uncertain: 'Context needed',
       correct: 'Valid use', correction: 'Correction', context_needed: 'Check the context',
       signals: 'Signals', implicit: 'The meaning and verb forms establish the time frame.',
-      forms: 'Verb forms', context: 'Connected context', revised: 'Corrected sentence',
+      guide: 'Tenses & signal words — Alfons’ guide', clauses: 'Time frame per clause', forms: 'Verb forms', context: 'Connected context', revised: 'Corrected sentence',
       note: 'Signal words are clues. The meaning and scope of each clause determine the appropriate form.'
     },
     nl: {
@@ -16,7 +16,7 @@
       present: 'Tegenwoordige tijd', past: 'Verleden tijd', future: 'Toekomst', mixed: 'Verschillende tijdskaders', uncertain: 'Context nodig',
       correct: 'Correct gebruik', correction: 'Correctie', context_needed: 'Controleer de context',
       signals: 'Signalen', implicit: 'De betekenis en werkwoordvormen bepalen hier het tijdskader.',
-      forms: 'Werkwoordvormen', context: 'Bijbehorende context', revised: 'Gecorrigeerde zin',
+      guide: 'Tenses & signaalwoorden — Alfons’ overzicht', clauses: 'Tijdskader per zinsdeel', forms: 'Werkwoordvormen', context: 'Bijbehorende context', revised: 'Gecorrigeerde zin',
       note: 'Signaalwoorden geven richting. De betekenis en reikwijdte van elke bijzin bepalen welke vorm past.'
     },
     es: {
@@ -25,7 +25,7 @@
       present: 'Presente', past: 'Pasado', future: 'Futuro', mixed: 'Marcos temporales diferentes', uncertain: 'Falta contexto',
       correct: 'Uso correcto', correction: 'Corrección', context_needed: 'Comprueba el contexto',
       signals: 'Palabras clave', implicit: 'El significado y las formas verbales establecen el marco temporal.',
-      forms: 'Formas verbales', context: 'Contexto relacionado', revised: 'Frase corregida',
+      guide: 'Tiempos y palabras clave — guía de Alfons', clauses: 'Marco temporal de cada oración', forms: 'Formas verbales', context: 'Contexto relacionado', revised: 'Frase corregida',
       note: 'Las palabras clave son pistas. El significado y el alcance de cada cláusula determinan la forma adecuada.'
     }
   };
@@ -91,6 +91,15 @@
       li.append(node('p', signals.length ? `${copy.signals}: ${signals.join(' · ')}` : copy.implicit));
       li.append(node('p', `${copy.forms}: ${entry.forms.slice(0,4).join(' · ')}`, 'tense-forms'));
       li.append(node('p', entry.explanation));
+      if (Array.isArray(entry.clauses)) {
+        const clauses=entry.clauses.filter(c=>c && typeof c.quote==='string' && c.quote && entry.example.includes(c.quote) &&
+          ['present','past','future','uncertain'].includes(c.timeFrame) && typeof c.form==='string').slice(0,4);
+        if(clauses.length) {
+          const detail=node('details');detail.append(node('summary',copy.clauses));
+          clauses.forEach(c=>{const p=node('p');p.append(node('q',c.quote),doc.createTextNode(` — ${copy[c.timeFrame]} · ${c.form}`));detail.append(p);});
+          li.append(detail);
+        }
+      }
       if (entry.status === 'correction') li.append(node('p', `${copy.revised}: ${entry.correctedVersion}`, 'tense-revised'));
       if (context.length) {
         const details = node('details');
@@ -101,7 +110,14 @@
       list.append(li);
     }
     card.append(header, list, node('p', copy.note, 'app-block__hint'));
+    const guide=node('a',copy.guide);guide.href=`tenses.html?lang=${Object.hasOwn(COPY,language)?language:'en'}#perfect`;
+    card.append(guide);
     card.hidden = false;
   }
-  window.ECTenseFeedback = {render};
+  function renderGuideLink(language='en') {
+    const lang=Object.hasOwn(COPY,language)?language:'en';
+    const link=document.getElementById('tenseGuideLink');
+    if(link){link.textContent=COPY[lang].guide;link.href=`tenses.html?lang=${lang}`;}
+  }
+  window.ECTenseFeedback = {render,renderGuideLink};
 })();

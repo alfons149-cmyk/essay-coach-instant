@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.2 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.3 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-15-tense-context-v5.2.1";
+const VERSION = "2026-10-15-tense-context-v5.3";
 const TIME_FRAMES = ['present', 'past', 'future', 'mixed', 'uncertain'];
 const TENSE_STATUS = ['correct', 'correction', 'context_needed'];
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
@@ -27,6 +27,26 @@ const UNITS = {
   "19": "Mastering the C2 Essay Task",
   "20": "Refining the C2 Essay — Elegance, Depth, and Nuance"
 };
+
+// Pedagogical clues only: recognition never decides whether a verb is wrong.
+const SIGNAL_PATTERNS = [
+  /\bby the time\b/gi, /\bas soon as\b/gi, /\bso now\b/gi,
+  /\bfor the last (?:\w+\s+){0,2}(?:hours?|days?|weeks?|months?|years?)\b/gi,
+  /\bthis (?:morning|afternoon|evening|week|month|year)\b/gi,
+  /\blast (?:night|week|month|year|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/gi,
+  /\bnext (?:week|month|year|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/gi,
+  /\bon (?:Mondays?|Tuesdays?|Wednesdays?|Thursdays?|Fridays?|Saturdays?|Sundays?)\b/gi,
+  /\b(?:yesterday|tomorrow)(?: at \d{1,2}(?::\d{2})?(?:\s*[ap]\.?m\.?)?)?\b/gi,
+  /\b(?:at the moment|right now|so far|how long|all day|every day|at present|up to now)\b/gi,
+  /\bat \d{1,2}(?::\d{2})?(?:\s*[ap]\.?m\.?)?\b/gi,
+  /\b(?:always|never|usually|often|sometimes|already|just|yet|today|for(?!\s+(?:example|instance)\b)|since|ago|now|when|while|before|after|until|hopefully|recently|lately|ever|still|soon)\b/gi
+];
+export function detectSignals(value) {
+  const matches=SIGNAL_PATTERNS.flatMap(pattern=>[...value.matchAll(new RegExp(pattern.source,pattern.flags))]
+    .map(m=>({text:m[0],start:m.index,end:m.index+m[0].length})));
+  return matches.filter(m=>!matches.some(other=>other!==m && other.start<=m.start && other.end>=m.end && other.text.length>m.text.length))
+    .sort((a,b)=>a.start-b.start).filter((m,i,a)=>a.findIndex(n=>n.text.toLowerCase()===m.text.toLowerCase())===i).map(m=>m.text);
+}
 
 const SYSTEM = `You are EssayCoach, an independent English writing tutor.
 Evaluate the ORIGINAL essay at the requested B2, C1 or C2 level. Write clear, supportive British English.
@@ -94,6 +114,33 @@ present perfect can be valid while it is still morning and the period is open. D
 the narrator's time of day from the server clock. If context is missing, explain both readings
 as context_needed and preserve a defensible original. Spanish 'Esta mañana he tomado un café'
 is a useful transfer example, not proof that every English present perfect here is wrong.
+ADDITIONAL CLUES FROM ALFONS' COMPLETE CHART
+Habit/frequency: on Fridays, always, never, usually (also often/sometimes/every day).
+They often support present simple, but always + continuous can express a repeated annoyance;
+never + present perfect can describe life experience. Frequency words do not fix the time frame.
+Present perfect: already, just, yet; today, this week/month/year if the period is open;
+also so far, ever, never, recently and lately. Already/just/yet also occur in other frames.
+Past background: yesterday at 5, when, while. Explain the background activity and the event
+or parallel activity; when/while do not inherently mean past or force continuous.
+Earlier past: before/after, with past perfect only when the past relationship warrants it.
+Duration to an endpoint: until, for, since; future completion/duration: by the time.
+Future: tomorrow at 5, next week, hopefully; will can express an instant decision without
+any explicit time word. Be going to is a future construction, not present continuous itself.
+Treat this list as useful clues, not exhaustive or mandatory tense mappings.
+
+PRESENT PERFECT DEPTH
+Dynamic verbs (do, clean, draw, buy, build, show, run, learn, read, ring, eat, cook): ask whether
+the writer highlights a completed result/quantity or activity/duration. Continuous may have
+JUST STOPPED with visible evidence; it need not still be happening. Simple can describe an
+ongoing state or repeated experience; it does not always mean finished. Work/live/study/teach
+often allow both forms for continuing situations; explain emphasis, not universal equivalence.
+Stative meaning generally favours simple (know, own, believe, understand, like, love, hate,
+want, prefer). Some verbs change meaning: think (opinion vs considering), have (possession vs
+activity), see (perception vs meeting), taste/smell (quality vs deliberate action), hear
+(perception vs an ongoing hearing/experience). Do not ban every -ing use of these verbs.
+Hope can naturally be continuous: 'I have been hoping to hear from you'.
+Use 'I have understood', not 'I have understand'. Do not reproduce source-sheet typos as rules.
+
 9. Keep coordinated actions consistent when they share the SAME past event:
 'I went home and eat a sandwich' -> 'I went home and ate a sandwich'. Different forms in one
 sentence are legitimate when their times/aspects differ: 'I was cooking when she called';
@@ -111,6 +158,18 @@ internally; select the opening anchor, meaningful frame changes, genuine tense c
 and useful ambiguities. For a suitable text, include at least one useful entry. Do not label
 correct tense variety as an error, invent markers, fill numbered gaps that were not answered,
 or change the student's intended timeline. Empty entries are allowed only for an unsuitable sample.
+Each entry must show the connection explicitly: quote a genuine TIME/CONNECTING WORD first,
+then explain the time frame and why this aspect fits the action/state. Prefer 'ago' to 'went'
+as the signal, 'So now' to 'am staying', and 'Tomorrow' to 'are visiting'. Do not substitute
+verb forms for available time clues. Quote the selected signal in the explanation too.
+Use all relevant clauses, not just the first: clauses contains 1-4 objects with an exact short
+original quote, its semantic timeFrame (present/past/future/uncertain), and its English form.
+For a correction, the quote is ORIGINAL and form names the CORRECTED form. If clause frames
+differ, the entry timeFrame MUST be mixed. A present simple future time clause is future TIME;
+a current activity in a relative clause can be present TIME even beside a future arrangement.
+For 'This morning I have had a coffee' without a closed morning stated in the text, preserve
+it and explain the ambiguity as context_needed. 'Last night' in another clause does NOT prove
+the morning is over. The reader's/server's clock is never evidence.
 Each entry uses sentenceId, 0-3 contextIds for other sentences needed to establish the frame,
 signals (0-4 exact case-sensitive excerpts from that sentence or those context sentences),
 timeFrame (present/past/future/mixed/uncertain), forms (1-4 short English tense/form labels),
@@ -123,6 +182,7 @@ corrected form. For correct entries describe the original forms. For context_nee
 what information is missing and valid alternatives without marking uncertainty as an error.
 If a tense correction is a high-value learning need, also explain it in feedback or an insight
 (Unit 12 for grammar); never deduct marks simply for an allowed alternative.
+The supplied detectedSignals are literal candidate clues; discuss their actual role (including non-temporal uses).
 The supplied tenseTeachingTargets identify sentences that MUST appear in tenseAnalysis for
 suitable writing, even if correct. They select teaching examples, NOT grammatical verdicts.
 Explain each target's actual time frame and marker scope. Retain these entries during review;
@@ -245,9 +305,30 @@ export function tenseTeachingTargets(sentences) {
   const eligible=sentences.filter(s=>s.text.length>=8);
   const opening=eligible.find(s=>/[.!?]["'”’)]*$/.test(s.text)) || eligible[0];
   if(!opening) return [];
-  const signals=/\b(?:ago|yesterday|so now|tomorrow|this morning|last (?:night|week|month|year)|next (?:week|month|year))\b/i;
-  return [opening,...eligible.filter(s=>s.id!==opening.id && signals.test(s.text))]
-    .slice(0,6).sort((a,b)=>a.start-b.start).map(s=>s.id);
+  const selected=[opening], covered=new Set(detectSignals(opening.text).map(s=>s.toLowerCase()));
+  // Prefer distinct clues so repeated "today" does not crowd out "since" or "while".
+  for(const sentence of eligible) {
+    const clues=detectSignals(sentence.text).map(s=>s.toLowerCase());
+    if(sentence!==opening && clues.some(clue=>!covered.has(clue))) {
+      selected.push(sentence);clues.forEach(clue=>covered.add(clue));
+      if(selected.length===6) break;
+    }
+  }
+  return selected.sort((a,b)=>a.start-b.start).map(s=>s.id);
+}
+
+// A conservative check for the observed English-only regression, not a general language detector.
+export function obviouslyEnglishExplanation(value, language) {
+  if(!['nl','es'].includes(language)) return false;
+  const prose=value.replace(/['"“”‘’][^'"“”‘’]*['"“”‘’]/g,' ');
+  const english=/\b(?:the|is|are|indicates?|describes?|should|because|with|used|action|ongoing)\b/gi;
+  const local=language==='nl' ? /\b(?:de|het|een|dit|deze|dat|omdat|wordt|worden|verleden|heden|toekomst|zin|duidt|geeft|beschrijft|wijst|gaat)\b/i
+    : /\b(?:el|la|los|las|un|una|se|es|son|porque|indica|describe|acción|pasado|presente|futuro|tiempo)\b/i;
+  return (prose.match(english)||[]).length>=3 && !local.test(prose);
+}
+function finishedMorningEvidence(sentences) {
+  // These are evidence of a closed morning, never the current date or a past marker elsewhere.
+  return sentences.some(s=>/\b(?:it is|it's|it’s|it was|now it is|now it's)\s+(?:now\s+)?(?:already\s+)?(?:the\s+)?(?:afternoon|evening|night)\b|\b(?:the|this) morning (?:is|was|has been) (?:already )?over\b|\bthis morning at \d/i.test(s.text));
 }
 
 function shape(properties) { return {type:'object',properties,required:Object.keys(properties),additionalProperties:false}; }
@@ -270,7 +351,8 @@ export function responseSchema(sentences) {
     vocabularySuggestions:arr(shape({sentenceId:id,original:str,alternatives:arr(str),explanation:str})),
     tenseAnalysis:arr(shape({sentenceId:id,contextIds:arr(id),signals:arr(str),
       timeFrame:{type:'string',enum:TIME_FRAMES},forms:arr(str),
-      status:{type:'string',enum:TENSE_STATUS},explanation:str}))
+      status:{type:'string',enum:TENSE_STATUS},explanation:str,
+      clauses:arr(shape({quote:str,timeFrame:{type:'string',enum:['present','past','future','uncertain']},form:str}))}))
   });
   schema.$defs={sentenceId};
   return schema;
@@ -383,6 +465,25 @@ export function validate(data, payload, sentences) {
       if(!TIME_FRAMES.includes(entry.timeFrame) || !TENSE_STATUS.includes(entry.status) || !text(entry.explanation) ||
          !Array.isArray(entry.forms) || !entry.forms.length || entry.forms.length>4 || entry.forms.some(f=>!text(f)))
         issues.push('tenseAnalysis needs a valid timeFrame, status, explanation and one to four verb-form labels.');
+      if(sentence) {
+        const clues=detectSignals(sentence.text);
+        const selected=Array.isArray(entry.signals) ? entry.signals : [];
+        if(clues.length && !clues.some(clue=>selected.some(signal=>signal.toLowerCase().includes(clue.toLowerCase()))))
+          issues.push(`${entry.sentenceId}: use an actual time/connecting clue from ${JSON.stringify(clues.slice(0,8))} in signals, not only a verb.`);
+        if(clues.length && !clues.some(clue=>text(entry.explanation).toLowerCase().includes(clue.toLowerCase())))
+          issues.push(`${entry.sentenceId}: explicitly quote a time/connecting clue in the explanation and explain its scope.`);
+        if(obviouslyEnglishExplanation(text(entry.explanation),payload.feedbackLanguage))
+          issues.push(`${entry.sentenceId}: rewrite the explanation in ${FEEDBACK_LANGUAGES[payload.feedbackLanguage]}; keep only quotes and form labels in English.`);
+        const clauses=entry.clauses;
+        if(!Array.isArray(clauses) || !clauses.length || clauses.length>4 || clauses.some(c=>!obj(c) || !text(c.quote) ||
+          !sentence.text.includes(text(c.quote)) || !['present','past','future','uncertain'].includes(c.timeFrame) || !text(c.form)))
+          issues.push(`${entry.sentenceId}: supply 1-4 clauses with exact original quotes, semantic timeFrames and form labels.`);
+        else {
+          const frames=new Set(clauses.map(c=>c.timeFrame));
+          const expected=frames.size>1 ? 'mixed' : clauses[0].timeFrame;
+          if(entry.timeFrame!==expected) issues.push(`${entry.sentenceId}: timeFrame must be ${expected}, matching all clause time frames, not just the first clause.`);
+        }
+      }
       if(entry.status==='correction' && !corrections.some(e=>e.sentenceId===entry.sentenceId))
         issues.push('A tenseAnalysis correction must have a matching correction edit for that sentence.');
     }
@@ -390,6 +491,12 @@ export function validate(data, payload, sentences) {
       const missing=tenseTeachingTargets(sentences).filter(id=>!seenTenses.has(id));
       if(missing.length) issues.push(`Explain the opening and selected time signals, not only errors. Add tenseAnalysis entries for: ${missing.join(', ')}. These may be correct or context_needed; do not invent corrections.`);
     }
+  }
+  for(const edit of corrections) {
+    const original=byId.get(edit.sentenceId)?.text || '';
+    if(/\bthis morning\b/i.test(original) && /\b(?:have|has)\s+(?:already\s+|just\s+|never\s+)?(?:had|been|\w+ed|done|seen|eaten|drunk|written|read)\b/i.test(original) &&
+       !/\b(?:have|has)\b/i.test(text(edit.replacement)) && !finishedMorningEvidence(sentences))
+      issues.push(`${edit.sentenceId}: do not replace a defensible present perfect with past simple for this morning without explicit finished-time evidence. Remove the unsupported correction and dependent criticism; use context_needed and explain both readings.`);
   }
   const languageReason=text(data.assessment?.criteria?.language?.reason);
   if(!corrections.length && /\b(?:with (?:some |a few )?(?:minor |grammatical |language )?errors|contains? (?:some |minor )?errors|errors that do not|there are (?:some |minor )?errors)\b/i.test(languageReason+' '+text(data.feedback)))
@@ -427,6 +534,7 @@ export function toClient(data, payload, sentences, attempts) {
       context:entry.contextIds.map(id=>({sentenceId:id,example:byId.get(id).text})),
       signals:entry.signals.map(text),timeFrame:entry.timeFrame,forms:entry.forms.map(text),
       status:entry.status,explanation:text(entry.explanation),
+      clauses:entry.clauses.map(c=>({quote:text(c.quote),timeFrame:c.timeFrame,form:text(c.form)})),
       correctedVersion:entry.status==='correction' ? edits.find(e=>e.kind==='correction' && e.sentenceId===entry.sentenceId).to : ''
     })),
     vocabularyDetails:data.vocabularySuggestions.map(v=>({...v,example:byId.get(v.sentenceId).text})),
@@ -467,7 +575,7 @@ export default {
     if(!env.OPENAI_API_KEY) return fail('CONFIG','The correction service is not configured.',503,origin);
     const model=env.OPENAI_MODEL || 'gpt-4o-mini';
     const messages=[{role:'system',content:SYSTEM + `\nWrite tenseAnalysis explanations in ${FEEDBACK_LANGUAGES[feedbackLanguage]}. Keep quotes, verb-form labels and corrected sentences in English.`},{role:'user',content:JSON.stringify({
-      ...payload,sentences:sentences.map(({id,text})=>({id,text})),tenseTeachingTargets:tenseTeachingTargets(sentences)
+      ...payload,sentences:sentences.map(({id,text})=>({id,text,detectedSignals:detectSignals(text)})),tenseTeachingTargets:tenseTeachingTargets(sentences)
     })}];
     const deadline=Date.now()+125000;
     let reviewRequested=false;
@@ -510,7 +618,7 @@ export default {
             if(!validationIssues.length) {
               reviewRequested=true;
               messages.push({role:'assistant',content:raw});
-              messages.push({role:'system',content:REVIEW});
+              messages.push({role:'system',content:REVIEW + `\nFINAL LANGUAGE CHECK: every tenseAnalysis explanation must be in ${FEEDBACK_LANGUAGES[feedbackLanguage]}. Quote actual time clues and cover every clause. Do not correct an ambiguous this morning without explicit finished-time evidence.`});
               continue;
             }
           }
@@ -521,7 +629,7 @@ export default {
       }
       if(attempt<3) {
         if(raw) messages.push({role:'assistant',content:raw});
-        messages.push({role:'system',content:'Validation failed. Return the complete assessment again, repairing these defects and any dependent error claims or insights. Do not invent mistakes or scores just to fill fields. Missing task affects only content/communicative, not organisation/language. Issues: '+validationIssues.join(' ')});
+        messages.push({role:'system',content:'Validation failed. Return the complete assessment again, repairing these defects and any dependent error claims or insights. Do not invent mistakes or scores just to fill fields. Missing task affects only content/communicative, not organisation/language. Issues: '+validationIssues.join(' ')+` All tenseAnalysis explanations must be in ${FEEDBACK_LANGUAGES[feedbackLanguage]}.`});
       }
     }
     return fail('ASSESSMENT_INCOMPLETE','The AI returned an incomplete assessment after validation and review attempts. Please try again.',502,origin,

@@ -1,0 +1,40 @@
+(() => {
+  const data=window.ECTenseGuideData;
+  let saved='en';try {saved=localStorage.getItem('ec.lang') || 'en';} catch {}
+  const requested=new URLSearchParams(location.search).get('lang') || saved;
+  const lang=Object.hasOwn(data.copy,requested) ? requested : 'en', c=data.copy[lang];
+  document.documentElement.lang=lang;document.title=c.title+' — Alfons Sergeant';
+  const back=document.getElementById('back');back.textContent=c.back;back.href='index.html?lang='+lang;
+  document.querySelector(`nav a[lang="${lang}"]`)?.setAttribute('aria-current','page');
+  const root=document.getElementById('guide');
+  const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
+  const link=(label,url)=>{const a=el('a',label);a.href=url;return a;};
+  const section=(id,title)=>{const s=el('section');s.id=id;s.append(el('h2',title));root.append(s);return s;};
+  root.append(el('p',c.sub,'eyebrow'),el('h1',c.title),el('p',c.intro,'intro'));
+  const nav=el('nav',null,'jump-links');nav.setAttribute('aria-label',c.title);
+  [['overview',c.overview],['signals',c.signals],['perfect',c.perfect],['original',c.original]].forEach(([id,label])=>nav.append(link(label,'#'+id)));
+  const print=el('button',c.print);print.type='button';print.addEventListener('click',()=>window.print());nav.append(print);root.append(nav);
+  const method=section('method',c.stepsTitle),steps=el('ol',null,'steps');c.steps.forEach(step=>steps.append(el('li',step)));method.append(steps,el('p',c.note,'note'));
+  const overview=section('overview',c.overview),grid=el('div',null,'tense-grid');
+  data.rows.forEach(([id,title,example,signals,meaning],i)=>{
+    const card=el('article',null,'tense-card');card.id=id;card.dataset.frame=['present','past','future'][Math.floor(i/4)];
+    card.append(el('h3',title),el('p',example,'example'),el('p',signals,'signal-words'),el('p',meaning[lang]));grid.append(card);
+  });overview.append(grid);
+  const signalSection=section('signals',c.signals),label=el('label',c.search);label.htmlFor='signal-search';
+  const search=el('input');search.id='signal-search';search.type='search';search.placeholder=c.placeholder;
+  const status=el('p',null,'search-status');status.setAttribute('role','status');
+  const groups=el('div',null,'signal-grid');
+  data.groups.forEach(([words,title,explanation])=>{const a=el('article');a.append(el('h3',words),el('p',title[lang],'eyebrow'),el('p',explanation[lang]));groups.append(a);});
+  const empty=el('p',c.empty);empty.hidden=true;
+  search.addEventListener('input',()=>{const query=search.value.toLowerCase().trim();let count=0;[...groups.children].forEach(a=>{a.hidden=!a.textContent.toLowerCase().includes(query);if(!a.hidden)count++;});empty.hidden=count>0;status.textContent=`${count} / ${data.groups.length} ${c.filterStatus}`;});
+  signalSection.append(label,search,status,groups,empty);
+  const perfect=section('perfect',c.perfect),compare=el('div',null,'compare');
+  [[c.simple,c.simpleFormula,'I have painted my house.'],[c.continuous,c.continuousFormula,'I have been painting my house.']].forEach(([title,formula,example])=>{const a=el('article');a.append(el('h3',title),el('p',formula,'formula'),el('p',example,'example'));compare.append(a);});perfect.append(compare);
+  data.lessons.forEach(([title,intro,examples])=>{const a=el('article',null,'lesson');a.append(el('h3',title[lang]),el('p',intro[lang]));examples.forEach(([example,explanation])=>{const pair=el('div',null,'example-pair');pair.append(el('p',example,'example'),el('p',explanation[lang]));a.append(pair);});perfect.append(a);});
+  const mixed=section('context',c.mixedTitle);mixed.append(el('p','I will be taking an exam later today, so I read my textbook last night.','example'),el('p',c.mixed),el('p','This morning I have had a coffee. / This morning I had a coffee.','example'),el('p',c.morning));
+  const original=section('original',c.original);original.append(el('p',c.originalNote));
+  const figure=el('figure'),img=el('img');img.src='assets/tenses/alfons-original-chart.png';img.alt=c.original+' — Present / Past / Future × Simple / Continuous / Perfect Simple / Perfect Continuous';img.width=2000;img.height=1125;img.loading='lazy';
+  const imageLink=link('','assets/tenses/alfons-original-chart.png');imageLink.append(img);figure.append(imageLink,el('figcaption','© Alfons Sergeant'));original.append(figure);
+  const links=el('p',null,'jump-links');links.append(link(c.openImage,'assets/tenses/alfons-original-chart.png'),link(c.openPdf,'assets/tenses/alfons-original-tenses.pdf'));original.append(links);
+  const footer=el('footer');footer.append(el('p',c.credit),link('British Council: Present Perfect','https://learnenglish.britishcouncil.org/free-resources/grammar/b1-b2/present-perfect-simple-continuous'),document.createTextNode(' · '),link('British Council: states and activities','https://learnenglish.britishcouncil.org/free-resources/grammar/c1/advanced-present-simple-continuous'));root.append(footer);
+})();

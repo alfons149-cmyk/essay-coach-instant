@@ -35,3 +35,31 @@ Live checks after deployment should include these original examples:
 5. `I will be taking an exam later today, so I read my textbook last night.` Preserve the legitimate mixed time frames.
 
 The GitHub Worker deployment uses existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` Actions secrets. It explicitly fails before deployment if either is missing. `OPENAI_API_KEY` remains a Cloudflare secret, and `keep_vars` preserves existing dashboard variables. The Worker can also be pasted as a complete ES module into the existing Cloudflare Worker editor.
+
+## v5.3: complete chart and evidence checks (15 October 2026)
+
+- `tenses.html` is the EN/NL/ES reference guide: 12 forms, searchable signal groups,
+  perfect simple/continuous comparison, dynamic verbs, work/live/study/teach,
+  stative meanings and changed-meaning examples. It is linked before the task input
+  and from tense feedback. The mobile bundle includes it.
+- The owner authorised publishing their chart. `assets/tenses/alfons-original-chart.png`
+  reproduces PDF page 1; `alfons-original-tenses.pdf` is the unchanged five-page source.
+  The photographed third-party gap-fill exercise is NOT included in the published assets.
+  The readable guide adds contextual qualifications (including hope, understood,
+  continuous activities that just stopped, and unfinished mornings).
+- The Worker recognises literal candidate clues across the chart, passes them to the model,
+  and rejects analyses that substitute verbs for all available temporal/connecting clues.
+  Recognition selects teaching evidence; it never chooses or changes a tense by itself.
+- `tenseAnalysis[].clauses` contains exact original clause excerpts, semantic timeFrame
+  and the English form label. Validation rejects aggregate frames that contradict the
+  reported clause frames. It does not constitute a full syntactic parser or prove that
+  the model analysed every clause correctly.
+- A conservative guard rejects the observed perfect-to-past rewrite with `this morning`
+  when the essay has no explicit recognised closed-morning evidence. It never uses the
+  server clock. A separate heuristic rejects clearly English explanations requested
+  in NL/ES; this is not a complete language detector.
+- Regression tests cover the observed wrong output, signal catalogue, exact clause
+  evidence, locale and existing assessment contract. Model calls in tests are mocked;
+  live semantic evaluation of v5.3 requires Cloudflare deployment.
+- Worker remains a standalone file for Cloudflare's editor. Existing OPENAI_API_KEY
+  stays in Secrets. Version: `2026-10-15-tense-context-v5.3`.
