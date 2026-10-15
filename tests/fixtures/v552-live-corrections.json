@@ -1,0 +1,37 @@
+{
+  "provenance": {
+    "worker": "2026-10-15-coaching-v5.5.2",
+    "configuredModel": "gpt-5.4",
+    "note": "Captured live responses; upstream model snapshot is not exposed by the Worker."
+  },
+  "combinedCausalForEdits": {
+    "home-en": {
+      "kind": "correction",
+      "from": "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+      "to": "Minority families are experiencing some of the most rapid growth in homeschooling because parents observe decreasing school funding, low academic performance in schools, concerns about safety and bullying, and inadequate resources.",
+      "reason": "The original connector use is unclear here. 'Because' introduces the reason more clearly, and 'in schools' is the more natural collocation.",
+      "sentenceId": "S12"
+    },
+    "home-es": {
+      "kind": "correction",
+      "from": "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+      "to": "Minority families are experiencing some of the most rapid growth in homeschooling because parents observe decreasing school funding, low academic performance in schools, concerns about safety and bullying, and inadequate resources.",
+      "reason": "La oración necesita un conector causal claro para unir la afirmación principal con las razones que la explican.",
+      "sentenceId": "S12"
+    },
+    "explicit-nl": {
+      "kind": "correction",
+      "from": "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+      "to": "Minority families are experiencing some of the most rapid growth in homeschooling because parents observe decreasing school funding, low academic performance in schools, concerns about safety and bullying, and inadequate resources.",
+      "reason": "De connector \"for\" maakt de oorzaak-gevolgrelatie hier onduidelijk en onnatuurlijk. \"Because\" maakt de logische relatie helder; \"in schools\" maakt ook de woordgroep natuurlijker.",
+      "sentenceId": "S12"
+    }
+  },
+  "illogicalAlthoughEdit": {
+    "kind": "correction",
+    "from": "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.",
+    "to": "Although homeschooling has existed for over a century, it existed before our current public education system.",
+    "reason": "La versión original usa \"Although\" de forma incorrecta, porque no introduce una concesión completa. Esta corrección crea una relación lógica y una oración gramaticalmente completa.",
+    "sentenceId": "S11"
+  }
+}

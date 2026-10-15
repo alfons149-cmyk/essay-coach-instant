@@ -1,4 +1,42 @@
-> Current behaviour: v5.5.2 retains the v5.5 UI and v5.5.1 source IDs, adds bounded task reclassification, server word metrics and narrow safeguards for observed false corrections. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+> Current behaviour: v5.5.3 retains the v5.5 UI, source IDs, bounded task reclassification and server word metrics. It extends causal-for protection to combined edits, separates the review prompt, and allows up to 60 seconds per AI call within the unchanged 180-second total deadline. Detailed tense/clauses sections below describe historical versions, not the active model contract.
+
+## v5.5.3: repair findings from live v5.5.2 tests
+
+Six requests were sent to the deployed v5.5.2 Worker with the user-confirmed gpt-5.4 setting.
+Five returned feedback: the morning sentence (~33 seconds), tense email (~46 seconds), source-only
+homeschooling in EN (~95 seconds) and ES (~107 seconds), and the explicit CPE task in NL (~94 seconds).
+The source-only NL request timed out during assessment (~52 seconds overall, 45 seconds for that call).
+The successful essays correctly identified the source-2 reversal and did not penalise the 256-word
+count. Source-only EN/ES recovered from an initial task-classification disagreement.
+
+All three successful essays nevertheless replaced valid causal for with because while also changing
+"performance of schools" to "performance in schools". The previous whole-sentence comparison missed
+this combined edit. The Spanish corrected draft also retained although between two reinforcing
+historical facts, with an incorrect explanation claiming that the relation was logical. Captured
+edits are retained in tests/fixtures/v552-live-corrections.json.
+
+Changes:
+
+- Match the local causal connector, recognised subject and finite verb independently of other
+  changes in the sentence. Reject the observed optional substitution even in a combined edit and
+  request reassessment of dependent criticism. Comma repair and unrelated corrections remain possible.
+  This remains a narrow safeguard, not a complete grammar parser.
+- Give the review phase a distinct audit system prompt, with the original task, essay, source
+  evidence and candidate unchanged. Ask it to verify necessity, preserved meaning and the actual
+  relationship expressed by connectors. Explicitly distinguish additive historical facts from
+  genuine concessions; do not treat punctuation alone as repairing an illogical although.
+- The reviewer also distinguishes source-faithful wording from necessary grammar corrections,
+  does not require choosing a winning source, and avoids teaching that all verbs in one sentence
+  must share a tense. These are model instructions, not deterministic semantic guarantees.
+- Allow each AI call up to 60 seconds, capped by the remaining 180-second total budget. Attempt
+  limits remain unchanged. This reduces premature per-call timeouts but does not guarantee completion.
+
+Verification: 72 Worker + 35 coaching + 8 writing-coach DOM + 6 tense DOM checks pass (121).
+New tests replay all three combined edits, verify repair-before-output, check the distinct review
+request retains original evidence, and check the per-call/shared time budgets. Model calls are mocked.
+The although fixture documents an observed failure; prompt assertions do NOT prove it is now fixed.
+Live semantic testing is still required after deployment. No model setting, API key or UI is changed.
+Standalone deployment file: downloads/essaycoach-worker-v5.5.3.txt, identical to Worker source.
 
 ## v5.5.2: recover task classification and address the GPT-5.4 comparison findings
 

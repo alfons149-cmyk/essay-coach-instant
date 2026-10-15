@@ -287,3 +287,49 @@ await test('causal-for guard generalises to other subjects and preserves indepen
  assert(!validate(d,{...payload,essay:original},local).some(s=>s.includes('replacing causal for')));
 });
 console.log(`${checks} coaching checks passed; live fixtures replayed without an AI call.`);
+
+const observed552=JSON.parse(await readFile(new URL('./fixtures/v552-live-corrections.json',import.meta.url),'utf8'));
+await test('captured combined for substitutions are rejected in all three successful live essay responses',()=>{
+ for(const live of Object.values(observed552.combinedCausalForEdits)) {
+  const d=assessment();d.edits.push({kind:'correction',sentenceId:live.sentenceId,replacement:live.to,reason:live.reason});
+  assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('replacing causal for')));
+  d.edits.at(-1).replacement=live.to.replace('homeschooling because','homeschooling, for');
+  assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+ }
+});
+await test('combined connector rejection requests a repair before any corrected draft is returned',async()=>{
+ const live=observed552.combinedCausalForEdits['home-en'],bodies=[];
+ globalThis.fetch=async(_,o)=>{
+  bodies.push(JSON.parse(o.body));const d=assessment();
+  if(bodies.length===2)d.edits.push({kind:'correction',sentenceId:live.sentenceId,replacement:live.to,reason:live.reason});
+  return completion(bodies.length===1?plan:d);
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,4);
+ assert.match(bodies[2].messages.at(-1).content,/even alongside other edits/);
+ assert(result.nextDraft.includes('homeschooling for parents observe'));
+ assert.equal(result.diagnostics.reviewCompleted,true);
+});
+await test('review uses a distinct audit prompt while retaining original task, essay and source evidence',async()=>{
+ const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));return completion(bodies.length===1?plan:assessment());};
+ const response=await worker.fetch(request(),env);assert.equal(response.status,200);
+ const review=bodies[2];assert.notEqual(review.messages[0].content,bodies[1].messages[0].content);
+ assert.match(review.messages[0].content,/independent English writing auditor/);
+ assert.match(review.messages.at(-1).content,/mutually reinforcing historical facts/);
+ assert.match(review.messages[0].content,/does not require choosing a winning source/);
+ const original=JSON.parse(review.messages.find(m=>m.role==='user').content);
+ assert.equal(original.essay,payload.essay);assert.equal(original.task,payload.task);
+ assert.equal(original.writingMetrics.inputWords,256);
+ assert(JSON.stringify(original).includes(plan.sources[1].keyPoints[0].quote));
+ assert.equal(review.messages.filter(m=>m.role==='assistant').length,1);
+});
+await test('each AI call has at most 60 seconds and cannot exceed the remaining shared deadline',async()=>{
+ const oldNow=Date.now,oldTimeout=AbortSignal.timeout;let elapsed=0,calls=0;const timeouts=[];
+ Date.now=()=>elapsed;AbortSignal.timeout=ms=>{timeouts.push(ms);return new AbortController().signal;};
+ try {
+  globalThis.fetch=async()=>{calls++;elapsed+=calls===1?50000:calls===2?110000:0;return completion(calls===1?plan:assessment());};
+  const response=await worker.fetch(request(),env);assert.equal(response.status,200);
+  assert.deepEqual(timeouts,[60000,60000,20000]);
+ } finally {Date.now=oldNow;AbortSignal.timeout=oldTimeout;}
+});
+console.log(`${checks} coaching checks passed; captured edits and request flow tested with mocked model calls.`);
