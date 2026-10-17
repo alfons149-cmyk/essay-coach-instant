@@ -88,3 +88,23 @@ node scripts/test-live-feedback.mjs --base https://essaycoach.alfons149.workers.
 ```
 
 Beoordeel iedere uitvoer op noodzakelijkheid van alle wijzigingen; uitleg tegenover originele fragmenten; gemiste fouten; behoud van correcte vormen; broninterpretatie; samenvatting versus evaluatie; concrete oefening/controlevraag; feedbacktaal en expliciete aannames bij ontbrekende instructies. Vergelijk mediane en langzaamste tijden plus herstelpogingen. Automatische steekproeven bewijzen geen inhoudelijke juistheid; een andere geldige formulering kan handmatige beoordeling vereisen.
+
+## Follow-up: auditfragmentherstel (17 oktober 2026)
+
+Build: `2026-10-17-coaching-v5.6.0-audit-fix`. De eigenaar rapporteerde een echte v5.6.0-fout bij homeschooling ES: HTTP 502 na zes aanroepen, eerst ontbrekend interpunctiebewijs voor P2, daarna overlappende `corrections[4].originalQuote` en een niet volledig reconstrueerbare `edits[2].replacement`. De volledige modelantwoorden zijn hier niet beschikbaar; de regressies reproduceren deze foutvormen, niet een exacte replay van die aanvraag. Volgens de eigenaar werken de energietekst en museumcorrectie live al.
+
+De review genereerde volledige verbeterde zinnen vóór het auditobject in de schema-volgorde. Daardoor moest hij achteraf passende, onderling niet-overlappende bewijsfragmenten leveren. De prompt noemde "matching punctuation evidence" zonder de concrete markering/offsetvoorwaarde voldoende expliciet te maken. Herstel kreeg foutmeldingen en het laatste antwoord, maar geen berekende fragmentposities, overlapparen of reconstructie per zin. Dit verklaart de kwetsbaarheid van het contract; zonder de volledige live-antwoorden kan niet worden vastgesteld welke fragmentkeuze het model precies maakte.
+
+Reparatie:
+
+- Het review-schema genereert `languageAudit` eerst, vóór de volledige verbeterde zinnen. Prompt en veldbeschrijvingen sturen op bewijs uit de oorspronkelijke tekst, gevolgd door toepassing van alle disjuncte fragmenten van rechts naar links.
+- Iedere interpunctiekandidaat krijgt in het schema zijn zin-ID, volledige markering en oorspronkelijke offset. Het bewijs moet de hele markering omvatten. Een algemeen voorbeeld toont aparte grammatica- en interpunctiefragmenten zonder overlap.
+- De bestaande herstelpoging krijgt een gestructureerd `auditRepair`-dossier voor de betrokken zinnen: originele tekst, voorgestelde vervangingen, fragmentposities, uniciteit, overlapparen, reconstructie (of `null` bij onbetrouwbare fragmenten) en ontbrekende koppelingen met interpunctiebewijs. De opdracht is alle fragmenten van zo'n zin samen opnieuw op te bouwen, niet losse patches over elkaar te stapelen.
+- Geen lokale samenvoeging, heretikettering of acceptatie van onverklaarde wijzigingen. `languageAuditIssues` en de overige eindcontroles zijn ongewijzigd. Het aantal pogingen en de tijdslimieten zijn niet verhoogd. Een tweede ongeldige review blijft HTTP 502 zonder verbeterde tekst opleveren.
+- Worker en plakversie zijn identiek. Geen frontendwijzigingen. De live-testrunner verwacht nu de herkenbare audit-fix-build; een oudere deployment kan expliciet met `--expected-version` worden gekozen.
+
+Technische verificatie: **163 checks geslaagd** (76 Worker, 38 coaching, 35 audit, 8 writing-coach, 6 tense-feedback), plus Worker syntax/build. De negen aanvullende auditchecks testen P2-koppeling, aangrenzend bewijs zonder volledige markering, overlap en reconstructie, succesvolle gerichte herstelpogingen, blijvende afwijzing bij de gemelde foutvolgorde, en behoud van energie/museum. Schema-volgorde wordt eveneens gecontroleerd. Alle AI-antwoorden in deze tests zijn gesimuleerd. Gemeten lokale suite-tijden op Node 24: respectievelijk 0,177 / 0,181 / 0,129 / 0,051 / 0,062 seconden; dit zijn **geen AI-verwerkingstijden**.
+
+Echte AI-verificatie van deze follow-up is niet uitgevoerd: lokaal is geen `OPENAI_API_KEY` beschikbaar en er wordt niets gedeployed. De nieuwe generatie-instructies en herstelcontext verminderen de contractambiguïteit, maar garanderen geen succesvolle modeluitvoer. Herhaal na een afzonderlijk geautoriseerde deployment homeschooling ES meerdere keren en controleer daarnaast energie EN en museum NL met `scripts/test-live-feedback.mjs`. Beoordeel ook de inhoudelijke uitleg, niet alleen HTTP-status en reconstructie.
+
+Publicatie: uitsluitend dezelfde reparatiebranch `fix/essaycoach-v5.6.0`. De repository-deploymentworkflows reageren op `main` of handmatig starten; deze branchpush activeert ze niet. Geen wijziging van `main`, geen Cloudflare-deployment.

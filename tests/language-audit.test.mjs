@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker,{numberSentences,punctuationCandidates,reviewSchema,languageAuditIssues,modelConfiguration,normaliseCoaching,validate} from '../apps/worker/src/worker.js';
+import worker,{numberSentences,punctuationCandidates,reviewSchema,languageAuditIssues,modelConfiguration,normaliseCoaching,validate,auditRepairContext} from '../apps/worker/src/worker.js';
 const cases=JSON.parse(await readFile(new URL('./fixtures/language-audit-cases.json',import.meta.url),'utf8'));
 const originalFetch=globalThis.fetch;
 let checks=0;
@@ -26,7 +26,7 @@ for(const input of cases)await test('exact reconstruction and coverage: '+input.
 await test('strict review schema includes short complete sentences',()=>{
  const ss=numberSentences('He go. I agree.'),schema=reviewSchema(ss);
  function walk(s){if(s.type==='object'){assert.equal(s.additionalProperties,false);assert.deepEqual(s.required,Object.keys(s.properties));Object.values(s.properties).forEach(walk);}if(s.items)walk(s.items);}
- walk(schema);assert.deepEqual(schema.$defs.sentenceId.enum,['S1','S2']);assert.equal(schema.properties.languageAudit.properties.checkedSentenceIds.minItems,2);
+ walk(schema);assert.equal(Object.keys(schema.properties)[0],'languageAudit');assert.deepEqual(schema.$defs.sentenceId.enum,['S1','S2']);assert.equal(schema.properties.languageAudit.properties.checkedSentenceIds.minItems,2);
 });
 await test('candidate scan generalises and does not rewrite correct concessive however',()=>{
  assert.deepEqual(punctuationCandidates(numberSentences(cases[0].essay)).map(c=>c.marker.toLowerCase()),['therefore','however']);
@@ -115,5 +115,67 @@ await test('inconsistent verdict alone causes no extra AI retry and its normaliz
 await test('correction insight cannot teach a different replacement from its actual edit',()=>{
  const d=sample(cases[0]);d.sentenceInsights=[{kind:'correction',sentenceId:'S1',issue:'Agreement',explanation:'Singular subject.',betterVersion:'Our university demands a sophisticated transport strategy.',unit:1}];assert(validate(d,cases[0],numberSentences(cases[0].essay)).some(s=>s.includes('identical replacement')));
 });
+// Reproduce the reported failure shapes; these are synthetic replies, not the unavailable live JSON.
+function brokenAudit(kind) {
+ const d=sample(cases[3]);
+ if(kind==='marker') d.languageAudit.corrections[3].category='grammar';
+ if(kind==='overlap') {
+  d.languageAudit.corrections.push({...d.languageAudit.corrections[3],originalQuote:'For example',replacementQuote:'For example,'});
+  d.edits[2].replacement+=' Everyone benefits.';
+ }
+ return d;
+}
+await test('repair dossier locates P2 and cannot silently relabel its evidence',()=>{
+ const d=brokenAudit('marker'),before=structuredClone(d),ctx=auditRepairContext(d,numberSentences(cases[3].essay));
+ assert.deepEqual(d,before);assert.equal(ctx.sentences.length,1);
+ const s=ctx.sentences[0];assert.equal(s.sentenceId,'S3');assert.equal(s.original,'For example local groups can organise free classes.');
+ assert.deepEqual(s.punctuationCandidates[0].matchingEvidenceIndexes,[]);assert.equal(s.punctuationCandidates[0].id,'P2');
+ assert(ctx.issues.some(x=>x.includes('punctuationChecks.P2')));
+});
+await test('adjacent-word insertion reconstructs text but still needs the complete punctuation marker',()=>{
+ const d=sample(cases[3]);d.languageAudit.corrections[3].originalQuote='local groups';d.languageAudit.corrections[3].replacementQuote=', local groups';
+ d.edits[2].replacement='For example , local groups can organise free classes.';
+ const ss=numberSentences(cases[3].essay),ctx=auditRepairContext(d,ss);
+ assert(ctx.issues.some(x=>x.includes('punctuationChecks.P2')));assert(!ctx.issues.some(x=>x.includes('EVERY change')));
+ assert.deepEqual(ctx.sentences[0].punctuationCandidates[0].matchingEvidenceIndexes,[]);
+ const description=reviewSchema(ss).properties.languageAudit.properties.punctuationChecks.properties.P2.description;
+ assert.match(description,/For example/);assert.match(description,/S3/);
+});
+await test('overlap repair discards an unreliable reconstruction and identifies both original spans',()=>{
+ const d=brokenAudit('overlap'),ctx=auditRepairContext(d,numberSentences(cases[3].essay));
+ const s=ctx.sentences.find(s=>s.sentenceId==='S3');assert.deepEqual(s.overlaps,[[3,4]]);assert.equal(s.reconstructed,null);
+ assert(ctx.issues.some(x=>x.startsWith('languageAudit.corrections[4].originalQuote')));
+ assert(ctx.issues.some(x=>x.startsWith('edits[2].replacement')));
+});
+await test('unexplained change shows exact reconstructed and proposed sentences without accepting either',()=>{
+ const d=sample(cases[3]);d.edits[2].replacement+=' Everyone benefits.';
+ const s=auditRepairContext(d,numberSentences(cases[3].essay)).sentences[0];
+ assert.equal(s.reconstructed,'For example, local groups can organise free classes.');
+ assert.equal(s.proposedReplacements[0],s.reconstructed+' Everyone benefits.');
+});
+for(const kind of ['marker','overlap']) await test('bounded ES review retry repairs '+kind+' using original sentence dossier',async()=>{
+ const bodies=[],input={...cases[3],feedbackLanguage:'es'};
+ globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));const d=bodies.length===2?brokenAudit(kind):sample(input);if(bodies.length===1)delete d.languageAudit;return completion(d);};
+ const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(bodies.length,3);
+ const repair=bodies[2].messages.filter(m=>m.role==='user').map(m=>JSON.parse(m.content)).find(m=>m.auditRepair)?.auditRepair;
+ assert(repair);assert(repair.sentences.some(s=>s.sentenceId==='S3'));assert.match(repair.instruction,/Replace the old spans/);
+ assert.deepEqual(d.languageAudit,sample(input).languageAudit);assert(d.nextDraft.includes('For example, local'));
+ assert(!d.nextDraft.includes('Everyone benefits'));assert.equal(d.diagnostics.repairAttempts.review,1);
+ assert.match(bodies[1].messages[0].content,/Build the evidence BEFORE/);
+});
+await test('reported two-review failure sequence still fails closed with precise final diagnostics',async()=>{
+ let calls=0;globalThis.fetch=async()=>{calls++;const d=calls===1?sample(cases[3]):brokenAudit(calls===2?'marker':'overlap');if(calls===1)delete d.languageAudit;return completion(d);};
+ const r=await worker.fetch(req({...cases[3],feedbackLanguage:'es'}),env),d=await r.json();assert.equal(r.status,502);assert.equal(d.code,'ASSESSMENT_INCOMPLETE');assert(!d.nextDraft);assert.equal(calls,3);
+ assert(d.diagnostics.history[1].checks.some(c=>c.field==='languageAudit.punctuationChecks.P2'));
+ assert(d.diagnostics.history[2].checks.some(c=>c.field==='languageAudit.corrections[4].originalQuote'));
+ assert(d.diagnostics.history[2].checks.some(c=>c.field==='edits[2].replacement'));
+});
+for(const i of [1,2]) await test('museum and correct energy survive review with no extra repair: '+cases[i].name,async()=>{
+ let calls=0;globalThis.fetch=async()=>{calls++;const d=sample(cases[i]);if(calls===1)delete d.languageAudit;return completion(d);};
+ const r=await worker.fetch(req(cases[i]),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(calls,2);
+ if(i===2)assert.equal(d.nextDraft,cases[i].essay);
+ else {assert(d.nextDraft.includes('and bought a ticket'));assert(d.nextDraft.includes('I read the exhibition guide last night.'));assert(d.nextDraft.includes('This morning I have had a coffee.'));}
+});
+
 globalThis.fetch=originalFetch;
 console.log(`${checks} language-audit checks passed. All model replies and clock advances are synthetic, not live AI accuracy or speed evidence.`);

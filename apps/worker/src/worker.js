@@ -1,6 +1,6 @@
 // EssayCoach Worker v5.6.0 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-17-coaching-v5.6.0";
+const VERSION = "2026-10-17-coaching-v5.6.0-audit-fix";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const MAX_EDITS=32;
 const eligibleSentences=sentences=>sentences.filter(s=>s.text.length>=8||/[.!?]$/.test(s.text));
@@ -980,6 +980,17 @@ Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as cor
 or context_needed with a contextual explanation. Discourse linking adverbs normally need a following
 comma; degree/concessive however is different. Do not change a valid or uncertain construction
 just to satisfy a checklist. A correction decision requires matching punctuation evidence and edit.
+Build the evidence BEFORE composing each final replacement: copy disjoint spans from the ORIGINAL,
+write each necessary replacement and explanation, then apply those spans right-to-left. Use that
+result verbatim as edits[].replacement. Never quote from an already corrected intermediate sentence.
+For a punctuation candidate, its punctuation span MUST contain the entire marker at the supplied
+original offset (e.g. originalQuote "however effective", replacementQuote "however, effective").
+Do not use only the adjacent word "effective" as evidence for the marker. Keep grammar evidence
+separate from punctuation evidence, with disjoint original context. For example in "It is an useful
+service; moreover it helps.", use "an useful" -> "a useful" (grammar) and "moreover it" ->
+"moreover, it" (punctuation), not a whole-sentence grammar span plus an overlapping punctuation span.
+If a quote repeats, extend it with unchanged context without crossing another span. Re-plan the
+sentence's spans together when necessary; never stack a local patch on an overlapping broad span.
 Check other punctuation too. Reconcile all feedback, score reasons, insights and teaching examples
 with the audited changes. Keep optional wording optional; do not invent grammatical rules.`;
 
@@ -988,9 +999,13 @@ export function reviewSchema(sentences,reading=null,language='en') {
   const explanation={type:'string',description:'Explain the original evidence in '+(FEEDBACK_LANGUAGES[language]||'English')+'.'};
   schema.properties.languageAudit=shape({
     checkedSentenceIds:arr(id,eligibleSentences(sentences).length,eligibleSentences(sentences).length),
-    corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:str,replacementQuote:str,explanation}),96),
-    punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,shape({decision:choice(['correction','valid','context_needed']),explanation})])))
+    corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:{type:'string',description:'Unique verbatim substring of the ORIGINAL sentence, disjoint from every other correction. Punctuation evidence for a candidate must include its entire marker at its original offset.'},replacementQuote:{type:'string',description:'Replacement for this span only. Apply all disjoint spans to the original right-to-left to obtain edits[].replacement exactly.'},explanation}),96),
+    punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,{...shape({decision:choice(['correction','valid','context_needed']),explanation}),description:'Candidate '+c.id+' in '+c.sentenceId+': marker '+JSON.stringify(c.marker)+' at original offset '+c.offset+'. A correction requires a punctuation evidence span containing this entire marker, plus its matching edit.'}])))
   });
+  // Structured outputs follow schema key order. Emit evidence before the redundant full
+  // replacement sentences so generation can compose edits from already chosen spans.
+  const {languageAudit,...assessmentProperties}=schema.properties;
+  schema.properties={languageAudit,...assessmentProperties};
   schema.required=Object.keys(schema.properties);
   return schema;
 }
@@ -1032,6 +1047,46 @@ export function languageAuditIssues(data,sentences) {
     }
   }
   return issues;
+}
+// Diagnostic context only: never rewrite, merge or accept model evidence locally.
+// Re-plan affected sentences together, since repairing overlapping spans one by one is unsafe.
+export function auditRepairContext(data,sentences) {
+  const issues=languageAuditIssues(data,sentences);
+  if(!issues.length) return null;
+  const corrections=Array.isArray(data?.languageAudit?.corrections)?data.languageAudit.corrections:[];
+  const edits=Array.isArray(data?.edits)?data.edits:[];
+  const candidates=punctuationCandidates(eligibleSentences(sentences));
+  const affected=new Set();
+  for(const issue of issues) {
+    const correction=issue.match(/^languageAudit\.corrections\[(\d+)\]/);
+    const edit=issue.match(/^edits\[(\d+)\]/);
+    const candidate=issue.match(/^languageAudit\.punctuationChecks\.(P\d+):/);
+    if(correction) affected.add(corrections[Number(correction[1])]?.sentenceId);
+    else if(edit) affected.add(edits[Number(edit[1])]?.sentenceId);
+    else if(candidate) affected.add(candidates.find(c=>c.id===candidate[1])?.sentenceId);
+    else for(const s of eligibleSentences(sentences)) affected.add(s.id);
+  }
+  return {issues, instruction:'Rebuild ALL evidence spans and the edit together for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. Keep unrelated valid findings. Match every correction decision to a disjoint punctuation span containing the entire marker. Derive the final sentence from the spans, then reconcile dependent explanations and insights. If a proposed change cannot be justified, remove that change and its dependent criticism. Return the complete review schema; every final check still applies.',
+    sentences:eligibleSentences(sentences).filter(s=>affected.has(s.id)).map(s=>{
+      const spans=corrections.flatMap((p,index)=>{
+        if(p?.sentenceId!==s.id) return [];
+        const quote=typeof p.originalQuote==='string'?p.originalQuote:'';
+        const start=quote?s.text.indexOf(quote):-1;
+        return [{index,category:p.category,originalQuote:quote,replacementQuote:p.replacementQuote,
+          start,end:start<0?-1:start+quote.length,unique:start>=0&&s.text.indexOf(quote,start+1)<0}];
+      });
+      const overlaps=[];
+      for(let i=0;i<spans.length;i++) for(let j=i+1;j<spans.length;j++)
+        if(spans[i].start>=0&&spans[j].start>=0&&spans[i].start<spans[j].end&&spans[j].start<spans[i].end) overlaps.push([spans[i].index,spans[j].index]);
+      let reconstructed=null;
+      if(!overlaps.length&&spans.every(p=>p.unique&&typeof p.replacementQuote==='string')) {
+        reconstructed=s.text;
+        for(const p of [...spans].sort((a,b)=>b.start-a.start)) reconstructed=reconstructed.slice(0,p.start)+p.replacementQuote+reconstructed.slice(p.end);
+      }
+      return {sentenceId:s.id,original:s.text,proposedReplacements:edits.filter(e=>e?.sentenceId===s.id).map(e=>e.replacement),spans,overlaps,reconstructed,
+        punctuationCandidates:candidates.filter(c=>c.sentenceId===s.id).map(c=>({...c,decision:data?.languageAudit?.punctuationChecks?.[c.id]||null,
+          matchingEvidenceIndexes:spans.filter(p=>p.unique&&p.category==='punctuation'&&p.start<=c.offset&&p.end>=c.offset+c.marker.length).map(p=>p.index)}))};
+    })};
 }
 function sameSourceContract(a,b) {
   return a?.taskType===b?.taskType&&JSON.stringify((a?.sources||[]).map(s=>s.sourceQuote))===JSON.stringify((b?.sources||[]).map(s=>s.sourceQuote))&&
@@ -1105,6 +1160,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
     const phaseAttempts={...(readTask?{task:0}:{}),assessment:0,review:0}, completions=[];
     let maxCompletionTokens=6000, compact=false, taskRecheck=null, taskRechecks=0,suspended=null,reusedAssessments=0;
     const history=[];
+    let auditRepair=null;
     const diagnostics=phase=>({attempts,phase,phaseAttempts,taskRechecks,reusedAssessments,
       model,modelSource:config.modelSource,totalMs:Math.max(0,Date.now()-startedAt),
       phaseMs:Object.fromEntries(Object.keys(phaseAttempts).map(p=>[p,history.filter(r=>r.phase===p).reduce((sum,r)=>sum+(r.finished?r.durationMs:Math.max(0,Date.now()-r.startedAt)),0)])),
@@ -1126,6 +1182,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
           'Re-read only the original task. Two passes disagreed about its classification: '+JSON.stringify(taskRecheck)+
           '. Neither classification is authoritative. Decide from the supplied task alone. Two C2 source bodies without instructions can be assessed provisionally as source_essay with basis assumed. Do not require the student essay to identify source passages.'});
         if(latestRaw) messages.push({role:'assistant',content:latestRaw});
+        if(phase==='review'&&auditRepair) messages.push({role:'user',content:JSON.stringify({auditRepair})});
         const instructions=[phase==='task'? 'Read the task without assuming a student interpretation. Return the source-only schema.' : phase==='review' ? REVIEW : 'Assess the original writing and return the complete assessment.'];
         if(validationIssues.length) instructions.push('Repair these defects and every dependent criticism, score reason and insight. Do not invent an error to satisfy validation: '+validationIssues.join(' '));
         if(compact) instructions.push('The previous output was incomplete because it reached the token limit. Return compact JSON: one brief sentence per explanation, short reasons, no optional vocabulary or style edits. Preserve all required assessment fields and supported corrections; never continue a partial JSON fragment.');
@@ -1212,6 +1269,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                 const referenceIssues=resolveSourceReferences(parsed,payload.sourceReading);
                 parsed=normaliseCoaching(applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences),sentences,record.normalisations);
                 validationIssues=[...referenceIssues,...validate(parsed,payload,sentences),...(phase==='review'&&parsed.languageAudit===undefined?languageAuditIssues(parsed,sentences):[])];
+                if(phase==='review') auditRepair=auditRepairContext(parsed,sentences);
                 record.validationMs=Math.max(0,Date.now()-validationStarted);
                 if(!validationIssues.length && parsed.sampleSuitable===false)
                   return fail('UNSUITABLE_SAMPLE','Please enter connected English writing suitable for an essay assessment.',422,origin,{diagnostics:diagnostics(phase)});
