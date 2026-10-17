@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.0 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.1 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-17-coaching-v5.6.0-audit-fix";
+const VERSION = "2026-10-17-coaching-v5.6.1";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const MAX_EDITS=32;
 const eligibleSentences=sentences=>sentences.filter(s=>s.text.length>=8||/[.!?]$/.test(s.text));
@@ -131,7 +131,15 @@ cannot be determined. Source-only C2 tasks can be assessed provisionally with ba
 For source_essay include checks task_coverage, source_accuracy, evaluation and own_position;
 organisation and register can also be checked. Each check has met/partial/missing/not_applicable,
 an explanation and valid evidenceIds (empty only for an absent feature or missing task).
-Use answered only if ALL applicable checks are met. A distorted source is never fully answered
+Task coverage must check ALL actual instructions, including the requested genre, points,
+comparisons, reasons and opinion where requested. Do not invent an obligation to argue both sides
+or give C2-depth evaluation for a B2 opinion task. Separate fulfilling instructions from opportunities
+to deepen an already sufficient answer. For non-source tasks, derive the verdict from task_coverage:
+met = answered, partial = partly_answered, missing = not_answered. Organisation, register and optional
+development still affect their appropriate feedback/scores, not task completion by themselves.
+For source essays, full achievement requires coverage, source accuracy, evaluation and own position;
+organisation/register refinements alone do not make a fully answered task incomplete.
+A distorted source is never fully answered
 or source_accuracy=met. Do not reward topical relevance as accurate source understanding.
 Score reasons must explain the same strengths/limitations as taskReview; scores are independent
 practice estimates, not official marks. Do not deduct twice mechanically or force a fixed score.
@@ -281,6 +289,12 @@ the original TASK, never from the student's essay. Use sourceQuote="" for gramma
 ordinary email advice without a source link. The student's evidence is already linked by evidenceId.
 Use the requested feedback language for explanations and English for examples/replacements.
 Judge the requested B2/C1/C2 level and actual genre. Scores are practice estimates, not official marks.
+For non-source tasks, task_coverage checks every actual instruction (genre, points, comparisons,
+reasons and opinion if requested) and determines the verdict: met/partial/missing means
+answered/partly_answered/not_answered. Optional refinement, register or organisation advice does
+not alone make a completed task incomplete. Do not invent a requirement to discuss both sides or
+apply C2 evaluation depth to a B2 opinion task. For source essays, additionally require source
+accuracy, evaluation and own position. Align the verdict explanation with these completion checks.
 When the task is missing, Content and Communicative Achievement are null; still assess Organisation
 and Language with evidence. Short understandable English is assessable with limitations.
 For source essays, check faithful summary, reasoned evaluation and a supported own position.
@@ -579,18 +593,28 @@ export function resolveSourceReferences(data,reading) {
 
 // Reconcile presentation order using already supplied, valid evidence. Never repair an
 // invented sentence ID or silently remove an unrecognised source interpretation.
+export function taskAchievementVerdict(review) {
+  if(!obj(review)||review.basis==='missing'||review.verdict==='not_assessable'||
+    !['other','source_essay'].includes(review.taskType)||!Array.isArray(review.checks)) return null;
+  const required=review.taskType==='source_essay'
+    ? ['task_coverage','source_accuracy','evaluation','own_position'] : ['task_coverage'];
+  const checks=required.map(r=>review.checks.filter(c=>c?.requirement===r));
+  if(checks.some(a=>a.length!==1||!['met','partial','missing'].includes(a[0]?.status))) return null;
+  const statuses=checks.map(a=>a[0].status);
+  if(statuses[0]==='missing') return 'not_answered';
+  return statuses.every(s=>s==='met')?'answered':'partly_answered';
+}
 export function normaliseCoaching(data,sentences,normalisations=[]) {
   if(!obj(data)) return data;
-  // The overall verdict is a summary of the unchanged, substantive checks. Do not
-  // ask the model to regenerate a whole assessment for an inconsistent enum alone.
+  // Summarise actual task completion separately from quality/development advice.
+  // Do not regenerate a whole assessment for an inconsistent summary enum alone.
   // No source finding, check status, score or explanation is inferred or removed.
   const review=data.taskReview;
-  if(review?.verdict==='answered'&&Array.isArray(review.checks)&&review.checks.length&&
-    review.checks.every(c=>['met','partial','missing','not_applicable'].includes(c?.status))&&
-    review.checks.some(c=>['partial','missing'].includes(c.status))) {
-    review.verdict=review.checks.some(c=>['met','partial'].includes(c.status))?'partly_answered':'not_answered';
-    normalisations.push({field:'taskReview.verdict',from:'answered',to:review.verdict,
-      reason:'Conservative summary of unchanged applicable check statuses; no scores or substantive findings changed.'});
+  const verdict=taskAchievementVerdict(review);
+  if(verdict&&['answered','partly_answered','not_answered'].includes(review.verdict)&&review.verdict!==verdict) {
+    const from=review.verdict;review.verdict=verdict;
+    normalisations.push({field:'taskReview.verdict',from,to:verdict,
+      reason:'Derived from task coverage and, for source essays, source accuracy, evaluation and own position. Optional development and presentation quality do not decide task completion.'});
   }
   const ids=new Set(eligibleSentences(sentences).map(s=>s.id));
   const points=Array.isArray(data.learningPoints)?data.learningPoints:[];
@@ -761,7 +785,8 @@ function coachingIssues(data,payload,byId) {
     }
     if(!seen.has('task_coverage')) issues.push('Every task review must explicitly check task_coverage.');
     if(review.verdict==='answered'&&review.checks.every(c=>c?.status==='not_applicable')) issues.push('Task achievement needs at least one applicable supported check.');
-    if(review.verdict==='answered'&&review.checks.some(c=>['partial','missing'].includes(c?.status))) issues.push('A partly met or missing requirement cannot have verdict answered.');
+    const expectedVerdict=taskAchievementVerdict(review);
+    if(expectedVerdict&&review.verdict!==expectedVerdict) issues.push('Task verdict must match task_coverage and required source-essay checks, not optional development or presentation quality.');
     if(review.taskType==='source_essay'&&!['task_coverage','source_accuracy','evaluation','own_position'].every(r=>seen.has(r)))
       issues.push('Source essays must check coverage, source accuracy, evaluation and own position separately.');
     if(review.taskType==='source_essay'&&review.verdict!=='not_assessable'&&review.checks.some(c=>['task_coverage','source_accuracy','evaluation','own_position'].includes(c?.requirement)&&c.status==='not_applicable'))
@@ -972,25 +997,27 @@ For EVERY final necessary language correction provide languageAudit.corrections 
 category grammar/punctuation/word_choice, a minimal exact originalQuote, replacementQuote and
 explanation. Explain the actual original defect and why the replacement is necessary, in the
 requested feedback language. Never teach a rule about words absent from that quotation.
-Quotes must be unique, non-overlapping substrings of the original sentence. Applying them must
-reproduce the ENTIRE edited sentence exactly. For insertions include adjacent original words or
+Quotes must be unique substrings of the original sentence. Their unchanged context may overlap,
+but actual changes must be compatible. The union of explained changes must reproduce the ENTIRE
+edited sentence exactly. For insertions include adjacent original words or
 punctuation in the quote. Never hide optional style, source interpretation or invented facts inside
 an edit. Preserve meaning. Source issues belong in sourceReview/taskReview and teaching exercises.
 Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as correction, valid
 or context_needed with a contextual explanation. Discourse linking adverbs normally need a following
 comma; degree/concessive however is different. Do not change a valid or uncertain construction
 just to satisfy a checklist. A correction decision requires matching punctuation evidence and edit.
-Build the evidence BEFORE composing each final replacement: copy disjoint spans from the ORIGINAL,
-write each necessary replacement and explanation, then apply those spans right-to-left. Use that
+Build the evidence BEFORE composing each final replacement: copy spans from the ORIGINAL,
+write each necessary replacement and explanation, then combine the actual changes. Use that
 result verbatim as edits[].replacement. Never quote from an already corrected intermediate sentence.
 For a punctuation candidate, its punctuation span MUST contain the entire marker at the supplied
 original offset (e.g. originalQuote "however effective", replacementQuote "however, effective").
 Do not use only the adjacent word "effective" as evidence for the marker. Keep grammar evidence
-separate from punctuation evidence, with disjoint original context. For example in "It is an useful
+separate from punctuation evidence where possible. For example in "It is an useful
 service; moreover it helps.", use "an useful" -> "a useful" (grammar) and "moreover it" ->
-"moreover, it" (punctuation), not a whole-sentence grammar span plus an overlapping punctuation span.
-If a quote repeats, extend it with unchanged context without crossing another span. Re-plan the
-sentence's spans together when necessary; never stack a local patch on an overlapping broad span.
+"moreover, it" (punctuation). Local evidence usually makes the explanation clearer than whole-sentence evidence.
+If a quote repeats, extend it with unchanged context. Prefer local, separate changes. Context may
+overlap, and identical changes may be supported twice, but never propose conflicting replacements
+for the same original characters. Re-plan the sentence's changes together when necessary.
 Check other punctuation too. Reconcile all feedback, score reasons, insights and teaching examples
 with the audited changes. Keep optional wording optional; do not invent grammatical rules.`;
 
@@ -999,7 +1026,7 @@ export function reviewSchema(sentences,reading=null,language='en') {
   const explanation={type:'string',description:'Explain the original evidence in '+(FEEDBACK_LANGUAGES[language]||'English')+'.'};
   schema.properties.languageAudit=shape({
     checkedSentenceIds:arr(id,eligibleSentences(sentences).length,eligibleSentences(sentences).length),
-    corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:{type:'string',description:'Unique verbatim substring of the ORIGINAL sentence, disjoint from every other correction. Punctuation evidence for a candidate must include its entire marker at its original offset.'},replacementQuote:{type:'string',description:'Replacement for this span only. Apply all disjoint spans to the original right-to-left to obtain edits[].replacement exactly.'},explanation}),96),
+    corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:{type:'string',description:'Unique verbatim substring of the ORIGINAL sentence. Unchanged context may overlap other quotes; actual changes must not conflict. Punctuation evidence must include the entire candidate marker.'},replacementQuote:{type:'string',description:'Replacement for this span only. The union of all actual explained changes must reproduce edits[].replacement exactly.'},explanation}),96),
     punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,{...shape({decision:choice(['correction','valid','context_needed']),explanation}),description:'Candidate '+c.id+' in '+c.sentenceId+': marker '+JSON.stringify(c.marker)+' at original offset '+c.offset+'. A correction requires a punctuation evidence span containing this entire marker, plus its matching edit.'}])))
   });
   // Structured outputs follow schema key order. Emit evidence before the redundant full
@@ -1008,6 +1035,67 @@ export function reviewSchema(sentences,reading=null,language='en') {
   schema.properties={languageAudit,...assessmentProperties};
   schema.required=Object.keys(schema.properties);
   return schema;
+}
+// Quotes are evidence, not sequential edit commands. Derive their actual changes
+// on original coordinates so shared context and identical evidence do not collide.
+// A bounded token LCS separates multiple changes in a broad quote. On large input
+// fall back to one exact replacement (conservative conflicts, never guessed edits).
+export function evidenceChanges(original,replacement,offset=0) {
+  let prefix=0;
+  while(prefix<original.length&&prefix<replacement.length&&original[prefix]===replacement[prefix]) prefix++;
+  let aEnd=original.length,bEnd=replacement.length;
+  while(aEnd>prefix&&bEnd>prefix&&original[aEnd-1]===replacement[bEnd-1]) {aEnd--;bEnd--;}
+  if(prefix===aEnd&&prefix===bEnd) return [];
+  const a=original.slice(prefix,aEnd),b=replacement.slice(prefix,bEnd),base=offset+prefix;
+  const tokens=s=>[...s.matchAll(/\s+|[\p{L}\p{N}_]+|[^\s\p{L}\p{N}_]/gu)].map(m=>({value:m[0],at:m.index}));
+  const left=tokens(a),right=tokens(b),cols=right.length+1;
+  if(!left.length||!right.length||(left.length+1)*cols>65536)
+    return [{start:base,end:base+a.length,replacementQuote:b}];
+  const lcs=new Uint16Array((left.length+1)*cols);
+  for(let i=left.length-1;i>=0;i--) for(let j=right.length-1;j>=0;j--)
+    lcs[i*cols+j]=left[i].value===right[j].value?1+lcs[(i+1)*cols+j+1]:Math.max(lcs[(i+1)*cols+j],lcs[i*cols+j+1]);
+  const changes=[];let i=0,j=0,start=null,end=0,insert='';
+  const flush=()=>{
+    if(start===null) return;
+    let from=a.slice(start,end),to=insert,p=0;
+    while(p<from.length&&p<to.length&&from[p]===to[p]) p++;
+    let x=from.length,y=to.length;
+    while(x>p&&y>p&&from[x-1]===to[y-1]) {x--;y--;}
+    if(x!==p||y!==p) changes.push({start:base+start+p,end:base+start+x,replacementQuote:to.slice(p,y)});
+    start=null;insert='';
+  };
+  while(i<left.length||j<right.length) {
+    if(i<left.length&&j<right.length&&left[i].value===right[j].value) {flush();i++;j++;continue;}
+    const position=i<left.length?left[i].at:a.length;
+    if(start===null) {start=position;end=position;}
+    if(i<left.length&&(j===right.length||lcs[(i+1)*cols+j]>=lcs[i*cols+j+1])) {end=left[i].at+left[i].value.length;i++;}
+    else {insert+=right[j].value;j++;}
+  }
+  flush();return changes;
+}
+export function combineEvidenceChanges(original,spans) {
+  const patches=[],conflicts=[];
+  for(const p of spans.flatMap(s=>s.changes.map(c=>({...c,index:s.index})))) {
+    if(patches.some(q=>q.start===p.start&&q.end===p.end&&q.replacementQuote===p.replacementQuote)) continue;
+    for(const q of patches) {
+      const overlap=p.start<q.end&&p.end>q.start;
+      const insertion=p.start===p.end&&q.start===q.end&&p.start===q.start;
+      if(overlap||insertion) conflicts.push([q.index,p.index]);
+    }
+    patches.push(p);
+  }
+  let reconstructed=original;
+  if(conflicts.length) reconstructed=null;
+  else for(const p of [...patches].sort((a,b)=>b.start-a.start||b.end-a.end))
+    reconstructed=reconstructed.slice(0,p.start)+p.replacementQuote+reconstructed.slice(p.end);
+  return {patches,conflicts,reconstructed};
+}
+function punctuationEvidence(span,candidate) {
+  if(span.category!=='punctuation'||span.start>candidate.offset||span.end<candidate.offset+candidate.marker.length) return false;
+  // Merely quoting a marker is insufficient: an actual change must touch it or
+  // its immediately following delimiter. Unrelated punctuation is not evidence.
+  const end=candidate.offset+candidate.marker.length;
+  return span.changes.some(p=>p.start<=end&&p.end>=candidate.offset);
 }
 export function languageAuditIssues(data,sentences) {
   const issues=[],audit=data?.languageAudit,byId=new Map(eligibleSentences(sentences).map(s=>[s.id,s]));
@@ -1025,14 +1113,17 @@ export function languageAuditIssues(data,sentences) {
     if(start<0||sentence.text.indexOf(p.originalQuote,start+1)>=0) {issues.push(field+'.originalQuote: quote must occur exactly once in the ORIGINAL sentence; include enough context.');continue;}
     if(!edits.some(e=>e?.kind==='correction'&&e.sentenceId===p.sentenceId)) issues.push(field+'.sentenceId: evidence needs a matching necessary correction edit.');
     const list=spans.get(p.sentenceId)||[];
-    if(list.some(other=>start<other.end&&end>other.start)) issues.push(field+'.originalQuote: evidence spans overlap.');
-    list.push({...p,start,end});spans.set(p.sentenceId,list);
+    list.push({...p,index,start,end,changes:evidenceChanges(p.originalQuote,p.replacementQuote,start)});spans.set(p.sentenceId,list);
+  }
+  const plans=new Map();
+  for(const [id,list] of spans) {
+    const plan=combineEvidenceChanges(byId.get(id).text,list);plans.set(id,plan);
+    for(const [first,index] of plan.conflicts) issues.push('languageAudit.corrections['+index+'].originalQuote: actual evidence changes conflict with correction '+first+'; overlapping context is allowed, incompatible changes are not.');
   }
   for(const [index,edit] of edits.entries()) {
     const sentence=byId.get(edit?.sentenceId),list=spans.get(edit?.sentenceId)||[];
     if(!sentence||edit.kind!=='correction') continue;
-    let rebuilt=sentence.text;
-    for(const p of [...list].sort((a,b)=>b.start-a.start)) rebuilt=rebuilt.slice(0,p.start)+p.replacementQuote+rebuilt.slice(p.end);
+    const rebuilt=plans.get(edit.sentenceId)?.reconstructed;
     if(!list.length||rebuilt!==text(edit.replacement)) issues.push('edits['+index+'].replacement: languageAudit.corrections must explain and reproduce EVERY change; remove ungrounded style/content changes or supply justified exact evidence.');
   }
   const candidates=punctuationCandidates(eligibleSentences(sentences));
@@ -1040,7 +1131,7 @@ export function languageAuditIssues(data,sentences) {
   else {
     if(Object.keys(audit.punctuationChecks).some(id=>!candidates.some(c=>c.id===id))) issues.push('languageAudit.punctuationChecks: unknown candidate ID.');
     for(const c of candidates) {
-      const check=audit.punctuationChecks[c.id],matching=(spans.get(c.sentenceId)||[]).some(p=>p.category==='punctuation'&&p.start<=c.offset&&p.end>=c.offset+c.marker.length);
+      const check=audit.punctuationChecks[c.id],matching=(spans.get(c.sentenceId)||[]).some(p=>punctuationEvidence(p,c));
       if(!obj(check)||!['correction','valid','context_needed'].includes(check.decision)||!text(check.explanation)) issues.push('languageAudit.punctuationChecks.'+c.id+': give a contextual decision and explanation for '+c.sentenceId+'.');
       else if(check.decision==='correction'&&!matching) issues.push('languageAudit.punctuationChecks.'+c.id+': diagnosed punctuation needs a matching punctuation evidence span and correction.');
       else if(check.decision!=='correction'&&matching) issues.push('languageAudit.punctuationChecks.'+c.id+': valid/context_needed contradicts an automatic punctuation correction at this marker.');
@@ -1048,8 +1139,8 @@ export function languageAuditIssues(data,sentences) {
   }
   return issues;
 }
-// Diagnostic context only: never rewrite, merge or accept model evidence locally.
-// Re-plan affected sentences together, since repairing overlapping spans one by one is unsafe.
+// Diagnostic context only: report evidence conflicts; never alter the proposed draft.
+// Re-plan affected sentences together rather than applying one patch to another.
 export function auditRepairContext(data,sentences) {
   const issues=languageAuditIssues(data,sentences);
   if(!issues.length) return null;
@@ -1066,26 +1157,24 @@ export function auditRepairContext(data,sentences) {
     else if(candidate) affected.add(candidates.find(c=>c.id===candidate[1])?.sentenceId);
     else for(const s of eligibleSentences(sentences)) affected.add(s.id);
   }
-  return {issues, instruction:'Rebuild ALL evidence spans and the edit together for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. Keep unrelated valid findings. Match every correction decision to a disjoint punctuation span containing the entire marker. Derive the final sentence from the spans, then reconcile dependent explanations and insights. If a proposed change cannot be justified, remove that change and its dependent criticism. Return the complete review schema; every final check still applies.',
+  return {issues, instruction:'Rebuild ALL evidence spans and the edit together for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. Keep unrelated valid findings. Match every correction decision to punctuation evidence containing and changing the marker or its following delimiter. Shared unchanged context is allowed; conflicting actual changes are not. Derive the final sentence from the compatible changes, then reconcile dependent explanations and insights. If a proposed change cannot be justified, remove that change and its dependent criticism. Return the complete review schema; every final check still applies.',
     sentences:eligibleSentences(sentences).filter(s=>affected.has(s.id)).map(s=>{
       const spans=corrections.flatMap((p,index)=>{
         if(p?.sentenceId!==s.id) return [];
         const quote=typeof p.originalQuote==='string'?p.originalQuote:'';
         const start=quote?s.text.indexOf(quote):-1;
         return [{index,category:p.category,originalQuote:quote,replacementQuote:p.replacementQuote,
-          start,end:start<0?-1:start+quote.length,unique:start>=0&&s.text.indexOf(quote,start+1)<0}];
+          start,end:start<0?-1:start+quote.length,unique:start>=0&&s.text.indexOf(quote,start+1)<0,
+          changes:start>=0&&typeof p.replacementQuote==='string'?evidenceChanges(quote,p.replacementQuote,start):[]}];
       });
       const overlaps=[];
       for(let i=0;i<spans.length;i++) for(let j=i+1;j<spans.length;j++)
         if(spans[i].start>=0&&spans[j].start>=0&&spans[i].start<spans[j].end&&spans[j].start<spans[i].end) overlaps.push([spans[i].index,spans[j].index]);
-      let reconstructed=null;
-      if(!overlaps.length&&spans.every(p=>p.unique&&typeof p.replacementQuote==='string')) {
-        reconstructed=s.text;
-        for(const p of [...spans].sort((a,b)=>b.start-a.start)) reconstructed=reconstructed.slice(0,p.start)+p.replacementQuote+reconstructed.slice(p.end);
-      }
-      return {sentenceId:s.id,original:s.text,proposedReplacements:edits.filter(e=>e?.sentenceId===s.id).map(e=>e.replacement),spans,overlaps,reconstructed,
+      const plan=combineEvidenceChanges(s.text,spans);
+      const reconstructed=spans.every(p=>p.unique&&typeof p.replacementQuote==='string')?plan.reconstructed:null;
+      return {sentenceId:s.id,original:s.text,proposedReplacements:edits.filter(e=>e?.sentenceId===s.id).map(e=>e.replacement),spans,overlaps,conflicts:plan.conflicts,reconstructed,
         punctuationCandidates:candidates.filter(c=>c.sentenceId===s.id).map(c=>({...c,decision:data?.languageAudit?.punctuationChecks?.[c.id]||null,
-          matchingEvidenceIndexes:spans.filter(p=>p.unique&&p.category==='punctuation'&&p.start<=c.offset&&p.end>=c.offset+c.marker.length).map(p=>p.index)}))};
+          matchingEvidenceIndexes:spans.filter(p=>p.unique&&punctuationEvidence(p,c)).map(p=>p.index)}))};
     })};
 }
 function sameSourceContract(a,b) {

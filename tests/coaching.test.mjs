@@ -52,7 +52,7 @@ await test('homeschooling example separates source distortion and weak evaluatio
 await test('contradictory task success, full source accuracy and Content 5 are rejected',()=>{
  const d=assessment();d.taskReview.verdict='answered';d.taskReview.checks[1].status='met';d.assessment.criteria.content.score=5;
  const issues=validate(d,{...payload,sourceReading:plan},ss);
- assert(issues.some(s=>s.includes('partly met')));assert(issues.some(s=>s.includes('Source distortion')));assert(issues.some(s=>s.includes('Content 5')));
+ assert(issues.some(s=>s.includes('Task verdict must match')));assert(issues.some(s=>s.includes('Source distortion')));assert(issues.some(s=>s.includes('Content 5')));
 });
 await test('source distortion cannot be hidden behind punctuation priority or absent learning evidence',()=>{
  const d=assessment();d.keyFocus.evidenceId=punctuation;d.learningPoints.shift();

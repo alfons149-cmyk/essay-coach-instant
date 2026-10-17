@@ -41,7 +41,7 @@ await test('missing duplicate or invented coverage is rejected on correct writin
 });
 await test('invented quotations overlapping evidence and extra rewrites are rejected',()=>{
  const ss=numberSentences(cases[0].essay);let d=sample(cases[0]);d.languageAudit.corrections[0].originalQuote='university have';assert(languageAuditIssues(d,ss).some(s=>s.includes('originalQuote')));
- d=sample(cases[0]);d.languageAudit.corrections.push({...d.languageAudit.corrections[0]});assert(languageAuditIssues(d,ss).some(s=>s.includes('overlap')));
+ d=sample(cases[0]);d.languageAudit.corrections.push({...d.languageAudit.corrections[0],replacementQuote:'university needed'});assert(languageAuditIssues(d,ss).some(s=>s.includes('conflict')));
  d=sample(cases[0]);d.edits[0].replacement+=' It will boost the economy.';assert(languageAuditIssues(d,ss).some(s=>s.includes('EVERY change')));
 });
 await test('style and source interpretation are not necessary language categories',()=>{
@@ -120,7 +120,7 @@ function brokenAudit(kind) {
  const d=sample(cases[3]);
  if(kind==='marker') d.languageAudit.corrections[3].category='grammar';
  if(kind==='overlap') {
-  d.languageAudit.corrections.push({...d.languageAudit.corrections[3],originalQuote:'For example',replacementQuote:'For example,'});
+  d.languageAudit.corrections.push({...d.languageAudit.corrections[3],originalQuote:'For example',replacementQuote:'For example;'});
   d.edits[2].replacement+=' Everyone benefits.';
  }
  return d;
@@ -143,7 +143,7 @@ await test('adjacent-word insertion reconstructs text but still needs the comple
 });
 await test('overlap repair discards an unreliable reconstruction and identifies both original spans',()=>{
  const d=brokenAudit('overlap'),ctx=auditRepairContext(d,numberSentences(cases[3].essay));
- const s=ctx.sentences.find(s=>s.sentenceId==='S3');assert.deepEqual(s.overlaps,[[3,4]]);assert.equal(s.reconstructed,null);
+ const s=ctx.sentences.find(s=>s.sentenceId==='S3');assert.deepEqual(s.overlaps,[[3,4]]);assert(s.conflicts.length);assert.equal(s.reconstructed,null);
  assert(ctx.issues.some(x=>x.startsWith('languageAudit.corrections[4].originalQuote')));
  assert(ctx.issues.some(x=>x.startsWith('edits[2].replacement')));
 });

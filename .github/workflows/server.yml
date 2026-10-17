@@ -8,6 +8,7 @@ on:
       - "tests/worker.test.mjs"
       - "tests/coaching.test.mjs"
       - "tests/language-audit.test.mjs"
+      - "tests/v561-regression.test.mjs"
       - "tests/helpers/**"
       - "tests/writing-coach.test.mjs"
       - "tests/fixtures/**"
@@ -38,6 +39,7 @@ jobs:
           node tests/worker.test.mjs
           node tests/coaching.test.mjs
           node tests/language-audit.test.mjs
+          node tests/v561-regression.test.mjs
           node tests/writing-coach.test.mjs
           node tests/tense-feedback.test.mjs
 
