@@ -7,6 +7,8 @@ on:
       - "apps/worker/**"
       - "tests/worker.test.mjs"
       - "tests/coaching.test.mjs"
+      - "tests/language-audit.test.mjs"
+      - "tests/helpers/**"
       - "tests/writing-coach.test.mjs"
       - "tests/fixtures/**"
       - "js/writing-coach.js"
@@ -35,6 +37,7 @@ jobs:
           node --check apps/worker/src/worker.js
           node tests/worker.test.mjs
           node tests/coaching.test.mjs
+          node tests/language-audit.test.mjs
           node tests/writing-coach.test.mjs
           node tests/tense-feedback.test.mjs
 

@@ -1,7 +1,9 @@
-// EssayCoach Worker v5.5.5 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.0 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-16-coaching-v5.5.5";
+const VERSION = "2026-10-17-coaching-v5.6.0";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
+const MAX_EDITS=32;
+const eligibleSentences=sentences=>sentences.filter(s=>s.text.length>=8||/[.!?]$/.test(s.text));
 const CATEGORIES = ["content", "communicative", "organisation", "language"];
 const UNITS = {
   "1": "Clauses, Phrases & Complete Sentences",
@@ -168,7 +170,7 @@ A freestanding 'For example, reducing waste and reusing containers.' is a fragme
 intentional contextual ellipsis from accidental fragments. Repair a fragment as a standalone
 sentence with minimal added grammar: do not delete it or merge across sentence IDs.
 Do not stop after superficial quote or spelling fixes. Prioritise substantive grammar before
-punctuation and then optional style suggestions within the eight-edit limit.
+punctuation and then optional style suggestions without stopping after the most salient errors. The safety limit is 32 edited sentences; do not claim exhaustive accuracy.
 Avoid generic 'transitions could be smoother': identify the actual relation that needs clarifying.
 Distinguish a missing idea from an idea mentioned briefly, and recognise existing examples.
 Never insert new arguments, factual claims or personal experiences into the corrected draft.
@@ -226,7 +228,7 @@ Explain the exact benefit of a suggestion; recognise clear introductions, conclu
 If the task is absent, briefly say content/communicative are not assessed; continue language feedback.
 
 EDITS
-Return 0-8 edits, with NO minimum. Every edit must be kind=correction for a demonstrable error.
+Return 0-32 edits, with NO minimum. Every edit must be kind=correction for a demonstrable error.
 Do not supply optional rewritten sentences. Put optional practice in sentenceInsights as an
 instruction or question, with kind=suggestion and betterVersion="". Never invent what the
 student felt, did, achieved, planned or intended, even as an optional illustration.
@@ -288,7 +290,7 @@ Use writingMetrics for word length, not an estimate. In-range writing must not b
 or too long. Weak argument development is distinct from word count.
 Prioritise a source misreading over style in keyFocus and the first learning point. Every learning
 point needs a concrete what/why/how, short English example, practice action and check question.
-Edits contain only demonstrable language errors, at most eight. Never insert new facts or fix a
+Edits contain only demonstrable language errors, at most 32 edited sentences. Never insert new facts or fix a
 source interpretation by silently changing the student's argument. Optional phrasing belongs in
 suggestions, not correction edits. A language correction lesson must use its edit's full replacement.
 Keep all dependent reasons, examples, feedback and scores consistent with the final edit list.
@@ -459,7 +461,7 @@ export function applyFeedbackPolicy(data,payload,sentences) {
   const focusNote=byId.get(data.keyFocus?.evidenceId);
   if(focusNote && !correctedIds.has(focusNote.sentenceId))
     data.keyFocus={action:focusNote.action,explanation:focusNote.explanation,evidenceId:focusNote.sentenceId};
-  if(notes.length && sentences.filter(s=>s.text.length>=8).length===1) {
+  if(notes.length && eligibleSentences(sentences).length===1) {
     // In a one-sentence sample the entire feedback is about this ambiguity.
     // Replace the model's blanket approval, rather than append a contradictory caveat.
     data.feedback=notes[0].explanation;
@@ -577,9 +579,20 @@ export function resolveSourceReferences(data,reading) {
 
 // Reconcile presentation order using already supplied, valid evidence. Never repair an
 // invented sentence ID or silently remove an unrecognised source interpretation.
-export function normaliseCoaching(data,sentences) {
+export function normaliseCoaching(data,sentences,normalisations=[]) {
   if(!obj(data)) return data;
-  const ids=new Set(sentences.filter(s=>s.text.length>=8).map(s=>s.id));
+  // The overall verdict is a summary of the unchanged, substantive checks. Do not
+  // ask the model to regenerate a whole assessment for an inconsistent enum alone.
+  // No source finding, check status, score or explanation is inferred or removed.
+  const review=data.taskReview;
+  if(review?.verdict==='answered'&&Array.isArray(review.checks)&&review.checks.length&&
+    review.checks.every(c=>['met','partial','missing','not_applicable'].includes(c?.status))&&
+    review.checks.some(c=>['partial','missing'].includes(c.status))) {
+    review.verdict=review.checks.some(c=>['met','partial'].includes(c.status))?'partly_answered':'not_answered';
+    normalisations.push({field:'taskReview.verdict',from:'answered',to:review.verdict,
+      reason:'Conservative summary of unchanged applicable check statuses; no scores or substantive findings changed.'});
+  }
+  const ids=new Set(eligibleSentences(sentences).map(s=>s.id));
   const points=Array.isArray(data.learningPoints)?data.learningPoints:[];
   const distortions=(Array.isArray(data.sourceReview)?data.sourceReview:[]).filter(s=>s?.coverage==='distorted');
   const sourcePoint=points.find(p=>p?.category==='source_interpretation'&&ids.has(p.evidenceId)&&
@@ -599,7 +612,7 @@ export function normaliseCoaching(data,sentences) {
 }
 
 export function responseSchema(sentences,reading=null,language='en') {
-  const eligible=sentences.filter(s=>s.text.length>=8);
+  const eligible=eligibleSentences(sentences);
   const sentenceId={type:'string',enum:eligible.map(s=>s.id)};
   const id={$ref:'#/$defs/sentenceId'};
   const criterion=shape({score,reason:str,evidenceIds:arr(id,3)});
@@ -618,7 +631,7 @@ export function responseSchema(sentences,reading=null,language='en') {
     sampleSuitable:{type:'boolean'},feedback:str,
     assessment:shape({taskSufficient:{type:'boolean'},criteria:shape(Object.fromEntries(CATEGORIES.map(k=>[k,criterion])))}),
     keyFocus:shape({action:str,evidenceId:id,explanation:str}),
-    edits:arr(edit,8),
+    edits:arr(edit,MAX_EDITS),
     sentenceInsights:arr(shape({kind,sentenceId:id,issue:str,explanation:str,betterVersion:str,
       unit:{type:['integer','null'],enum:[...Array.from({length:20},(_,i)=>i+1),null]}}),3),
     vocabularySuggestions:arr(shape({sentenceId:id,original:str,alternatives:arr(str,3,1),explanation:str}),4)
@@ -637,7 +650,7 @@ export function responseSchema(sentences,reading=null,language='en') {
     learning.required=Object.keys(learning.properties);
     schema.required=Object.keys(schema.properties);
   }
-  if(ambiguousMorningIds(sentences).length&&sentences.filter(s=>s.text.length>=8).length===1)
+  if(ambiguousMorningIds(sentences).length&&eligibleSentences(sentences).length===1)
     schema.properties.sampleSuitable={type:'boolean',enum:[true],description:'This is an understandable English practice sentence. Assess it with limitations; its short length is not grounds for rejection.'};
   const translated=new Set(['feedback','reason','action','explanation','issue','practiceInstruction','checkQuestion','expectedResponse','point']);
   function describe(s) {
@@ -654,7 +667,7 @@ export function responseSchema(sentences,reading=null,language='en') {
 
 // Only cap evidence when every reference is valid; never hide an invented ID.
 export function normaliseEvidence(data,sentences) {
-  const ids=new Set(sentences.filter(s=>s.text.length>=8).map(s=>s.id));
+  const ids=new Set(eligibleSentences(sentences).map(s=>s.id));
   for(const key of CATEGORIES) {
     const criterion=data?.assessment?.criteria?.[key];
     if(Array.isArray(criterion?.evidenceIds) && criterion.evidenceIds.every(id=>ids.has(id)))
@@ -799,11 +812,11 @@ function coachingIssues(data,payload,byId) {
 // Invalid core results must be repaired or rejected, not silently converted into an empty success.
 export function validate(data, payload, sentences) {
   const issues=[];
-  const byId=new Map(sentences.filter(s=>s.text.length>=8).map(s=>[s.id,s]));
+  const byId=new Map(eligibleSentences(sentences).map(s=>[s.id,s]));
   if(!obj(data)) return ['Response must be an object.'];
   issues.push(...coachingIssues(data,payload,byId));
   if(typeof data.sampleSuitable!=='boolean') issues.push('sampleSuitable must be boolean.');
-  if(data.sampleSuitable===false&&ambiguousMorningIds(sentences).length&&sentences.filter(s=>s.text.length>=8).length===1)
+  if(data.sampleSuitable===false&&ambiguousMorningIds(sentences).length&&eligibleSentences(sentences).length===1)
     issues.push('This is an understandable English practice sentence: sampleSuitable must be true. Assess the limited evidence rather than rejecting it for length.');
   if(!text(data.feedback)) issues.push('Provide specific feedback.');
   if(!obj(data.assessment) || typeof data.assessment.taskSufficient!=='boolean') issues.push('Provide assessment.taskSufficient.');
@@ -811,13 +824,13 @@ export function validate(data, payload, sentences) {
   const taskOK=Boolean(text(payload.task)) && data.assessment?.taskSufficient===true;
   for(const key of CATEGORIES) {
     const c=data.assessment?.criteria?.[key];
-    if(!obj(c) || !text(c.reason)) { issues.push(`${key}: provide a reason.`); continue; }
+    if(!obj(c) || !text(c.reason)) { issues.push(`assessment.criteria.${key}: provide a reason.`); continue; }
     if(!Array.isArray(c.evidenceIds) || c.evidenceIds.some(id=>!byId.has(id)) || c.evidenceIds.length>3)
-      issues.push(`${key}: use up to three valid evidenceIds.`);
+      issues.push(`assessment.criteria.${key}: use up to three valid evidenceIds.`);
     const assess=data.sampleSuitable===true && (taskOK || ['organisation','language'].includes(key));
     if(assess && (!isScore(c.score) || !c.evidenceIds?.length))
-      issues.push(`${key}: a numeric score 0-5 and at least one valid sentence ID are required, even with an empty TASK for organisation/language.`);
-    if(!assess && c.score!==null) issues.push(`${key}: score must be null when not assessable.`);
+      issues.push(`assessment.criteria.${key}: a numeric score 0-5 and at least one valid sentence ID are required, even with an empty TASK for organisation/language.`);
+    if(!assess && c.score!==null) issues.push(`assessment.criteria.${key}: score must be null when not assessable.`);
   }
   const focus=data.keyFocus;
   if(!obj(focus) || !text(focus.action) || !text(focus.explanation) || !byId.has(focus.evidenceId))
@@ -825,13 +838,13 @@ export function validate(data, payload, sentences) {
   const seen=new Set();
   if(!Array.isArray(data.edits)) issues.push('edits must be an array (zero edits is allowed).');
   else {
-    if(data.edits.length>8) issues.push('At most eight edits.');
+    if(data.edits.length>MAX_EDITS) issues.push('edits: at most '+MAX_EDITS+' edited sentences.');
     for(const [index,e] of data.edits.entries()) {
       const label=`edits[${index}]`;
       if(!obj(e)) {issues.push(`${label}: must be an edit object.`);continue;}
       const sentence=byId.get(e.sentenceId);
       if(!sentence) issues.push(`${label}: sentenceId must be one of the supplied sentence IDs; do not put a quotation in this field.`);
-      if(!isKind(e.kind)) issues.push(`${label}: kind must be correction or suggestion.`);
+      if(e.kind!=='correction') issues.push(`${label}.kind: only necessary language corrections can be automatic; put style in optional insights and source problems in sourceReview.`);
       if(!text(e.replacement)) issues.push(`${label}: replacement must contain the complete revised sentence.`);
       if(!text(e.reason)) issues.push(`${label}: explain the specific change in reason.`);
       if(sentence && text(e.replacement)===sentence.text) issues.push(`${label} (${e.sentenceId}): unchanged replacement. Remove this edit and any claim that it corrects an error.`);
@@ -889,9 +902,10 @@ export function validate(data, payload, sentences) {
   if(!corrections.length && /\b(?:with (?:some |a few )?(?:minor |grammatical |language )?errors|contains? (?:some |minor )?errors|errors that do not|there are (?:some |minor )?errors)\b/i.test(languageReason+' '+text(data.feedback)))
     issues.push('Error claim without a correction: identify a demonstrable error in edits, or remove the unsupported error claim. Do not invent an error.');
   for(const i of Array.isArray(data.sentenceInsights)?data.sentenceInsights:[]) {
-    if(i?.kind==='correction' && !corrections.some(e=>e.sentenceId===i.sentenceId))
-      issues.push('A correction insight must have a matching correction edit for that sentence.');
+    if(i?.kind==='correction' && !corrections.some(e=>e.sentenceId===i.sentenceId && text(e.replacement)===text(i.betterVersion)))
+      issues.push('sentenceInsights.betterVersion: a correction insight must have a matching correction edit and identical replacement for that sentence.');
   }
+  if(data.languageAudit!==undefined) issues.push(...languageAuditIssues(data,sentences));
   return [...new Set(issues)];
 }
 
@@ -914,7 +928,7 @@ export function toClient(data, payload, sentences, attempts) {
   const vocabularySuggestions=Object.create(null);
   for(const v of data.vocabularySuggestions) vocabularySuggestions[text(v.original)]=v.alternatives.map(text);
   return {
-    schemaVersion:2,version:VERSION,level:payload.level,inputWords:countWords(payload.essay),outputWords:countWords(nextDraft),
+    schemaVersion:2,version:VERSION,...(data.languageAudit?{languageAudit:data.languageAudit}:{}),level:payload.level,inputWords:countWords(payload.essay),outputWords:countWords(nextDraft),
     contextNotes:notes,feedback:[...new Set([...notes.map(n=>n.explanation),text(data.feedback)])].join('\n\n'),assessment:{taskSufficient:data.assessment.taskSufficient,criteria},
     keyFocus:{action:text(data.keyFocus.action),explanation:text(data.keyFocus.explanation),evidence:byId.get(data.keyFocus.evidenceId).text},
     edits,nextDraft,vocabularySuggestions,
@@ -938,12 +952,119 @@ function headers(origin) {
 function json(body,status,origin) { return new Response(JSON.stringify(body),{status,headers:headers(origin)}); }
 function fail(code,error,status,origin,details={}) { return json({error,code,version:VERSION,...details},status,origin); }
 
+// Candidates are questions for the auditor, never automatic punctuation rules.
+// In particular, degree/concessive "however difficult it seems" can be correct.
+export function punctuationCandidates(sentences) {
+  const result=[];
+  for(const s of sentences) {
+    const pattern=/(^|[;:]\s*)(however|therefore|nevertheless|nonetheless|moreover|furthermore|consequently|instead|otherwise|what is more|for example|in addition)\b(?!\s*[,;:!?—–-])(?=\s+\S)/gi;
+    for(const m of s.text.matchAll(pattern)) result.push({id:'P'+(result.length+1),sentenceId:s.id,marker:m[2],offset:m.index+m[1].length});
+  }
+  return result;
+}
+const LANGUAGE_AUDIT=`LANGUAGE AUDIT — independent review only.
+Read EVERY original sentence in order, not just the proposed edits. Check clause completeness,
+agreement, verb morphology and time context, articles/determiners, word order, reference, lexical
+meaning, spelling, and punctuation/clause boundaries in separate passes. Register all supplied
+eligible sentence IDs exactly once in languageAudit.checkedSentenceIds, even if no edit is needed.
+Coverage is a record of checking, not proof of grammatical accuracy. There is no minimum edit count.
+For EVERY final necessary language correction provide languageAudit.corrections with sentenceId,
+category grammar/punctuation/word_choice, a minimal exact originalQuote, replacementQuote and
+explanation. Explain the actual original defect and why the replacement is necessary, in the
+requested feedback language. Never teach a rule about words absent from that quotation.
+Quotes must be unique, non-overlapping substrings of the original sentence. Applying them must
+reproduce the ENTIRE edited sentence exactly. For insertions include adjacent original words or
+punctuation in the quote. Never hide optional style, source interpretation or invented facts inside
+an edit. Preserve meaning. Source issues belong in sourceReview/taskReview and teaching exercises.
+Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as correction, valid
+or context_needed with a contextual explanation. Discourse linking adverbs normally need a following
+comma; degree/concessive however is different. Do not change a valid or uncertain construction
+just to satisfy a checklist. A correction decision requires matching punctuation evidence and edit.
+Check other punctuation too. Reconcile all feedback, score reasons, insights and teaching examples
+with the audited changes. Keep optional wording optional; do not invent grammatical rules.`;
+
+export function reviewSchema(sentences,reading=null,language='en') {
+  const schema=responseSchema(sentences,reading,language),id={$ref:'#/$defs/sentenceId'};
+  const explanation={type:'string',description:'Explain the original evidence in '+(FEEDBACK_LANGUAGES[language]||'English')+'.'};
+  schema.properties.languageAudit=shape({
+    checkedSentenceIds:arr(id,eligibleSentences(sentences).length,eligibleSentences(sentences).length),
+    corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:str,replacementQuote:str,explanation}),96),
+    punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,shape({decision:choice(['correction','valid','context_needed']),explanation})])))
+  });
+  schema.required=Object.keys(schema.properties);
+  return schema;
+}
+export function languageAuditIssues(data,sentences) {
+  const issues=[],audit=data?.languageAudit,byId=new Map(eligibleSentences(sentences).map(s=>[s.id,s]));
+  if(!obj(audit)) return ['languageAudit: independent review must record sentence coverage, correction evidence and punctuation decisions.'];
+  if(!Array.isArray(audit.checkedSentenceIds)||audit.checkedSentenceIds.length!==byId.size||new Set(audit.checkedSentenceIds).size!==byId.size||audit.checkedSentenceIds.some(id=>!byId.has(id)))
+    issues.push('languageAudit.checkedSentenceIds: check every eligible original sentence exactly once, including sentences without edits.');
+  if(!Array.isArray(audit.corrections)||audit.corrections.length>96) return [...issues,'languageAudit.corrections: provide up to 96 exact evidence spans.'];
+  const edits=Array.isArray(data.edits)?data.edits:[],spans=new Map();
+  for(const [index,p] of audit.corrections.entries()) {
+    const field='languageAudit.corrections['+index+']',sentence=byId.get(p?.sentenceId);
+    if(!sentence||!['grammar','punctuation','word_choice'].includes(p?.category)||!text(p?.originalQuote)||typeof p?.replacementQuote!=='string'||p.originalQuote===p.replacementQuote||!text(p?.explanation)) {
+      issues.push(field+': supply a necessary language category, changed exact quotations, an explanation and a valid sentence ID.');continue;
+    }
+    const start=sentence.text.indexOf(p.originalQuote),end=start+p.originalQuote.length;
+    if(start<0||sentence.text.indexOf(p.originalQuote,start+1)>=0) {issues.push(field+'.originalQuote: quote must occur exactly once in the ORIGINAL sentence; include enough context.');continue;}
+    if(!edits.some(e=>e?.kind==='correction'&&e.sentenceId===p.sentenceId)) issues.push(field+'.sentenceId: evidence needs a matching necessary correction edit.');
+    const list=spans.get(p.sentenceId)||[];
+    if(list.some(other=>start<other.end&&end>other.start)) issues.push(field+'.originalQuote: evidence spans overlap.');
+    list.push({...p,start,end});spans.set(p.sentenceId,list);
+  }
+  for(const [index,edit] of edits.entries()) {
+    const sentence=byId.get(edit?.sentenceId),list=spans.get(edit?.sentenceId)||[];
+    if(!sentence||edit.kind!=='correction') continue;
+    let rebuilt=sentence.text;
+    for(const p of [...list].sort((a,b)=>b.start-a.start)) rebuilt=rebuilt.slice(0,p.start)+p.replacementQuote+rebuilt.slice(p.end);
+    if(!list.length||rebuilt!==text(edit.replacement)) issues.push('edits['+index+'].replacement: languageAudit.corrections must explain and reproduce EVERY change; remove ungrounded style/content changes or supply justified exact evidence.');
+  }
+  const candidates=punctuationCandidates(eligibleSentences(sentences));
+  if(!obj(audit.punctuationChecks)) issues.push('languageAudit.punctuationChecks: resolve every punctuation candidate.');
+  else {
+    if(Object.keys(audit.punctuationChecks).some(id=>!candidates.some(c=>c.id===id))) issues.push('languageAudit.punctuationChecks: unknown candidate ID.');
+    for(const c of candidates) {
+      const check=audit.punctuationChecks[c.id],matching=(spans.get(c.sentenceId)||[]).some(p=>p.category==='punctuation'&&p.start<=c.offset&&p.end>=c.offset+c.marker.length);
+      if(!obj(check)||!['correction','valid','context_needed'].includes(check.decision)||!text(check.explanation)) issues.push('languageAudit.punctuationChecks.'+c.id+': give a contextual decision and explanation for '+c.sentenceId+'.');
+      else if(check.decision==='correction'&&!matching) issues.push('languageAudit.punctuationChecks.'+c.id+': diagnosed punctuation needs a matching punctuation evidence span and correction.');
+      else if(check.decision!=='correction'&&matching) issues.push('languageAudit.punctuationChecks.'+c.id+': valid/context_needed contradicts an automatic punctuation correction at this marker.');
+    }
+  }
+  return issues;
+}
+function sameSourceContract(a,b) {
+  return a?.taskType===b?.taskType&&JSON.stringify((a?.sources||[]).map(s=>s.sourceQuote))===JSON.stringify((b?.sources||[]).map(s=>s.sourceQuote))&&
+    JSON.stringify(sourceCatalog(a).map(p=>[p.id,p.quote]))===JSON.stringify(sourceCatalog(b).map(p=>[p.id,p.quote]));
+}
+function auditCanRepair(issues) {
+  // Only complete candidates with known linguistic disagreements may go straight
+  // to the independent auditor. Final validation and review are never bypassed.
+  return issues.length>0&&issues.every(issue=>/unsupported correction of protected phrase|replacing causal for|defensible present perfect|server word count|Error claim without a correction/.test(issue));
+}
+function safeModelId(value) {return typeof value==='string'&&/^(?:gpt|o[134])[-a-zA-Z0-9.]{0,80}$/.test(value)?value:null;}
+export function modelConfiguration(env) {
+  const configured=typeof env.OPENAI_MODEL==='string'&&env.OPENAI_MODEL.trim()!=='';
+  return {model:safeModelId(configured?env.OPENAI_MODEL.trim():'gpt-4o-mini'),modelSource:configured?'OPENAI_MODEL':'default',apiKeyConfigured:Boolean(env.OPENAI_API_KEY)};
+}
+function diagnosticChecks(issues,phase) {
+  return issues.map(message=>({phase,
+    field:message.match(/\b(?:languageAudit|edits|sentenceInsights|learningPoints|assessment|taskReview|sourceReview)(?:\[[^\]]+\]|\.[A-Za-z][A-Za-z0-9_]*)*/)?.[0]||
+      (phase==='task'?(/key.point/i.test(message)?'sourceReading.sources.keyPoints':/source/i.test(message)?'sourceReading.sources':'sourceReading'):
+      /unknown source point|missing source review|sourceReviewById/i.test(message)?'sourceReviewById':
+      /sourceQuote|Learning point/i.test(message)?'learningPoints.sourceQuote':
+      /source review|source distortion|source interpretation/i.test(message)?'sourceReview':
+      /protected phrase|causal for|defensible present perfect/i.test(message)?'edits':
+      /task checks/i.test(message)?'taskReview.checks':/task|classification/i.test(message)?'taskReview':'assessment'),
+    rule:/checkedSentenceIds/.test(message)?'SENTENCE_COVERAGE':/reproduce EVERY/.test(message)?'UNEXPLAINED_CHANGE':/punctuationChecks/.test(message)?'PUNCTUATION_AUDIT':/originalQuote/.test(message)?'ORIGINAL_EVIDENCE':/protected phrase|causal for|defensible present perfect/.test(message)?'UNNECESSARY_CORRECTION':/word count/.test(message)?'WORD_LENGTH':/classification|task type/.test(message)?'TASK_CLASSIFICATION':'RESPONSE_CONSISTENCY',message}));
+}
+
 export default {
   async fetch(request,env) {
     const origin=request.headers.get('Origin') || '';
     const path=new URL(request.url).pathname;
     if(request.method==='OPTIONS') return new Response(null,{status:204,headers:headers(origin)});
-    if(request.method==='GET' && (path==='/api/health' || path==='/')) return json({ok:true,version:VERSION},200,origin);
+    if(request.method==='GET' && (path==='/api/health' || path==='/')) return json({ok:true,version:VERSION,...modelConfiguration(env)},200,origin);
     if(path!=='/api/correct') return fail('NOT_FOUND','Not found',404,origin);
     if(request.method!=='POST') return fail('METHOD','Use POST',405,origin);
     let body;
@@ -956,9 +1077,11 @@ export default {
     if(payload.essay.length>30000 || payload.task.length>30000) return fail('TOO_LONG','Maximum 30,000 characters per field.',413,origin);
     const sentences=numberSentences(payload.essay);
     if(sentences.length>600) return fail('TOO_MANY_SENTENCES','Please submit a shorter essay (maximum 600 text segments).',413,origin);
-    if(!sentences.some(s=>s.text.length>=8)) return fail('TOO_SHORT','Please enter connected English writing to assess.',422,origin);
+    if(!eligibleSentences(sentences).length) return fail('TOO_SHORT','Please enter connected English writing to assess.',422,origin);
     if(!env.OPENAI_API_KEY) return fail('CONFIG','The correction service is not configured.',503,origin);
-    const model=env.OPENAI_MODEL || 'gpt-4o-mini';
+    const config=modelConfiguration(env);
+    if(!config.model) return fail('AI_CONFIGURATION','OPENAI_MODEL must be a model identifier.',503,origin);
+    const model=config.model;
     const languageCheck=`Write ALL learner-facing explanations in ${FEEDBACK_LANGUAGES[feedbackLanguage]}, including taskReview expectedResponse/explanation/checks, learningPoints issue/explanation/practiceInstruction/checkQuestion, sourceReview point/explanation, feedback, correction reasons, keyFocus and insights. Only original quotations and English examples/replacements stay in English. Do not default the new teaching fields to English.`;
     const protectedMorningIds=ambiguousMorningIds(sentences);
     const preservationRule=protectedMorningIds.length
@@ -971,18 +1094,24 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
         writingMetrics:writingMetrics(payload),
         sentences:sentences.map(({id,text})=>({id,text,detectedSignals:detectSignals(text)})),
         correctionPreservations:correctionPreservations(sentences),
+        punctuationCandidates:punctuationCandidates(eligibleSentences(sentences)),
         ambiguousMorningIds:protectedMorningIds})}];
     // C2 with a task starts with a source-only reading; other requests use two calls.
     // Repairs have their own bounded budgets, so a valid third
     // assessment always gets a review. Every network call shares one overall deadline.
-    const deadline=Date.now()+180000;
+    const startedAt=Date.now(),deadline=startedAt+180000;
     let attempts=0, candidate=null, latestRaw='', validationIssues=[];
     const readTask=payload.level==='C2'&&Boolean(text(payload.task));
     const phaseAttempts={...(readTask?{task:0}:{}),assessment:0,review:0}, completions=[];
-    let maxCompletionTokens=6000, compact=false, taskRecheck=null, taskRechecks=0;
-    const diagnostics=phase=>({attempts,phase,phaseAttempts,taskRechecks,
+    let maxCompletionTokens=6000, compact=false, taskRecheck=null, taskRechecks=0,suspended=null,reusedAssessments=0;
+    const history=[];
+    const diagnostics=phase=>({attempts,phase,phaseAttempts,taskRechecks,reusedAssessments,
+      model,modelSource:config.modelSource,totalMs:Math.max(0,Date.now()-startedAt),
+      phaseMs:Object.fromEntries(Object.keys(phaseAttempts).map(p=>[p,history.filter(r=>r.phase===p).reduce((sum,r)=>sum+(r.finished?r.durationMs:Math.max(0,Date.now()-r.startedAt)),0)])),
+      repairAttempts:Object.fromEntries(Object.entries(phaseAttempts).map(([p,n])=>[p,Math.max(0,n-1)])),
+      history:history.map(({startedAt:at,finished,...r})=>({...r,durationMs:finished?r.durationMs:Math.max(0,Date.now()-at),checks:finished?r.checks:diagnosticChecks(validationIssues,r.phase)})),
       taskClassification:payload.sourceReading?{taskType:payload.sourceReading.taskType,basis:payload.sourceReading.instructionStatus}:null,
-      reviewRequested:phase==='review',reviewCompleted:false,completions});
+      reviewRequested:phaseAttempts.review>0,reviewCompleted:false,completions});
     const phases=[...(readTask?['task']:[]),'assessment','review'];
     for(let phaseIndex=0;phaseIndex<phases.length;phaseIndex++) {
       const phase=phases[phaseIndex];
@@ -992,7 +1121,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
       for(let phaseAttempt=phaseAttempts[phase]+1;phaseAttempt<=maximum;phaseAttempt++) {
         const messages=phase==='task' ? [{role:'system',content:TASK_READING},
           {role:'user',content:JSON.stringify({task:payload.task,level:payload.level,feedbackLanguage:payload.feedbackLanguage})}] : phase==='review'
-          ? [{role:'system',content:REVIEW_SYSTEM},baseMessages[1]] : [...baseMessages];
+          ? [{role:'system',content:REVIEW_SYSTEM+'\n'+LANGUAGE_AUDIT},baseMessages[1]] : [...baseMessages];
         if(phase==='task'&&taskRecheck) messages.push({role:'system',content:
           'Re-read only the original task. Two passes disagreed about its classification: '+JSON.stringify(taskRecheck)+
           '. Neither classification is authoritative. Decide from the supplied task alone. Two C2 source bodies without instructions can be assessed provisionally as source_essay with basis assumed. Do not require the student essay to identify source passages.'});
@@ -1002,47 +1131,60 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
         if(compact) instructions.push('The previous output was incomplete because it reached the token limit. Return compact JSON: one brief sentence per explanation, short reasons, no optional vocabulary or style edits. Preserve all required assessment fields and supported corrections; never continue a partial JSON fragment.');
         instructions.push(languageCheck+(phase==='task'?'':preservationRule));
         messages.push({role:'system',content:instructions.join('\n')});
-        let raw='';
+        let raw='',record=null,requestStarted=0;
         try {
           const timeout=Math.min(60000,deadline-Date.now());
           if(timeout<=0) return fail('TIMEOUT','The correction took too long. Please try again.',504,origin,{diagnostics:diagnostics(phase)});
           attempts++;phaseAttempts[phase]++;
+          requestStarted=Date.now();validationIssues=[];
+          record={phase,attempt:phaseAttempts[phase],startedAt:requestStarted,durationMs:0,providerMs:0,validationMs:0,outcome:'requesting',checks:[],normalisations:[]};history.push(record);
           const response=await fetch('https://api.openai.com/v1/chat/completions',{
             method:'POST',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},
             body:JSON.stringify({model,temperature:0.2,max_completion_tokens:maxCompletionTokens,
-              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema():responseSchema(sentences,payload.sourceReading,feedbackLanguage)}},messages}),
+              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema():phase==='review'?reviewSchema(sentences,payload.sourceReading,feedbackLanguage):responseSchema(sentences,payload.sourceReading,feedbackLanguage)}},messages}),
             signal:AbortSignal.timeout(timeout)
           });
           if(!response.ok) {
-            if(response.status===400) return fail('AI_CONFIGURATION','The AI model or response format is not supported. Check OPENAI_MODEL.',502,origin,{upstreamStatus:400});
-            return fail('AI_SERVICE','The AI service could not complete the correction. Please try again later.',502,origin,{upstreamStatus:response.status});
+            record.providerMs=Math.max(0,Date.now()-requestStarted);record.outcome='upstream_error';record.upstreamStatus=response.status;
+            if(response.status===400) return fail('AI_CONFIGURATION','The AI model or response format is not supported. Check OPENAI_MODEL.',502,origin,{upstreamStatus:400,diagnostics:diagnostics(phase)});
+            return fail('AI_SERVICE','The AI service could not complete the correction. Please try again later.',502,origin,{upstreamStatus:response.status,diagnostics:diagnostics(phase)});
           }
           let result;
           try {result=await response.json();} catch {
+            record.providerMs=Math.max(0,Date.now()-requestStarted);record.outcome='unreadable_response';
             return fail('AI_RESPONSE','The AI service returned an unreadable response.',502,origin,{diagnostics:diagnostics(phase)});
           }
+          record.providerMs=Math.max(0,Date.now()-requestStarted);
           const choice=result?.choices?.[0];
           const allowedReasons=['stop','length','content_filter','tool_calls','function_call'];
           const finishReason=allowedReasons.includes(choice?.finish_reason)?choice.finish_reason:'unexpected';
+          record.finishReason=finishReason;record.outcome=finishReason;
           completions.push({phase,attempt:phaseAttempt,finishReason,maxCompletionTokens,
+            resolvedModel:safeModelId(result?.model),
             completionTokens:Number.isInteger(result?.usage?.completion_tokens)&&result.usage.completion_tokens>=0?result.usage.completion_tokens:null});
-          if(choice?.message?.refusal) return fail('AI_REFUSAL','The AI service could not assess this text.',422,origin,{diagnostics:diagnostics(phase)});
+          if(choice?.message?.refusal) {record.outcome='refusal';return fail('AI_REFUSAL','The AI service could not assess this text.',422,origin,{diagnostics:diagnostics(phase)});}
           if(finishReason==='content_filter') return fail('AI_FILTERED','The AI service could not return an assessment for this text.',422,origin,{diagnostics:diagnostics(phase)});
           if(!['stop','length'].includes(finishReason)) return fail('AI_RESPONSE','The AI service returned an unexpected response.',502,origin,{diagnostics:diagnostics(phase)});
           if(finishReason==='length') {
             compact=true;maxCompletionTokens=10000;
             validationIssues=['The previous output was incomplete (finish_reason=length). Return a shorter but complete assessment within the increased output budget.'];
           } else {
+            const validationStarted=Date.now();
             raw=choice.message?.content || '';
             let parsed;
             try {parsed=JSON.parse(raw);} catch {validationIssues=['Return valid JSON matching the schema.'];}
             if(parsed!==undefined) {
               if(phase==='task') {
                 validationIssues=validateTaskReading(parsed,payload.task);
+                record.validationMs=Math.max(0,Date.now()-validationStarted);
                 if(!validationIssues.length) {
                   payload.sourceReading=parsed;
                   baseMessages[1]={role:'user',content:JSON.stringify({...JSON.parse(baseMessages[1].content),sourceReading:parsed,sourceCatalog:sourceCatalog(parsed),writingMetrics:writingMetrics(payload,parsed)})};
-                  latestRaw='';break;
+                  if(suspended&&sameSourceContract(suspended.reading,parsed)) {
+                    latestRaw=suspended.raw;candidate=suspended.candidate;reusedAssessments++;
+                    phases.splice(phaseIndex+1,2,'review');suspended=null;record.outcome='valid_reused_candidate';break;
+                  }
+                  suspended=null;record.outcome='valid';latestRaw='';break;
                 }
               } else {
                 const reading=payload.sourceReading,review=parsed?.taskReview;
@@ -1055,34 +1197,52 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                   if(phaseAttempts.task<2&&phaseAttempts.assessment<3&&phaseAttempts.review<2) {
                     taskRecheck={previous:{taskType:reading.taskType,basis:reading.instructionStatus},
                       alternative:{taskType:review.taskType,basis:review.basis}};
+                    suspended={reading,raw,candidate:parsed};
                     taskRechecks++;latestRaw='';candidate=null;delete payload.sourceReading;
-                    const input=JSON.parse(baseMessages[1].content);delete input.sourceReading;delete input.sourceCatalog;input.writingMetrics=writingMetrics(payload);
+                    const input=JSON.parse(baseMessages[1].content);delete input.sourceReading;delete input.sourceCatalog;delete input.assessmentDefects;input.writingMetrics=writingMetrics(payload);
                     baseMessages[1]={role:'user',content:JSON.stringify(input)};
                     phases.splice(phaseIndex+1,0,'task',...(phase==='review'?['assessment']:[]),phase);
+                    record.outcome='task_recheck';validationIssues=['taskReview: classification disagrees with the source-only reading; recheck the original task.'];
                     reroute=true;break;
                   }
+                  record.outcome='classification_disagreement';validationIssues=['taskReview: task classification disagreement remains; the source-reading or assessment/review retry budget is exhausted.'];
                   return fail('ASSESSMENT_INCOMPLETE','The AI could not consistently identify the writing task. Please include the complete instructions and sources.',502,origin,
                     {diagnostics:{...diagnostics(phase),issues:['Task classification disagreement remains; the source-reading or assessment/review retry budget is exhausted.']}});
                 }
                 const referenceIssues=resolveSourceReferences(parsed,payload.sourceReading);
-                parsed=normaliseCoaching(applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences),sentences);
-                validationIssues=[...referenceIssues,...validate(parsed,payload,sentences)];
+                parsed=normaliseCoaching(applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences),sentences,record.normalisations);
+                validationIssues=[...referenceIssues,...validate(parsed,payload,sentences),...(phase==='review'&&parsed.languageAudit===undefined?languageAuditIssues(parsed,sentences):[])];
+                record.validationMs=Math.max(0,Date.now()-validationStarted);
                 if(!validationIssues.length && parsed.sampleSuitable===false)
-                  return fail('UNSUITABLE_SAMPLE','Please enter connected English writing suitable for an essay assessment.',422,origin);
+                  return fail('UNSUITABLE_SAMPLE','Please enter connected English writing suitable for an essay assessment.',422,origin,{diagnostics:diagnostics(phase)});
                 if(!validationIssues.length) {
                   if(phase==='review') {
+                    for(const edit of parsed.edits) edit.reason=parsed.languageAudit.corrections.filter(p=>p.sentenceId===edit.sentenceId).map(p=>p.explanation).join(' ');
+                    record.outcome='valid';
                     const output=toClient(parsed,payload,sentences,attempts);
-                    Object.assign(output.diagnostics,{reviewCompleted:true,phaseAttempts,taskRechecks,completions});
+                    Object.assign(output.diagnostics,diagnostics(phase),{reviewCompleted:true});
                     return json(output,200,origin);
                   }
-                  candidate=parsed;latestRaw=raw;break;
+                  record.outcome='valid';candidate=parsed;latestRaw=raw;break;
+                }
+                if(phase==='assessment'&&auditCanRepair(validationIssues)) {
+                  candidate=parsed;latestRaw=raw;record.outcome='sent_to_review';
+                  baseMessages[1]={role:'user',content:JSON.stringify({...JSON.parse(baseMessages[1].content),assessmentDefects:diagnosticChecks(validationIssues,phase)})};
+                  break;
                 }
               }
             }
           }
         } catch(e) {
           const timeout=e?.name==='TimeoutError' || e?.name==='AbortError';
+          if(record){record.providerMs=Math.max(0,Date.now()-requestStarted);record.outcome=timeout?'timeout':'connection_error';}
           return fail(timeout ? 'TIMEOUT' : 'AI_CONNECTION',timeout ? 'The correction took too long. Please try again.' : 'The correction service could not be reached. Please try again.',timeout ? 504 : 502,origin,{diagnostics:diagnostics(phase)});
+        } finally {
+          if(record) {
+            record.durationMs=Math.max(0,Date.now()-requestStarted);record.finished=true;
+            record.checks=diagnosticChecks(validationIssues,phase);
+            if(validationIssues.length&&record.outcome==='stop') record.outcome='validation_failed';
+          }
         }
         // Supply only the latest complete answer, not an accumulating chain of bad drafts.
         // Truncated output never replaces a complete assessment awaiting review.

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics} from '../apps/worker/src/worker.js';
+import workerImpl,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics} from '../apps/worker/src/worker.js';
+import {withReviewContract} from './helpers/review-contract.mjs';
+const worker=withReviewContract(workerImpl);
 const input=JSON.parse(await readFile(new URL('./fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
 const {sourceBodies,...payload}=input,ss=numberSentences(payload.essay);
 const id=part=>ss.find(s=>s.text.includes(part)).id;
@@ -112,11 +114,14 @@ await test('persistent source-reading failure returns no assessment or corrected
  let calls=0;globalThis.fetch=async()=>{calls++;return completion({...plan,sources:[]});};
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,2);
  assert.equal(result.diagnostics.phase,'task');assert(!result.nextDraft);assert(!result.assessment);
+ assert.equal(result.diagnostics.history.at(-1).checks[0].field,'sourceReading.sources');
 });
 await test('review cannot conceal source distortion by changing only the overall verdict',async()=>{
  let calls=0;globalThis.fetch=async()=>{calls++;const d=assessment();if(calls===3)d.taskReview.verdict='answered';return completion(calls===1?plan:d);};
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200);assert.equal(calls,4);
- assert.equal(result.taskReview.verdict,'partly_answered');assert.equal(result.diagnostics.phaseAttempts.review,2);
+ const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200);assert.equal(calls,3);
+ assert.equal(result.taskReview.verdict,'partly_answered');assert.equal(result.diagnostics.phaseAttempts.review,1);
+ assert.equal(result.diagnostics.history[2].normalisations[0].field,'taskReview.verdict');
+ assert(result.sourceReview.some(r=>r.coverage==='distorted')); // Source findings remain explicit.
 });
 console.log(`${checks} coaching checks passed. Model interpretation is mocked; live quality requires deployment testing.`);
 
@@ -208,12 +213,12 @@ await test('classification disagreement triggers an isolated task recheck and re
 await test('a disagreement about assumed instructions also gets a source-only recheck',async()=>{
  let calls=0;globalThis.fetch=async()=>{calls++;return completion(calls===1?{...plan,instructionStatus:'explicit'}:calls===3?plan:assessment());};
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
- assert.equal(calls,5);assert.equal(result.taskReview.basis,'assumed');
+ assert.equal(calls,4);assert.equal(result.taskReview.basis,'assumed');assert.equal(result.diagnostics.reusedAssessments,1);
 });
 await test('permanent task disagreement is bounded and returns no provisional feedback',async()=>{
  let calls=0;globalThis.fetch=async()=>plainCompletion(++calls%2?wrongReading:assessment());
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,4);
- assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:0});
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:1});
  assert(result.diagnostics.issues[0].includes('disagreement'));assert(!result.nextDraft);assert(!result.learningPoints);
 });
 await test('a recheck still rejects fabricated source bodies instead of accepting a changed classification',async()=>{
@@ -224,13 +229,13 @@ await test('a recheck still rejects fabricated source bodies instead of acceptin
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,3);
  assert.equal(result.diagnostics.phase,'task');assert(!result.assessment);
 });
-await test('a review-stage classification disagreement discards the candidate and reassesses after re-reading',async()=>{
+await test('a review-stage disagreement reuses the candidate only when the literal source contract is unchanged',async()=>{
  let calls=0;globalThis.fetch=async()=>{
   calls++;if(calls===3){const d=wire(assessment());d.taskReview.taskType='other';return plainCompletion(d);}
   return completion([1,4].includes(calls)?plan:assessment());
  };
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,6);
- assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:2});assert.equal(result.diagnostics.reviewCompleted,true);
+ const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,5);assert.equal(result.diagnostics.reusedAssessments,1);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:2});assert.equal(result.diagnostics.reviewCompleted,true);
 });
 await test('task reclassification does not reset the shared deadline',async()=>{
  const oldNow=Date.now;let elapsed=0,calls=0;Date.now=()=>elapsed;
@@ -305,8 +310,8 @@ await test('combined connector rejection requests a repair before any corrected 
   return completion(bodies.length===1?plan:d);
  };
  const response=await worker.fetch(request(),env),result=await response.json();
- assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,4);
- assert.match(bodies[2].messages.at(-1).content,/even alongside other edits/);
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,3);
+ assert.match(bodies[2].messages.find(m=>m.role==='user').content,/even alongside other edits/);
  assert(result.nextDraft.includes('homeschooling for parents observe'));
  assert.equal(result.diagnostics.reviewCompleted,true);
 });
