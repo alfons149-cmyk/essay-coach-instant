@@ -2,10 +2,10 @@
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
 const VERSION = "2026-10-18-coaching-v5.6.4";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
-const FOCUSED_NOTE={
-  en:'This review explains the clearest language corrections; the revised text may still contain other errors.',
-  es:'Esta revisión explica las correcciones lingüísticas más claras; el texto revisado aún puede contener otros errores.',
-  nl:'Deze beoordeling legt de duidelijkste taalcorrecties uit; de aangepaste tekst kan nog andere fouten bevatten.'
+const FOCUSED_HEADING={
+  en:'Your main areas to work on are:',
+  es:'Tus principales puntos de mejora son:',
+  nl:'De belangrijkste aandachtspunten voor jou zijn:'
 };
 const MAX_EDITS=6;
 const MAX_EVIDENCE=18;
@@ -1011,9 +1011,12 @@ export function toClient(data, payload, sentences, attempts) {
   }
   const vocabularySuggestions=Object.create(null);
   for(const v of data.vocabularySuggestions) vocabularySuggestions[text(v.original)]=v.alternatives.map(text);
+  const priorities=[...new Set(data.learningPoints.map(p=>text(p.issue)).filter(Boolean))].slice(0,3);
+  const focusSummary=priorities.length
+    ? (FOCUSED_HEADING[payload.feedbackLanguage]||FOCUSED_HEADING.en)+'\n'+priorities.map(issue=>'- '+issue).join('\n') : '';
   return {
     schemaVersion:2,version:VERSION,...(data.languageAudit?{languageAudit:data.languageAudit}:{}),level:payload.level,inputWords:countWords(payload.essay),outputWords:countWords(nextDraft),
-    contextNotes:notes,feedback:[...new Set([...notes.map(n=>n.explanation),text(data.feedback),FOCUSED_NOTE[payload.feedbackLanguage]||FOCUSED_NOTE.en])].join('\n\n'),assessment:{taskSufficient:data.assessment.taskSufficient,criteria},
+    contextNotes:notes,feedback:[...new Set([...notes.map(n=>n.explanation),text(data.feedback),focusSummary].filter(Boolean))].join('\n\n'),assessment:{taskSufficient:data.assessment.taskSufficient,criteria},
     keyFocus:{action:text(data.keyFocus.action),explanation:text(data.keyFocus.explanation),evidence:byId.get(data.keyFocus.evidenceId).text},
     edits,nextDraft,vocabularySuggestions,
     taskReview:{...data.taskReview,checks:data.taskReview.checks.map(c=>({...c,evidence:c.evidenceIds.map(id=>byId.get(id).text)}))},
