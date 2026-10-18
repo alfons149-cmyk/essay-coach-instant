@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.5 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.6 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.5";
+const VERSION = "2026-10-18-coaching-v5.6.6";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -152,6 +152,9 @@ or give C2-depth evaluation for a B2 opinion task. Separate fulfilling instructi
 to deepen an already sufficient answer. For non-source tasks, derive the verdict from task_coverage:
 met = answered, partial = partly_answered, missing = not_answered. Organisation, register and optional
 development still affect their appropriate feedback/scores, not task completion by themselves.
+Check each supporting sentence against the actual topic. An unrelated point can be grammatical
+and well connected to its neighbour but still be off-topic. Name that sentence and explain its
+relevance gap without calling the entire answer wrong when the main points answer the task.
 For source essays, full achievement requires coverage, source accuracy, evaluation and own position;
 organisation/register refinements alone do not make a fully answered task incomplete.
 A distorted source is never fully answered
@@ -316,6 +319,8 @@ answered/partly_answered/not_answered. Optional refinement, register or organisa
 not alone make a completed task incomplete. Do not invent a requirement to discuss both sides or
 apply C2 evaluation depth to a B2 opinion task. For source essays, additionally require source
 accuracy, evaluation and own position. Align the verdict explanation with these completion checks.
+Inspect each original supporting sentence for actual relevance to the task. A fluent, correctly
+joined digression remains off-topic: identify its sentence ID and explain the missing connection.
 When the task is missing, Content and Communicative Achievement are null; still assess Organisation
 and Language with evidence. Short understandable English is assessable with limitations.
 For source essays, check faithful summary, reasoned evaluation and a supported own position.
@@ -1092,6 +1097,8 @@ Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as cor
 or context_needed with a contextual explanation. Discourse linking adverbs normally need a following
 comma; degree/concessive however is different. Do not change a valid or uncertain construction
 just to satisfy a checklist. A correction decision requires matching punctuation evidence and edit.
+After a semicolon, clause-initial therefore introducing a result needs a following comma:
+"...; therefore, ...". Do not apply this rule to integrated "should therefore consult".
 Copy spans from the ORIGINAL and explain each necessary replacement. The server
 combines compatible changes using original coordinates. Never quote from an
 already corrected intermediate sentence.
@@ -1279,7 +1286,10 @@ export function languageAuditIssues(data,sentences) {
     if(Object.keys(audit.punctuationChecks).some(id=>!candidates.some(c=>c.id===id))) issues.push('languageAudit.punctuationChecks: unknown candidate ID.');
     for(const c of candidates) {
       const check=audit.punctuationChecks[c.id],matching=(spans.get(c.sentenceId)||[]).some(p=>punctuationEvidence(p,c));
+      const original=byId.get(c.sentenceId)?.text||'';
+      const semicolonTherefore=c.marker.toLowerCase()==='therefore'&&/;\s*$/.test(original.slice(0,c.offset));
       if(!obj(check)||!['correction','valid','context_needed'].includes(check.decision)||!text(check.explanation)) issues.push('languageAudit.punctuationChecks.'+c.id+': give a contextual decision and explanation for '+c.sentenceId+'.');
+      else if(semicolonTherefore&&check.decision!=='correction') issues.push('languageAudit.punctuationChecks.'+c.id+': clause-initial therefore after a semicolon needs a following comma and matching original evidence.');
       else if(check.decision==='correction'&&!matching) issues.push('languageAudit.punctuationChecks.'+c.id+': diagnosed punctuation needs a matching punctuation evidence span and correction.');
       else if(check.decision!=='correction'&&matching) issues.push('languageAudit.punctuationChecks.'+c.id+': valid/context_needed contradicts an automatic punctuation correction at this marker.');
     }

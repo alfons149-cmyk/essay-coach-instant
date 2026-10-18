@@ -60,6 +60,35 @@ await test('candidate scan generalises and does not rewrite correct concessive h
  const d=sample(cases[2]);assert.equal(d.languageAudit.punctuationChecks.P1.decision,'valid');assert.deepEqual(d.edits,[]);
  assert.deepEqual(punctuationCandidates(numberSentences('However, we agreed. The costs rose; therefore, we waited.')),[]);
 });
+await test('live-style false approval of semicolon therefore is rejected while integrated therefore stays valid',()=>{
+ const input=cases[0],ss=numberSentences(input.essay),d=sample(input);
+ d.languageAudit.corrections=d.languageAudit.corrections.filter(p=>p.sentenceId!=='S2');
+ d.edits=d.edits.filter(p=>p.sentenceId!=='S2');
+ d.languageAudit.punctuationChecks.P1={decision:'valid',explanation:'A semicolon alone is enough before therefore.'};
+ assert(languageAuditIssues(d,ss).some(issue=>issue.includes('punctuationChecks.P1')&&issue.includes('following comma')));
+ assert.deepEqual(languageAuditIssues(sample(input),ss),[]);
+ assert.deepEqual(punctuationCandidates(numberSentences('Councils should therefore consult residents.')),[]);
+ assert.deepEqual(punctuationCandidates(numberSentences('The cost rose; therefore, we waited.')),[]);
+});
+await test('independent review repairs false semicolon therefore approval with exact evidence',async()=>{
+ const input=cases[0],bodies=[];
+ globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));const d=sample(input);
+  if(bodies.length===1)delete d.languageAudit;
+  if(bodies.length===2){
+   d.languageAudit.corrections=d.languageAudit.corrections.filter(p=>p.sentenceId!=='S2');
+   d.edits=d.edits.filter(p=>p.sentenceId!=='S2');
+   d.languageAudit.punctuationChecks.P1={decision:'valid',explanation:'A semicolon alone is enough before therefore.'};
+  }
+  return completion(d);
+ };
+ const r=await worker.fetch(req(input),env),d=await r.json();
+ assert.equal(r.status,200,JSON.stringify(d));assert.equal(bodies.length,3);
+ assert(d.nextDraft.includes('; therefore, affordable buses'));
+ assert(d.nextDraft.includes('However convenient cars may be'));
+ assert(d.nextDraft.includes('for students need a quiet place'));
+ assert(d.diagnostics.history[1].checks.some(c=>c.rule==='PUNCTUATION_AUDIT'));
+});
 await test('missing duplicate or invented coverage is rejected on correct writing',()=>{
  for(const change of [a=>a.checkedSentenceIds.pop(),a=>a.checkedSentenceIds[0]=a.checkedSentenceIds[1],a=>a.checkedSentenceIds[0]='S999']){
   const d=sample(cases[2]);change(d.languageAudit);assert(languageAuditIssues(d,numberSentences(cases[2].essay)).some(s=>s.includes('checkedSentenceIds')));
@@ -116,8 +145,8 @@ await test('reported however omission can be caught by review without a hardcode
  const input={...cases[0],essay:'The challenge is even more significant for single parents; however effective budgeting and time management skills will be crucial if you plan to homeschool.',corrections:[{sentenceId:'S1',category:'punctuation',originalQuote:'however effective',replacementQuote:'however, effective',explanation:'The linking adverb however needs a following comma here.'}],decisions:['correction']};let calls=0;
  globalThis.fetch=async()=>{const d=sample(input);if(++calls===1){d.edits=[];delete d.languageAudit;}return completion(d);};const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert(d.nextDraft.includes('; however, effective'));assert.equal(calls,2);
 });
-await test('valid and uncertain punctuation decisions cannot contradict their automatic edit',()=>{
- for(const decision of ['valid','context_needed']){const d=sample(cases[0]);d.languageAudit.punctuationChecks.P1.decision=decision;assert(languageAuditIssues(d,numberSentences(cases[0].essay)).some(s=>s.includes('contradicts an automatic punctuation correction')));}
+await test('valid and uncertain punctuation decisions cannot excuse an omitted comma after semicolon therefore',()=>{
+ for(const decision of ['valid','context_needed']){const d=sample(cases[0]);d.languageAudit.punctuationChecks.P1.decision=decision;assert(languageAuditIssues(d,numberSentences(cases[0].essay)).some(s=>s.includes('following comma')));}
 });
 await test('known linguistic disagreement goes directly to independent review with original evidence',async()=>{
  const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));const d=sample(cases[0]);if(bodies.length===1){delete d.languageAudit;d.edits.push({kind:'correction',sentenceId:'S3',replacement:'The library stays open late, because students need a quiet place to work.',reason:'For cannot introduce a reason.'});}return completion(d);};
