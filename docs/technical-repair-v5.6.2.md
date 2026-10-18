@@ -6,7 +6,7 @@ Basis: `12bca93` op `fix/essaycoach-v5.6.0`. Build: `2026-10-18-coaching-v5.6.2`
 
 De eigenaar meldt twee geslaagde live v5.6.1 C2-aanvragen van ongeveer 113 en 138 seconden, beide task 1 / assessment 1 / review 2. De assessment wilde geldig causaal `for` vervangen; de eerste review strandde op interpunctiebewijs of `learningPoints.sourceQuote`. Dit zijn door de eigenaar gemelde metingen, niet in deze sessie herhaalde aanvragen. De volledige afgekeurde modelantwoorden ontbreken, dus de precieze foutieve fragmenten en bron-ID-keuze zijn niet vastgesteld.
 
-De code bevat drie concrete ambiguïteiten die daarop aansluiten:
+De code bevat drie onderzochte contractambiguïteiten. De lege bron-ID hieronder was een afzonderlijk gevonden risico, geen reproductie van de gemelde tweede reviewfout; zie de correctie en aanvullende regressie onderaan:
 
 1. De assessmentprompt noemde `for` → `as` als optioneel, terwijl de eindcontrole ook `because` en `since` afwijst. Assessment en review noemen nu alle drie expliciet en eisen behoud van geldig causaal `for`, ook bij andere fouten in dezelfde zin. Een ontbrekende komma mag afzonderlijk worden gecorrigeerd.
 2. Het auditcontract vroeg om de hele markering te citeren, maar de validator vereist bovendien een daadwerkelijke wijziging bij die markering of de direct volgende afbakening. Prompt en kandidaatbeschrijvingen maken dit nu expliciet. Een plaatselijke komma na `however` krijgt eigen interpunctiebewijs; een breed citaat met een wijziging elders is onvoldoende. De v5.6.1-reconstructie, conflictcontrole en interpunctie-eindcontrole blijven ongewijzigd.
@@ -37,3 +37,13 @@ Lokale suites duurden circa 0,17 / 0,19 / 0,13 / 0,10 / 0,04 / 0,05 seconden. Di
 - Publicatie van deze code naar de reparatiebranch deployt niet: repository-deploymentworkflows luisteren naar `main` of handmatig starten. Main en Cloudflare blijven ongemoeid.
 
 Na afzonderlijke autorisatie/deployment: draai `scripts/test-live-feedback.mjs` met `--base https://essaycoach.alfons149.workers.dev`, `--case library`, `--case c1`, `--case c1-wrong-task` en `--case homeschooling`. Voor C2 gebruik `--language es --repeat 3`; de runner verwacht standaard v5.6.2 en bewaart tijden, fasepogingen en feedback. Beoordeel de concrete bronuitleg en voorbeelden handmatig naast de automatische controles. Test de drie frontendtalen ook in de browser.
+
+## Aanvulling: volledige vervanging in language-learning point
+
+De eigenaar heeft de tweede live reviewfout nader gespecificeerd: `A language correction learning point must match an actual edit and its complete replacement.` De eerdere lege-`sourcePointId`-regressie reproduceerde die fout **niet**. Het gaat hier om `category=language`, `kind=correction` en een `improvedExample` dat niet overeenkomt met de volledige `edits[].replacement` voor dezelfde zin.
+
+De reviewprompt en schema-omschrijving vragen nu expliciet om de volledige, uiteindelijke vervangende zin letterlijk te kopiëren, inclusief onveranderde woorden en interpunctie. Het algemene advies voor een kort voorbeeld geldt niet voor deze correctielessen. Bij afkeuring noemt de herstelinstructie het concrete `learningPoints[index].improvedExample`, het evidenceId en de volledige bijpassende vervanging. Het model mag de geldige edit niet aanpassen om een afwijkend lesvoorbeeld passend te maken. Ontbreekt een edit, dan mag het geen taalfout verzinnen. De bestaande gelijkheidsvoorwaarde in de eindvalidator is ongewijzigd; er wordt geen lesvoorbeeld automatisch overschreven.
+
+Twee aanvullende volledige C2-regressies, zonder legacy-auditadapter, geven de eerste review een verkort voorbeeld (`however, effective budgeting`) in plaats van de volledige verbeterde zin. De eerste controleert afkeuring, de gerichte herstelprompt en succes na het teruggeven van de volledige zin. De tweede houdt dezelfde fout in beide reviews en controleert HTTP 502 zonder nextDraft. Een correcte bron-ID-regressie blijft apart bestaan.
+
+**192 technische checks slagen**, waarvan 45 coachingchecks. Deze aanvullende bevestiging gebruikt uitsluitend mocks. Er is geen echte AI-aanvraag uitgevoerd en geen live tijdwinst gemeten; de bruikbare lokale API-binding ontbreekt nog steeds. De v5.6.2-plakversie is opnieuw gesynchroniseerd. Geen frontendwijzigingen in deze aanvulling, geen deployment.

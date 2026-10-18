@@ -408,3 +408,24 @@ await test('source lesson without ID still fails final validation despite schema
  assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('matching sourceReview quotation')));
 });
 console.log(`${checks} coaching checks passed including targeted v5.6.2 C2 regressions; no real AI requests.`);
+
+for(const persistent of [false,true]) await test('C2 language lesson with shortened replacement '+(persistent?'remains rejected':'receives exact full-sentence repair'),async()=>{
+ const bodies=[];
+ const full=assessment().edits.find(e=>e.sentenceId===punctuation).replacement;
+ globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));let d=bodies.length===1?structuredClone(plan):auditedWire();
+  if(bodies.length===2)delete d.languageAudit;
+  if(bodies.length>=3)d.learningPoints.push({category:'language',kind:'correction',evidenceId:punctuation,sourcePointId:'',issue:'Punctuate the linking adverb.',explanation:'However introduces a contrasting independent clause.',improvedExample:bodies.length===3||persistent?'however, effective budgeting':full,practiceInstruction:'Copy the sentence with the missing comma restored.',checkQuestion:'Is the linking adverb followed by a comma?'});
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+ };
+ const r=await workerImpl.fetch(request(),env),d=await r.json();assert.equal(bodies.length,4);
+ const first=d.diagnostics.history.find(h=>h.phase==='review');
+ assert.equal(first.outcome,'validation_failed');assert(first.checks.some(c=>c.rule==='RESPONSE_CONSISTENCY'&&c.field==='learningPoints[2].improvedExample'));
+ const instruction=bodies[3].messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
+ assert(instruction.includes('A language correction learning point must match an actual edit and its complete replacement.'));
+ assert(instruction.includes(JSON.stringify(full)));assert(instruction.includes('not a shortened fragment'));
+ assert.match(bodies[2].messages[0].content,/copy its ENTIRE replacement verbatim/);
+ if(persistent){assert.equal(r.status,502);assert.equal(d.code,'ASSESSMENT_INCOMPLETE');assert.equal(d.nextDraft,undefined);}
+ else{assert.equal(r.status,200,JSON.stringify(d));assert.equal(d.learningPoints.find(p=>p.category==='language').improvedExample,full);assert(d.nextDraft.includes(full));assert(d.nextDraft.includes('for parents observe'));assert.equal(d.sourceReview[1].coverage,'distorted');}
+});
+console.log(`${checks} coaching checks passed; learning-point replacement regressions use mocked AI replies.`);

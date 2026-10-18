@@ -312,7 +312,13 @@ Prioritise a source misreading over style in keyFocus and the first learning poi
 point needs a concrete what/why/how, short English example, practice action and check question.
 Edits contain only demonstrable language errors, at most 32 edited sentences. Never insert new facts or fix a
 source interpretation by silently changing the student's argument. Optional phrasing belongs in
-suggestions, not correction edits. A language correction lesson must use its edit's full replacement.
+suggestions, not correction edits. For category=language and kind=correction, find the correction
+edit whose sentenceId equals the lesson's evidenceId, then copy its ENTIRE replacement verbatim
+into improvedExample, including unchanged words and punctuation. A corrected phrase, shortened
+example, paraphrase or alternative correction is not sufficient. The short-example advice applies
+to development/optional lessons, not to this exact-copy requirement. If the edit changes during
+review, update the lesson from the final edit. Never change an otherwise justified edit merely to
+match a lesson; both the edit and its audit evidence must still pass independent validation.
 Keep all dependent reasons, examples, feedback and scores consistent with the final edit list.
 Preserve correctionPreservations and the conditional morning guidance. No timeline or tense catalogue.
 Do not turn a local tense correction into a rule that every verb in a sentence must share a tense.
@@ -698,7 +704,7 @@ export function responseSchema(sentences,reading=null,language='en') {
   function describe(s) {
     if(s.properties) for(const [name,field] of Object.entries(s.properties)) {
       if(translated.has(name)&&field.type==='string') s.properties[name]={...field,description:`Write this learner-facing text in ${FEEDBACK_LANGUAGES[language]||'English'}. English quotations may remain English.`};
-      else if(['replacement','improvedExample','betterVersion'].includes(name)) s.properties[name]={...field,description:'Write the example or replacement in English.'};
+      else if(['replacement','improvedExample','betterVersion'].includes(name)) s.properties[name]={...field,description:'Write the example or replacement in English.'+(name==='improvedExample'?' For a language correction lesson, copy the ENTIRE edits[].replacement for the correction with sentenceId equal to evidenceId verbatim, including unchanged words and punctuation. Do not shorten or paraphrase it.':'')};
       describe(s.properties[name]);
     }
     if(s.items) describe(s.items);
@@ -845,7 +851,13 @@ function coachingIssues(data,payload,byId) {
         issues.push('Learning point '+String(point.evidenceId)+': sourceQuote is not an exact quotation from TASK. Student essay evidence belongs in evidenceId, not sourceQuote. For grammar or ordinary email advice without a source link, set sourceQuote to "" and retain the explanation, example, practice and check question. Do not invent a source quotation.');
     }
     if(point?.category==='language'&&point.kind==='correction'&&!(Array.isArray(data.edits)&&data.edits.some(e=>e?.kind==='correction'&&e.sentenceId===point.evidenceId&&text(e.replacement)===text(point.improvedExample))))
-      issues.push('A language correction learning point must match an actual edit and its complete replacement.');
+    {
+      const matchingEdit=Array.isArray(data.edits)?data.edits.find(e=>e?.kind==='correction'&&e.sentenceId===point.evidenceId):null;
+      issues.push('A language correction learning point must match an actual edit and its complete replacement. '+
+        'learningPoints['+points.indexOf(point)+'].improvedExample: evidenceId='+JSON.stringify(point.evidenceId)+'. '+
+        (matchingEdit?'Copy this entire matching edit replacement verbatim, not a shortened fragment: '+JSON.stringify(matchingEdit.replacement)+'. Keep the justified edit and its audit evidence; update the lesson from the final validated replacement.':
+        'No matching correction edit exists. Reassess the original sentence; do not invent a correction to support the lesson. If no necessary error exists, remove the erroneous correction claim and reconcile dependent feedback.'));
+    }
     if(point?.category==='source_interpretation'&&(!text(point.sourceQuote)||!sourceList.some(s=>s?.sourceQuote===point.sourceQuote)))
       issues.push('Source interpretation learning points need a matching sourceReview quotation.');
   }
