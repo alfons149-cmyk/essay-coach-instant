@@ -43,20 +43,47 @@ jobs:
           node tests/writing-coach.test.mjs
           node tests/tense-feedback.test.mjs
 
-      - name: Verify deployment credentials are configured
+      - name: Select deployment route
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
-            echo "::error::Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in repository Actions secrets to deploy EssayCoach. Existing OpenAI secrets remain on Cloudflare."
+          if [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ]; then
+            echo "deploy_with_actions=true" >> "$GITHUB_ENV"
+          elif [ -z "$CF_TOKEN" ] && [ -z "$CF_ACCOUNT" ]; then
+            echo "deploy_with_actions=false" >> "$GITHUB_ENV"
+            echo "Cloudflare credentials are absent; checking the existing external deployment."
+          else
+            echo "::error::Configure both CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, or neither when an external deployment is configured."
             exit 1
           fi
 
       - name: Deploy to Cloudflare
+        if: env.deploy_with_actions == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/worker
           command: deploy --keep-vars
+
+      - name: Verify live Worker version
+        run: |
+          expected=$(node -p "require('fs').readFileSync('apps/worker/src/worker.js', 'utf8').match(/^const VERSION = \"([^\"]+)\";/m)?.[1] ?? ''")
+          if [ -z "$expected" ]; then
+            echo "::error::Could not read the Worker version from source."
+            exit 1
+          fi
+          for attempt in {1..12}; do
+            if response=$(curl -fs --max-time 10 "https://essaycoach.alfons149.workers.dev/api/health?deployment_check=${GITHUB_SHA}-${attempt}"); then
+              actual=$(node -p "try { JSON.parse(process.argv[1]).version ?? '' } catch { '' }" "$response")
+              if [ "$actual" = "$expected" ]; then
+                echo "Live Worker version $actual matches source (attempt $attempt)."
+                exit 0
+              fi
+              echo "Attempt $attempt: live version ${actual:-unknown}; expected $expected."
+            fi
+            if [ "$attempt" -lt 12 ]; then sleep 10; fi
+          done
+          echo "::error::The live Worker did not report version $expected. Check the external Cloudflare deployment or configure repository Actions secrets."
+          exit 1
