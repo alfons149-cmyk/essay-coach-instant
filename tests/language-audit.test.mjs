@@ -129,6 +129,17 @@ await test('captured C2 split spans cannot hide an unnecessary semicolon rewrite
  d.languageAudit.corrections[0].replacementQuote='Homeschooling has existed for over a century;';
  assert.deepEqual(languageAuditIssues(d,ss),[]);
 });
+await test('captured lowercase beginning after removing Although is rejected with exact evidence',()=>{
+ const original='Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.';
+ const ss=numberSentences(original),d={edits:[{kind:'correction',sentenceId:'S1',replacement:'homeschooling has existed for over a century; what is more, homeschooling existed before our current public education system.'}],languageAudit:{checkedSentenceIds:['S1'],corrections:[
+  {sentenceId:'S1',category:'grammar',originalQuote:'Although, homeschooling',replacementQuote:'homeschooling',explanation:'Remove the unsuitable concessive opener.'},
+  {sentenceId:'S1',category:'punctuation',originalQuote:'what is more homeschooling',replacementQuote:'what is more, homeschooling',explanation:'Add the comma after what is more.'}],punctuationChecks:{P1:{decision:'correction',explanation:'The marker needs a comma.'}}}};
+ assert.deepEqual(constructAuditedEdits(structuredClone(d),ss),[]);
+ assert(languageAuditIssues(d,ss).some(x=>x.includes('sentence-initial lowercase')));
+ d.edits[0].replacement='Homeschooling has existed for over a century; what is more, homeschooling existed before our current public education system.';
+ d.languageAudit.corrections[0].replacementQuote='Homeschooling';
+ assert.deepEqual(languageAuditIssues(d,ss),[]);
+});
 await test('additive-linker rule applies across topics and allows correct counterexamples',()=>{
  const original='Although, the policy has existed for years; moreover it has broad support.';
  const ss=numberSentences(original),d={edits:[{kind:'correction',sentenceId:'S1',replacement:'The policy has existed for years, and moreover, it has broad support.'}],languageAudit:{checkedSentenceIds:['S1'],corrections:[
@@ -161,6 +172,24 @@ await test('review retry repairs the captured semicolon rewrite without returnin
  assert.equal(r.status,200,JSON.stringify(d));assert.equal(calls,3);
  assert(d.nextDraft.includes('years; moreover, it has broad support.'));
  assert(d.diagnostics.history[1].checks.some(c=>c.rule==='UNNECESSARY_CORRECTION'));
+});
+await test('review retry repairs the lowercase sentence start before exposing the next draft',async()=>{
+ const input={task:'Summarise the history of this practice.',essay:'Although, the practice has existed for years; moreover it is widely known.',corrections:[
+  {sentenceId:'S1',category:'grammar',originalQuote:'Although, the practice',replacementQuote:'The practice',explanation:'Remove the unsupported concessive opener and capitalise the new beginning.'},
+  {sentenceId:'S1',category:'punctuation',originalQuote:'moreover it',replacementQuote:'moreover, it',explanation:'Add the missing comma.'}],decisions:['correction']};
+ let calls=0;globalThis.fetch=async()=>{
+  const d=sample(input);calls++;
+  if(calls===1)delete d.languageAudit;
+  if(calls===2){
+   d.edits[0].replacement='the practice has existed for years; moreover, it is widely known.';
+   d.languageAudit.corrections[0].replacementQuote='the practice';
+  }
+  return completion(d);
+ };
+ const r=await worker.fetch(req(input),env),d=await r.json();
+ assert.equal(r.status,200,JSON.stringify(d));assert.equal(calls,3);
+ assert(d.nextDraft.includes('The practice has existed for years; moreover, it is widely known.'));
+ assert(d.diagnostics.history[1].checks.some(c=>c.rule==='CAPITALIZATION_AUDIT'));
 });
 await test('three independent necessary grammar repairs work as three local spans',()=>{
  const original='He go, she eat, and it seem unusual.';

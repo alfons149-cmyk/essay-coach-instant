@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.10 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.11 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.10";
+const VERSION = "2026-10-18-coaching-v5.6.11";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -1127,6 +1127,8 @@ removing an unsuitable connector elsewhere in the sentence. Preserve correct str
 If an unsuitable opening "Although," is removed and a later independent clause starts with
 "what is more" or a similar additive linker, retain the valid semicolon before that linker.
 Changing it to ", and" is optional wording, not a necessary language correction.
+When removing an unsuitable opening connector, capitalise the first word of the resulting
+sentence. Include that capitalisation in the exact replacement quote and the lesson example.
 Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as correction, valid
 or context_needed with a contextual explanation. Discourse linking adverbs normally need a following
 comma; degree/concessive however is different. Do not change a valid or uncertain construction
@@ -1324,6 +1326,9 @@ export function languageAuditIssues(data,sentences) {
       if(markerAt>=0&&!/;\s*$/.test(edit.replacement.slice(0,markerAt)))
         issues.push('edits['+index+'].replacement: unnecessary semicolon rewrite while removing an unsuitable concessive opener; preserve the valid semicolon before '+additive[1]+'.');
     }
+    if(/^(?:although|even though),\s+[a-z]/i.test(sentence.text)&&
+       !/^(?:although|even though)\b/i.test(edit.replacement)&&/^[a-z]/.test(edit.replacement))
+      issues.push('edits['+index+'].replacement: sentence-initial lowercase after removing a concessive opener; capitalise the first word and include the capitalisation in the exact original evidence and lesson example.');
   }
   const candidates=punctuationCandidates(eligibleSentences(sentences));
   if(!obj(audit.punctuationChecks)) issues.push('languageAudit.punctuationChecks: resolve every punctuation candidate.');
@@ -1417,7 +1422,7 @@ function diagnosticChecks(issues,phase) {
       /source review|source distortion|source interpretation/i.test(message)?'sourceReview':
       /protected phrase|causal for|defensible present perfect/i.test(message)?'edits':
       /task checks/i.test(message)?'taskReview.checks':/task|classification/i.test(message)?'taskReview':'assessment'),
-    rule:/checkedSentenceIds/.test(message)?'SENTENCE_COVERAGE':/reproduce EVERY/.test(message)?'UNEXPLAINED_CHANGE':/punctuationChecks/.test(message)?'PUNCTUATION_AUDIT':/originalQuote/.test(message)?'ORIGINAL_EVIDENCE':/protected phrase|causal for|defensible present perfect|unnecessary semicolon rewrite/.test(message)?'UNNECESSARY_CORRECTION':/word count/.test(message)?'WORD_LENGTH':/classification|task type/.test(message)?'TASK_CLASSIFICATION':'RESPONSE_CONSISTENCY',message}));
+    rule:/checkedSentenceIds/.test(message)?'SENTENCE_COVERAGE':/reproduce EVERY/.test(message)?'UNEXPLAINED_CHANGE':/punctuationChecks/.test(message)?'PUNCTUATION_AUDIT':/sentence-initial lowercase/.test(message)?'CAPITALIZATION_AUDIT':/originalQuote/.test(message)?'ORIGINAL_EVIDENCE':/protected phrase|causal for|defensible present perfect|unnecessary semicolon rewrite/.test(message)?'UNNECESSARY_CORRECTION':/word count/.test(message)?'WORD_LENGTH':/classification|task type/.test(message)?'TASK_CLASSIFICATION':'RESPONSE_CONSISTENCY',message}));
 }
 
 export default {
