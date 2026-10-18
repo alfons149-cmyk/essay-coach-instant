@@ -412,6 +412,33 @@ await test('captured combined for substitutions are rejected in all three succes
   assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
  }
 });
+await test('captured v5.6.11 review cannot rewrite the distorted source sentence or gerundise causal for',()=>{
+ const d=assessment(),s10=ss.find(s=>s.id===mistaken),s12=ss.find(s=>s.text.includes('for parents observe'));
+ d.edits.push({kind:'correction',sentenceId:mistaken,replacement:s10.text.replace('is not widely recognized as a legitimate','is a well-established'),reason:'Change the source conclusion.'});
+ d.edits.push({kind:'correction',sentenceId:s12.id,replacement:s12.text.replace('for parents observe','for parents observing'),reason:'Change the finite clause.'});
+ const issues=validate(d,{...payload,sourceReading:plan},ss);
+ assert(issues.some(s=>s.includes('source-position contradiction needs a learner rewrite')));
+ assert(issues.some(s=>s.includes('causal for clause changed its finite verb')));
+ d.edits=d.edits.filter(e=>e.sentenceId!==mistaken);
+ d.edits.find(e=>e.sentenceId===s12.id).replacement=s12.text.replace('homeschooling for parents','homeschooling, for parents');
+ assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+ const beneficiary='A support group offers resources for parents observing their children at home.';
+ const ordinary=assessment();ordinary.sourceReview=[];ordinary.edits=[{kind:'correction',sentenceId:'S1',replacement:'A support group offers useful resources for parents observing their children at home.',reason:'Add a clarifying adjective.'}];
+ assert(!validate(ordinary,{...payload,essay:beneficiary},numberSentences(beneficiary)).some(s=>s.includes('causal for clause changed')));
+});
+await test('source-meaning edit is sent to independent review and cannot reach nextDraft',async()=>{
+ const s10=ss.find(s=>s.id===mistaken);let calls=0;
+ globalThis.fetch=async()=>{
+  calls++;if(calls===1)return completion(plan);
+  const d=assessment();if(calls===2)d.edits.push({kind:'correction',sentenceId:mistaken,replacement:s10.text.replace('not widely recognized as a legitimate','a well-established'),reason:'Correct the source interpretation.'});
+  return completion(d);
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,3);
+ assert(result.diagnostics.history[1].checks.some(x=>x.rule==='SOURCE_MEANING_EDIT'));
+ assert(result.nextDraft.includes(s10.text));
+ assert(!result.edits.some(x=>x.sentenceId===mistaken));
+});
 await test('combined connector rejection requests a repair before any corrected draft is returned',async()=>{
  const live=observed552.combinedCausalForEdits['home-en'],bodies=[];
  globalThis.fetch=async(_,o)=>{

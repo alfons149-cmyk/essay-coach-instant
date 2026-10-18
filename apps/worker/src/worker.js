@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.11 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.12 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.11";
+const VERSION = "2026-10-18-coaching-v5.6.12";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -186,6 +186,9 @@ or reasoning step; checkQuestion tests the underlying distinction, not just 'is 
 Prioritise a central source misreading or unmet task requirement over cosmetic phrasing in keyFocus.
 The first learningPoint and keyFocus must refer to the same evidence sentence.
 Source misreadings belong in sourceReview/taskReview/learningPoints, not automatic grammar edits.
+Leave a sentence that reverses a source position unchanged in the language-corrected draft:
+the student must rewrite that sentence using the source lesson. Do not propose a language edit
+on that sentence, even if it also has a local grammar problem.
 Do not claim plural grammar errors when only one is identified; describe the actual correction.
 
 CONNECTORS AND MEANING
@@ -313,7 +316,8 @@ Keep source quotations literal; use source point IDs when the schema supplies th
 In ID mode, a source_interpretation learning point MUST select a non-empty sourcePointId from the catalog,
 matching the sourceReviewById finding and the essay evidence. The server supplies sourceQuote;
 never output sourceQuote yourself in ID mode. Empty IDs are only for non-source lessons.
-Preserve grammatical causal for, including when correcting nearby errors: for -> because/as/since
+Preserve grammatical causal for with its finite clause, including when correcting nearby errors:
+do not turn for + subject + finite verb into for + subject + participle. For -> because/as/since
 is optional wording, not a grammar repair. A missing comma before for can be corrected on its own.
 For learning points without sourcePointId, sourceQuote is ONLY an exact quote from a source in
 the original TASK, never from the student's essay. Use sourceQuote="" for grammar, style and
@@ -1019,8 +1023,11 @@ export function validate(data, payload, sentences) {
   }
   const corrections=Array.isArray(data.edits) ? data.edits.filter(e=>e?.kind==='correction') : [];
   issues.push(...preservationIssues(corrections,sentences),...lengthClaimIssues(data,payload));
+  const contradictoryIds=new Set(Array.isArray(data.sourceReview)?data.sourceReview.filter(r=>r?.coverage==='distorted').flatMap(r=>r.essayEvidenceIds||[]):[]);
   for(const edit of corrections) {
     const original=byId.get(edit.sentenceId)?.text||'';
+    if(contradictoryIds.has(edit.sentenceId))
+      issues.push(edit.sentenceId+': source-position contradiction needs a learner rewrite, not an automatic language edit. Remove the entire correction for this sentence; keep the source interpretation lesson and evidence.');
     // Protect the local causal connector + subject + finite verb, independently
     // of other changes elsewhere. A comma-only repair and real grammar fixes remain possible.
     const causal=/\bfor\s+(?:i|you|we|they|he|she|it|parents|students|teachers|people|children)\s+(?:am|is|are|was|were|have|has|had|do|does|did|can|could|will|would|must|may|might|see|sees|observe|observes|need|needs|want|wants|believe|believes|know|knows|feel|feels|fear|fears)\b/gi;
@@ -1028,6 +1035,9 @@ export function validate(data, payload, sentences) {
       const clauseStart=match[0].slice(3).trim().split(/\s+/).join('\\s+');
       const replaced=new RegExp('\\b(because|as|since)\\s+'+clauseStart+'\\b','i').exec(text(edit.replacement));
       if(replaced) issues.push(edit.sentenceId+': replacing causal for with '+replaced[1]+' is an optional connector choice, not a necessary grammar correction, even alongside other edits. Retain for; add a comma before it if required. Reconsider all dependent criticism, teaching examples and score reasons.');
+      const [,subject,verb]=match[0].split(/\s+/),stem=verb.endsWith('e')&&!verb.endsWith('ee')?verb.slice(0,-1):verb;
+      if(new RegExp('\\bfor\\s+'+subject+'\\s+'+stem+'ing\\b','i').test(text(edit.replacement)))
+        issues.push(edit.sentenceId+': causal for clause changed its finite verb to a participle. Keep the original for + subject + finite verb clause; if needed add a comma before for.');
     }
   }
   const protectedMorningIds=new Set(ambiguousMorningIds(sentences));
@@ -1127,6 +1137,9 @@ removing an unsuitable connector elsewhere in the sentence. Preserve correct str
 If an unsuitable opening "Although," is removed and a later independent clause starts with
 "what is more" or a similar additive linker, retain the valid semicolon before that linker.
 Changing it to ", and" is optional wording, not a necessary language correction.
+If the source review identifies a sentence that reverses an author's position, leave that
+sentence for the learner to rewrite; do not include it in languageAudit.corrections.
+Keep a causal "for + subject + finite verb" clause intact when adding punctuation.
 When removing an unsuitable opening connector, capitalise the first word of the resulting
 sentence. Include that capitalisation in the exact replacement quote and the lesson example.
 Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as correction, valid
@@ -1406,7 +1419,7 @@ function sameSourceContract(a,b) {
 function auditCanRepair(issues) {
   // Only complete candidates with known linguistic disagreements may go straight
   // to the independent auditor. Final validation and review are never bypassed.
-  return issues.length>0&&issues.every(issue=>/unsupported correction of protected phrase|replacing causal for|defensible present perfect|server word count|Error claim without a correction/.test(issue));
+  return issues.length>0&&issues.every(issue=>/unsupported correction of protected phrase|replacing causal for|causal for clause changed|source-position contradiction needs|defensible present perfect|server word count|Error claim without a correction/.test(issue));
 }
 function safeModelId(value) {return typeof value==='string'&&/^(?:gpt|o[134])[-a-zA-Z0-9.]{0,80}$/.test(value)?value:null;}
 export function modelConfiguration(env) {
@@ -1420,9 +1433,9 @@ function diagnosticChecks(issues,phase) {
       /unknown source point|missing source review|sourceReviewById/i.test(message)?'sourceReviewById':
       /sourceQuote|Learning point/i.test(message)?'learningPoints.sourceQuote':
       /source review|source distortion|source interpretation/i.test(message)?'sourceReview':
-      /protected phrase|causal for|defensible present perfect/i.test(message)?'edits':
+      /protected phrase|causal for|source-position contradiction|defensible present perfect/i.test(message)?'edits':
       /task checks/i.test(message)?'taskReview.checks':/task|classification/i.test(message)?'taskReview':'assessment'),
-    rule:/checkedSentenceIds/.test(message)?'SENTENCE_COVERAGE':/reproduce EVERY/.test(message)?'UNEXPLAINED_CHANGE':/punctuationChecks/.test(message)?'PUNCTUATION_AUDIT':/sentence-initial lowercase/.test(message)?'CAPITALIZATION_AUDIT':/originalQuote/.test(message)?'ORIGINAL_EVIDENCE':/protected phrase|causal for|defensible present perfect|unnecessary semicolon rewrite/.test(message)?'UNNECESSARY_CORRECTION':/word count/.test(message)?'WORD_LENGTH':/classification|task type/.test(message)?'TASK_CLASSIFICATION':'RESPONSE_CONSISTENCY',message}));
+    rule:/checkedSentenceIds/.test(message)?'SENTENCE_COVERAGE':/reproduce EVERY/.test(message)?'UNEXPLAINED_CHANGE':/punctuationChecks/.test(message)?'PUNCTUATION_AUDIT':/sentence-initial lowercase/.test(message)?'CAPITALIZATION_AUDIT':/originalQuote/.test(message)?'ORIGINAL_EVIDENCE':/source-position contradiction/.test(message)?'SOURCE_MEANING_EDIT':/protected phrase|causal for|defensible present perfect|unnecessary semicolon rewrite/.test(message)?'UNNECESSARY_CORRECTION':/word count/.test(message)?'WORD_LENGTH':/classification|task type/.test(message)?'TASK_CLASSIFICATION':'RESPONSE_CONSISTENCY',message}));
 }
 
 export default {
