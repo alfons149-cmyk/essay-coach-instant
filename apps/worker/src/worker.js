@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.2 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.3 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.2";
+const VERSION = "2026-10-18-coaching-v5.6.3";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const MAX_EDITS=32;
 const eligibleSentences=sentences=>sentences.filter(s=>s.text.length>=8||/[.!?]$/.test(s.text));
@@ -94,6 +94,15 @@ Do not assume all C2 writing is a two-source task. Judge the supplied instructio
 sources are supplied, state any assumed summary/evaluation task in feedback and limit certainty.
 Populate sourceReview with up to six central points, exact short quotations from TASK,
 essayEvidenceIds (empty for an absent idea), coverage and a specific explanation.
+For EACH source point, compare the author's claim with every cited student sentence.
+Record evidenceRelation: agrees if the cited claim is compatible with the author,
+contradicts if ANY cited claim attributes the OPPOSITE position to the author,
+absent if the point is not mentioned. A partly accurate paragraph can still contain
+an explicit contradiction: mark that point distorted, not partial. Partial means
+the claim is compatible but omits a central qualification or part of the argument.
+An absent supporting detail does not erase an opposite claim. Do not infer the
+author's position from a heading that the body rejects. Ground this decision in
+the actual body and the student's original sentence; do not require agreement.
 Use [] if there are no identifiable source passages. Never quote invented source material.
 For taskType other/unclear, sourceReview is empty and the source_accuracy check is not applicable.
 Task instructions are assessed under task_coverage, not as the position of a source author.
@@ -331,6 +340,11 @@ other real grammar problems. Keep correct sentences unchanged; remove unnecessar
 Check the sourceReview against both original sources. Are central environmental, social or
 other claims accurately represented? Do not impose a topic-specific checklist or mark every
 omission as an error. Check whether evaluative judgements are actually developed in this essay.
+For each point compare the author's affirmative position with every cited student claim.
+If a cited claim reverses it, use evidenceRelation=contradicts and coverage=distorted,
+even when the essay also omits supporting details. Use partial only for a compatible
+but incomplete account; use absent/missing for no claim. Reconcile source_accuracy,
+the leading learning point and score reasons with the actual source evidence.
 Look for existing examples before claiming examples are absent. Prioritise the most consequential
 learning need, not an arbitrary stylistic preference. Every criticism needs a concrete explanation.
 Review all four scores independently; retain a score when justified, change it only on evidence.
@@ -666,7 +680,7 @@ export function responseSchema(sentences,reading=null,language='en') {
     learningPoints:arr(shape({category:choice(['source_interpretation','task_response','language','organisation','style']),
       kind:choice(['correction','development','optional']),evidenceId:id,sourceQuote:str,issue:str,explanation:str,
       improvedExample:str,practiceInstruction:str,checkQuestion:str}),3),
-    sourceReview:arr(shape({sourceQuote:str,point:str,coverage:{type:'string',enum:['covered','partial','missing','distorted']},essayEvidenceIds:arr(id),explanation:str}),6),
+    sourceReview:arr(shape({sourceQuote:str,point:str,coverage:{type:'string',enum:['covered','partial','missing','distorted']},evidenceRelation:choice(['agrees','contradicts','absent']),essayEvidenceIds:arr(id),explanation:str}),6),
     sampleSuitable:{type:'boolean'},feedback:str,
     assessment:shape({taskSufficient:{type:'boolean'},criteria:shape(Object.fromEntries(CATEGORIES.map(k=>[k,criterion])))}),
     keyFocus:shape({action:str,evidenceId:id,explanation:str}),
@@ -682,7 +696,7 @@ export function responseSchema(sentences,reading=null,language='en') {
   if(reading?.taskType==='source_essay') {
     delete schema.properties.sourceReview;
     schema.properties.sourceReviewById=shape(Object.fromEntries(catalog.map(point=>[point.id,
-      shape({point:str,coverage:choice(['covered','partial','missing','distorted']),essayEvidenceIds:arr(id),explanation:str})])));
+      shape({point:str,coverage:choice(['covered','partial','missing','distorted']),evidenceRelation:{...choice(['agrees','contradicts','absent']),description:'Compare the SOURCE BODY author position to each cited ORIGINAL essay sentence. agrees: compatible even if incomplete; contradicts: any cited sentence reverses the position, even when other details are omitted; absent: no relevant claim. An opposite position is distorted, not partial.'},essayEvidenceIds:arr(id),explanation:str})])));
     const learning=schema.properties.learningPoints.items;
     delete learning.properties.sourceQuote;
     learning.properties.sourcePointId={...choice(['',...catalog.map(p=>p.id)]),description:'Choose the sourceCatalog ID for the source being discussed, matching sourceReviewById and evidenceId. Empty only when this lesson does not cite a source.'};
@@ -932,9 +946,11 @@ export function validate(data, payload, sentences) {
   if(!Array.isArray(data.sourceReview) || data.sourceReview.length>6) issues.push('sourceReview must contain zero to six source points.');
   else for(const r of data.sourceReview) {
     if(!obj(r) || !text(r.sourceQuote) || !payload.task.includes(text(r.sourceQuote)) || !text(r.point) || !text(r.explanation) ||
-      !['covered','partial','missing','distorted'].includes(r.coverage) || !Array.isArray(r.essayEvidenceIds) ||
+      !['covered','partial','missing','distorted'].includes(r.coverage) || !['agrees','contradicts','absent'].includes(r.evidenceRelation) || !Array.isArray(r.essayEvidenceIds) ||
       r.essayEvidenceIds.some(id=>!byId.has(id)) || (r.coverage!=='missing' && !r.essayEvidenceIds.length))
       issues.push('Source review needs an exact TASK quotation, valid coverage and essay IDs for any claimed coverage or distortion.');
+    if(obj(r)&&({'agrees':['covered','partial'],'contradicts':['distorted'],'absent':['missing']}[r.evidenceRelation]||[]).indexOf(r.coverage)<0)
+      issues.push('sourceReview.evidenceRelation: a contradictory student claim is distorted, a compatible but incomplete claim is partial, and an absent claim is missing. Check the author position against each original essay evidenceId.');
   }
   const corrections=Array.isArray(data.edits) ? data.edits.filter(e=>e?.kind==='correction') : [];
   issues.push(...preservationIssues(corrections,sentences),...lengthClaimIssues(data,payload));
@@ -1176,6 +1192,17 @@ export function languageAuditIssues(data,sentences) {
 }
 // Diagnostic context only: report evidence conflicts; never alter the proposed draft.
 // Re-plan affected sentences together rather than applying one patch to another.
+function quotedChange(sentence,change) {
+  // Expand an original-coordinate patch to a unique quote. This is a repair hint,
+  // never accepted as evidence until the reviewer justifies and returns it.
+  let start=Math.max(0,change.start-1),end=Math.min(sentence.length,change.end+1);
+  if(start===end) end=Math.min(sentence.length,end+1);
+  while(start>0&&sentence.indexOf(sentence.slice(start,end),start+1)>=0) start--;
+  while(end<sentence.length&&sentence.indexOf(sentence.slice(start,end),start+1)>=0) end++;
+  const originalQuote=sentence.slice(start,end);
+  return {originalOffset:change.start,originalEnd:change.end,originalQuote,
+    replacementQuote:sentence.slice(start,change.start)+change.replacementQuote+sentence.slice(change.end,end)};
+}
 export function auditRepairContext(data,sentences) {
   const issues=languageAuditIssues(data,sentences);
   if(!issues.length) return null;
@@ -1192,7 +1219,7 @@ export function auditRepairContext(data,sentences) {
     else if(candidate) affected.add(candidates.find(c=>c.id===candidate[1])?.sentenceId);
     else for(const s of eligibleSentences(sentences)) affected.add(s.id);
   }
-  return {issues, instruction:'Rebuild ALL evidence spans and the edit together for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. Keep unrelated valid findings. Match every correction decision to punctuation evidence containing and changing the marker or its following delimiter. Shared unchanged context is allowed; conflicting actual changes are not. Derive the final sentence from the compatible changes, then reconcile dependent explanations and insights. If a proposed change cannot be justified, remove that change and its dependent criticism. Return the complete review schema; every final check still applies.',
+  return {issues, instruction:'Rebuild ALL evidence spans and the edit together for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. targetChanges and unaccountedChanges are DIFF HINTS, not proof of a necessary correction. For EACH proposed change decide whether the original is genuinely wrong; if not, remove it from the edit and dependent criticism. If justified, quote the ORIGINAL, not an intermediate draft; verify unique offsets, nonconflicting changes and exact whole-sentence reconstruction. Keep unrelated valid findings. Match every correction decision to punctuation evidence containing and changing the marker or its following delimiter. Reconcile dependent explanations and insights. Return the complete review schema; every final check still applies.',
     sentences:eligibleSentences(sentences).filter(s=>affected.has(s.id)).map(s=>{
       const spans=corrections.flatMap((p,index)=>{
         if(p?.sentenceId!==s.id) return [];
@@ -1207,7 +1234,11 @@ export function auditRepairContext(data,sentences) {
         if(spans[i].start>=0&&spans[j].start>=0&&spans[i].start<spans[j].end&&spans[j].start<spans[i].end) overlaps.push([spans[i].index,spans[j].index]);
       const plan=combineEvidenceChanges(s.text,spans);
       const reconstructed=spans.every(p=>p.unique&&typeof p.replacementQuote==='string')?plan.reconstructed:null;
-      return {sentenceId:s.id,original:s.text,proposedReplacements:edits.filter(e=>e?.sentenceId===s.id).map(e=>e.replacement),spans,overlaps,conflicts:plan.conflicts,reconstructed,
+      const proposedReplacements=edits.filter(e=>e?.sentenceId===s.id).map(e=>e.replacement);
+      const targets=proposedReplacements.filter(value=>typeof value==='string').map(value=>({replacement:value,
+        targetChanges:evidenceChanges(s.text,value).map(change=>quotedChange(s.text,change)),
+        unaccountedChanges:reconstructed===null?null:evidenceChanges(reconstructed,value)}));
+      return {sentenceId:s.id,original:s.text,proposedReplacements,targets,spans,overlaps,conflicts:plan.conflicts,reconstructed,
         punctuationCandidates:candidates.filter(c=>c.sentenceId===s.id).map(c=>({...c,decision:data?.languageAudit?.punctuationChecks?.[c.id]||null,
           matchingEvidenceIndexes:spans.filter(p=>p.unique&&punctuationEvidence(p,c)).map(p=>p.index)}))};
     })};

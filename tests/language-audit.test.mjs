@@ -152,6 +152,27 @@ await test('unexplained change shows exact reconstructed and proposed sentences 
  const s=auditRepairContext(d,numberSentences(cases[3].essay)).sentences[0];
  assert.equal(s.reconstructed,'For example, local groups can organise free classes.');
  assert.equal(s.proposedReplacements[0],s.reconstructed+' Everyone benefits.');
+ assert(s.targets[0].unaccountedChanges.length);
+ assert(s.targets[0].targetChanges.every(p=>s.original.includes(p.originalQuote)));
+});
+await test('conflicting original spans show exact target patches without accepting either',()=>{
+ const d=brokenAudit('overlap'),ss=numberSentences(cases[3].essay),ctx=auditRepairContext(d,ss),s=ctx.sentences[0];
+ assert.equal(s.reconstructed,null);assert.equal(s.targets[0].unaccountedChanges,null);
+ assert(s.targets[0].targetChanges.length);
+ assert(s.targets[0].targetChanges.every(p=>s.original.indexOf(p.originalQuote)>=0));
+ assert(languageAuditIssues(d,ss).some(x=>x.includes('conflict')));
+});
+await test('review retry sees whole target delta and original offsets; unjustified additions still fail closed',async()=>{
+ const bodies=[];globalThis.fetch=async(_,o)=>{
+  bodies.push(JSON.parse(o.body));const d=bodies.length===1?sample(cases[3]):brokenAudit('overlap');
+  if(bodies.length===1)delete d.languageAudit;return completion(d);
+ };
+ const r=await worker.fetch(req(cases[3]),env),d=await r.json();assert.equal(r.status,502);
+ const retry=bodies[2].messages.find(m=>m.role==='user'&&JSON.parse(m.content).auditRepair);
+ const dossier=JSON.parse(retry.content).auditRepair.sentences[0];
+ assert(dossier.targets[0].targetChanges.length);assert.equal(dossier.targets[0].unaccountedChanges,null);
+ assert(dossier.targets[0].targetChanges.every(p=>Number.isInteger(p.originalOffset)));
+ assert(!d.nextDraft);assert(d.diagnostics.history.at(-1).checks.some(c=>c.rule==='UNEXPLAINED_CHANGE'));
 });
 for(const kind of ['marker','overlap']) await test('bounded ES review retry repairs '+kind+' using original sentence dossier',async()=>{
  const bodies=[],input={...cases[3],feedbackLanguage:'es'};

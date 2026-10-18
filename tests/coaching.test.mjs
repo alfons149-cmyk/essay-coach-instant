@@ -19,8 +19,8 @@ function assessment(){return {
   organisation:{score:3,reason:'Clear paragraphs, but although does not express a clear concession here.',evidenceIds:[although]},
   language:{score:3,reason:'Repair the clause construction and however punctuation.',evidenceIds:[punctuation,although]}}},
  keyFocus:{action:'Correct your interpretation of the second source.',evidenceId:mistaken,explanation:'The body challenges the heading; it does not endorse it.'},
- sourceReview:[{sourceQuote:plan.sources[0].keyPoints[0].quote,point:'Financial cost',coverage:'covered',essayEvidenceIds:[id('reduction in your')],explanation:'The essay mentions possible reduced income.'},
-  {sourceQuote:plan.sources[1].keyPoints[0].quote,point:'An established alternative',coverage:'distorted',essayEvidenceIds:[mistaken],explanation:'The essay attributes the rejected view to the author.'}],
+ sourceReview:[{sourceQuote:plan.sources[0].keyPoints[0].quote,point:'Financial cost',coverage:'covered',evidenceRelation:'agrees',essayEvidenceIds:[id('reduction in your')],explanation:'The essay mentions possible reduced income.'},
+  {sourceQuote:plan.sources[1].keyPoints[0].quote,point:'An established alternative',coverage:'distorted',evidenceRelation:'contradicts',essayEvidenceIds:[mistaken],explanation:'The essay attributes the rejected view to the author.'}],
  taskReview:{taskType:'source_essay',basis:'assumed',verdict:'partly_answered',expectedResponse:plan.summary,explanation:'The instructions are absent, so this is a provisional C2 source-essay review.',checks:[
   {requirement:'task_coverage',status:'partial',explanation:'The practical costs are included; available support needs attention.',evidenceIds:[id('reduction in your')]},
   {requirement:'source_accuracy',status:'partial',explanation:'The second author’s position is reversed.',evidenceIds:[mistaken]},
@@ -122,6 +122,32 @@ await test('review cannot conceal source distortion by changing only the overall
  assert.equal(result.taskReview.verdict,'partly_answered');assert.equal(result.diagnostics.phaseAttempts.review,1);
  assert.equal(result.diagnostics.history[2].normalisations[0].field,'taskReview.verdict');
  assert(result.sourceReview.some(r=>r.coverage==='distorted')); // Source findings remain explicit.
+});
+await test('an explicitly opposite source stance cannot be downgraded to partial coverage',async()=>{
+ const d=assessment(),source=d.sourceReview[1];source.coverage='partial';
+ source.explanation='The essay omits the supporting details, but its cited sentence states the opposite position.';
+ const errors=validate(d,{...payload,sourceReading:plan},ss);
+ assert(errors.some(e=>e.includes('sourceReview.evidenceRelation')));
+ assert.equal(source.evidenceRelation,'contradicts');
+});
+await test('compatible but incomplete and absent source points remain valid alternatives',()=>{
+ const compatible=assessment();compatible.sourceReview[0].coverage='partial';
+ assert.deepEqual(validate(compatible,{...payload,sourceReading:plan},ss),[]);
+ const absent=assessment();absent.sourceReview[0].coverage='missing';
+ absent.sourceReview[0].evidenceRelation='absent';absent.sourceReview[0].essayEvidenceIds=[];
+ assert.deepEqual(validate(absent,{...payload,sourceReading:plan},ss),[]);
+});
+await test('review repairs a partial-versus-contradictory source finding before release',async()=>{
+ const bodies=[];globalThis.fetch=async(_,o)=>{
+  bodies.push(JSON.parse(o.body));if(bodies.length===1)return completion(plan);
+  const d=assessment();if(bodies.length===3){d.sourceReview[1].coverage='partial';
+   d.sourceReview[1].explanation='Missing support, despite the opposite author claim.';}
+  return completion(d);
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,4);
+ assert(result.diagnostics.history[2].checks.some(c=>c.field==='sourceReview.evidenceRelation'));
+ assert.equal(result.sourceReview[1].coverage,'distorted');
 });
 console.log(`${checks} coaching checks passed. Model interpretation is mocked; live quality requires deployment testing.`);
 
