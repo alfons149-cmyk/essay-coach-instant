@@ -22,6 +22,9 @@
   // -----------------------------
   const el = {
     task:       $("#task"),
+    c2Sources:  $("#c2Sources"),
+    sourceOne:  $("#sourceOne"),
+    sourceTwo:  $("#sourceTwo"),
     essay:      $("#essay"),
     nextDraft:  $("#nextDraft"),
     feedback:   $("#feedback"),
@@ -89,8 +92,8 @@
     updateCounters();
     assessmentLabels();
     if (latestAssessment) {
-      const {response,level,essay} = latestAssessment;
-      renderAssessment(response,level,essay);
+      const {response,level,essay,taskContext} = latestAssessment;
+      renderAssessment(response,level,essay,taskContext);
       setFeedbackAndCourseHelp(response,essay);
       renderExtras(response);
       renderTenseAnalysis(response, essay);
@@ -351,10 +354,15 @@
     if ($("#nextDraftTaskContext")) $("#nextDraftTaskContext").replaceChildren();
     refreshAdvancedVisibility();
   }
-  function renderAssessment(response, level, essay) {
-    latestAssessment = {response, level, essay};
+  function sourceTaskContext(payload) {
+    if (!Array.isArray(payload.sourceBodies)) return payload.task || "";
+    return [payload.task?.trim(), ...payload.sourceBodies.map((body,i) => `Text ${i+1}\n${body.trim()}`)]
+      .filter(Boolean).join("\n\n");
+  }
+  function renderAssessment(response, level, essay, taskContext=el.task?.value||"") {
+    latestAssessment = {response, level, essay, taskContext};
     assessmentLabels();
-    window.ECWritingCoach?.render($("#writingCoachCard"),response,essay,el.task?.value||'',detectUILang());
+    window.ECWritingCoach?.render($("#writingCoachCard"),response,essay,taskContext,detectUILang());
     const card = $("#bandsCard"), list = $("#bandsCategories"), improvements = $("#bandsImprovements");
     if (!card || !list || !improvements) return;
     list.innerHTML = ""; improvements.innerHTML = "";
@@ -548,6 +556,7 @@
 
   function reflectLevelButtons(level) {
     const current = level || localStorage.getItem("ec.level") || "C1";
+    if (el.c2Sources) el.c2Sources.hidden = current !== "C2";
     $$("[data-level]").forEach((b) => {
       const active = (b.getAttribute("data-level") || "C1") === current;
       b.classList.toggle("pill--active", active);
@@ -685,6 +694,8 @@
       el.btnClear.addEventListener("click", () => {
         requestSequence++; resetResults();
         if (el.task)      el.task.value = "";
+        if (el.sourceOne) el.sourceOne.value = "";
+        if (el.sourceTwo) el.sourceTwo.value = "";
         if (el.essay)     el.essay.value = "";
         if (el.nextDraft) el.nextDraft.value = "";
         if (el.feedback)  el.feedback.textContent = "—";
@@ -713,6 +724,18 @@
           task:  el.task ? (el.task.value || "") : "",
           essay: el.essay ? (el.essay.value || "") : ""
         };
+        const sourceOne=el.sourceOne?.value.trim()||"",sourceTwo=el.sourceTwo?.value.trim()||"";
+        if (level==="C2" && (sourceOne || sourceTwo)) {
+          if (sourceOne.length<40 || sourceTwo.length<40 || sourceOne===sourceTwo) {
+            if (el.feedback) el.feedback.textContent = window.I18N?.t?.("errors.c2_sources") || "For C2, enter both complete source texts.";
+            return;
+          }
+          if (payload.task.includes(sourceOne) || payload.task.includes(sourceTwo)) {
+            if (el.feedback) el.feedback.textContent = window.I18N?.t?.("errors.c2_duplicate_task") || "Keep only the writing instructions in the task field when using separate source texts.";
+            return;
+          }
+          payload.sourceBodies=[sourceOne,sourceTwo];
+        }
 
         if (!payload.essay.trim()) {
           if (el.feedback) el.feedback.textContent = "Please write or paste your essay first.";
@@ -765,7 +788,7 @@
           window.EC_LAST_RESPONSE = res;
           renderDebugJson(res);
 
-          renderAssessment(res, level, payload.essay);
+          renderAssessment(res, level, payload.essay, sourceTaskContext(payload));
           if (res.schemaVersion !== 2 && el.feedback) {
             const note=document.createElement("p"); note.textContent=copy("legacy"); el.feedback.appendChild(note);
           }
@@ -795,7 +818,7 @@
     }
 
     // Word count while typing
-    for (const input of [el.essay, el.task]) if (input) input.addEventListener("input", () => {
+    for (const input of [el.essay, el.task, el.sourceOne, el.sourceTwo]) if (input) input.addEventListener("input", () => {
       requestSequence++; resetResults(); updateCounters();
     });
 
