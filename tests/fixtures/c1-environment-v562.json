@@ -1,0 +1,9 @@
+{
+  "name": "correct C1 urban environment essay",
+  "level": "C1",
+  "task": "Write an essay discussing how local governments can reduce environmental impact through public transport and public buildings. Explain your own view.",
+  "wrongTask": "Write an essay comparing two causes of the French Revolution and explain which was more important.",
+  "essay": "Local governments have an important role to play in reducing the environmental impact of urban life. Although national policies establish broad goals, decisions about transport and public buildings directly affect the choices that residents make every day.\n\nImproving public transport is a practical starting point. Reliable buses allow people to travel without a car, while affordable fares make the service accessible to families with limited incomes. However, a new route is useful only if it connects the places where people actually live and work. Councils should therefore consult residents before deciding where to invest.\n\nPublic buildings offer another opportunity. Better insulation can reduce the energy needed to heat schools and libraries. The initial expense may be substantial, but lower operating costs can release money for other services over time. Clear information about costs and expected savings would help residents judge whether a proposed project represents a sensible investment.\n\nNeither approach will solve every environmental problem. Some people will still need private vehicles, and older buildings may be difficult to improve. These limitations are reasons to plan carefully rather than abandon change.\n\nIn my view, councils should combine gradual improvements to buildings with reliable public transport. This approach addresses different needs and avoids depending on a single solution. Regular reviews would allow local authorities to learn from experience and adjust their plans as circumstances change.",
+  "corrections": [],
+  "decisions": []
+}

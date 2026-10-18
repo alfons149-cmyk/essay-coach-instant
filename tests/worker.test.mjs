@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import worker,{numberSentences,responseSchema,validate,toClient,detectSignals} from '../apps/worker/src/worker.js';
+import workerImpl,{numberSentences,responseSchema,validate,toClient,detectSignals} from '../apps/worker/src/worker.js';
+import {withReviewContract} from './helpers/review-contract.mjs';
+const worker=withReviewContract(workerImpl);
 const payload={essay:"Essay\r\nThe overarching theme of the two texts relates to cars and transportation.\r\nLiving abroad helps students develop their confidence. Students learns abroad.\r\nLiving abroad helps students develop their confidence.",task:'',level:'C1'};
 const sentences=numberSentences(payload.essay);
 const idFor=t=>sentences.find(s=>s.text===t).id;
@@ -37,7 +39,7 @@ const env={OPENAI_API_KEY:'test-key-not-real'};
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 let calls=0,sent=[];
 globalThis.fetch=async(_,options)=>{calls++;sent.push(JSON.parse(options.body));return completion(valid());};
-await test('HTTP contract returns v2 shape with v5.5.3 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-16-coaching-v5.5.5');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
+await test('HTTP contract returns v2 shape with v5.6.5 version',async()=>{let r=await worker.fetch(request(payload),env);assert.equal(r.status,200);r=await r.json();assert.equal(r.version,'2026-10-18-coaching-v5.6.5');assert.equal(r.schemaVersion,2);assert.equal(r.diagnostics.attempts,2);assert.equal(r.diagnostics.reviewCompleted,true);assert.equal(sent[0].response_format.json_schema.strict,true);});
 await test('invalid response triggers exactly one repair',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();if(calls===1){d.assessment.criteria.language.score=null;d.keyFocus.evidenceId='S999';}return completion(d);};const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal((await r.json()).diagnostics.attempts,3);assert.equal(calls,3);});
 await test('twice-incomplete response rejected with diagnostic code',async()=>{calls=0;globalThis.fetch=async()=>{calls++;let d=valid();d.assessment.criteria.organisation.evidenceIds=[];return completion(d);};let r=await worker.fetch(request(payload),env);assert.equal(r.status,502);r=await r.json();assert.equal(r.code,'ASSESSMENT_INCOMPLETE');assert(r.diagnostics.issues.length);assert.equal(calls,3);});
 await test('truncation can be repaired',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{'}}]})):completion(valid());const r=await worker.fetch(request(payload),env);assert.equal(r.status,200);assert.equal(calls,3);});
@@ -48,8 +50,15 @@ console.log(`${checks} tests passed. API responses mocked; no live AI evaluation
 await test('unsupported minor-error claim rejected',()=>{const d=valid();d.edits=[];d.sentenceInsights=[];d.assessment.criteria.language.reason='Generally accurate, with minor errors that do not impede understanding.';assert(validate(d,payload,sentences).some(x=>x.includes('Error claim')));});
 await test('correction insight requires corresponding edit',()=>{const d=valid();d.edits=[];assert(validate(d,payload,sentences).some(x=>x.includes('matching correction')));});
 await test('invented source quotations rejected',()=>{const d=valid();d.sourceReview=[{sourceQuote:'invented source',point:'A claim',coverage:'missing',essayEvidenceIds:[],explanation:'Not included.'}];assert(validate(d,payload,sentences).some(x=>x.includes('Source review')));});
-await test('missing source idea can have no essay quotation',()=>{const p={...payload,task:'Products should last longer.'};const d=valid();d.sourceReview=[{sourceQuote:p.task,point:'Durability',coverage:'missing',essayEvidenceIds:[],explanation:'The draft does not discuss durability.'}];assert.equal(validate(d,p,sentences).length,0);d.sourceReview[0].coverage='covered';assert(validate(d,p,sentences).length);});
-await test('reviewed result replaces provisional result',async()=>{calls=0;globalThis.fetch=async()=>{calls++;const d=valid();if(calls===2)d.feedback='Reviewed feedback with a checked agreement correction.';return completion(d);};const r=await worker.fetch(request(payload),env);const d=await r.json();assert.equal(d.feedback,'Reviewed feedback with a checked agreement correction.');assert.equal(d.diagnostics.reviewCompleted,true);assert.equal(calls,2);});
+await test('missing source idea can have no essay quotation',()=>{const p={...payload,task:'Products should last longer.'};const d=valid();d.sourceReview=[{sourceQuote:p.task,point:'Durability',coverage:'missing',evidenceRelation:'absent',essayEvidenceIds:[],explanation:'The draft does not discuss durability.'}];assert.equal(validate(d,p,sentences).length,0);d.sourceReview[0].coverage='covered';assert(validate(d,p,sentences).length);});
+await test('reviewed result uses validated learning points as a priority list',async()=>{calls=0;globalThis.fetch=async()=>{calls++;const d=valid();if(calls===2)d.feedback='Reviewed feedback with a checked agreement correction.';return completion(d);};const r=await worker.fetch(request(payload),env);const d=await r.json();assert(d.feedback.startsWith('Reviewed feedback with a checked agreement correction.'));assert(d.feedback.includes('Your main areas to work on are:\n- '+valid().learningPoints[0].issue));assert(!d.feedback.includes('may still contain other errors'));assert.equal(d.diagnostics.reviewCompleted,true);assert.equal(calls,2);});
+await test('priority heading follows feedback language without inventing new points',()=>{
+ for(const [language,heading] of [['nl','De belangrijkste aandachtspunten voor jou zijn:'],['es','Tus principales puntos de mejora son:']]){
+  const d=valid(),result=toClient(d,{...payload,feedbackLanguage:language},sentences,1);
+  assert(result.feedback.includes(heading+'\n- '+d.learningPoints[0].issue));
+  assert(!result.feedback.includes('andere fouten')&&!result.feedback.includes('otros errores'));
+ }
+});
 await test('failed review never returns unchecked draft as success',async()=>{calls=0;globalThis.fetch=async()=>++calls===1?completion(valid()):new Response('unavailable',{status:503});const r=await worker.fetch(request(payload),env);assert.equal(r.status,502);assert.equal(calls,2);});
 await test('fragment correction preserves surrounding sentences and paragraphs',()=>{const essay='We can change our lifestyles.\nFor example, reducing disposable waste and increasing the use of reusable items.\nEducation also matters.';const ss=numberSentences(essay),d=valid();const id=ss[1].id;d.assessment.criteria.organisation.evidenceIds=[ss[0].id];d.assessment.criteria.language.evidenceIds=[id];d.keyFocus.evidenceId=id;d.learningPoints=[lesson(id)];d.edits=[{kind:'correction',sentenceId:id,replacement:'For example, we can reduce disposable waste and increase the use of reusable items.',reason:'Add a subject and finite verb to complete the sentence.'}];d.sentenceInsights=[];d.vocabularySuggestions=[];const r=toClient(d,{...payload,essay},ss,2);assert.equal(r.nextDraft,essay.replace(ss[1].text,d.edits[0].replacement));});
 console.log(`${checks} total checks passed. Mocked model responses: these tests do not establish live assessment quality.`);
@@ -78,7 +87,7 @@ await test('third assessment attempt still receives an independent review',async
 await test('review repair has a turn after all three assessment attempts',async()=>{
  calls=0;globalThis.fetch=async()=>{calls++;const d=valid();if([1,2,4].includes(calls))d.keyFocus.evidenceId='S999';if(calls===5)d.feedback='Reviewed and repaired.';return completion(d);};
  const response=await worker.fetch(request(payload),env), result=await response.json();
- assert.equal(response.status,200);assert.equal(calls,5);assert.equal(result.feedback,'Reviewed and repaired.');
+ assert.equal(response.status,200);assert.equal(calls,5);assert(result.feedback.startsWith('Reviewed and repaired.'));
  assert.deepEqual(result.diagnostics.phaseAttempts,{assessment:3,review:2});
 });
 await test('exhausted review reports real defects and never returns provisional corrections',async()=>{
@@ -288,11 +297,12 @@ for(const language of ['nl','es','en']) await test(`reassessment removes both fa
  const f=preservationFixture(language),bodies=[];
  globalThis.fetch=async(_,options)=>{bodies.push(JSON.parse(options.body));return completion(structuredClone(bodies.length===1?f.bad:f.d));};
  const response=await worker.fetch(request(f.p),env),result=await response.json();
- assert.equal(response.status,200);assert.equal(bodies.length,3);assert.equal(result.diagnostics.reviewCompleted,true);
+ assert.equal(response.status,200);assert.equal(bodies.length,2);assert.equal(result.diagnostics.reviewCompleted,true);
  assert.equal(result.nextDraft,f.p.essay.replace('and eat','and ate'));assert.equal(result.edits.length,1);
  assert.equal(result.assessment.criteria.language.reason,f.d.assessment.criteria.language.reason);
- assert(!JSON.stringify(result).includes('studied'));assert.deepEqual(result.sentenceInsights,[]);
- assert.match(bodies[1].messages.at(-1).content,/dependent criticism, score penalties and insights/);
+ const {diagnostics,...learnerResult}=result;assert(!JSON.stringify(learnerResult).includes('studied'));assert.deepEqual(result.sentenceInsights,[]);
+ assert.match(bodies[1].messages.find(m=>m.role==='user').content,/dependent criticism, score penalties and insights/);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{assessment:1,review:1});
  const input=JSON.parse(bodies[0].messages.find(m=>m.role==='user').content);
  assert.equal(input.correctionPreservations.length,2);assert.equal(input.essay,f.p.essay);
 });
@@ -308,7 +318,7 @@ for(const phase of ['assessment','review']) await test(`persistent false correct
  globalThis.fetch=async()=>completion(structuredClone(++calls===1&&phase==='review'?f.d:f.bad));
  const response=await worker.fetch(request(f.p),env),result=await response.json();
  assert.equal(response.status,502);assert.equal(calls,3);assert.equal(result.code,'ASSESSMENT_INCOMPLETE');
- assert.equal(result.diagnostics.phase,phase);assert.equal(result.diagnostics.reviewCompleted,false);
+ assert.equal(result.diagnostics.phase,'review');assert.equal(result.diagnostics.reviewCompleted,false);
  assert(result.diagnostics.issues.some(s=>s.includes('protected phrase')));assert(!Object.hasOwn(result,'nextDraft'));
 });
 console.log(`${checks} core and correction-preservation checks passed; model calls mocked.`);

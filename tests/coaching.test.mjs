@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics} from '../apps/worker/src/worker.js';
+import workerImpl,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics,punctuationCandidates,languageAuditIssues,sourceInput} from '../apps/worker/src/worker.js';
+import {withReviewContract} from './helpers/review-contract.mjs';
+const worker=withReviewContract(workerImpl);
 const input=JSON.parse(await readFile(new URL('./fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
 const {sourceBodies,...payload}=input,ss=numberSentences(payload.essay);
 const id=part=>ss.find(s=>s.text.includes(part)).id;
@@ -17,8 +19,8 @@ function assessment(){return {
   organisation:{score:3,reason:'Clear paragraphs, but although does not express a clear concession here.',evidenceIds:[although]},
   language:{score:3,reason:'Repair the clause construction and however punctuation.',evidenceIds:[punctuation,although]}}},
  keyFocus:{action:'Correct your interpretation of the second source.',evidenceId:mistaken,explanation:'The body challenges the heading; it does not endorse it.'},
- sourceReview:[{sourceQuote:plan.sources[0].keyPoints[0].quote,point:'Financial cost',coverage:'covered',essayEvidenceIds:[id('reduction in your')],explanation:'The essay mentions possible reduced income.'},
-  {sourceQuote:plan.sources[1].keyPoints[0].quote,point:'An established alternative',coverage:'distorted',essayEvidenceIds:[mistaken],explanation:'The essay attributes the rejected view to the author.'}],
+ sourceReview:[{sourceQuote:plan.sources[0].keyPoints[0].quote,point:'Financial cost',coverage:'covered',evidenceRelation:'agrees',essayEvidenceIds:[id('reduction in your')],explanation:'The essay mentions possible reduced income.'},
+  {sourceQuote:plan.sources[1].keyPoints[0].quote,point:'An established alternative',coverage:'distorted',evidenceRelation:'contradicts',essayEvidenceIds:[mistaken],explanation:'The essay attributes the rejected view to the author.'}],
  taskReview:{taskType:'source_essay',basis:'assumed',verdict:'partly_answered',expectedResponse:plan.summary,explanation:'The instructions are absent, so this is a provisional C2 source-essay review.',checks:[
   {requirement:'task_coverage',status:'partial',explanation:'The practical costs are included; available support needs attention.',evidenceIds:[id('reduction in your')]},
   {requirement:'source_accuracy',status:'partial',explanation:'The second author’s position is reversed.',evidenceIds:[mistaken]},
@@ -50,7 +52,7 @@ await test('homeschooling example separates source distortion and weak evaluatio
 await test('contradictory task success, full source accuracy and Content 5 are rejected',()=>{
  const d=assessment();d.taskReview.verdict='answered';d.taskReview.checks[1].status='met';d.assessment.criteria.content.score=5;
  const issues=validate(d,{...payload,sourceReading:plan},ss);
- assert(issues.some(s=>s.includes('partly met')));assert(issues.some(s=>s.includes('Source distortion')));assert(issues.some(s=>s.includes('Content 5')));
+ assert(issues.some(s=>s.includes('Task verdict must match')));assert(issues.some(s=>s.includes('Source distortion')));assert(issues.some(s=>s.includes('Content 5')));
 });
 await test('source distortion cannot be hidden behind punctuation priority or absent learning evidence',()=>{
  const d=assessment();d.keyFocus.evidenceId=punctuation;d.learningPoints.shift();
@@ -94,6 +96,29 @@ function wire(d) {
 }
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(wire(d))}}]}));
 const env={OPENAI_API_KEY:'mock-not-a-key'};
+await test('two substantial source passages constrain classification without topic rules',()=>{
+ const contract=sourceInput(payload.task);
+ assert.deepEqual(contract,{bodies:sourceBodies,explicit:false});
+ assert.deepEqual(taskReadingSchema(contract).properties.taskType.enum,['source_essay']);
+ assert.deepEqual(taskReadingSchema(contract).properties.instructionStatus.enum,['assumed']);
+ assert.deepEqual(validateTaskReading(plan,payload.task,contract),[]);
+ assert(validateTaskReading({taskType:'other',instructionStatus:'missing',summary:'Other.',sources:[]},payload.task,contract).length);
+ assert.deepEqual(sourceInput('Write about renewable energy.\n\nCompare the claims of two speakers.'),null);
+ assert.deepEqual(sourceInput('Write an informal email to a friend.\nDiscuss your weekend.'),null);
+});
+await test('separate C2 source fields bind verbatim text and distinguish absent instructions',async()=>{
+ const contract=sourceInput('',sourceBodies);
+ assert.deepEqual(contract,{bodies:sourceBodies,explicit:false});
+ assert.equal(sourceInput('Write an essay.',sourceBodies).explicit,true);
+ let calls=0;globalThis.fetch=async(_,o)=>{
+  calls++;const sent=JSON.parse(o.body);
+  if(calls===1){assert.deepEqual(sent.response_format.json_schema.schema.properties.taskType.enum,['source_essay']);
+   assert.deepEqual(sent.response_format.json_schema.schema.properties.instructionStatus.enum,['assumed']);return completion(plan);}
+  return completion(assessment());
+ };
+ const r=await worker.fetch(new Request('https://worker.test/api/correct',{method:'POST',body:JSON.stringify({...payload,task:'',sourceBodies})}),{OPENAI_API_KEY:'mock'});
+ const result=await r.json();assert.equal(r.status,200,JSON.stringify(result));assert.equal(calls,3);assert.equal(result.diagnostics.taskRechecks,0);
+});
 await test('C2 source reading precedes essay assessment and never sees the learner interpretation',async()=>{
  const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));return completion(bodies.length===1?plan:assessment());};
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
@@ -112,11 +137,40 @@ await test('persistent source-reading failure returns no assessment or corrected
  let calls=0;globalThis.fetch=async()=>{calls++;return completion({...plan,sources:[]});};
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,2);
  assert.equal(result.diagnostics.phase,'task');assert(!result.nextDraft);assert(!result.assessment);
+ assert.equal(result.diagnostics.history.at(-1).checks[0].field,'sourceReading.sources');
 });
 await test('review cannot conceal source distortion by changing only the overall verdict',async()=>{
  let calls=0;globalThis.fetch=async()=>{calls++;const d=assessment();if(calls===3)d.taskReview.verdict='answered';return completion(calls===1?plan:d);};
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200);assert.equal(calls,4);
- assert.equal(result.taskReview.verdict,'partly_answered');assert.equal(result.diagnostics.phaseAttempts.review,2);
+ const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200);assert.equal(calls,3);
+ assert.equal(result.taskReview.verdict,'partly_answered');assert.equal(result.diagnostics.phaseAttempts.review,1);
+ assert.equal(result.diagnostics.history[2].normalisations[0].field,'taskReview.verdict');
+ assert(result.sourceReview.some(r=>r.coverage==='distorted')); // Source findings remain explicit.
+});
+await test('an explicitly opposite source stance cannot be downgraded to partial coverage',async()=>{
+ const d=assessment(),source=d.sourceReview[1];source.coverage='partial';
+ source.explanation='The essay omits the supporting details, but its cited sentence states the opposite position.';
+ const errors=validate(d,{...payload,sourceReading:plan},ss);
+ assert(errors.some(e=>e.includes('sourceReview.evidenceRelation')));
+ assert.equal(source.evidenceRelation,'contradicts');
+});
+await test('compatible but incomplete and absent source points remain valid alternatives',()=>{
+ const compatible=assessment();compatible.sourceReview[0].coverage='partial';
+ assert.deepEqual(validate(compatible,{...payload,sourceReading:plan},ss),[]);
+ const absent=assessment();absent.sourceReview[0].coverage='missing';
+ absent.sourceReview[0].evidenceRelation='absent';absent.sourceReview[0].essayEvidenceIds=[];
+ assert.deepEqual(validate(absent,{...payload,sourceReading:plan},ss),[]);
+});
+await test('review repairs a partial-versus-contradictory source finding before release',async()=>{
+ const bodies=[];globalThis.fetch=async(_,o)=>{
+  bodies.push(JSON.parse(o.body));if(bodies.length===1)return completion(plan);
+  const d=assessment();if(bodies.length===3){d.sourceReview[1].coverage='partial';
+   d.sourceReview[1].explanation='Missing support, despite the opposite author claim.';}
+  return completion(d);
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,4);
+ assert(result.diagnostics.history[2].checks.some(c=>c.field==='sourceReview.evidenceRelation'));
+ assert.equal(result.sourceReview[1].coverage,'distorted');
 });
 console.log(`${checks} coaching checks passed. Model interpretation is mocked; live quality requires deployment testing.`);
 
@@ -146,8 +200,8 @@ await test('source IDs are required by the schema, and exact quotations are atta
  const catalog=sourceCatalog(plan),schema=responseSchema(ss,plan,'nl'),d=wire(assessment());
  assert(!('sourceReview' in schema.properties));
  assert.deepEqual(schema.properties.sourceReviewById.required,catalog.map(p=>p.id));
- assert(!('sourceQuote' in schema.properties.learningPoints.items.properties));
- assert(schema.properties.learningPoints.items.properties.sourcePointId.enum.includes(catalog[1].id));
+ assert(!('sourceQuote' in schema.properties.learningPoints.items.anyOf[0].properties));
+ assert(schema.properties.learningPoints.items.anyOf[0].properties.sourcePointId.enum.includes(catalog[1].id));
  assert.deepEqual(resolveSourceReferences(d,plan),[]);
  assert.deepEqual(d.sourceReview.map(s=>s.sourceQuote),catalog.map(p=>p.quote));
  assert.equal(d.learningPoints[0].sourceQuote,plan.sources[1].keyPoints[0].quote);
@@ -169,9 +223,9 @@ await test('new learner-facing fields carry explicit language instructions in th
  for(const lang of ['nl','es']) {
   const schema=responseSchema(ss,plan,lang),name=lang==='nl'?'Dutch':'Spanish';
   assert(schema.properties.taskReview.properties.explanation.description.includes(name));
-  assert(schema.properties.learningPoints.items.properties.practiceInstruction.description.includes(name));
+  assert(schema.properties.learningPoints.items.anyOf[0].properties.practiceInstruction.description.includes(name));
   assert(schema.properties.sourceReviewById.properties.T1P1.properties.explanation.description.includes(name));
-  assert(schema.properties.learningPoints.items.properties.improvedExample.description.includes('English'));
+  assert(schema.properties.learningPoints.items.anyOf[0].properties.improvedExample.description.includes('English'));
  }
 });
 await test('ordinary tasks do not display task instructions as an author source',()=>{
@@ -188,13 +242,16 @@ console.log(`${checks} source-reference and coaching checks passed; model calls 
 
 const plainCompletion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 const wrongReading={taskType:'other',instructionStatus:'missing',summary:'No explicit writing instructions identified.',sources:[]};
+// Legacy classification disagreement remains testable on genuinely ambiguous
+// instruction-plus-source input; the clear two-block case is now constrained.
+const uncertainRequest=()=>new Request('https://worker.test/api/correct',{method:'POST',body:JSON.stringify({...payload,task:'Discuss these passages:\n\n'+payload.task})});
 await test('classification disagreement triggers an isolated task recheck and rebuilds the source schema',async()=>{
  const bodies=[];
  globalThis.fetch=async(_,o)=>{
   bodies.push(JSON.parse(o.body));
   return bodies.length===1?plainCompletion(wrongReading):bodies.length===2?plainCompletion(assessment()):completion(bodies.length===3?plan:assessment());
  };
- const response=await worker.fetch(request(),env),result=await response.json();
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();
  assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,5);
  assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:1});assert.equal(result.diagnostics.taskRechecks,1);
  const recheck=bodies[2];assert.equal(recheck.response_format.json_schema.name,'essaycoach_task_reading');
@@ -207,13 +264,13 @@ await test('classification disagreement triggers an isolated task recheck and re
 });
 await test('a disagreement about assumed instructions also gets a source-only recheck',async()=>{
  let calls=0;globalThis.fetch=async()=>{calls++;return completion(calls===1?{...plan,instructionStatus:'explicit'}:calls===3?plan:assessment());};
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
- assert.equal(calls,5);assert.equal(result.taskReview.basis,'assumed');
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
+ assert.equal(calls,4);assert.equal(result.taskReview.basis,'assumed');assert.equal(result.diagnostics.reusedAssessments,1);
 });
 await test('permanent task disagreement is bounded and returns no provisional feedback',async()=>{
  let calls=0;globalThis.fetch=async()=>plainCompletion(++calls%2?wrongReading:assessment());
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,4);
- assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:0});
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,4);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:1});
  assert(result.diagnostics.issues[0].includes('disagreement'));assert(!result.nextDraft);assert(!result.learningPoints);
 });
 await test('a recheck still rejects fabricated source bodies instead of accepting a changed classification',async()=>{
@@ -221,22 +278,22 @@ await test('a recheck still rejects fabricated source bodies instead of acceptin
   calls++;const bad=structuredClone(plan);bad.sources[0].sourceQuote='A fabricated source body that is absent from the task.';
   return plainCompletion(calls===1?wrongReading:calls===2?assessment():bad);
  };
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,3);
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,3);
  assert.equal(result.diagnostics.phase,'task');assert(!result.assessment);
 });
-await test('a review-stage classification disagreement discards the candidate and reassesses after re-reading',async()=>{
+await test('a review-stage disagreement reuses the candidate only when the literal source contract is unchanged',async()=>{
  let calls=0;globalThis.fetch=async()=>{
   calls++;if(calls===3){const d=wire(assessment());d.taskReview.taskType='other';return plainCompletion(d);}
   return completion([1,4].includes(calls)?plan:assessment());
  };
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,6);
- assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:2});assert.equal(result.diagnostics.reviewCompleted,true);
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,5);assert.equal(result.diagnostics.reusedAssessments,1);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:2});assert.equal(result.diagnostics.reviewCompleted,true);
 });
 await test('task reclassification does not reset the shared deadline',async()=>{
  const oldNow=Date.now;let elapsed=0,calls=0;Date.now=()=>elapsed;
  try {
   globalThis.fetch=async()=>{elapsed+=100000;return plainCompletion(++calls===1?wrongReading:assessment());};
-  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,504);assert.equal(calls,2);
+  const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,504);assert.equal(calls,2);
   assert.equal(result.diagnostics.phase,'task');assert.equal(result.diagnostics.taskRechecks,1);
  } finally {Date.now=oldNow;}
 });
@@ -305,8 +362,8 @@ await test('combined connector rejection requests a repair before any corrected 
   return completion(bodies.length===1?plan:d);
  };
  const response=await worker.fetch(request(),env),result=await response.json();
- assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,4);
- assert.match(bodies[2].messages.at(-1).content,/even alongside other edits/);
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,3);
+ assert.match(bodies[2].messages.find(m=>m.role==='user').content,/even alongside other edits/);
  assert(result.nextDraft.includes('homeschooling for parents observe'));
  assert.equal(result.diagnostics.reviewCompleted,true);
 });
@@ -369,3 +426,75 @@ await test('a correct in-range assessment with negated length advice completes w
  assert.equal(result.diagnostics.reviewCompleted,true);assert(result.feedback.includes('no es demasiado corto'));
 });
 console.log(`${checks} coaching checks passed; model calls mocked, including negation and field-specific length repair.`);
+
+function auditedWire() {
+ const d=wire(assessment());
+ d.languageAudit={checkedSentenceIds:ss.map(s=>s.id),corrections:d.edits.map(e=>({sentenceId:e.sentenceId,category:'punctuation',originalQuote:ss.find(s=>s.id===e.sentenceId).text,replacementQuote:e.replacement,explanation:e.reason})),punctuationChecks:Object.fromEntries(punctuationCandidates(ss).map(c=>[c.id,{decision:d.edits.some(e=>e.sentenceId===c.sentenceId)?'correction':'valid',explanation:'The linking marker requires a delimiter in this context.'}]))};
+ return d;
+}
+await test('C2 reviewer supplies audit evidence without redundant edits',async()=>{
+ const bodies=[];globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));const d=bodies.length===1?structuredClone(plan):auditedWire();
+  if(bodies.length===2)delete d.languageAudit;
+  if(bodies.length===3)delete d.edits;
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+ };
+ const r=await workerImpl.fetch(request(),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));
+ assert(!('edits' in bodies[2].response_format.json_schema.schema.properties));
+ assert(d.nextDraft.includes('however, effective'));assert(d.nextDraft.includes('not widely recognized'));
+ assert.equal(d.sourceReview[1].coverage,'distorted');assert.equal(d.diagnostics.phaseAttempts.review,1);
+});
+await test('C2 schema requires a real source ID for interpretation and generates findings before lessons',()=>{
+ const schema=responseSchema(ss,plan,'es'),branches=schema.properties.learningPoints.items.anyOf;
+ assert.deepEqual(schema.properties.taskReview.properties.taskType.enum,['source_essay']);
+ assert.deepEqual(schema.properties.taskReview.properties.basis.enum,['assumed']);
+ assert.deepEqual(branches[0].properties.category.enum,['source_interpretation']);assert(!branches[0].properties.sourcePointId.enum.includes(''));
+ assert(!branches[1].properties.category.enum.includes('source_interpretation'));assert(branches[1].properties.sourcePointId.enum.includes(''));
+ assert(Object.keys(schema.properties).indexOf('sourceReviewById')<Object.keys(schema.properties).indexOf('learningPoints'));
+ function strict(s){if(s.type==='object'){assert.equal(s.additionalProperties,false);assert.deepEqual(s.required,Object.keys(s.properties));Object.values(s.properties).forEach(strict);}if(s.items)strict(s.items);if(s.anyOf)s.anyOf.forEach(strict);}
+ strict(schema);
+});
+for(const failure of ['none','punctuation','source']) await test('unwrapped C2 review preserves meaning and repairs only invalid '+failure+' evidence',async()=>{
+ const bodies=[];globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));let d=bodies.length===1?structuredClone(plan):auditedWire();
+  if(bodies.length===2)delete d.languageAudit;
+  if(bodies.length===3&&failure==='punctuation'){
+   const span=d.languageAudit.corrections.find(p=>p.sentenceId===punctuation);
+   span.category='grammar';span.explanation='The phrase needs clearer syntax.';
+  }
+  if(bodies.length===3&&failure==='source')d.learningPoints[0].sourcePointId='';
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+ };
+ const r=await workerImpl.fetch(request(),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(bodies.length,failure==='none'?3:4);
+ assert(d.nextDraft.includes('however, effective'));assert(d.nextDraft.includes('for parents observe'));assert(d.nextDraft.includes('not widely recognized'));
+ assert.equal(d.sourceReview[1].coverage,'distorted');assert.equal(d.learningPoints[0].sourceQuote,plan.sources[1].keyPoints[0].quote);
+ assert(d.learningPoints[0].improvedExample.includes('challenges'));assert.equal(d.taskReview.verdict,'partly_answered');
+ assert.match(bodies[1].messages[0].content,/because,\nas or since/);assert.match(bodies[2].messages[0].content,/ACTUALLY change/);
+ if(failure!=='none')assert(d.diagnostics.history.find(h=>h.phase==='review').checks.some(c=>c.rule===(failure==='punctuation'?'PUNCTUATION_AUDIT':'RESPONSE_CONSISTENCY')));
+});
+await test('source lesson without ID still fails final validation despite schema guidance',()=>{
+ const d=auditedWire();d.learningPoints[0].sourcePointId='';assert(resolveSourceReferences(d,plan).some(s=>s.startsWith('learningPoints.sourcePointId:')));
+ assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('matching sourceReview quotation')));
+});
+console.log(`${checks} coaching checks passed including targeted v5.6.2 C2 regressions; no real AI requests.`);
+
+for(const persistent of [false,true]) await test('C2 language lesson with shortened replacement '+(persistent?'remains rejected':'receives exact full-sentence repair'),async()=>{
+ const bodies=[];
+ const full=assessment().edits.find(e=>e.sentenceId===punctuation).replacement;
+ globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));let d=bodies.length===1?structuredClone(plan):auditedWire();
+  if(bodies.length===2)delete d.languageAudit;
+  if(bodies.length>=3)d.learningPoints.push({category:'language',kind:'correction',evidenceId:punctuation,sourcePointId:'',issue:'Punctuate the linking adverb.',explanation:'However introduces a contrasting independent clause.',improvedExample:bodies.length===3||persistent?'however, effective budgeting':full,practiceInstruction:'Copy the sentence with the missing comma restored.',checkQuestion:'Is the linking adverb followed by a comma?'});
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+ };
+ const r=await workerImpl.fetch(request(),env),d=await r.json();assert.equal(bodies.length,4);
+ const first=d.diagnostics.history.find(h=>h.phase==='review');
+ assert.equal(first.outcome,'validation_failed');assert(first.checks.some(c=>c.rule==='RESPONSE_CONSISTENCY'&&c.field==='learningPoints[2].improvedExample'));
+ const instruction=bodies[3].messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
+ assert(instruction.includes('A language correction learning point must match an actual edit and its complete replacement.'));
+ assert(instruction.includes(JSON.stringify(full)));assert(instruction.includes('not a shortened fragment'));
+ assert.match(bodies[2].messages[0].content,/server fills\s+improvedExample/);
+ if(persistent){assert.equal(r.status,502);assert.equal(d.code,'ASSESSMENT_INCOMPLETE');assert.equal(d.nextDraft,undefined);}
+ else{assert.equal(r.status,200,JSON.stringify(d));assert.equal(d.learningPoints.find(p=>p.category==='language').improvedExample,full);assert(d.nextDraft.includes(full));assert(d.nextDraft.includes('for parents observe'));assert.equal(d.sourceReview[1].coverage,'distorted');}
+});
+console.log(`${checks} coaching checks passed; learning-point replacement regressions use mocked AI replies.`);

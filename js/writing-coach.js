@@ -1,21 +1,21 @@
 // Evidence-backed task and learning feedback. Model/student text is never HTML.
 (() => {
   const COPY={
-    en:{title:'Does your essay answer the task?',expected:'What the task asks',assumed:'The writing instructions are missing. This review assumes the usual C2 two-source summary and evaluation task.',
+    en:{remaining:'The source or task problem identified in the feedback has not been corrected in this version. Revise it yourself using the explanation and example.',sourceLink:'Read the source explanation',exampleLink:'See the example and rewrite exercise',title:'Does your essay answer the task?',expected:'What the task asks',assumed:'The writing instructions are missing. This review assumes the usual C2 two-source summary and evaluation task.',
       answered:'Task answered',partly_answered:'Task partly answered',not_answered:'Task not answered',not_assessable:'Task achievement cannot be assessed',
       task_coverage:'Required content',source_accuracy:'Accurate source interpretation',evaluation:'Evaluation of the arguments',own_position:'Your supported position',organisation:'Organisation',register:'Style and register',
       met:'Met',partial:'Partly met',missing:'Not demonstrated',not_applicable:'Not applicable',sources:'Check the source against your essay',covered:'Accurately covered',distorted:'Source misinterpreted',
       source:'Source evidence',student:'Your writing',learn:'Your next learning steps',correction:'Correction',development:'Develop your answer',optional:'Optional practice',why:'Why this matters',
       example:'Example to study — not inserted automatically',practice:'Try it yourself',check:'Check your reasoning',next:'Rewrite the relevant passage in your essay, then submit it again. Examples illustrate an approach; they are not the only acceptable answer.',
       draft:'This draft contains language corrections only. The task is not yet fully answered: use the learning steps above to revise the content or structure yourself.',draftUnknown:'This draft contains language corrections only. Supply the complete task to check whether it answers the question.',reference:'C2 essay requirements — Cambridge English'},
-    nl:{title:'Beantwoordt je essay de opdracht?',expected:'Wat de opdracht vraagt',assumed:'De schrijfinstructies ontbreken. Deze beoordeling gaat uit van de gebruikelijke C2-opdracht: twee bronnen samenvatten en evalueren.',
+    nl:{remaining:'Het vastgestelde bron- of taakprobleem is in deze versie niet hersteld. Herzie dit zelf met behulp van de uitleg en het voorbeeld.',sourceLink:'Lees de bronuitleg',exampleLink:'Bekijk het voorbeeld en de herschrijfoefening',title:'Beantwoordt je essay de opdracht?',expected:'Wat de opdracht vraagt',assumed:'De schrijfinstructies ontbreken. Deze beoordeling gaat uit van de gebruikelijke C2-opdracht: twee bronnen samenvatten en evalueren.',
       answered:'Opdracht beantwoord',partly_answered:'Opdracht gedeeltelijk beantwoord',not_answered:'Opdracht niet beantwoord',not_assessable:'Opdrachtuitvoering niet te beoordelen',
       task_coverage:'Gevraagde inhoud',source_accuracy:'Juiste broninterpretatie',evaluation:'Beoordeling van de argumenten',own_position:'Je onderbouwde standpunt',organisation:'Opbouw',register:'Stijl en register',
       met:'Voldaan',partial:'Gedeeltelijk voldaan',missing:'Niet aangetoond',not_applicable:'Niet van toepassing',sources:'Vergelijk de bron met je essay',covered:'Correct weergegeven',distorted:'Bron verkeerd geïnterpreteerd',
       source:'Bewijs uit de bron',student:'Jouw tekst',learn:'Je volgende leerstappen',correction:'Correctie',development:'Werk je antwoord verder uit',optional:'Optionele oefening',why:'Waarom dit belangrijk is',
       example:'Voorbeeld om te bestuderen — niet automatisch ingevoegd',practice:'Probeer het zelf',check:'Controleer je redenering',next:'Herschrijf de betreffende passage in je essay en laat de tekst opnieuw controleren. De voorbeelden tonen een aanpak; ze zijn niet het enige juiste antwoord.',
       draft:'Deze versie bevat alleen taalcorrecties. De opdracht is nog niet volledig beantwoord: gebruik de leerstappen hierboven om de inhoud of opbouw zelf te herzien.',draftUnknown:'Deze versie bevat alleen taalcorrecties. Voeg de volledige opdracht toe om te controleren of de tekst de vraag beantwoordt.',reference:'Eisen aan het C2-essay — Cambridge English'},
-    es:{title:'¿Responde tu ensayo a la tarea?',expected:'Qué pide la tarea',assumed:'Faltan las instrucciones de escritura. Esta revisión supone la tarea habitual de C2: resumir y evaluar dos textos.',
+    es:{remaining:'El problema de interpretación o de respuesta a la tarea señalado en los comentarios no se ha corregido en esta versión. Revísalo tú mismo con la explicación y el ejemplo.',sourceLink:'Lee la explicación de la fuente',exampleLink:'Consulta el ejemplo y el ejercicio de reescritura',title:'¿Responde tu ensayo a la tarea?',expected:'Qué pide la tarea',assumed:'Faltan las instrucciones de escritura. Esta revisión supone la tarea habitual de C2: resumir y evaluar dos textos.',
       answered:'Tarea respondida',partly_answered:'Tarea parcialmente respondida',not_answered:'Tarea no respondida',not_assessable:'No se puede evaluar la respuesta a la tarea',
       task_coverage:'Contenido solicitado',source_accuracy:'Interpretación correcta de las fuentes',evaluation:'Evaluación de los argumentos',own_position:'Tu postura fundamentada',organisation:'Organización',register:'Estilo y registro',
       met:'Cumplido',partial:'Parcialmente cumplido',missing:'No demostrado',not_applicable:'No aplicable',sources:'Compara la fuente con tu ensayo',covered:'Representado correctamente',distorted:'Fuente mal interpretada',
@@ -52,7 +52,7 @@
     const sources=(Array.isArray(response.sourceReview)?response.sourceReview:[]).filter(s=>exact(s?.sourceQuote,task)&&
       ['covered','partial','missing','distorted'].includes(s.coverage)&&s.explanation&&Array.isArray(s.essayEvidence)&&s.essayEvidence.every(q=>exact(q,essay)));
     if(sources.length) {
-      const details=doc.createElement('details');details.append(node('summary',c.sources));
+      const details=doc.createElement('details');details.id='writingCoachSources';details.append(node('summary',c.sources));
       details.open=sources.some(s=>s.coverage==='distorted');
       for(const source of sources) {
         const item=doc.createElement('div');item.className='coach-source';
@@ -67,7 +67,7 @@
       ['correction','development','optional'].includes(p.kind)&&p.issue&&p.explanation&&p.improvedExample&&p.practiceInstruction&&p.checkQuestion&&
       (!p.sourceQuote||exact(p.sourceQuote,task))).slice(0,3);
     if(points.length) {
-      card.append(node('h3',c.learn));const steps=doc.createElement('ol');steps.className='coach-steps';
+      card.append(node('h3',c.learn));const steps=doc.createElement('ol');steps.className='coach-steps';steps.id='writingCoachExamples';
       for(const point of points) {
         const item=doc.createElement('li');item.className='app-box';
         item.append(node('h4',`${c[point.kind]}: ${point.issue}`),node('strong',c.student),node('blockquote',point.example));
@@ -77,6 +77,15 @@
         steps.append(item);
       }
       card.append(steps,node('p',c.next));
+    }
+    if(draftNote&&(r.verdict==='partly_answered'||r.verdict==='not_answered'||sources.some(s=>s.coverage==='distorted'))) {
+      draftNote.append(node('p',c.remaining));draftNote.hidden=false;
+      if(sources.length) {
+        const link=node('a',c.sourceLink);link.href='#writingCoachSources';
+        link.onclick=()=>{const details=doc.getElementById('writingCoachSources');if(details)details.open=true;};
+        const paragraph=node('p','');paragraph.append(link);draftNote.append(paragraph);
+      }
+      if(points.length) {const link=node('a',c.exampleLink);link.href='#writingCoachExamples';const paragraph=node('p','');paragraph.append(link);draftNote.append(paragraph);}
     }
     if(r.taskType==='source_essay') {
       const link=node('a',c.reference);link.href='https://www.cambridgeenglish.org/exams-and-tests/qualifications/proficiency/format/';card.append(link);

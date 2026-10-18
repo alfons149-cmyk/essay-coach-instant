@@ -1,3 +1,5 @@
+> Nieuwe implementatie: v5.6.0 (17 oktober 2026). Zie [technisch herstel, metingen en deployment](technical-repair-v5.6.0.md). De onderstaande v5.5.5-inleiding beschrijft de vorige versie. Nieuwe-versie live AI-nauwkeurigheid en tijdwinst zijn nog niet bevestigd.
+
 > Current behaviour: v5.5.5 retains the v5.5 UI, source IDs, bounded task reclassification, word metrics, independent review and correction safeguards. The word-length guard now matches direct affirmative claims and reports their field and wording. Detailed tense/clauses sections below describe historical versions, not the active model contract.
 
 ## v5.5.5: narrow the word-length guard after v5.5.4 testing
@@ -513,3 +515,7 @@ Deploy `downloads/essaycoach-worker-v5.4.txt`. Health should report
 `2026-10-15-tense-context-v5.4`. Repeat the NL correction passage, isolated morning
 sentence and ES passage after deployment. Reduced depth reduces failure surfaces;
 it does not guarantee error-free model judgements. No model or API key change.
+
+### 2026-10-17 — v5.6.0 audit-fix follow-up
+
+Na een gemelde live ES-reviewfout wordt auditbewijs vóór de verbeterde zinnen gegenereerd. De herstelpoging ontvangt originele zinnen, fragmentposities, overlapparen, reconstructie en concrete interpunctiekoppelingen. Alle eindcontroles en poginglimieten blijven behouden. 163 technische checks slagen, inclusief museum/energie; geen nieuwe live AI-test of deployment uitgevoerd. Details: `docs/technical-repair-v5.6.0.md`, sectie auditfragmentherstel. Build-ID: `2026-10-17-coaching-v5.6.0-audit-fix`.

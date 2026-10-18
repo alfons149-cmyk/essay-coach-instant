@@ -23,7 +23,7 @@ for(const [language,title,note] of [['nl','Beantwoordt je essay de opdracht?','D
  assert.equal(card.children.find(n=>n.tagName==='details').open,true);assert.equal(draft.hidden,false);assert(draft.textContent.includes(note));
  console.log('PASS task verdict, assumption, sources, teaching example, exercise and draft warning in',language);
 }
-const answered=structuredClone(data);answered.taskReview.verdict='answered';
+const answered=structuredClone(data);answered.taskReview.verdict='answered';answered.sourceReview[0].coverage='covered';
 window.ECWritingCoach.render(card,answered,essay,task);assert.equal(draft.hidden,true);assert.equal(draft.textContent,'');
 console.log('PASS successful task review clears the stale draft warning');
 window.ECWritingCoach.render(card,data,'Unrelated writing.','Unrelated task.');
@@ -38,3 +38,17 @@ console.log('PASS v5.4.1 responses and clear state leave no empty or stale coach
 const missing=structuredClone(data);missing.taskReview.basis='missing';missing.taskReview.verdict='not_assessable';missing.sourceReview=[];missing.learningPoints=[];
 window.ECWritingCoach.render(card,missing,essay,'','nl');assert(draft.textContent.includes('Voeg de volledige opdracht toe'));
 console.log('PASS missing task requests the prompt rather than claiming task success');
+
+for(const [language,warning] of [['en','has not been corrected'],['nl','niet hersteld'],['es','no se ha corregido']]) {
+ const before=structuredClone(data);window.ECWritingCoach.render(card,data,essay,task,language);
+ assert(draft.textContent.includes(warning));assert.deepEqual(data,before);
+ const links=walk(draft).filter(n=>n.tagName==='a');assert.deepEqual(links.map(n=>n.href),['#writingCoachSources','#writingCoachExamples']);
+ assert(walk(card).some(n=>n.id==='writingCoachSources'));assert(walk(card).some(n=>n.id==='writingCoachExamples'));
+ assert(card.textContent.includes('The author defends homeschooling.'));
+ console.log('PASS explicit remaining source error and direct explanation/example links in',language);
+}
+const translations=await readFile(new URL('../js/i18n.js',import.meta.url),'utf8'),html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+for(const label of ['Language-corrected version','Taalgecorrigeerde versie','Versión con correcciones lingüísticas'])assert(translations.includes(label));
+assert(html.includes('nextDraftScope nextDraftContext nextDraftTaskContext'));assert(html.includes('Language-corrected version'));
+assert(!translations.includes('"Gecorrigeerd essay"'));assert(!translations.includes('"Corrected essay"'));
+console.log('PASS scope labels and permanently described draft limitation in EN NL ES');

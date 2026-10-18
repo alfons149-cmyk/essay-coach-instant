@@ -1,0 +1,123 @@
+{
+  "b2-library-es": {
+    "request": {
+      "essay": "Synthetic regression text."
+    },
+    "response": {
+      "taskReview": {
+        "taskType": "other",
+        "basis": "explicit",
+        "verdict": "partly_answered",
+        "checks": [
+          {
+            "requirement": "task_coverage",
+            "status": "met"
+          },
+          {
+            "requirement": "evaluation",
+            "status": "partial"
+          },
+          {
+            "requirement": "own_position",
+            "status": "met"
+          },
+          {
+            "requirement": "organisation",
+            "status": "met"
+          },
+          {
+            "requirement": "register",
+            "status": "met"
+          }
+        ]
+      },
+      "assessment": {
+        "criteria": {
+          "content": {
+            "score": 4
+          },
+          "communicative": {
+            "score": 4
+          },
+          "organisation": {
+            "score": 4
+          },
+          "language": {
+            "score": 3
+          }
+        }
+      },
+      "edits": [],
+      "nextDraft": "Synthetic regression text."
+    }
+  },
+  "c1-wrong-task-es": {
+    "request": {
+      "essay": "Synthetic regression text."
+    },
+    "response": {
+      "taskReview": {
+        "taskType": "other",
+        "basis": "explicit",
+        "verdict": "not_answered",
+        "checks": [
+          {
+            "requirement": "task_coverage",
+            "status": "missing"
+          },
+          {
+            "requirement": "evaluation",
+            "status": "missing"
+          },
+          {
+            "requirement": "own_position",
+            "status": "missing"
+          },
+          {
+            "requirement": "organisation",
+            "status": "met"
+          },
+          {
+            "requirement": "register",
+            "status": "met"
+          }
+        ]
+      },
+      "assessment": {
+        "criteria": {
+          "content": {
+            "score": 0
+          },
+          "communicative": {
+            "score": 1
+          },
+          "organisation": {
+            "score": 5
+          },
+          "language": {
+            "score": 5
+          }
+        }
+      },
+      "edits": [],
+      "nextDraft": "Synthetic regression text."
+    }
+  },
+  "c2-homeschooling-nl": {
+    "response": {
+      "code": "ASSESSMENT_INCOMPLETE",
+      "version": "2026-10-17-coaching-v5.6.0-audit-fix",
+      "diagnostics": {
+        "phaseAttempts": {
+          "task": 1,
+          "assessment": 1,
+          "review": 2
+        },
+        "issues": [
+          "languageAudit.corrections[4].originalQuote: evidence spans overlap.",
+          "edits[2].replacement: languageAudit.corrections must explain and reproduce EVERY change; remove ungrounded style/content changes or supply justified exact evidence."
+        ]
+      }
+    }
+  }
+}

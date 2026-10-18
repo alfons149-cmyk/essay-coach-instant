@@ -1,0 +1,715 @@
+{
+  "date": "2026-10-17",
+  "endpoint": "https://essaycoach.alfons149.workers.dev/api/correct",
+  "scope": "Real AI baseline of unchanged production v5.5.5, NOT live verification of v5.6.0.",
+  "model": "Owner-reported gpt-5.4; not exposed by v5.5.5 and not independently confirmed.",
+  "runs": [
+    {
+      "case": "baseline-es",
+      "httpStatus": 200,
+      "elapsedMs": 107517,
+      "input": {
+        "essay": "Over these past few years, the concept of homeschooling has gained quite a lot of attention. Especially in a time like the COVID-19 pandemic, it has become an alternative to traditional schooling for many parents. The two texts express contrasting views on the debated homeschooling.\n\nThe author of the first text considers that homeschooling significantly alters one's way of life in the long run. When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head. Apparently, this involves delivering lessons, arranging excursions, coordinating activities with other parents, and ensuring compliance with state and local homeschooling regulations. These duties are in addition to your regular responsibilities as a parent. However, it is inevitable that homeschooling may lead to a reduction in your family's income. The challenge is even more significant for single parents; however effective budgeting and time management skills will be crucial if you plan to homeschool.\n\nThe author of the second text considers that homeschooling is not widely recognized as a legitimate form of education. Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system. Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.\n\nTo conclude, I believe that homeschooling has both advantages and disadvantages. It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities.",
+        "task": "Homeschooling Is A Major Lifestyle Change\nWhen you decide to homeschool, you will take on the duties and responsibilities of both a teacher and administrator. You will need to implement lessons, organize field trips, coordinate activities with other parents, and make sure you are compliant with state and local homeschool requirements. These responsibilities get added to your normal role as a parent. However, you cannot escape the fact that by dedicating more time to teaching in your children at home, your family may suffer a loss in income. The challenge is greater if you are a single parent. Careful budgeting and time management skills will be essential if you are going to homeschool.\n\nHomeschooling Is Not An Accepted Form Of Education\nHomeschooling has been around over one hundred years. In many ways, it predates our current public education system. Second, depending on the source you look at, the number of children homeschooling is estimated to be between 1.8 million and 2.5 million. Some of the fastest growth in homeschooling has been with minority families. Why? Put simply, every day parents see declining school budgets, poor academic ratings of schools, crime, bullying, and fewer resources. They want a change that will benefit their children, and homeschooling is well-established, with curriculum options and support groups.",
+        "level": "C2",
+        "feedbackLanguage": "es"
+      },
+      "response": {
+        "schemaVersion": 2,
+        "version": "2026-10-16-coaching-v5.5.5",
+        "level": "C2",
+        "inputWords": 256,
+        "outputWords": 251,
+        "contextNotes": [],
+        "feedback": "Tu texto es claro, está bien organizado y mantiene un registro bastante formal. Resumes con bastante precisión el primer texto y tu inglés es generalmente comprensible y correcto. Lo más importante que debes mejorar es la lectura del segundo texto, porque su postura queda invertida. También te conviene desarrollar más la evaluación final: ahora das una opinión general, pero todavía no analizas los argumentos de las fuentes con suficiente profundidad para un C2.",
+        "assessment": {
+          "taskSufficient": true,
+          "criteria": {
+            "content": {
+              "score": 3,
+              "reason": "Incluyes ideas relevantes de ambos textos y una conclusión propia, pero la postura central del segundo texto queda mal interpretada. Además, la valoración final es demasiado general para una respuesta de fuentes más sólida.",
+              "evidence": [
+                "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education.",
+                "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+                "To conclude, I believe that homeschooling has both advantages and disadvantages."
+              ]
+            },
+            "communicative": {
+              "score": 3,
+              "reason": "El texto cumple en lo esencial la función de resumir y responder, con un tono adecuado. Sin embargo, la inversión de la postura del segundo autor reduce la eficacia comunicativa global.",
+              "evidence": [
+                "The two texts express contrasting views on the debated homeschooling.",
+                "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education.",
+                "It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities."
+              ]
+            },
+            "organisation": {
+              "score": 4,
+              "reason": "La respuesta tiene una estructura clara: introducción, desarrollo por fuentes y conclusión. La progresión es lógica, aunque la comparación entre textos podría integrarse más.",
+              "evidence": [
+                "The two texts express contrasting views on the debated homeschooling.",
+                "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+                "To conclude, I believe that homeschooling has both advantages and disadvantages."
+              ]
+            },
+            "language": {
+              "score": 4,
+              "reason": "Hay buen control general del idioma, con vocabulario apropiado y varias estructuras correctas. Los problemas reales son limitados y localizados, sobre todo en conectores, puntuación y alguna elección léxica poco natural.",
+              "evidence": [
+                "The two texts express contrasting views on the debated homeschooling.",
+                "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.",
+                "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources."
+              ]
+            }
+          }
+        },
+        "keyFocus": {
+          "action": "Vuelve a leer el segundo texto y subraya dos frases del cuerpo que muestren la postura real del autor. Después reescribe S10 usando esa evidencia.",
+          "explanation": "En S10 dices que el segundo autor considera que el homeschooling no está ampliamente reconocido como forma legítima de educación. Sin embargo, el cuerpo del texto sostiene lo contrario: dice que existe desde hace mucho tiempo, que está creciendo y que está bien establecido, con recursos y grupos de apoyo. En una tarea de fuentes, este tipo de inversión es más importante que un problema de estilo, porque cambia el sentido del resumen.",
+          "evidence": "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education."
+        },
+        "edits": [
+          {
+            "kind": "correction",
+            "from": "The two texts express contrasting views on the debated homeschooling.",
+            "to": "The two texts express contrasting views on homeschooling.",
+            "reason": "Debated homeschooling no suena natural en esta estructura. La corrección mantiene tu significado y mejora la colocación léxica.",
+            "sentenceId": "S3"
+          },
+          {
+            "kind": "correction",
+            "from": "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.",
+            "to": "Homeschooling has existed for over a century, and it existed before our current public education system.",
+            "reason": "Although no encaja aquí porque no hay contraste real entre las dos ideas. Se necesita una conexión aditiva.",
+            "sentenceId": "S11"
+          },
+          {
+            "kind": "correction",
+            "from": "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+            "to": "Minority families are experiencing some of the most rapid growth in homeschooling, for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.",
+            "reason": "Hace falta una coma antes de for para separar con claridad las dos cláusulas. Aquí for puede mantenerse como conector causal formal.",
+            "sentenceId": "S12"
+          }
+        ],
+        "nextDraft": "Over these past few years, the concept of homeschooling has gained quite a lot of attention. Especially in a time like the COVID-19 pandemic, it has become an alternative to traditional schooling for many parents. The two texts express contrasting views on homeschooling.\n\nThe author of the first text considers that homeschooling significantly alters one's way of life in the long run. When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head. Apparently, this involves delivering lessons, arranging excursions, coordinating activities with other parents, and ensuring compliance with state and local homeschooling regulations. These duties are in addition to your regular responsibilities as a parent. However, it is inevitable that homeschooling may lead to a reduction in your family's income. The challenge is even more significant for single parents; however effective budgeting and time management skills will be crucial if you plan to homeschool.\n\nThe author of the second text considers that homeschooling is not widely recognized as a legitimate form of education. Homeschooling has existed for over a century, and it existed before our current public education system. Minority families are experiencing some of the most rapid growth in homeschooling, for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources.\n\nTo conclude, I believe that homeschooling has both advantages and disadvantages. It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities.",
+        "vocabularySuggestions": {
+          "it is inevitable that": [
+            "it is likely that",
+            "it may lead to",
+            "it can result in"
+          ]
+        },
+        "taskReview": {
+          "taskType": "source_essay",
+          "basis": "assumed",
+          "verdict": "partly_answered",
+          "expectedResponse": "Como no aparecen instrucciones explícitas, asumo provisionalmente una tarea de ensayo de fuentes de nivel C2: resumir con precisión las ideas principales de ambos textos, relacionarlas y añadir una valoración propia algo desarrollada dentro del límite de palabras.",
+          "explanation": "Tu respuesta cubre los dos textos y añade una opinión final, así que la tarea está respondida en lo básico. El problema principal está en la interpretación del segundo texto: presentas su postura como negativa hacia el homeschooling, cuando el cuerpo del texto realmente lo defiende como una opción consolidada. Además, tu valoración personal existe, pero es muy general y poco desarrollada para un nivel C2.",
+          "checks": [
+            {
+              "requirement": "task_coverage",
+              "status": "met",
+              "explanation": "Sí tratas los dos textos y cierras con una postura personal.",
+              "evidenceIds": [
+                "S4",
+                "S10",
+                "S13"
+              ],
+              "evidence": [
+                "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+                "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education.",
+                "To conclude, I believe that homeschooling has both advantages and disadvantages."
+              ]
+            },
+            {
+              "requirement": "source_accuracy",
+              "status": "partial",
+              "explanation": "El primer texto está resumido de forma bastante fiel, pero en el segundo hay una inversión de la postura del autor.",
+              "evidenceIds": [
+                "S4",
+                "S8",
+                "S10"
+              ],
+              "evidence": [
+                "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+                "However, it is inevitable that homeschooling may lead to a reduction in your family's income.",
+                "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education."
+              ]
+            },
+            {
+              "requirement": "evaluation",
+              "status": "partial",
+              "explanation": "Hay una opinión final, pero no llega a una evaluación desarrollada de los argumentos de las fuentes.",
+              "evidenceIds": [
+                "S13",
+                "S14"
+              ],
+              "evidence": [
+                "To conclude, I believe that homeschooling has both advantages and disadvantages.",
+                "It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities."
+              ]
+            },
+            {
+              "requirement": "own_position",
+              "status": "met",
+              "explanation": "Sí expresas tu propia postura sobre el tema, aunque podría justificarse mejor.",
+              "evidenceIds": [
+                "S13",
+                "S14"
+              ],
+              "evidence": [
+                "To conclude, I believe that homeschooling has both advantages and disadvantages.",
+                "It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities."
+              ]
+            },
+            {
+              "requirement": "organisation",
+              "status": "met",
+              "explanation": "La estructura general es clara y fácil de seguir.",
+              "evidenceIds": [
+                "S3",
+                "S4",
+                "S13"
+              ],
+              "evidence": [
+                "The two texts express contrasting views on the debated homeschooling.",
+                "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+                "To conclude, I believe that homeschooling has both advantages and disadvantages."
+              ]
+            },
+            {
+              "requirement": "register",
+              "status": "met",
+              "explanation": "El tono es en general adecuado para un texto formal de síntesis.",
+              "evidenceIds": [
+                "S1",
+                "S4",
+                "S14"
+              ],
+              "evidence": [
+                "Over these past few years, the concept of homeschooling has gained quite a lot of attention.",
+                "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+                "It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities."
+              ]
+            }
+          ]
+        },
+        "learningPoints": [
+          {
+            "category": "source_interpretation",
+            "kind": "development",
+            "evidenceId": "S10",
+            "issue": "Has invertido la postura del segundo texto.",
+            "explanation": "En S10 dices que el segundo autor considera que el homeschooling no está ampliamente reconocido como forma legítima de educación. Sin embargo, el cuerpo del texto sostiene lo contrario: dice que existe desde hace mucho tiempo, que está creciendo y que está bien establecido, con recursos y grupos de apoyo. En una tarea de fuentes, este tipo de inversión es más importante que un problema de estilo, porque cambia el sentido del resumen.",
+            "improvedExample": "The second author argues that homeschooling is a well-established form of education.",
+            "practiceInstruction": "Vuelve a leer el segundo texto y subraya dos frases del cuerpo que muestren la postura real del autor. Después reescribe S10 usando esa evidencia.",
+            "checkQuestion": "¿Tu frase resume la postura real del autor o solo repite el título sin comprobar el resto del texto?",
+            "sourcePointId": "T2P2",
+            "sourceQuote": "homeschooling is well-established, with curriculum options and support groups.",
+            "example": "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education."
+          },
+          {
+            "category": "task_response",
+            "kind": "development",
+            "evidenceId": "S13",
+            "issue": "Tu opinión final es válida, pero demasiado general para funcionar como evaluación de fuentes.",
+            "explanation": "Decir que hay ventajas y desventajas muestra postura, pero todavía no explica cómo valoras los argumentos de los textos. Para una respuesta más fuerte, necesitas decir qué ideas te parecen más convincentes o más limitadas, y por qué.",
+            "improvedExample": "Both texts raise valid points, but the first is more practical because it explains the daily and financial demands of homeschooling.",
+            "practiceInstruction": "Añade dos frases a tu conclusión: una para valorar un argumento de una fuente y otra para explicar por qué te parece convincente o limitado.",
+            "checkQuestion": "¿Tu conclusión solo da una opinión general o también valora al menos un argumento concreto de las fuentes?",
+            "sourcePointId": "",
+            "sourceQuote": "",
+            "example": "To conclude, I believe that homeschooling has both advantages and disadvantages."
+          },
+          {
+            "category": "language",
+            "kind": "correction",
+            "evidenceId": "S11",
+            "issue": "El conector inicial no expresa la relación lógica correcta entre las dos ideas.",
+            "explanation": "Although introduce una concesión o contraste. Aquí las dos ideas se refuerzan entre sí: que el homeschooling existe desde hace más de un siglo y que incluso precede al sistema público actual. Por eso conviene usar un conector aditivo, no concesivo.",
+            "improvedExample": "Homeschooling has existed for over a century, and it existed before our current public education system.",
+            "practiceInstruction": "Busca en tu texto un conector de contraste y comprueba si realmente hay oposición entre las ideas. Si no la hay, sustitúyelo por un conector de suma.",
+            "checkQuestion": "¿Las dos ideas contrastan de verdad, o simplemente añaden información en la misma dirección?",
+            "sourcePointId": "",
+            "sourceQuote": "",
+            "example": "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system."
+          }
+        ],
+        "feedbackMode": "focused",
+        "tenseAnalysis": [],
+        "signalHints": [
+          {
+            "sentenceId": "S5",
+            "example": "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head.",
+            "signals": [
+              "When"
+            ],
+            "explanation": "Las palabras clave orientan. Comprueba el tiempo y el significado de la acción; no elijas automáticamente una sola forma verbal."
+          },
+          {
+            "sentenceId": "S11",
+            "example": "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.",
+            "signals": [
+              "for over a century",
+              "before"
+            ],
+            "explanation": "Las palabras clave orientan. Comprueba el tiempo y el significado de la acción; no elijas automáticamente una sola forma verbal."
+          }
+        ],
+        "vocabularyDetails": [
+          {
+            "sentenceId": "S8",
+            "original": "it is inevitable that",
+            "alternatives": [
+              "it is likely that",
+              "it may lead to",
+              "it can result in"
+            ],
+            "explanation": "Inevitable suena demasiado absoluto para una afirmación general. Estas opciones permiten una formulación más precisa y matizada.",
+            "example": "However, it is inevitable that homeschooling may lead to a reduction in your family's income."
+          }
+        ],
+        "sentenceInsights": [
+          {
+            "kind": "suggestion",
+            "example": "It is up to parents to make a thoughtful decision regarding homeschooling because each child varies in their educational needs and abilities.",
+            "issue": "La idea final es razonable, pero puede sonar más precisa con una formulación más académica.",
+            "explanation": "No es un error gramatical. Como mejora opcional, puedes expresar la variación entre niños de una forma más natural en registro formal.",
+            "betterVersion": "",
+            "unit": 20,
+            "linkHint": "Study Unit 20"
+          }
+        ],
+        "sourceReview": [
+          {
+            "point": "El primer texto presenta el homeschooling como un cambio importante en el estilo de vida familiar.",
+            "coverage": "covered",
+            "essayEvidenceIds": [
+              "S4",
+              "S5",
+              "S7"
+            ],
+            "explanation": "Esta idea central aparece con claridad en tu resumen del primer texto.",
+            "sourcePointId": "T1P1",
+            "sourceQuote": "Homeschooling Is A Major Lifestyle Change",
+            "essayEvidence": [
+              "The author of the first text considers that homeschooling significantly alters one's way of life in the long run.",
+              "When you choose to homeschool, you assume the roles and responsibilities of both a teacher and a head.",
+              "These duties are in addition to your regular responsibilities as a parent."
+            ]
+          },
+          {
+            "point": "El primer texto insiste en que serán esenciales la planificación económica y la gestión del tiempo.",
+            "coverage": "covered",
+            "essayEvidenceIds": [
+              "S8",
+              "S9"
+            ],
+            "explanation": "Recoges bien la posible pérdida de ingresos y la necesidad de presupuesto y organización, especialmente para familias monoparentales.",
+            "sourcePointId": "T1P2",
+            "sourceQuote": "Careful budgeting and time management skills will be essential if you are going to homeschool.",
+            "essayEvidence": [
+              "However, it is inevitable that homeschooling may lead to a reduction in your family's income.",
+              "The challenge is even more significant for single parents; however effective budgeting and time management skills will be crucial if you plan to homeschool."
+            ]
+          },
+          {
+            "point": "El segundo texto afirma que el homeschooling existe desde hace más de cien años y no es algo nuevo.",
+            "coverage": "covered",
+            "essayEvidenceIds": [
+              "S11"
+            ],
+            "explanation": "Sí incluyes correctamente la antigüedad de esta práctica y su anterioridad respecto al sistema público actual.",
+            "sourcePointId": "T2P1",
+            "sourceQuote": "Homeschooling has been around over one hundred years.",
+            "essayEvidence": [
+              "Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system."
+            ]
+          },
+          {
+            "point": "El segundo texto defiende que el homeschooling está bien establecido, con recursos y grupos de apoyo, y lo presenta como una opción educativa legítima.",
+            "coverage": "distorted",
+            "essayEvidenceIds": [
+              "S10",
+              "S12"
+            ],
+            "explanation": "Aunque mencionas razones de su crecimiento, atribuyes al autor una postura negativa que el cuerpo del texto no sostiene. Aquí hay una inversión clara del sentido de la fuente.",
+            "sourcePointId": "T2P2",
+            "sourceQuote": "homeschooling is well-established, with curriculum options and support groups.",
+            "essayEvidence": [
+              "The author of the second text considers that homeschooling is not widely recognized as a legitimate form of education.",
+              "Minority families are experiencing some of the most rapid growth in homeschooling for parents observe decreasing school funding, low academic performance of schools, concerns about safety and bullying, and inadequate resources."
+            ]
+          }
+        ],
+        "validationWarnings": [],
+        "diagnostics": {
+          "attempts": 6,
+          "evidenceMethod": "server-resolved-sentence-ids",
+          "reviewCompleted": true,
+          "phaseAttempts": {
+            "task": 2,
+            "assessment": 3,
+            "review": 1
+          },
+          "taskRechecks": 1,
+          "completions": [
+            {
+              "phase": "task",
+              "attempt": 1,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 106
+            },
+            {
+              "phase": "assessment",
+              "attempt": 1,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 2410
+            },
+            {
+              "phase": "task",
+              "attempt": 2,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 641
+            },
+            {
+              "phase": "assessment",
+              "attempt": 2,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 2158
+            },
+            {
+              "phase": "assessment",
+              "attempt": 3,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 2158
+            },
+            {
+              "phase": "review",
+              "attempt": 1,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 2060
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case": "baseline-energy-en",
+      "httpStatus": 502,
+      "elapsedMs": 37733,
+      "input": {
+        "essay": "Solar panels can reduce emissions; however, their initial cost can be high. However difficult it seems, a gradual transition is possible. Cities should consult residents, for they know their neighbourhoods. I have known our local engineer since 2010. Investment does not mean that every existing system must be replaced immediately.",
+        "task": "Write a short practice paragraph discussing investment in clean energy.",
+        "level": "C1",
+        "feedbackLanguage": "en"
+      },
+      "response": {
+        "error": "The AI could not complete a consistent assessment. Please try again.",
+        "code": "ASSESSMENT_INCOMPLETE",
+        "version": "2026-10-16-coaching-v5.5.5",
+        "diagnostics": {
+          "attempts": 3,
+          "phase": "review",
+          "phaseAttempts": {
+            "assessment": 1,
+            "review": 2
+          },
+          "taskRechecks": 0,
+          "taskClassification": null,
+          "reviewRequested": true,
+          "reviewCompleted": false,
+          "completions": [
+            {
+              "phase": "assessment",
+              "attempt": 1,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 1112
+            },
+            {
+              "phase": "review",
+              "attempt": 1,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 1189
+            },
+            {
+              "phase": "review",
+              "attempt": 2,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 1116
+            }
+          ],
+          "issues": [
+            "A partly met or missing requirement cannot have verdict answered."
+          ]
+        }
+      }
+    },
+    {
+      "case": "baseline-museum-nl",
+      "httpStatus": 200,
+      "elapsedMs": 41004,
+      "input": {
+        "essay": "I read the exhibition guide last night. Yesterday I went to the museum and buy a ticket. Tomorrow I am meeting the curator. I will call as soon as I know the details. This morning I have had a coffee.",
+        "task": "Write a short email to a friend about a museum visit and your plans.",
+        "level": "C1",
+        "feedbackLanguage": "nl"
+      },
+      "response": {
+        "schemaVersion": 2,
+        "version": "2026-10-16-coaching-v5.5.5",
+        "level": "C1",
+        "inputWords": 40,
+        "outputWords": 40,
+        "contextNotes": [
+          {
+            "sentenceId": "S5",
+            "example": "This morning I have had a coffee.",
+            "title": "Controleer de tijd vóór je deze zin gebruikt",
+            "explanation": "“This morning”: is de ochtend voorbij, of beschrijf je een afgerond moment, dan gebruik je de past simple. Voorbeeld: “This morning I had a coffee.” Dat is de vorm voor een afgesloten ochtend. De present perfect kan passen als de ochtend nog bezig is én er een verbinding met het heden is. Keur de oorspronkelijke zin daarom niet zonder die context goed.",
+            "action": "Bepaal eerst of de ochtend voorbij is."
+          }
+        ],
+        "feedback": "“This morning”: is de ochtend voorbij, of beschrijf je een afgerond moment, dan gebruik je de past simple. Voorbeeld: “This morning I had a coffee.” Dat is de vorm voor een afgesloten ochtend. De present perfect kan passen als de ochtend nog bezig is én er een verbinding met het heden is. Keur de oorspronkelijke zin daarom niet zonder die context goed.\n\nJe tekst is duidelijk en grammaticaal grotendeels correct. Vooral S1, S3 en S4 werken goed: de tijdsaanduidingen passen daar bij de gekozen werkwoordsvormen. De enige echte taalfout staat in S2, waar \"buy\" naar \"bought\" moet. Daarnaast kun je voor deze taak nog beter laten zien dat je een e-mail schrijft door een begroeting en afsluiting toe te voegen. S5 is zonder extra context geen fout: na \"This morning\" kan present perfect nog steeds goed mogelijk zijn.",
+        "assessment": {
+          "taskSufficient": true,
+          "criteria": {
+            "content": {
+              "score": 3,
+              "reason": "Je behandelt de hoofdinhoud van de taak: een museumbezoek en toekomstige plannen. De tekst blijft wel erg kort en weinig uitgewerkt.",
+              "evidence": [
+                "Yesterday I went to the museum and buy a ticket.",
+                "Tomorrow I am meeting the curator.",
+                "I will call as soon as I know the details."
+              ]
+            },
+            "communicative": {
+              "score": 2,
+              "reason": "De boodschap is begrijpelijk, maar het antwoord functioneert nog maar gedeeltelijk als e-mail aan een vriend, omdat typische e-mailelementen ontbreken.",
+              "evidence": [
+                "I read the exhibition guide last night.",
+                "Tomorrow I am meeting the curator.",
+                "I will call as soon as I know the details."
+              ]
+            },
+            "organisation": {
+              "score": 3,
+              "reason": "De zinnen staan in een logische tijdsvolgorde van verleden naar toekomst. Er is nog weinig verbinding tussen de zinnen en geen duidelijke e-mailstructuur.",
+              "evidence": [
+                "I read the exhibition guide last night.",
+                "Yesterday I went to the museum and buy a ticket.",
+                "Tomorrow I am meeting the curator."
+              ]
+            },
+            "language": {
+              "score": 3,
+              "reason": "Je gebruikt meerdere tijdsvormen passend, bijvoorbeeld in S1, S3 en S4. Er is één duidelijke grammaticale fout in S2, maar de rest is goed begrijpelijk en meestal correct.",
+              "evidence": [
+                "I read the exhibition guide last night.",
+                "Yesterday I went to the museum and buy a ticket.",
+                "Tomorrow I am meeting the curator."
+              ]
+            }
+          }
+        },
+        "keyFocus": {
+          "action": "Controleer vooral zinnen met twee handelingen in hetzelfde verleden moment.",
+          "explanation": "In S2 is de eerste werkwoordsvorm correct verleden tijd (\"went\"), maar de tweede niet. Als je bij zulke zinnen bewust beide werkwoorden controleert, voorkom je een veelvoorkomende fout.",
+          "evidence": "Yesterday I went to the museum and buy a ticket."
+        },
+        "edits": [
+          {
+            "kind": "correction",
+            "from": "Yesterday I went to the museum and buy a ticket.",
+            "to": "Yesterday I went to the museum and bought a ticket.",
+            "reason": "Beide handelingen horen bij hetzelfde afgeronde moment in het verleden, dus ook het tweede werkwoord moet in de verleden tijd staan: \"bought\".",
+            "sentenceId": "S2"
+          }
+        ],
+        "nextDraft": "I read the exhibition guide last night. Yesterday I went to the museum and bought a ticket. Tomorrow I am meeting the curator. I will call as soon as I know the details. This morning I have had a coffee.",
+        "vocabularySuggestions": {},
+        "taskReview": {
+          "taskType": "other",
+          "basis": "explicit",
+          "verdict": "partly_answered",
+          "expectedResponse": "Je moest een korte e-mail aan een vriend schrijven over een museumbezoek en je plannen.",
+          "explanation": "Je tekst past inhoudelijk bij de taak: je noemt een museumbezoek en toekomstige plannen. Toch is het antwoord maar gedeeltelijk taakgericht, omdat het nog niet echt als e-mail is uitgewerkt: er ontbreekt een aanspreking, een afsluiting en wat meer samenhang tussen de zinnen.",
+          "checks": [
+            {
+              "requirement": "task_coverage",
+              "status": "partial",
+              "explanation": "Je noemt zowel het museumbezoek als je plannen, dus de kern van de taak is aanwezig. De inhoud blijft wel erg beperkt.",
+              "evidenceIds": [
+                "S2",
+                "S3",
+                "S4"
+              ],
+              "evidence": [
+                "Yesterday I went to the museum and buy a ticket.",
+                "Tomorrow I am meeting the curator.",
+                "I will call as soon as I know the details."
+              ]
+            },
+            {
+              "requirement": "evaluation",
+              "status": "not_applicable",
+              "explanation": "Bij deze taak hoef je niets te evalueren.",
+              "evidenceIds": [],
+              "evidence": []
+            },
+            {
+              "requirement": "own_position",
+              "status": "not_applicable",
+              "explanation": "Voor deze taak is geen beargumenteerd eigen standpunt nodig.",
+              "evidenceIds": [],
+              "evidence": []
+            },
+            {
+              "requirement": "organisation",
+              "status": "partial",
+              "explanation": "De volgorde is logisch, maar de tekst heeft nog geen duidelijke e-mailopbouw.",
+              "evidenceIds": [
+                "S1",
+                "S2",
+                "S3"
+              ],
+              "evidence": [
+                "I read the exhibition guide last night.",
+                "Yesterday I went to the museum and buy a ticket.",
+                "Tomorrow I am meeting the curator."
+              ]
+            },
+            {
+              "requirement": "register",
+              "status": "partial",
+              "explanation": "De toon is neutraal en begrijpelijk, maar nog niet duidelijk persoonlijk of e-mailachtig voor een vriend.",
+              "evidenceIds": [
+                "S1",
+                "S4"
+              ],
+              "evidence": [
+                "I read the exhibition guide last night.",
+                "I will call as soon as I know the details."
+              ]
+            }
+          ]
+        },
+        "learningPoints": [
+          {
+            "category": "language",
+            "kind": "correction",
+            "evidenceId": "S2",
+            "sourceQuote": "",
+            "issue": "Gebruik in één afgeronde gebeurtenis dezelfde verleden tijd voor beide werkwoorden.",
+            "explanation": "In deze zin horen \"went\" en \"bought\" bij hetzelfde moment in het verleden. \"buy\" is hier de infinitief en past daarom niet na \"Yesterday I went...\". Door ook het tweede werkwoord in de verleden tijd te zetten, wordt de zin grammaticaal correct.",
+            "improvedExample": "Yesterday I went to the museum and bought a ticket.",
+            "practiceInstruction": "Schrijf drie zinnen over gisteren met twee handelingen in één zin, en controleer of beide werkwoorden in de verleden tijd staan.",
+            "checkQuestion": "Als twee handelingen allebei gisteren zijn afgerond, welke vorm moet het tweede werkwoord dan krijgen?",
+            "example": "Yesterday I went to the museum and buy a ticket."
+          },
+          {
+            "category": "task_response",
+            "kind": "development",
+            "evidenceId": "S1",
+            "sourceQuote": "",
+            "issue": "Maak van losse mededelingen een echte korte e-mail.",
+            "explanation": "Je zinnen zijn begrijpelijk, maar samen vormen ze nog vooral een lijstje. Een korte begroeting, een verbindende zin en een afsluiting helpen de lezer om het als een bericht aan een vriend te lezen.",
+            "improvedExample": "Hi Alex, I went to the museum yesterday and bought a ticket. Tomorrow I am meeting the curator, and I’ll call you as soon as I know the details. See you soon!",
+            "practiceInstruction": "Voeg aan je tekst een begroeting en een afsluitende zin toe, en verbind minstens twee bestaande zinnen tot één vloeiend geheel.",
+            "checkQuestion": "Welke twee elementen maken jouw tekst meteen herkenbaarder als e-mail aan een vriend?",
+            "example": "I read the exhibition guide last night."
+          },
+          {
+            "category": "language",
+            "kind": "optional",
+            "evidenceId": "S5",
+            "sourceQuote": "",
+            "issue": "Controleer de tijd vóór je deze zin gebruikt",
+            "explanation": "“This morning”: is de ochtend voorbij, of beschrijf je een afgerond moment, dan gebruik je de past simple. Voorbeeld: “This morning I had a coffee.” Dat is de vorm voor een afgesloten ochtend. De present perfect kan passen als de ochtend nog bezig is én er een verbinding met het heden is. Keur de oorspronkelijke zin daarom niet zonder die context goed.",
+            "improvedExample": "If the morning is over: “This morning I had a coffee.”",
+            "practiceInstruction": "Bepaal eerst of de ochtend voorbij is.",
+            "checkQuestion": "Is de ochtend afgesloten, of nog bezig met een verbinding met het heden?",
+            "example": "This morning I have had a coffee."
+          }
+        ],
+        "feedbackMode": "focused",
+        "tenseAnalysis": [],
+        "signalHints": [
+          {
+            "sentenceId": "S1",
+            "example": "I read the exhibition guide last night.",
+            "signals": [
+              "last night"
+            ],
+            "explanation": "Deze woorden kunnen op een afgesloten verleden moment wijzen. Controleer of de werkwoorden bij dat moment passen."
+          },
+          {
+            "sentenceId": "S2",
+            "example": "Yesterday I went to the museum and buy a ticket.",
+            "signals": [
+              "Yesterday"
+            ],
+            "explanation": "Deze woorden kunnen op een afgesloten verleden moment wijzen. Controleer of de werkwoorden bij dat moment passen."
+          },
+          {
+            "sentenceId": "S5",
+            "example": "This morning I have had a coffee.",
+            "signals": [
+              "This morning"
+            ],
+            "explanation": "“This morning”: is de ochtend voorbij, of beschrijf je een afgerond moment, dan gebruik je de past simple. Voorbeeld: “This morning I had a coffee.” Dat is de vorm voor een afgesloten ochtend. De present perfect kan passen als de ochtend nog bezig is én er een verbinding met het heden is. Keur de oorspronkelijke zin daarom niet zonder die context goed."
+          }
+        ],
+        "vocabularyDetails": [],
+        "sentenceInsights": [
+          {
+            "kind": "suggestion",
+            "example": "This morning I have had a coffee.",
+            "issue": "Controleer de tijd vóór je deze zin gebruikt",
+            "explanation": "“This morning”: is de ochtend voorbij, of beschrijf je een afgerond moment, dan gebruik je de past simple. Voorbeeld: “This morning I had a coffee.” Dat is de vorm voor een afgesloten ochtend. De present perfect kan passen als de ochtend nog bezig is én er een verbinding met het heden is. Keur de oorspronkelijke zin daarom niet zonder die context goed.",
+            "betterVersion": "",
+            "unit": 12,
+            "linkHint": "Study Unit 12"
+          }
+        ],
+        "sourceReview": [],
+        "validationWarnings": [],
+        "diagnostics": {
+          "attempts": 2,
+          "evidenceMethod": "server-resolved-sentence-ids",
+          "reviewCompleted": true,
+          "phaseAttempts": {
+            "assessment": 1,
+            "review": 1
+          },
+          "taskRechecks": 0,
+          "completions": [
+            {
+              "phase": "assessment",
+              "attempt": 1,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 1463
+            },
+            {
+              "phase": "review",
+              "attempt": 1,
+              "finishReason": "stop",
+              "maxCompletionTokens": 6000,
+              "completionTokens": 1525
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
