@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker,{numberSentences,punctuationCandidates,reviewSchema,languageAuditIssues,modelConfiguration,normaliseCoaching,validate,auditRepairContext} from '../apps/worker/src/worker.js';
+import worker,{numberSentences,punctuationCandidates,reviewSchema,languageAuditIssues,modelConfiguration,normaliseCoaching,validate,auditRepairContext,constructAuditedEdits} from '../apps/worker/src/worker.js';
 const cases=JSON.parse(await readFile(new URL('./fixtures/language-audit-cases.json',import.meta.url),'utf8'));
 const originalFetch=globalThis.fetch;
 let checks=0;
@@ -27,6 +27,33 @@ await test('strict review schema includes short complete sentences',()=>{
  const ss=numberSentences('He go. I agree.'),schema=reviewSchema(ss);
  function walk(s){if(s.type==='object'){assert.equal(s.additionalProperties,false);assert.deepEqual(s.required,Object.keys(s.properties));Object.values(s.properties).forEach(walk);}if(s.items)walk(s.items);}
  walk(schema);assert.equal(Object.keys(schema.properties)[0],'languageAudit');assert.deepEqual(schema.$defs.sentenceId.enum,['S1','S2']);assert.equal(schema.properties.languageAudit.properties.checkedSentenceIds.minItems,2);
+ assert(!('edits' in schema.properties));assert.equal(schema.properties.languageAudit.properties.corrections.maxItems,18);
+});
+await test('server builds corrected sentences from independent evidence with no review edits',async()=>{
+ const input=cases[3],bodies=[];
+ globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));const d=sample(input);
+  if(bodies.length===1)delete d.languageAudit;
+  else {delete d.edits;d.learningPoints.push({category:'language',kind:'correction',evidenceId:'S3',sourceQuote:'',issue:'Punctuate the marker.',explanation:'The linking phrase needs a comma.',improvedExample:'',practiceInstruction:'Rewrite the original sentence.',checkQuestion:'Where does the linking phrase end?'});}
+  return completion(d);
+ };
+ const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));
+ assert(!('edits' in bodies[1].response_format.json_schema.schema.properties));
+ assert.equal(d.edits[2].to,'For example, local groups can organise free classes.');
+ assert.equal(d.learningPoints[1].improvedExample,d.edits[2].to);
+ assert(d.diagnostics.history[1].normalisations.some(x=>x.field==='edits'&&x.to===3));
+});
+await test('server refuses conflicting original spans instead of constructing a draft',async()=>{
+ const input=cases[3],ss=numberSentences(input.essay),bad=brokenAudit('overlap');delete bad.edits;
+ const issues=constructAuditedEdits(bad,ss);assert(issues.some(x=>x.includes('conflicting')));assert.deepEqual(bad.edits,[]);
+ let calls=0;globalThis.fetch=async()=>{const d=++calls===1?sample(input):structuredClone(bad);if(calls===1)delete d.languageAudit;else delete d.edits;return completion(d);};
+ const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,502);assert(!d.nextDraft);
+});
+await test('server-built edits still reject replacing grammatical causal for',()=>{
+ const input=cases[0],ss=numberSentences(input.essay),d=sample(input);
+ d.languageAudit.corrections.push({sentenceId:'S3',category:'word_choice',originalQuote:'for students need',replacementQuote:'because students need',explanation:'Unnecessary connector substitution.'});
+ delete d.edits;assert.deepEqual(constructAuditedEdits(d,ss),[]);
+ assert(validate(d,{...input,feedbackLanguage:'en'},ss).some(x=>x.includes('replacing causal for')));
 });
 await test('candidate scan generalises and does not rewrite correct concessive however',()=>{
  assert.deepEqual(punctuationCandidates(numberSentences(cases[0].essay)).map(c=>c.marker.toLowerCase()),['therefore','however']);
@@ -96,8 +123,9 @@ await test('known linguistic disagreement goes directly to independent review wi
  const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));const d=sample(cases[0]);if(bodies.length===1){delete d.languageAudit;d.edits.push({kind:'correction',sentenceId:'S3',replacement:'The library stays open late, because students need a quiet place to work.',reason:'For cannot introduce a reason.'});}return completion(d);};
  const r=await worker.fetch(req(cases[0]),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(bodies.length,2);assert.deepEqual(d.diagnostics.phaseAttempts,{assessment:1,review:1});assert.equal(d.diagnostics.history[0].outcome,'sent_to_review');assert.equal(d.diagnostics.history[0].checks[0].rule,'UNNECESSARY_CORRECTION');const input=JSON.parse(bodies[1].messages.find(m=>m.role==='user').content);assert.equal(input.essay,cases[0].essay);assert(input.assessmentDefects.length);assert(d.nextDraft.includes(', for students need'));
 });
-await test('more than eight erroneous sentences fit the expanded edit budget',async()=>{
- const essay=Array.from({length:10},(_,i)=>'Student '+(i+1)+' need support.').join('\n'),input={...cases[0],essay,decisions:[],corrections:numberSentences(essay).map(s=>({sentenceId:s.id,category:'grammar',originalQuote:s.text,replacementQuote:s.text.replace(' need ',' needs '),explanation:'The singular subject requires needs.'}))};globalThis.fetch=async()=>completion(sample(input));const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(d.edits.length,10);assert(!d.nextDraft.includes(' need '));
+await test('focused review corrects six sentences and does not imply every error is fixed',async()=>{
+ const essay=Array.from({length:10},(_,i)=>'Student '+(i+1)+' need support.').join('\n'),input={...cases[0],essay,decisions:[],corrections:numberSentences(essay).slice(0,6).map(s=>({sentenceId:s.id,category:'grammar',originalQuote:s.text,replacementQuote:s.text.replace(' need ',' needs '),explanation:'The singular subject requires needs.'}))};globalThis.fetch=async()=>completion(sample(input));const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(d.edits.length,6);assert(d.nextDraft.includes('Student 10 need support.'));
+ const excess=sample({...input,corrections:numberSentences(essay).map(s=>({sentenceId:s.id,category:'grammar',originalQuote:s.text,replacementQuote:s.text.replace(' need ',' needs '),explanation:'Agreement.'}))});assert(languageAuditIssues(excess,numberSentences(essay)).some(x=>x.includes('at most 6')));
 });
 await test('overall task verdict is derived conservatively without changing findings scores or explanations',()=>{
  for(const status of ['partial','missing']) {
@@ -182,7 +210,7 @@ for(const kind of ['marker','overlap']) await test('bounded ES review retry repa
  assert(repair);assert(repair.sentences.some(s=>s.sentenceId==='S3'));assert.match(repair.instruction,/Replace the old spans/);
  assert.deepEqual(d.languageAudit,sample(input).languageAudit);assert(d.nextDraft.includes('For example, local'));
  assert(!d.nextDraft.includes('Everyone benefits'));assert.equal(d.diagnostics.repairAttempts.review,1);
- assert.match(bodies[1].messages[0].content,/Build the evidence BEFORE/);
+ assert.match(bodies[1].messages[0].content,/server builds the ENTIRE edited sentence/);
 });
 await test('reported two-review failure sequence still fails closed with precise final diagnostics',async()=>{
  let calls=0;globalThis.fetch=async()=>{calls++;const d=calls===1?sample(cases[3]):brokenAudit(calls===2?'marker':'overlap');if(calls===1)delete d.languageAudit;return completion(d);};

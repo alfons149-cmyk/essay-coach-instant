@@ -1,8 +1,14 @@
-// EssayCoach Worker v5.6.3 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.4 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.3";
+const VERSION = "2026-10-18-coaching-v5.6.4";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
-const MAX_EDITS=32;
+const FOCUSED_NOTE={
+  en:'This review explains the clearest language corrections; the revised text may still contain other errors.',
+  es:'Esta revisión explica las correcciones lingüísticas más claras; el texto revisado aún puede contener otros errores.',
+  nl:'Deze beoordeling legt de duidelijkste taalcorrecties uit; de aangepaste tekst kan nog andere fouten bevatten.'
+};
+const MAX_EDITS=6;
+const MAX_EVIDENCE=18;
 const eligibleSentences=sentences=>sentences.filter(s=>s.text.length>=8||/[.!?]$/.test(s.text));
 const CATEGORIES = ["content", "communicative", "organisation", "language"];
 const UNITS = {
@@ -187,8 +193,8 @@ A freestanding 'For example, reducing waste and reusing containers.' is a fragme
 'This involves reducing waste and reusing containers.' is complete. Distinguish headings and
 intentional contextual ellipsis from accidental fragments. Repair a fragment as a standalone
 sentence with minimal added grammar: do not delete it or merge across sentence IDs.
-Do not stop after superficial quote or spelling fixes. Prioritise substantive grammar before
-punctuation and then optional style suggestions without stopping after the most salient errors. The safety limit is 32 edited sentences; do not claim exhaustive accuracy.
+Prioritise up to six clear, useful language corrections, including consequential grammar
+and punctuation. Other possible improvements belong in optional suggestions; do not claim exhaustive accuracy.
 Avoid generic 'transitions could be smoother': identify the actual relation that needs clarifying.
 Distinguish a missing idea from an idea mentioned briefly, and recognise existing examples.
 Never insert new arguments, factual claims or personal experiences into the corrected draft.
@@ -246,7 +252,7 @@ Explain the exact benefit of a suggestion; recognise clear introductions, conclu
 If the task is absent, briefly say content/communicative are not assessed; continue language feedback.
 
 EDITS
-Return 0-32 edits, with NO minimum. Every edit must be kind=correction for a demonstrable error.
+Return 0-6 edits, with NO minimum. Every edit must be kind=correction for a demonstrable error.
 Do not supply optional rewritten sentences. Put optional practice in sentenceInsights as an
 instruction or question, with kind=suggestion and betterVersion="". Never invent what the
 student felt, did, achieved, planned or intended, even as an optional illustration.
@@ -319,15 +325,15 @@ Use writingMetrics for word length, not an estimate. In-range writing must not b
 or too long. Weak argument development is distinct from word count.
 Prioritise a source misreading over style in keyFocus and the first learning point. Every learning
 point needs a concrete what/why/how, short English example, practice action and check question.
-Edits contain only demonstrable language errors, at most 32 edited sentences. Never insert new facts or fix a
+Choose at most six high-confidence sentence corrections. Further possible improvements
+belong in optional teaching suggestions, not automatic edits. Do not claim a complete
+proofread or that the resulting essay is error-free. Never insert new facts or fix a
 source interpretation by silently changing the student's argument. Optional phrasing belongs in
-suggestions, not correction edits. For category=language and kind=correction, find the correction
-edit whose sentenceId equals the lesson's evidenceId, then copy its ENTIRE replacement verbatim
-into improvedExample, including unchanged words and punctuation. A corrected phrase, shortened
-example, paraphrase or alternative correction is not sufficient. The short-example advice applies
-to development/optional lessons, not to this exact-copy requirement. If the edit changes during
-review, update the lesson from the final edit. Never change an otherwise justified edit merely to
-match a lesson; both the edit and its audit evidence must still pass independent validation.
+suggestions, not correction edits. For category=language and kind=correction,
+use the sentenceId of a justified audit correction as evidenceId. The server fills
+improvedExample with the complete reconstructed sentence; do not invent another
+sentence or a correction without exact original evidence. The same applies to the
+betterVersion of a correction insight. Keep optional examples distinct.
 Keep all dependent reasons, examples, feedback and scores consistent with the final edit list.
 Preserve correctionPreservations and the conditional morning guidance. No timeline or tense catalogue.
 Do not turn a local tense correction into a rule that every verb in a sentence must share a tense.
@@ -712,6 +718,12 @@ export function responseSchema(sentences,reading=null,language='en') {
     schema.properties={sourceReviewById,...rest,learningPoints};
     schema.required=Object.keys(schema.properties);
   }
+  // With two source bodies but no explicit instructions, the source-only pass
+  // fixes the provisional task basis. The assessor still judges every claim.
+  if(reading?.taskType==='source_essay'&&reading.instructionStatus==='assumed') {
+    schema.properties.taskReview.properties.taskType=choice(['source_essay']);
+    schema.properties.taskReview.properties.basis=choice(['assumed']);
+  }
   if(ambiguousMorningIds(sentences).length&&eligibleSentences(sentences).length===1)
     schema.properties.sampleSuitable={type:'boolean',enum:[true],description:'This is an understandable English practice sentence. Assess it with limitations; its short length is not grounds for rejection.'};
   const translated=new Set(['feedback','reason','action','explanation','issue','practiceInstruction','checkQuestion','expectedResponse','point']);
@@ -1001,7 +1013,7 @@ export function toClient(data, payload, sentences, attempts) {
   for(const v of data.vocabularySuggestions) vocabularySuggestions[text(v.original)]=v.alternatives.map(text);
   return {
     schemaVersion:2,version:VERSION,...(data.languageAudit?{languageAudit:data.languageAudit}:{}),level:payload.level,inputWords:countWords(payload.essay),outputWords:countWords(nextDraft),
-    contextNotes:notes,feedback:[...new Set([...notes.map(n=>n.explanation),text(data.feedback)])].join('\n\n'),assessment:{taskSufficient:data.assessment.taskSufficient,criteria},
+    contextNotes:notes,feedback:[...new Set([...notes.map(n=>n.explanation),text(data.feedback),FOCUSED_NOTE[payload.feedbackLanguage]||FOCUSED_NOTE.en])].join('\n\n'),assessment:{taskSufficient:data.assessment.taskSufficient,criteria},
     keyFocus:{action:text(data.keyFocus.action),explanation:text(data.keyFocus.explanation),evidence:byId.get(data.keyFocus.evidenceId).text},
     edits,nextDraft,vocabularySuggestions,
     taskReview:{...data.taskReview,checks:data.taskReview.checks.map(c=>({...c,evidence:c.evidenceIds.map(id=>byId.get(id).text)}))},
@@ -1040,22 +1052,24 @@ agreement, verb morphology and time context, articles/determiners, word order, r
 meaning, spelling, and punctuation/clause boundaries in separate passes. Register all supplied
 eligible sentence IDs exactly once in languageAudit.checkedSentenceIds, even if no edit is needed.
 Coverage is a record of checking, not proof of grammatical accuracy. There is no minimum edit count.
-For EVERY final necessary language correction provide languageAudit.corrections with sentenceId,
+Prioritise at most six sentences with clear, necessary corrections. This is a focused
+teaching review, not a claim that every possible error has been corrected. For EVERY
+chosen correction provide languageAudit.corrections with sentenceId,
 category grammar/punctuation/word_choice, a minimal exact originalQuote, replacementQuote and
 explanation. Explain the actual original defect and why the replacement is necessary, in the
 requested feedback language. Never teach a rule about words absent from that quotation.
 Quotes must be unique substrings of the original sentence. Their unchanged context may overlap,
-but actual changes must be compatible. The union of explained changes must reproduce the ENTIRE
-edited sentence exactly. For insertions include adjacent original words or
+but actual changes must be compatible. The server builds the ENTIRE edited sentence
+from the explained changes; do not output a separate edit. For insertions include adjacent original words or
 punctuation in the quote. Never hide optional style, source interpretation or invented facts inside
 an edit. Preserve meaning. Source issues belong in sourceReview/taskReview and teaching exercises.
 Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as correction, valid
 or context_needed with a contextual explanation. Discourse linking adverbs normally need a following
 comma; degree/concessive however is different. Do not change a valid or uncertain construction
 just to satisfy a checklist. A correction decision requires matching punctuation evidence and edit.
-Build the evidence BEFORE composing each final replacement: copy spans from the ORIGINAL,
-write each necessary replacement and explanation, then combine the actual changes. Use that
-result verbatim as edits[].replacement. Never quote from an already corrected intermediate sentence.
+Copy spans from the ORIGINAL and explain each necessary replacement. The server
+combines compatible changes using original coordinates. Never quote from an
+already corrected intermediate sentence.
 For a punctuation candidate, its punctuation span MUST contain the entire marker at the supplied
 original offset (e.g. originalQuote "however effective", replacementQuote "however, effective").
 The span must also ACTUALLY change that marker or its immediately following delimiter.
@@ -1077,11 +1091,15 @@ export function reviewSchema(sentences,reading=null,language='en') {
   const explanation={type:'string',description:'Explain the original evidence in '+(FEEDBACK_LANGUAGES[language]||'English')+'.'};
   schema.properties.languageAudit=shape({
     checkedSentenceIds:arr(id,eligibleSentences(sentences).length,eligibleSentences(sentences).length),
-    corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:{type:'string',description:'Unique verbatim substring of the ORIGINAL sentence. Unchanged context may overlap other quotes; actual changes must not conflict. Punctuation evidence must include the entire candidate marker AND actually change that marker or its immediately following delimiter; unchanged marker context alone is insufficient.'},replacementQuote:{type:'string',description:'Replacement for this span only. The union of all actual explained changes must reproduce edits[].replacement exactly.'},explanation}),96),
+    corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:{type:'string',description:'Unique verbatim substring of the ORIGINAL sentence. Unchanged context may overlap other quotes; actual changes must not conflict. Punctuation evidence must include the entire candidate marker AND actually change that marker or its immediately following delimiter; unchanged marker context alone is insufficient.'},replacementQuote:{type:'string',description:'Replacement for this span only. The server reconstructs one complete edit per sentenceId from compatible original-coordinate changes; do not output a separate edit.'},explanation}),MAX_EVIDENCE),
     punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,{...shape({decision:choice(['correction','valid','context_needed']),explanation}),description:'Candidate '+c.id+' in '+c.sentenceId+': marker '+JSON.stringify(c.marker)+' at original offset '+c.offset+'. A correction requires a punctuation evidence span containing this entire marker AND an actual change at the marker or its immediately following delimiter, plus the exactly reconstructed edit. A change elsewhere in a broad quote is insufficient.'}])))
   });
-  // Structured outputs follow schema key order. Emit evidence before the redundant full
-  // replacement sentences so generation can compose edits from already chosen spans.
+  // The reviewer supplies only evidence; the server derives complete sentence edits.
+  // Legacy mock responses with explicit edits still receive full strict validation.
+  delete schema.properties.edits;
+  const lessons=schema.properties.learningPoints.items;
+  for(const lesson of lessons.anyOf||[lessons])
+    lesson.properties.improvedExample.description='For a language correction, use an English example or an empty string; the server replaces it with the exact reconstructed sentence for evidenceId after validating the audit. Other lessons need a short English example.';
   const {languageAudit,...assessmentProperties}=schema.properties;
   schema.properties={languageAudit,...assessmentProperties};
   schema.required=Object.keys(schema.properties);
@@ -1141,6 +1159,50 @@ export function combineEvidenceChanges(original,spans) {
     reconstructed=reconstructed.slice(0,p.start)+p.replacementQuote+reconstructed.slice(p.end);
   return {patches,conflicts,reconstructed};
 }
+// The independent reviewer no longer generates a redundant whole-sentence edit.
+// Construct it only when every original quote and every patch is sound; never
+// silently discard a bad span, a conflict or an unexplained additional change.
+export function constructAuditedEdits(data,sentences) {
+  const corrections=data?.languageAudit?.corrections,byId=new Map(eligibleSentences(sentences).map(s=>[s.id,s]));
+  if(!Array.isArray(corrections)) return ['languageAudit.corrections: exact original evidence is required to construct edits.'];
+  const issues=[],groups=new Map();
+  if(corrections.length>MAX_EVIDENCE) issues.push('languageAudit.corrections: too many evidence spans for a focused review.');
+  for(const [index,p] of corrections.entries()) {
+    const original=byId.get(p?.sentenceId)?.text,quote=p?.originalQuote;
+    if(!original||typeof quote!=='string'||!quote||typeof p.replacementQuote!=='string'||
+       quote===p.replacementQuote||!['grammar','punctuation','word_choice'].includes(p.category)||!text(p.explanation)) {
+      issues.push(`languageAudit.corrections[${index}]: exact changed original evidence, category, sentence ID and explanation are required.`);continue;
+    }
+    const start=original.indexOf(quote);
+    if(start<0||original.indexOf(quote,start+1)>=0) {
+      issues.push(`languageAudit.corrections[${index}].originalQuote: quote must occur exactly once in the ORIGINAL sentence.`);continue;
+    }
+    const list=groups.get(p.sentenceId)||[];
+    list.push({...p,index,changes:evidenceChanges(quote,p.replacementQuote,start)});
+    groups.set(p.sentenceId,list);
+  }
+  if(groups.size>MAX_EDITS) issues.push(`languageAudit.corrections: at most ${MAX_EDITS} distinct corrected sentences.`);
+  const edits=[];
+  for(const [sentenceId,spans] of groups) {
+    const original=byId.get(sentenceId).text,plan=combineEvidenceChanges(original,spans);
+    if(plan.conflicts.length||plan.reconstructed===original||!plan.patches.length) {
+      issues.push(`languageAudit.corrections: ${sentenceId} has conflicting or unchanged original-coordinate changes; rebuild all spans from the original sentence.`);continue;
+    }
+    edits.push({kind:'correction',sentenceId,replacement:plan.reconstructed,
+      reason:spans.map(p=>p.explanation).join(' ')});
+  }
+  if(issues.length) {data.edits=[];return issues;}
+  data.edits=edits;
+  for(const point of Array.isArray(data.learningPoints)?data.learningPoints:[]) {
+    const edit=edits.find(e=>e.sentenceId===point?.evidenceId);
+    if(point?.category==='language'&&point.kind==='correction'&&edit) point.improvedExample=edit.replacement;
+  }
+  for(const insight of Array.isArray(data.sentenceInsights)?data.sentenceInsights:[]) {
+    const edit=edits.find(e=>e.sentenceId===insight?.sentenceId);
+    if(insight?.kind==='correction'&&edit) insight.betterVersion=edit.replacement;
+  }
+  return [];
+}
 function punctuationEvidence(span,candidate) {
   if(span.category!=='punctuation'||span.start>candidate.offset||span.end<candidate.offset+candidate.marker.length) return false;
   // Merely quoting a marker is insufficient: an actual change must touch it or
@@ -1153,7 +1215,9 @@ export function languageAuditIssues(data,sentences) {
   if(!obj(audit)) return ['languageAudit: independent review must record sentence coverage, correction evidence and punctuation decisions.'];
   if(!Array.isArray(audit.checkedSentenceIds)||audit.checkedSentenceIds.length!==byId.size||new Set(audit.checkedSentenceIds).size!==byId.size||audit.checkedSentenceIds.some(id=>!byId.has(id)))
     issues.push('languageAudit.checkedSentenceIds: check every eligible original sentence exactly once, including sentences without edits.');
-  if(!Array.isArray(audit.corrections)||audit.corrections.length>96) return [...issues,'languageAudit.corrections: provide up to 96 exact evidence spans.'];
+  if(!Array.isArray(audit.corrections)||audit.corrections.length>MAX_EVIDENCE) return [...issues,`languageAudit.corrections: provide up to ${MAX_EVIDENCE} exact evidence spans.`];
+  if(new Set(audit.corrections.map(p=>p?.sentenceId)).size>MAX_EDITS)
+    issues.push(`languageAudit.corrections: focus on at most ${MAX_EDITS} corrected sentences.`);
   const edits=Array.isArray(data.edits)?data.edits:[],spans=new Map();
   for(const [index,p] of audit.corrections.entries()) {
     const field='languageAudit.corrections['+index+']',sentence=byId.get(p?.sentenceId);
@@ -1219,7 +1283,7 @@ export function auditRepairContext(data,sentences) {
     else if(candidate) affected.add(candidates.find(c=>c.id===candidate[1])?.sentenceId);
     else for(const s of eligibleSentences(sentences)) affected.add(s.id);
   }
-  return {issues, instruction:'Rebuild ALL evidence spans and the edit together for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. targetChanges and unaccountedChanges are DIFF HINTS, not proof of a necessary correction. For EACH proposed change decide whether the original is genuinely wrong; if not, remove it from the edit and dependent criticism. If justified, quote the ORIGINAL, not an intermediate draft; verify unique offsets, nonconflicting changes and exact whole-sentence reconstruction. Keep unrelated valid findings. Match every correction decision to punctuation evidence containing and changing the marker or its following delimiter. Reconcile dependent explanations and insights. Return the complete review schema; every final check still applies.',
+  return {issues, instruction:'Rebuild ALL evidence spans for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. The server constructs complete edits from the evidence; do not output a separate full-sentence edit. targetChanges and unaccountedChanges are DIFF HINTS, not proof of a necessary correction. For EACH proposed change decide whether the original is genuinely wrong; if not, remove it and dependent criticism. If justified, quote the ORIGINAL, not an intermediate draft; verify unique offsets, nonconflicting changes and exact whole-sentence reconstruction. Keep unrelated valid findings. Match every correction decision to punctuation evidence containing and changing the marker or its following delimiter. Reconcile dependent explanations and insights. Return the complete review schema; every final check still applies.',
     sentences:eligibleSentences(sentences).filter(s=>affected.has(s.id)).map(s=>{
       const spans=corrections.flatMap((p,index)=>{
         if(p?.sentenceId!==s.id) return [];
@@ -1421,9 +1485,14 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                   return fail('ASSESSMENT_INCOMPLETE','The AI could not consistently identify the writing task. Please include the complete instructions and sources.',502,origin,
                     {diagnostics:{...diagnostics(phase),issues:['Task classification disagreement remains; the source-reading or assessment/review retry budget is exhausted.']}});
                 }
+                const constructing=phase==='review'&&parsed?.edits===undefined;
+                const constructionIssues=constructing?constructAuditedEdits(parsed,sentences):[];
+                if(constructing&&!constructionIssues.length)
+                  record.normalisations.push({field:'edits',from:'languageAudit.corrections',to:parsed.edits.length,
+                    reason:'Server reconstructed whole sentences from exact original evidence.'});
                 const referenceIssues=resolveSourceReferences(parsed,payload.sourceReading);
                 parsed=normaliseCoaching(applyFeedbackPolicy(normaliseEvidence(normaliseEdits(parsed,sentences),sentences),payload,sentences),sentences,record.normalisations);
-                validationIssues=[...referenceIssues,...validate(parsed,payload,sentences),...(phase==='review'&&parsed.languageAudit===undefined?languageAuditIssues(parsed,sentences):[])];
+                validationIssues=[...constructionIssues,...referenceIssues,...validate(parsed,payload,sentences),...(phase==='review'&&parsed.languageAudit===undefined?languageAuditIssues(parsed,sentences):[])];
                 if(phase==='review') auditRepair=auditRepairContext(parsed,sentences);
                 record.validationMs=Math.max(0,Date.now()-validationStarted);
                 if(!validationIssues.length && parsed.sampleSuitable===false)

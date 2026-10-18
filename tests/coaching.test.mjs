@@ -406,8 +406,22 @@ function auditedWire() {
  d.languageAudit={checkedSentenceIds:ss.map(s=>s.id),corrections:d.edits.map(e=>({sentenceId:e.sentenceId,category:'punctuation',originalQuote:ss.find(s=>s.id===e.sentenceId).text,replacementQuote:e.replacement,explanation:e.reason})),punctuationChecks:Object.fromEntries(punctuationCandidates(ss).map(c=>[c.id,{decision:d.edits.some(e=>e.sentenceId===c.sentenceId)?'correction':'valid',explanation:'The linking marker requires a delimiter in this context.'}]))};
  return d;
 }
+await test('C2 reviewer supplies audit evidence without redundant edits',async()=>{
+ const bodies=[];globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));const d=bodies.length===1?structuredClone(plan):auditedWire();
+  if(bodies.length===2)delete d.languageAudit;
+  if(bodies.length===3)delete d.edits;
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+ };
+ const r=await workerImpl.fetch(request(),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));
+ assert(!('edits' in bodies[2].response_format.json_schema.schema.properties));
+ assert(d.nextDraft.includes('however, effective'));assert(d.nextDraft.includes('not widely recognized'));
+ assert.equal(d.sourceReview[1].coverage,'distorted');assert.equal(d.diagnostics.phaseAttempts.review,1);
+});
 await test('C2 schema requires a real source ID for interpretation and generates findings before lessons',()=>{
  const schema=responseSchema(ss,plan,'es'),branches=schema.properties.learningPoints.items.anyOf;
+ assert.deepEqual(schema.properties.taskReview.properties.taskType.enum,['source_essay']);
+ assert.deepEqual(schema.properties.taskReview.properties.basis.enum,['assumed']);
  assert.deepEqual(branches[0].properties.category.enum,['source_interpretation']);assert(!branches[0].properties.sourcePointId.enum.includes(''));
  assert(!branches[1].properties.category.enum.includes('source_interpretation'));assert(branches[1].properties.sourcePointId.enum.includes(''));
  assert(Object.keys(schema.properties).indexOf('sourceReviewById')<Object.keys(schema.properties).indexOf('learningPoints'));
@@ -450,7 +464,7 @@ for(const persistent of [false,true]) await test('C2 language lesson with shorte
  const instruction=bodies[3].messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
  assert(instruction.includes('A language correction learning point must match an actual edit and its complete replacement.'));
  assert(instruction.includes(JSON.stringify(full)));assert(instruction.includes('not a shortened fragment'));
- assert.match(bodies[2].messages[0].content,/copy its ENTIRE replacement verbatim/);
+ assert.match(bodies[2].messages[0].content,/server fills\s+improvedExample/);
  if(persistent){assert.equal(r.status,502);assert.equal(d.code,'ASSESSMENT_INCOMPLETE');assert.equal(d.nextDraft,undefined);}
  else{assert.equal(r.status,200,JSON.stringify(d));assert.equal(d.learningPoints.find(p=>p.category==='language').improvedExample,full);assert(d.nextDraft.includes(full));assert(d.nextDraft.includes('for parents observe'));assert.equal(d.sourceReview[1].coverage,'distorted');}
 });
