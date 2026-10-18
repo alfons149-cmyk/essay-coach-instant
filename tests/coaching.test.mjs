@@ -35,6 +35,8 @@ let checks=0;
 async function test(name,fn){await fn();checks++;console.log('PASS',name);}
 await test('source-only schema is strict and verifies literal non-overlapping source bodies',()=>{
  assert.equal(taskReadingSchema().additionalProperties,false);assert.deepEqual(validateTaskReading(plan,payload.task),[]);
+ assert.equal(taskReadingSchema().properties.sources.items.properties.keyPoints.minItems,1);
+ assert.equal(taskReadingSchema().properties.sources.items.properties.keyPoints.maxItems,1);
  const bad=structuredClone(plan);bad.sources[1].sourceQuote=bad.sources[0].sourceQuote;
  assert(validateTaskReading(bad,payload.task).some(x=>x.includes('non-overlapping')));
  bad.sources[1].sourceQuote='Invented source quotation that is not present in the original writing task.';
@@ -133,6 +135,24 @@ await test('failed literal source evidence is repaired before any essay assessme
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200);assert.equal(calls,4);
  assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:1});
 });
+await test('captured mixed history and position source reading is retried before assessment',async()=>{
+ const bodies=[];globalThis.fetch=async(_,o)=>{
+  bodies.push(JSON.parse(o.body));
+  if(bodies.length===1){
+   const mixed=structuredClone(plan);
+   mixed.sources[1].keyPoints.unshift({quote:'Homeschooling has been around over one hundred years',meaning:'Homeschooling has a long history and is therefore an established educational choice.'});
+   return completion(mixed);
+  }
+  return completion(bodies.length===2?plan:assessment());
+ };
+ const response=await worker.fetch(request(),env),result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,4);
+ assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:1});
+ assert(result.diagnostics.history[0].checks.some(x=>x.message.includes('exactly one overall-position key point')));
+ assert.equal(result.sourceReview.length,2);
+ assert.equal(result.sourceReview[1].coverage,'distorted');
+ assert.deepEqual(result.sourceReview[1].essayEvidenceIds,[mistaken]);
+});
 await test('persistent source-reading failure returns no assessment or corrected draft',async()=>{
  let calls=0;globalThis.fetch=async()=>{calls++;return completion({...plan,sources:[]});};
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,2);
@@ -213,14 +233,16 @@ await test('missing and invented source IDs are rejected, never fuzzily matched 
  assert(issues.some(x=>x.includes('Missing source review')));assert(issues.some(x=>x.includes('Unknown source point')));
  assert(issues.some(x=>x.includes('unknown sourcePointId')));assert(!d.sourceReview.some(r=>r.sourcePointId==='UNKNOWN'));
 });
-await test('an accurate historical detail remains covered beside a distorted overall position',()=>{
+await test('two live-style C2 source points that mix history and overall position are rejected at task reading',()=>{
  const reading=structuredClone(plan),historyQuote='Homeschooling has been around over one hundred years';
- reading.sources[1].keyPoints.unshift({quote:historyQuote,meaning:'The practice has existed for over a century.'});
- const d=assessment();d.sourceReview.splice(1,0,{sourceQuote:historyQuote,point:'Long history',coverage:'covered',evidenceRelation:'agrees',essayEvidenceIds:[although],explanation:'The learner correctly reports the long history, even though another sentence reverses the author’s conclusion.'});
- assert.deepEqual(validate(d,{...payload,sourceReading:reading},ss),[]);
- assert.equal(d.sourceReview[1].coverage,'covered');assert.equal(d.sourceReview[2].coverage,'distorted');
- const schema=responseSchema(ss,reading,'nl');
- assert.match(schema.properties.sourceReviewById.properties.T2P1.properties.evidenceRelation.description,/THIS source point/);
+ reading.sources[1].keyPoints.unshift({quote:historyQuote,meaning:'The practice has existed for over a century and is well-established.'});
+ assert(validateTaskReading(reading,payload.task).some(x=>x.includes('exactly one overall-position key point')));
+ const schema=taskReadingSchema(sourceInput(payload.task));
+ assert.equal(schema.properties.sources.items.properties.keyPoints.maxItems,1);
+ const d=assessment();d.sourceReview[1].explanation='The overall position is reversed in S10; the historical detail in S11 is accurately reported.';
+ assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+ assert.equal(d.sourceReview[1].coverage,'distorted');
+ assert.match(responseSchema(ss,plan,'nl').properties.sourceReviewById.properties.T2P1.properties.evidenceRelation.description,/THIS source point/);
 });
 await test('focus and first learning point are reconciled using valid existing source evidence',()=>{
  const d=assessment();d.learningPoints.reverse();d.keyFocus={action:'Fix a comma.',evidenceId:punctuation,explanation:'Punctuation first.'};

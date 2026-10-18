@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.8 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.9 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.8";
+const VERSION = "2026-10-18-coaching-v5.6.9";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -74,13 +74,12 @@ For C2, two substantial expository passages can be source_essay even when the ex
 are absent: use instructionStatus assumed. Missing instructions do not make the supplied source
 bodies disappear. Other means an identifiable different task; unclear means genuinely indeterminate.
 Copy each source body as one exact contiguous sourceQuote (without inventing or correcting words).
-For each source select one or two central keyPoints with exact short quotes and a paraphrased meaning.
-Always include the author's overall position as a key point. Supporting numbers or examples are
-not separate central arguments unless they are essential to the position. Prefer the statement
-of what the author argues over an incidental statistic.
-Make keyPoints distinct propositions. If duration or historical background is evidence that
-the author's position is well-established, include it in that point's explanation instead
-of creating a second, overlapping keyPoint. A second point must be an independent central claim.
+For each source return exactly ONE keyPoint for the author's overall position, anchored to an
+exact short quote expressing the author's conclusion. Do not choose a heading that the body
+refutes. Do not choose a duration, historical fact, statistic, example or reason as the central
+claim when it merely supports the author's conclusion. Include such supporting facts in the
+position or summary instead. The single point must be one assessable proposition; do not
+join the main claim and supporting facts as separate things to grade in its meaning.
 instructionStatus is explicit when the writing instructions are supplied; assumed when two source
 texts imply the usual C2 summary/evaluation essay but instructions are absent; missing when the
 writing task cannot be determined. For other tasks use sources=[] and follow their actual genre.
@@ -101,7 +100,7 @@ Do not require every minor detail or one particular interpretation. Assess omiss
 importance to the task. Do not credit a generic concluding agreement as sustained evaluation.
 Do not assume all C2 writing is a two-source task. Judge the supplied instructions; if only
 sources are supplied, state any assumed summary/evaluation task in feedback and limit certainty.
-Populate sourceReview with up to six central points, exact short quotations from TASK,
+Populate sourceReview with the central position of each source, exact short quotations from TASK,
 essayEvidenceIds (empty for an absent idea), coverage and a specific explanation.
 For EACH source point, compare the author's claim with every cited student sentence.
 Record evidenceRelation: agrees if the cited claim is compatible with the author,
@@ -109,10 +108,10 @@ contradicts if ANY cited claim attributes the OPPOSITE position to the author,
 absent if the point is not mentioned. A partly accurate paragraph can still contain
 an explicit contradiction: mark that point distorted, not partial. Partial means
 the claim is compatible but omits a central qualification or part of the argument.
-Judge EACH keyPoint's own proposition. A wrong overall position does not turn a separately
-accurate historical fact into a contradiction of that fact. Cite only student sentences that
-actually make a claim about the point being graded; describe the broader reversal in the point
-about the author's overall position. Do not duplicate a reversal across compatible facts.
+Judge EACH keyPoint's own proposition. A wrong overall position does not make the student's
+accurate historical details wrong. Cite the sentence that states the opposite overall claim;
+mention accurately reported supporting facts in the explanation without grading them as a
+second, overlapping source position.
 An absent supporting detail does not erase an opposite claim. Do not infer the
 author's position from a heading that the body rejects. Ground this decision in
 the actual body and the student's original sentence; do not require agreement.
@@ -363,9 +362,9 @@ If a cited claim reverses it, use evidenceRelation=contradicts and coverage=dist
 even when the essay also omits supporting details. Use partial only for a compatible
 but incomplete account; use absent/missing for no claim. Reconcile source_accuracy,
 the leading learning point and score reasons with the actual source evidence.
-Keep keyPoints separate: an accurate statement about the source's history remains covered
-even if another sentence reverses the author's overall conclusion. Link that other sentence
-to the overall-position point, not to the accurate historical claim.
+Each source has one overall-position keyPoint. An accurate historical detail remains accurate
+even if another sentence reverses that overall conclusion. Explain the accurate detail, but
+grade the overall-position point using the sentence that actually makes the reversed claim.
 Look for existing examples before claiming examples are absent. Prioritise the most consequential
 learning need, not an arbitrary stylistic preference. Every criticism needs a concrete explanation.
 Review all four scores independently; retain a score when justified, change it only on evidence.
@@ -610,7 +609,7 @@ export function taskReadingSchema(sourceContract=null) {
   return shape({taskType:choice(sourceContract?['source_essay']:['source_essay','other','unclear']),
     instructionStatus:choice(sourceContract?[sourceContract.explicit?'explicit':'assumed']:['explicit','assumed','missing']),
     summary:str,sources:arr(shape({label:str,sourceQuote:sourceContract?choice(sourceContract.bodies):str,
-      position:str,keyPoints:arr(shape({quote:str,meaning:str}),2,1)}),2,sourceContract?2:0)});
+      position:str,keyPoints:arr(shape({quote:str,meaning:str}),1,1)}),2,sourceContract?2:0)});
 }
 export function validateTaskReading(data,task,sourceContract=null) {
   const issues=[];
@@ -624,8 +623,8 @@ export function validateTaskReading(data,task,sourceContract=null) {
   const spans=[];
   for(const source of data.sources) {
     const quote=text(source?.sourceQuote),start=task.indexOf(quote);
-    if(!text(source?.label)||!text(source?.position)||quote.length<40||start<0||!Array.isArray(source.keyPoints)||!source.keyPoints.length||source.keyPoints.length>2) {
-      issues.push('Each source needs its exact body, position and one or two key points.');continue;
+    if(!text(source?.label)||!text(source?.position)||quote.length<40||start<0||!Array.isArray(source.keyPoints)||source.keyPoints.length!==1) {
+      issues.push('Each source needs its exact body, position and exactly one overall-position key point; put supporting history and reasons in the position or summary.');continue;
     }
     if(spans.some(s=>start<s.end&&start+quote.length>s.start)) issues.push('Source bodies must be distinct, non-overlapping passages.');
     spans.push({start,end:start+quote.length});
