@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import workerImpl,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics,punctuationCandidates,languageAuditIssues,sourceInput} from '../apps/worker/src/worker.js';
-import {withReviewContract} from './helpers/review-contract.mjs';
+import {withReviewContract,syntheticSpans} from './helpers/review-contract.mjs';
 const worker=withReviewContract(workerImpl);
 const input=JSON.parse(await readFile(new URL('./fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
 const {sourceBodies,...payload}=input,ss=numberSentences(payload.essay);
@@ -212,6 +212,15 @@ await test('missing and invented source IDs are rejected, never fuzzily matched 
  const issues=resolveSourceReferences(d,plan);
  assert(issues.some(x=>x.includes('Missing source review')));assert(issues.some(x=>x.includes('Unknown source point')));
  assert(issues.some(x=>x.includes('unknown sourcePointId')));assert(!d.sourceReview.some(r=>r.sourcePointId==='UNKNOWN'));
+});
+await test('an accurate historical detail remains covered beside a distorted overall position',()=>{
+ const reading=structuredClone(plan),historyQuote='Homeschooling has been around over one hundred years';
+ reading.sources[1].keyPoints.unshift({quote:historyQuote,meaning:'The practice has existed for over a century.'});
+ const d=assessment();d.sourceReview.splice(1,0,{sourceQuote:historyQuote,point:'Long history',coverage:'covered',evidenceRelation:'agrees',essayEvidenceIds:[although],explanation:'The learner correctly reports the long history, even though another sentence reverses the author’s conclusion.'});
+ assert.deepEqual(validate(d,{...payload,sourceReading:reading},ss),[]);
+ assert.equal(d.sourceReview[1].coverage,'covered');assert.equal(d.sourceReview[2].coverage,'distorted');
+ const schema=responseSchema(ss,reading,'nl');
+ assert.match(schema.properties.sourceReviewById.properties.T2P1.properties.evidenceRelation.description,/THIS source point/);
 });
 await test('focus and first learning point are reconciled using valid existing source evidence',()=>{
  const d=assessment();d.learningPoints.reverse();d.keyFocus={action:'Fix a comma.',evidenceId:punctuation,explanation:'Punctuation first.'};
@@ -429,7 +438,8 @@ console.log(`${checks} coaching checks passed; model calls mocked, including neg
 
 function auditedWire() {
  const d=wire(assessment());
- d.languageAudit={checkedSentenceIds:ss.map(s=>s.id),corrections:d.edits.map(e=>({sentenceId:e.sentenceId,category:'punctuation',originalQuote:ss.find(s=>s.id===e.sentenceId).text,replacementQuote:e.replacement,explanation:e.reason})),punctuationChecks:Object.fromEntries(punctuationCandidates(ss).map(c=>[c.id,{decision:d.edits.some(e=>e.sentenceId===c.sentenceId)?'correction':'valid',explanation:'The linking marker requires a delimiter in this context.'}]))};
+ const candidates=punctuationCandidates(ss);
+ d.languageAudit={checkedSentenceIds:ss.map(s=>s.id),corrections:d.edits.flatMap(e=>syntheticSpans(ss.find(s=>s.id===e.sentenceId).text,e.replacement,e.sentenceId,candidates)),punctuationChecks:Object.fromEntries(candidates.map(c=>[c.id,{decision:d.edits.some(e=>e.sentenceId===c.sentenceId)?'correction':'valid',explanation:'The linking marker requires a delimiter in this context.'}]))};
  return d;
 }
 await test('C2 reviewer supplies audit evidence without redundant edits',async()=>{

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker,{numberSentences,punctuationCandidates,reviewSchema,languageAuditIssues,modelConfiguration,normaliseCoaching,validate,auditRepairContext,constructAuditedEdits} from '../apps/worker/src/worker.js';
+import worker,{numberSentences,punctuationCandidates,reviewSchema,languageAuditIssues,evidenceChanges,modelConfiguration,normaliseCoaching,validate,auditRepairContext,constructAuditedEdits} from '../apps/worker/src/worker.js';
 const cases=JSON.parse(await readFile(new URL('./fixtures/language-audit-cases.json',import.meta.url),'utf8'));
 const originalFetch=globalThis.fetch;
 let checks=0;
@@ -99,6 +99,31 @@ await test('invented quotations overlapping evidence and extra rewrites are reje
  const ss=numberSentences(cases[0].essay);let d=sample(cases[0]);d.languageAudit.corrections[0].originalQuote='university have';assert(languageAuditIssues(d,ss).some(s=>s.includes('originalQuote')));
  d=sample(cases[0]);d.languageAudit.corrections.push({...d.languageAudit.corrections[0],replacementQuote:'university needed'});assert(languageAuditIssues(d,ss).some(s=>s.includes('conflict')));
  d=sample(cases[0]);d.edits[0].replacement+=' It will boost the economy.';assert(languageAuditIssues(d,ss).some(s=>s.includes('EVERY change')));
+});
+await test('captured C2 broad rewrite needs separate local evidence and preserves a valid semicolon',()=>{
+ const original='Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.';
+ const overbroad='Homeschooling has existed for over a century, and what is more, it existed before our current public education system.';
+ const ss=numberSentences(original),d={edits:[{kind:'correction',sentenceId:'S1',replacement:overbroad}],languageAudit:{checkedSentenceIds:['S1'],corrections:[{
+  sentenceId:'S1',category:'grammar',originalQuote:original,replacementQuote:overbroad,
+  explanation:'Remove unsuitable although and punctuate what is more.'}],punctuationChecks:{P1:{decision:'correction',explanation:'Add the comma after what is more.'}}}};
+ assert(evidenceChanges(original,overbroad).length>2);
+ assert(languageAuditIssues(d,ss).some(x=>x.includes('split broad evidence')));
+ assert(constructAuditedEdits(structuredClone(d),ss).some(x=>x.includes('split broad evidence')));
+ const minimal='Homeschooling has existed for over a century; what is more, homeschooling existed before our current public education system.';
+ d.edits[0].replacement=minimal;
+ d.languageAudit.corrections=[
+  {sentenceId:'S1',category:'grammar',originalQuote:'Although, homeschooling',replacementQuote:'Homeschooling',explanation:'The following claim adds support rather than conceding a contrast.'},
+  {sentenceId:'S1',category:'punctuation',originalQuote:'what is more homeschooling',replacementQuote:'what is more, homeschooling',explanation:'The introductory phrase needs a comma.'}];
+ assert.deepEqual(languageAuditIssues(d,ss),[]);
+ assert.deepEqual(constructAuditedEdits(structuredClone(d),ss),[]);
+});
+await test('three independent necessary grammar repairs work as three local spans',()=>{
+ const original='He go, she eat, and it seem unusual.';
+ const ss=numberSentences(original),d={edits:[{kind:'correction',sentenceId:'S1',replacement:'He goes, she eats, and it seems unusual.'}],languageAudit:{checkedSentenceIds:['S1'],corrections:[
+  {sentenceId:'S1',category:'grammar',originalQuote:'He go',replacementQuote:'He goes',explanation:'He takes goes.'},
+  {sentenceId:'S1',category:'grammar',originalQuote:'she eat',replacementQuote:'she eats',explanation:'She takes eats.'},
+  {sentenceId:'S1',category:'grammar',originalQuote:'it seem',replacementQuote:'it seems',explanation:'It takes seems.'}],punctuationChecks:{}}};
+ assert.deepEqual(languageAuditIssues(d,ss),[]);
 });
 await test('style and source interpretation are not necessary language categories',()=>{
  for(const category of ['style','source_interpretation']){const d=sample(cases[0]);d.languageAudit.corrections[0].category=category;assert(languageAuditIssues(d,numberSentences(cases[0].essay)).some(s=>s.includes('necessary language category')));}

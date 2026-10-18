@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.6 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.7 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.6";
+const VERSION = "2026-10-18-coaching-v5.6.7";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -78,6 +78,9 @@ For each source select one or two central keyPoints with exact short quotes and 
 Always include the author's overall position as a key point. Supporting numbers or examples are
 not separate central arguments unless they are essential to the position. Prefer the statement
 of what the author argues over an incidental statistic.
+Make keyPoints distinct propositions. If duration or historical background is evidence that
+the author's position is well-established, include it in that point's explanation instead
+of creating a second, overlapping keyPoint. A second point must be an independent central claim.
 instructionStatus is explicit when the writing instructions are supplied; assumed when two source
 texts imply the usual C2 summary/evaluation essay but instructions are absent; missing when the
 writing task cannot be determined. For other tasks use sources=[] and follow their actual genre.
@@ -106,6 +109,10 @@ contradicts if ANY cited claim attributes the OPPOSITE position to the author,
 absent if the point is not mentioned. A partly accurate paragraph can still contain
 an explicit contradiction: mark that point distorted, not partial. Partial means
 the claim is compatible but omits a central qualification or part of the argument.
+Judge EACH keyPoint's own proposition. A wrong overall position does not turn a separately
+accurate historical fact into a contradiction of that fact. Cite only student sentences that
+actually make a claim about the point being graded; describe the broader reversal in the point
+about the author's overall position. Do not duplicate a reversal across compatible facts.
 An absent supporting detail does not erase an opposite claim. Do not infer the
 author's position from a heading that the body rejects. Ground this decision in
 the actual body and the student's original sentence; do not require agreement.
@@ -356,6 +363,9 @@ If a cited claim reverses it, use evidenceRelation=contradicts and coverage=dist
 even when the essay also omits supporting details. Use partial only for a compatible
 but incomplete account; use absent/missing for no claim. Reconcile source_accuracy,
 the leading learning point and score reasons with the actual source evidence.
+Keep keyPoints separate: an accurate statement about the source's history remains covered
+even if another sentence reverses the author's overall conclusion. Link that other sentence
+to the overall-position point, not to the accurate historical claim.
 Look for existing examples before claiming examples are absent. Prioritise the most consequential
 learning need, not an arbitrary stylistic preference. Every criticism needs a concrete explanation.
 Review all four scores independently; retain a score when justified, change it only on evidence.
@@ -729,7 +739,7 @@ export function responseSchema(sentences,reading=null,language='en') {
   if(reading?.taskType==='source_essay') {
     delete schema.properties.sourceReview;
     schema.properties.sourceReviewById=shape(Object.fromEntries(catalog.map(point=>[point.id,
-      shape({point:str,coverage:choice(['covered','partial','missing','distorted']),evidenceRelation:{...choice(['agrees','contradicts','absent']),description:'Compare the SOURCE BODY author position to each cited ORIGINAL essay sentence. agrees: compatible even if incomplete; contradicts: any cited sentence reverses the position, even when other details are omitted; absent: no relevant claim. An opposite position is distorted, not partial.'},essayEvidenceIds:arr(id),explanation:str})])));
+      shape({point:str,coverage:choice(['covered','partial','missing','distorted']),evidenceRelation:{...choice(['agrees','contradicts','absent']),description:'Compare THIS source point proposition with the ORIGINAL essay sentence(s) cited for THIS point. agrees: compatible even if incomplete; contradicts: an essay claim reverses THIS point; absent: no relevant claim. A false overall conclusion belongs to the overall-position point, not a separately accurate historical detail.'},essayEvidenceIds:arr(id),explanation:str})])));
     const learning=schema.properties.learningPoints.items;
     delete learning.properties.sourceQuote;
     learning.properties.sourcePointId={...choice(['',...catalog.map(p=>p.id)]),description:'Choose the sourceCatalog ID for the source being discussed, matching sourceReviewById and evidenceId. Empty only when this lesson does not cite a source.'};
@@ -1093,6 +1103,10 @@ but actual changes must be compatible. The server builds the ENTIRE edited sente
 from the explained changes; do not output a separate edit. For insertions include adjacent original words or
 punctuation in the quote. Never hide optional style, source interpretation or invented facts inside
 an edit. Preserve meaning. Source issues belong in sourceReview/taskReview and teaching exercises.
+Use separate, local quotes for separate defects. A single quote may contain at most two distinct
+changes; split broader changes into independent evidence spans. Do not turn a correct semicolon
+into comma-and, or replace a correctly repeated noun with a pronoun, merely because you are
+removing an unsuitable connector elsewhere in the sentence. Preserve correct structure and wording.
 Resolve EVERY punctuationCandidates ID in languageAudit.punctuationChecks as correction, valid
 or context_needed with a contextual explanation. Discourse linking adverbs normally need a following
 comma; degree/concessive however is different. Do not change a valid or uncertain construction
@@ -1211,7 +1225,9 @@ export function constructAuditedEdits(data,sentences) {
       issues.push(`languageAudit.corrections[${index}].originalQuote: quote must occur exactly once in the ORIGINAL sentence.`);continue;
     }
     const list=groups.get(p.sentenceId)||[];
-    list.push({...p,index,changes:evidenceChanges(quote,p.replacementQuote,start)});
+    const changes=evidenceChanges(quote,p.replacementQuote,start);
+    if(changes.length>2) issues.push(`languageAudit.corrections[${index}]: split broad evidence into local spans of at most two independent changes; preserve unrelated correct structure and wording.`);
+    list.push({...p,index,changes});
     groups.set(p.sentenceId,list);
   }
   if(groups.size>MAX_EDITS) issues.push(`languageAudit.corrections: at most ${MAX_EDITS} distinct corrected sentences.`);
@@ -1267,7 +1283,9 @@ export function languageAuditIssues(data,sentences) {
     if(start<0||sentence.text.indexOf(p.originalQuote,start+1)>=0) {issues.push(field+'.originalQuote: quote must occur exactly once in the ORIGINAL sentence; include enough context.');continue;}
     if(!edits.some(e=>e?.kind==='correction'&&e.sentenceId===p.sentenceId)) issues.push(field+'.sentenceId: evidence needs a matching necessary correction edit.');
     const list=spans.get(p.sentenceId)||[];
-    list.push({...p,index,start,end,changes:evidenceChanges(p.originalQuote,p.replacementQuote,start)});spans.set(p.sentenceId,list);
+    const changes=evidenceChanges(p.originalQuote,p.replacementQuote,start);
+    if(changes.length>2) issues.push(field+': split broad evidence into local spans of at most two independent changes; preserve unrelated correct structure and wording.');
+    list.push({...p,index,start,end,changes});spans.set(p.sentenceId,list);
   }
   const plans=new Map();
   for(const [id,list] of spans) {

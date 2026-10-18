@@ -1,7 +1,7 @@
 // Real AI measurement; one local request by default, no credentials read/printed.
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
-const options={base:'http://127.0.0.1:8787',case:'homeschooling',language:'es',repeat:'1','expected-version':'2026-10-18-coaching-v5.6.6',out:'/tmp/essaycoach-live'};
+const options={base:'http://127.0.0.1:8787',case:'homeschooling',language:'es',repeat:'1','expected-version':'2026-10-18-coaching-v5.6.7',out:'/tmp/essaycoach-live'};
 for(let i=2;i<process.argv.length;i+=2){const name=process.argv[i].replace(/^--/,'');if(!Object.hasOwn(options,name)||!process.argv[i+1])throw new Error('Use --base, --case, --language, --repeat, --expected-version or --out with a value.');options[name]=process.argv[i+1];}
 const repeats=Number(options.repeat),base=new URL(options.base);
 if(!Number.isInteger(repeats)||repeats<1||repeats>10||!['en','nl','es'].includes(options.language))throw new Error('Use 1–10 repetitions and language en/nl/es.');
