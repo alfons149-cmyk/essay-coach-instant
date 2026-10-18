@@ -88,7 +88,10 @@ function wire(d) {
  const catalog=sourceCatalog(plan);
  copy.sourceReviewById=Object.fromEntries(catalog.map(p=>{
   const review=copy.sourceReview.find(s=>s.sourceQuote===p.quote);
-  const {sourceQuote,...entry}=review;return [p.id,entry];
+  const {sourceQuote,essayEvidenceIds,accurateEvidenceIds,...entry}=review;
+  entry.evidenceItems=[...essayEvidenceIds.map(sentenceId=>({sentenceId,relation:review.coverage==='distorted'?'contradicts':'agrees'})),
+   ...(accurateEvidenceIds||[]).map(sentenceId=>({sentenceId,relation:'agrees'}))];
+  return [p.id,entry];
  }));
  delete copy.sourceReview;
  for(const point of copy.learningPoints) {
@@ -233,6 +236,30 @@ await test('missing and invented source IDs are rejected, never fuzzily matched 
  assert(issues.some(x=>x.includes('Missing source review')));assert(issues.some(x=>x.includes('Unknown source point')));
  assert(issues.some(x=>x.includes('unknown sourcePointId')));assert(!d.sourceReview.some(r=>r.sourcePointId==='UNKNOWN'));
 });
+await test('captured mixed evidence shows only S10 as the distortion while keeping accurate details separate',()=>{
+ const d=wire(assessment()),finding=d.sourceReviewById.T2P1;
+ finding.evidenceItems.push({sentenceId:although,relation:'agrees'},
+  {sentenceId:id('Minority families'),relation:'agrees'});
+ finding.explanation='The overall claim in S10 is reversed; S11 and S12 report compatible supporting facts.';
+ assert.deepEqual(resolveSourceReferences(d,plan),[]);
+ assert.deepEqual(d.sourceReview[1].essayEvidenceIds,[mistaken]);
+ assert.deepEqual(d.sourceReview[1].accurateEvidenceIds,[although,id('Minority families')]);
+ assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
+ const result=toClient(d,{...payload,sourceReading:plan},ss,3);
+ assert.deepEqual(result.sourceReview[1].essayEvidence,[ss.find(s=>s.id===mistaken).text]);
+ assert.deepEqual(result.sourceReview[1].accurateEvidence,[ss.find(s=>s.id===although).text,ss.find(s=>s.id===id('Minority families')).text]);
+});
+await test('evidence roles are distinct, complete and consistent with coverage',()=>{
+ for(const mutate of [
+  items=>items.push({...items[0]}),
+  items=>items.splice(0,1,{...items[0],relation:'agrees'})
+ ]){
+  const d=wire(assessment());mutate(d.sourceReviewById.T2P1.evidenceItems);
+  assert(resolveSourceReferences(d,plan).some(x=>x.includes('evidenceItems')));
+ }
+ const d=wire(assessment());d.sourceReviewById.T1P1.evidenceItems.push({sentenceId:mistaken,relation:'contradicts'});
+ assert(resolveSourceReferences(d,plan).some(x=>x.includes('evidenceItems')));
+});
 await test('two live-style C2 source points that mix history and overall position are rejected at task reading',()=>{
  const reading=structuredClone(plan),historyQuote='Homeschooling has been around over one hundred years';
  reading.sources[1].keyPoints.unshift({quote:historyQuote,meaning:'The practice has existed for over a century and is well-established.'});
@@ -242,7 +269,7 @@ await test('two live-style C2 source points that mix history and overall positio
  const d=assessment();d.sourceReview[1].explanation='The overall position is reversed in S10; the historical detail in S11 is accurately reported.';
  assert.deepEqual(validate(d,{...payload,sourceReading:plan},ss),[]);
  assert.equal(d.sourceReview[1].coverage,'distorted');
- assert.match(responseSchema(ss,plan,'nl').properties.sourceReviewById.properties.T2P1.properties.evidenceRelation.description,/THIS source point/);
+ assert.match(responseSchema(ss,plan,'nl').properties.sourceReviewById.properties.T2P1.properties.evidenceRelation.description,/THIS source position/);
 });
 await test('focus and first learning point are reconciled using valid existing source evidence',()=>{
  const d=assessment();d.learningPoints.reverse();d.keyFocus={action:'Fix a comma.',evidenceId:punctuation,explanation:'Punctuation first.'};

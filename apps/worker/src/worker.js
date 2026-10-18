@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.9 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.10 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.9";
+const VERSION = "2026-10-18-coaching-v5.6.10";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -109,9 +109,10 @@ absent if the point is not mentioned. A partly accurate paragraph can still cont
 an explicit contradiction: mark that point distorted, not partial. Partial means
 the claim is compatible but omits a central qualification or part of the argument.
 Judge EACH keyPoint's own proposition. A wrong overall position does not make the student's
-accurate historical details wrong. Cite the sentence that states the opposite overall claim;
-mention accurately reported supporting facts in the explanation without grading them as a
-second, overlapping source position.
+accurate historical details wrong. In evidenceItems, classify each cited sentence separately:
+contradicts only if THAT sentence reverses the source position; agrees for compatible details.
+For a distorted finding the server shows only the contradictory sentences as the error evidence.
+Mention accurate details in the explanation without calling them distorted.
 An absent supporting detail does not erase an opposite claim. Do not infer the
 author's position from a heading that the body rejects. Ground this decision in
 the actual body and the student's original sentence; do not require agreement.
@@ -363,8 +364,9 @@ even when the essay also omits supporting details. Use partial only for a compat
 but incomplete account; use absent/missing for no claim. Reconcile source_accuracy,
 the leading learning point and score reasons with the actual source evidence.
 Each source has one overall-position keyPoint. An accurate historical detail remains accurate
-even if another sentence reverses that overall conclusion. Explain the accurate detail, but
-grade the overall-position point using the sentence that actually makes the reversed claim.
+even if another sentence reverses that overall conclusion. Check every evidenceItems relation:
+the opposite overall claim is contradicts, while compatible supporting facts are agrees.
+Explain accurate details, and cite only contradictory sentences as the error evidence.
 Look for existing examples before claiming examples are absent. Prioritise the most consequential
 learning need, not an arbitrary stylistic preference. Every criticism needs a concrete explanation.
 Review all four scores independently; retain a score when justified, change it only on evidence.
@@ -647,7 +649,20 @@ export function resolveSourceReferences(data,reading) {
   for(const point of catalog) {
     const review=data.sourceReviewById[point.id];
     if(!obj(review)) {issues.push('Missing source review for '+point.id);continue;}
-    data.sourceReview.push({...review,sourcePointId:point.id,sourceQuote:point.quote});
+    const items=review.evidenceItems,valid=Array.isArray(items)&&items.every(p=>obj(p)&&typeof p.sentenceId==='string'&&['agrees','contradicts'].includes(p.relation));
+    if(!valid||new Set(items.map(p=>p.sentenceId)).size!==items.length) {
+      issues.push('sourceReviewById.'+point.id+'.evidenceItems: classify each distinct original student sentence as agrees or contradicts.');continue;
+    }
+    const opposite=items.filter(p=>p.relation==='contradicts').map(p=>p.sentenceId);
+    const accurate=items.filter(p=>p.relation==='agrees').map(p=>p.sentenceId);
+    if((review.coverage==='distorted'&&(!opposite.length||review.evidenceRelation!=='contradicts'))||
+       (review.coverage!=='distorted'&&opposite.length)||
+       (review.coverage==='missing'&&items.length)||
+       (['covered','partial'].includes(review.coverage)&&!accurate.length))
+      issues.push('sourceReviewById.'+point.id+'.evidenceItems: distorted needs contradictory evidence; covered/partial needs compatible evidence; missing has no cited sentence.');
+    const {evidenceItems,...rest}=review;
+    data.sourceReview.push({...rest,essayEvidenceIds:review.coverage==='distorted'?opposite:accurate,
+      accurateEvidenceIds:review.coverage==='distorted'?accurate:[],sourcePointId:point.id,sourceQuote:point.quote});
   }
   for(const point of Array.isArray(data.learningPoints)?data.learningPoints:[]) {
     if(!obj(point)) continue;
@@ -738,7 +753,7 @@ export function responseSchema(sentences,reading=null,language='en') {
   if(reading?.taskType==='source_essay') {
     delete schema.properties.sourceReview;
     schema.properties.sourceReviewById=shape(Object.fromEntries(catalog.map(point=>[point.id,
-      shape({point:str,coverage:choice(['covered','partial','missing','distorted']),evidenceRelation:{...choice(['agrees','contradicts','absent']),description:'Compare THIS source point proposition with the ORIGINAL essay sentence(s) cited for THIS point. agrees: compatible even if incomplete; contradicts: an essay claim reverses THIS point; absent: no relevant claim. A false overall conclusion belongs to the overall-position point, not a separately accurate historical detail.'},essayEvidenceIds:arr(id),explanation:str})])));
+      shape({point:str,coverage:choice(['covered','partial','missing','distorted']),evidenceRelation:{...choice(['agrees','contradicts','absent']),description:'Compare THIS source position with original essay claims. agrees: compatible even if incomplete; contradicts: an essay claim reverses this position; absent: no relevant claim.'},evidenceItems:{...arr(shape({sentenceId:id,relation:choice(['agrees','contradicts'])}),6),description:'Classify EACH cited original essay sentence independently. A distorted source position may cite BOTH an opposite claim (contradicts) and accurate historical/supporting details (agrees); only the opposite claim is shown as error evidence.'},explanation:str})])));
     const learning=schema.properties.learningPoints.items;
     delete learning.properties.sourceQuote;
     learning.properties.sourcePointId={...choice(['',...catalog.map(p=>p.id)]),description:'Choose the sourceCatalog ID for the source being discussed, matching sourceReviewById and evidenceId. Empty only when this lesson does not cite a source.'};
@@ -999,6 +1014,8 @@ export function validate(data, payload, sentences) {
       issues.push('Source review needs an exact TASK quotation, valid coverage and essay IDs for any claimed coverage or distortion.');
     if(obj(r)&&({'agrees':['covered','partial'],'contradicts':['distorted'],'absent':['missing']}[r.evidenceRelation]||[]).indexOf(r.coverage)<0)
       issues.push('sourceReview.evidenceRelation: a contradictory student claim is distorted, a compatible but incomplete claim is partial, and an absent claim is missing. Check the author position against each original essay evidenceId.');
+    if(obj(r)&&r.accurateEvidenceIds!==undefined&&(!Array.isArray(r.accurateEvidenceIds)||r.accurateEvidenceIds.some(id=>!byId.has(id)||r.essayEvidenceIds?.includes(id))))
+      issues.push('sourceReview.accurateEvidenceIds: compatible supporting sentences must be valid and separate from the contradictory evidence shown for a distorted point.');
   }
   const corrections=Array.isArray(data.edits) ? data.edits.filter(e=>e?.kind==='correction') : [];
   issues.push(...preservationIssues(corrections,sentences),...lengthClaimIssues(data,payload));
@@ -1061,7 +1078,8 @@ export function toClient(data, payload, sentences, attempts) {
     vocabularyDetails:data.vocabularySuggestions.map(v=>({...v,example:byId.get(v.sentenceId).text})),
     sentenceInsights:data.sentenceInsights.map(i=>({kind:i.kind,example:byId.get(i.sentenceId).text,issue:text(i.issue),
       explanation:text(i.explanation),betterVersion:text(i.betterVersion),unit:i.unit,linkHint:i.unit ? `Study Unit ${i.unit}` : ''})),
-    sourceReview:data.sourceReview.map(r=>({...r,essayEvidence:r.essayEvidenceIds.map(id=>byId.get(id).text)})),
+    sourceReview:data.sourceReview.map(r=>({...r,essayEvidence:r.essayEvidenceIds.map(id=>byId.get(id).text),
+      accurateEvidence:(r.accurateEvidenceIds||[]).map(id=>byId.get(id).text)})),
     validationWarnings:[],diagnostics:{attempts,evidenceMethod:'server-resolved-sentence-ids'}
   };
 }
