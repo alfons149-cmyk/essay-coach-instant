@@ -177,5 +177,15 @@ for(const i of [1,2]) await test('museum and correct energy survive review with 
  else {assert(d.nextDraft.includes('and bought a ticket'));assert(d.nextDraft.includes('I read the exhibition guide last night.'));assert(d.nextDraft.includes('This morning I have had a coffee.'));}
 });
 
+await test('correct C1 language stays intact for a wrong history task without extra calls',async()=>{
+ const fixture=JSON.parse(await readFile(new URL('./fixtures/c1-environment-v562.json',import.meta.url),'utf8'));const input={...fixture,task:fixture.wrongTask};let calls=0;
+ globalThis.fetch=async()=>{calls++;const d=sample(input);d.taskReview.verdict='not_answered';d.taskReview.checks[0].status='missing';d.taskReview.checks[0].evidenceIds=[];d.taskReview.checks[0].explanation='The energy paragraph does not address the historical task.';if(calls===1)delete d.languageAudit;return completion(d);};
+ const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(calls,2);assert.equal(d.nextDraft,input.essay);assert.equal(d.taskReview.verdict,'not_answered');
+});
+await test('complete correct C1 essay answers its real task and retains all language',async()=>{
+ const input=JSON.parse(await readFile(new URL('./fixtures/c1-environment-v562.json',import.meta.url),'utf8'));let calls=0;
+ globalThis.fetch=async()=>{calls++;const d=sample(input);d.taskReview.verdict='answered';d.taskReview.checks[0].status='met';if(calls===1)delete d.languageAudit;return completion(d);};
+ const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(calls,2);assert.equal(d.nextDraft,input.essay);assert.equal(d.taskReview.verdict,'answered');
+});
 globalThis.fetch=originalFetch;
 console.log(`${checks} language-audit checks passed. All model replies and clock advances are synthetic, not live AI accuracy or speed evidence.`);

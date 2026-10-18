@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import workerImpl,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics} from '../apps/worker/src/worker.js';
+import workerImpl,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics,punctuationCandidates,languageAuditIssues} from '../apps/worker/src/worker.js';
 import {withReviewContract} from './helpers/review-contract.mjs';
 const worker=withReviewContract(workerImpl);
 const input=JSON.parse(await readFile(new URL('./fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
@@ -151,8 +151,8 @@ await test('source IDs are required by the schema, and exact quotations are atta
  const catalog=sourceCatalog(plan),schema=responseSchema(ss,plan,'nl'),d=wire(assessment());
  assert(!('sourceReview' in schema.properties));
  assert.deepEqual(schema.properties.sourceReviewById.required,catalog.map(p=>p.id));
- assert(!('sourceQuote' in schema.properties.learningPoints.items.properties));
- assert(schema.properties.learningPoints.items.properties.sourcePointId.enum.includes(catalog[1].id));
+ assert(!('sourceQuote' in schema.properties.learningPoints.items.anyOf[0].properties));
+ assert(schema.properties.learningPoints.items.anyOf[0].properties.sourcePointId.enum.includes(catalog[1].id));
  assert.deepEqual(resolveSourceReferences(d,plan),[]);
  assert.deepEqual(d.sourceReview.map(s=>s.sourceQuote),catalog.map(p=>p.quote));
  assert.equal(d.learningPoints[0].sourceQuote,plan.sources[1].keyPoints[0].quote);
@@ -174,9 +174,9 @@ await test('new learner-facing fields carry explicit language instructions in th
  for(const lang of ['nl','es']) {
   const schema=responseSchema(ss,plan,lang),name=lang==='nl'?'Dutch':'Spanish';
   assert(schema.properties.taskReview.properties.explanation.description.includes(name));
-  assert(schema.properties.learningPoints.items.properties.practiceInstruction.description.includes(name));
+  assert(schema.properties.learningPoints.items.anyOf[0].properties.practiceInstruction.description.includes(name));
   assert(schema.properties.sourceReviewById.properties.T1P1.properties.explanation.description.includes(name));
-  assert(schema.properties.learningPoints.items.properties.improvedExample.description.includes('English'));
+  assert(schema.properties.learningPoints.items.anyOf[0].properties.improvedExample.description.includes('English'));
  }
 });
 await test('ordinary tasks do not display task instructions as an author source',()=>{
@@ -374,3 +374,37 @@ await test('a correct in-range assessment with negated length advice completes w
  assert.equal(result.diagnostics.reviewCompleted,true);assert(result.feedback.includes('no es demasiado corto'));
 });
 console.log(`${checks} coaching checks passed; model calls mocked, including negation and field-specific length repair.`);
+
+function auditedWire() {
+ const d=wire(assessment());
+ d.languageAudit={checkedSentenceIds:ss.map(s=>s.id),corrections:d.edits.map(e=>({sentenceId:e.sentenceId,category:'punctuation',originalQuote:ss.find(s=>s.id===e.sentenceId).text,replacementQuote:e.replacement,explanation:e.reason})),punctuationChecks:Object.fromEntries(punctuationCandidates(ss).map(c=>[c.id,{decision:d.edits.some(e=>e.sentenceId===c.sentenceId)?'correction':'valid',explanation:'The linking marker requires a delimiter in this context.'}]))};
+ return d;
+}
+await test('C2 schema requires a real source ID for interpretation and generates findings before lessons',()=>{
+ const schema=responseSchema(ss,plan,'es'),branches=schema.properties.learningPoints.items.anyOf;
+ assert.deepEqual(branches[0].properties.category.enum,['source_interpretation']);assert(!branches[0].properties.sourcePointId.enum.includes(''));
+ assert(!branches[1].properties.category.enum.includes('source_interpretation'));assert(branches[1].properties.sourcePointId.enum.includes(''));
+ assert(Object.keys(schema.properties).indexOf('sourceReviewById')<Object.keys(schema.properties).indexOf('learningPoints'));
+ function strict(s){if(s.type==='object'){assert.equal(s.additionalProperties,false);assert.deepEqual(s.required,Object.keys(s.properties));Object.values(s.properties).forEach(strict);}if(s.items)strict(s.items);if(s.anyOf)s.anyOf.forEach(strict);}
+ strict(schema);
+});
+for(const failure of ['none','punctuation','source']) await test('unwrapped C2 review preserves meaning and repairs only invalid '+failure+' evidence',async()=>{
+ const bodies=[];globalThis.fetch=async(_,options)=>{
+  bodies.push(JSON.parse(options.body));let d=bodies.length===1?structuredClone(plan):auditedWire();
+  if(bodies.length===2)delete d.languageAudit;
+  if(bodies.length===3&&failure==='punctuation')d.languageAudit.corrections.find(p=>p.sentenceId===punctuation).category='grammar';
+  if(bodies.length===3&&failure==='source')d.learningPoints[0].sourcePointId='';
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
+ };
+ const r=await workerImpl.fetch(request(),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert.equal(bodies.length,failure==='none'?3:4);
+ assert(d.nextDraft.includes('however, effective'));assert(d.nextDraft.includes('for parents observe'));assert(d.nextDraft.includes('not widely recognized'));
+ assert.equal(d.sourceReview[1].coverage,'distorted');assert.equal(d.learningPoints[0].sourceQuote,plan.sources[1].keyPoints[0].quote);
+ assert(d.learningPoints[0].improvedExample.includes('challenges'));assert.equal(d.taskReview.verdict,'partly_answered');
+ assert.match(bodies[1].messages[0].content,/because,\nas or since/);assert.match(bodies[2].messages[0].content,/ACTUALLY change/);
+ if(failure!=='none')assert(d.diagnostics.history.find(h=>h.phase==='review').checks.some(c=>c.rule===(failure==='punctuation'?'PUNCTUATION_AUDIT':'RESPONSE_CONSISTENCY')));
+});
+await test('source lesson without ID still fails final validation despite schema guidance',()=>{
+ const d=auditedWire();d.learningPoints[0].sourcePointId='';assert(resolveSourceReferences(d,plan).some(s=>s.startsWith('learningPoints.sourcePointId:')));
+ assert(validate(d,{...payload,sourceReading:plan},ss).some(s=>s.includes('matching sourceReview quotation')));
+});
+console.log(`${checks} coaching checks passed including targeted v5.6.2 C2 regressions; no real AI requests.`);

@@ -1,7 +1,7 @@
 // Real AI measurement; one local request by default, no credentials read/printed.
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
-const options={base:'http://127.0.0.1:8787',case:'homeschooling',language:'es',repeat:'1','expected-version':'2026-10-17-coaching-v5.6.1',out:'/tmp/essaycoach-live'};
+const options={base:'http://127.0.0.1:8787',case:'homeschooling',language:'es',repeat:'1','expected-version':'2026-10-18-coaching-v5.6.2',out:'/tmp/essaycoach-live'};
 for(let i=2;i<process.argv.length;i+=2){const name=process.argv[i].replace(/^--/,'');if(!Object.hasOwn(options,name)||!process.argv[i+1])throw new Error('Use --base, --case, --language, --repeat, --expected-version or --out with a value.');options[name]=process.argv[i+1];}
 const repeats=Number(options.repeat),base=new URL(options.base);
 if(!Number.isInteger(repeats)||repeats<1||repeats>10||!['en','nl','es'].includes(options.language))throw new Error('Use 1–10 repetitions and language en/nl/es.');
@@ -9,8 +9,9 @@ if(!['http:','https:'].includes(base.protocol)||base.username||base.password||ba
 const names={university:0,museum:1,energy:2,library:3};
 let input;
 if(options.case==='homeschooling')input=JSON.parse(await readFile(new URL('../tests/fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
+else if(['c1','c1-wrong-task'].includes(options.case)){input=JSON.parse(await readFile(new URL('../tests/fixtures/c1-environment-v562.json',import.meta.url),'utf8'));if(options.case==='c1-wrong-task')input.task=input.wrongTask;}
 else if(Object.hasOwn(names,options.case))input=JSON.parse(await readFile(new URL('../tests/fixtures/language-audit-cases.json',import.meta.url),'utf8'))[names[options.case]];
-else throw new Error('Case must be homeschooling, university, museum, energy or library.');
+else throw new Error('Case must be homeschooling, university, museum, energy, library, c1 or c1-wrong-task.');
 const payload={essay:input.essay,task:input.task,level:input.level,feedbackLanguage:options.language};
 const hr=await fetch(new URL('/api/health',base),{signal:AbortSignal.timeout(20000)});if(!hr.ok)throw new Error('Health HTTP '+hr.status);
 const health=await hr.json(),safeHealth={version:health.version,model:health.model??null,modelSource:health.modelSource??null,apiKeyConfigured:health.apiKeyConfigured??null};
@@ -31,7 +32,8 @@ for(let run=1;run<=repeats;run++){
    checks.sourceDistortionReported=result.sourceReview?.some(r=>r.coverage==='distorted')===true;
    checks.assumedInstructions=result.taskReview?.basis==='assumed';checks.serverWordCount=result.inputWords===256;
   }
-  if(options.case==='energy')checks.correctTextUnchanged=result.nextDraft===payload.essay;
+  if(['c1','c1-wrong-task'].includes(options.case))checks.taskVerdict=result.taskReview?.verdict===(options.case==='c1'?'answered':'not_answered');
+  if(['energy','c1','c1-wrong-task'].includes(options.case))checks.correctTextUnchanged=result.nextDraft===payload.essay;
   if(options.case==='museum'){
    checks.pastAction=result.nextDraft?.includes('and bought a ticket')===true;
    checks.preserveRead=result.nextDraft?.includes('I read the exhibition guide last night.')===true;

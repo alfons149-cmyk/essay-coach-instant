@@ -13,7 +13,7 @@
       "labels.essay": "Your essay",
       "labels.feedback": "Your personalised feedback",
       "labels.edits": "Edits",
-      "labels.next_draft": "Corrected essay",
+      "labels.next_draft": "Language-corrected version",
       "labels.vocab_options": "Vocabulary options",
       "labels.sentence_insights": "Sentence insights",
       "labels.course_book": "Read the Course Book",
@@ -83,7 +83,7 @@
       "summary.key_focus_title": "Key focus",
       "summary.key_focus": "Key focus",
       "summary.key_focus_prefix": "Your top priority: ",
-      "sections.next_draft_hint": "Compare this corrected version with your original essay.",
+      "sections.next_draft_hint": "Only necessary language corrections are applied. Source or task errors may remain: this is not a fully corrected answer. Review the feedback and revise the content yourself.",
       "summary.key_focus_label": "Most important thing to fix",
       "summary.output_length": "Output length"
     },
@@ -100,7 +100,7 @@
       "labels.essay": "Tu redacción",
       "labels.feedback": "Tu retroalimentación personalizada",
       "labels.edits": "Correcciones",
-      "labels.next_draft": "Redacción corregida",
+      "labels.next_draft": "Versión con correcciones lingüísticas",
       "labels.vocab_options": "Opciones de vocabulario",
       "labels.sentence_insights": "Análisis de oraciones",
       "labels.course_book": "Leer el libro del curso",
@@ -170,7 +170,7 @@
       "summary.key_focus_title": "En qué centrarte",
       "summary.key_focus": "En qué centrarte",
       "summary.key_focus_prefix": "Tu prioridad principal: ",
-      "sections.next_draft_hint": "Compara esta versión corregida con tu redacción original.",
+      "sections.next_draft_hint": "Solo se aplican correcciones lingüísticas necesarias. Pueden quedar errores de interpretación de las fuentes o de respuesta a la tarea: no es una respuesta totalmente corregida. Revisa los comentarios y modifica tú mismo el contenido.",
       "summary.key_focus_label": "Lo más importante a mejorar",
       "summary.output_length": "Longitud del texto"
     },
@@ -187,7 +187,7 @@
       "labels.essay": "Je essay",
       "labels.feedback": "Je persoonlijke feedback",
       "labels.edits": "Wijzigingen",
-      "labels.next_draft": "Gecorrigeerd essay",
+      "labels.next_draft": "Taalgecorrigeerde versie",
       "labels.vocab_options": "Woordenschat-opties",
       "labels.sentence_insights": "Zinsinzichten",
       "labels.course_book": "Lees het cursusboek",
@@ -257,7 +257,7 @@
       "summary.key_focus_title": "Belangrijkste aandachtspunt",
       "summary.key_focus": "Belangrijkste aandachtspunt",
       "summary.key_focus_prefix": "Je belangrijkste aandachtspunt: ",
-      "sections.next_draft_hint": "Vergelijk deze gecorrigeerde versie met je oorspronkelijke essay.",
+      "sections.next_draft_hint": "Alleen noodzakelijke taalcorrecties zijn toegepast. Bron- of taakfouten kunnen blijven staan: dit is geen volledig verbeterd antwoord. Bekijk de feedback en herzie zelf de inhoud.",
       "summary.key_focus_label": "Belangrijkste om te verbeteren",
       "summary.output_length": "Lengte van de output"
     }
