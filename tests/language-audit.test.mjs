@@ -117,6 +117,51 @@ await test('captured C2 broad rewrite needs separate local evidence and preserve
  assert.deepEqual(languageAuditIssues(d,ss),[]);
  assert.deepEqual(constructAuditedEdits(structuredClone(d),ss),[]);
 });
+await test('captured C2 split spans cannot hide an unnecessary semicolon rewrite',()=>{
+ const original='Although, homeschooling has existed for over a century; what is more homeschooling existed before our current public education system.';
+ const revised='Homeschooling has existed for over a century, and what is more, homeschooling existed before our current public education system.';
+ const ss=numberSentences(original),d={edits:[{kind:'correction',sentenceId:'S1',replacement:revised}],languageAudit:{checkedSentenceIds:['S1'],corrections:[
+  {sentenceId:'S1',category:'grammar',originalQuote:'Although, homeschooling has existed for over a century;',replacementQuote:'Homeschooling has existed for over a century, and',explanation:'Remove the opening connector.'},
+  {sentenceId:'S1',category:'punctuation',originalQuote:'what is more homeschooling',replacementQuote:'what is more, homeschooling',explanation:'Add a comma after the marker.'}],punctuationChecks:{P1:{decision:'correction',explanation:'The marker needs a following comma.'}}}};
+ assert.deepEqual(constructAuditedEdits(structuredClone(d),ss),[]);
+ assert(languageAuditIssues(d,ss).some(x=>x.includes('unnecessary semicolon rewrite')));
+ d.edits[0].replacement='Homeschooling has existed for over a century; what is more, homeschooling existed before our current public education system.';
+ d.languageAudit.corrections[0].replacementQuote='Homeschooling has existed for over a century;';
+ assert.deepEqual(languageAuditIssues(d,ss),[]);
+});
+await test('additive-linker rule applies across topics and allows correct counterexamples',()=>{
+ const original='Although, the policy has existed for years; moreover it has broad support.';
+ const ss=numberSentences(original),d={edits:[{kind:'correction',sentenceId:'S1',replacement:'The policy has existed for years, and moreover, it has broad support.'}],languageAudit:{checkedSentenceIds:['S1'],corrections:[
+  {sentenceId:'S1',category:'grammar',originalQuote:'Although, the policy has existed for years;',replacementQuote:'The policy has existed for years, and',explanation:'Remove the unsuitable concessive opener.'},
+  {sentenceId:'S1',category:'punctuation',originalQuote:'moreover it',replacementQuote:'moreover, it',explanation:'Add a comma after moreover.'}],punctuationChecks:{P1:{decision:'correction',explanation:'The marker needs a following comma.'}}}};
+ assert(languageAuditIssues(d,ss).some(x=>x.includes('unnecessary semicolon rewrite')));
+ d.edits[0].replacement='The policy has existed for years; moreover, it has broad support.';
+ d.languageAudit.corrections[0].replacementQuote='The policy has existed for years;';
+ assert.deepEqual(languageAuditIssues(d,ss),[]);
+ const valid='The policy has existed for years; moreover, it has broad support.';
+ assert.deepEqual(languageAuditIssues({edits:[],languageAudit:{checkedSentenceIds:['S1'],corrections:[],punctuationChecks:{}}},numberSentences(valid)),[]);
+});
+await test('review retry repairs the captured semicolon rewrite without returning an unchecked draft',async()=>{
+ const original='Although, the policy has existed for years; moreover it has broad support.';
+ const input={task:'Explain how this policy developed.',essay:original,corrections:[
+  {sentenceId:'S1',category:'grammar',originalQuote:'Although, the policy',replacementQuote:'The policy',explanation:'This is an independent claim, not a concession.'},
+  {sentenceId:'S1',category:'punctuation',originalQuote:'moreover it',replacementQuote:'moreover, it',explanation:'Add a comma after moreover.'}],decisions:['correction']};
+ let calls=0;
+ globalThis.fetch=async()=>{
+  const d=sample(input);calls++;
+  if(calls===1)delete d.languageAudit;
+  if(calls===2){
+   d.edits[0].replacement='The policy has existed for years, and moreover, it has broad support.';
+   d.languageAudit.corrections[0].originalQuote='Although, the policy has existed for years;';
+   d.languageAudit.corrections[0].replacementQuote='The policy has existed for years, and';
+  }
+  return completion(d);
+ };
+ const r=await worker.fetch(req(input),env),d=await r.json();
+ assert.equal(r.status,200,JSON.stringify(d));assert.equal(calls,3);
+ assert(d.nextDraft.includes('years; moreover, it has broad support.'));
+ assert(d.diagnostics.history[1].checks.some(c=>c.rule==='UNNECESSARY_CORRECTION'));
+});
 await test('three independent necessary grammar repairs work as three local spans',()=>{
  const original='He go, she eat, and it seem unusual.';
  const ss=numberSentences(original),d={edits:[{kind:'correction',sentenceId:'S1',replacement:'He goes, she eats, and it seems unusual.'}],languageAudit:{checkedSentenceIds:['S1'],corrections:[
