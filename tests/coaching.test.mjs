@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import workerImpl,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics,punctuationCandidates,languageAuditIssues} from '../apps/worker/src/worker.js';
+import workerImpl,{numberSentences,taskReadingSchema,validateTaskReading,validate,toClient,teachingSignals,buildSignalHints,sourceCatalog,responseSchema,resolveSourceReferences,normaliseCoaching,writingMetrics,punctuationCandidates,languageAuditIssues,sourceInput} from '../apps/worker/src/worker.js';
 import {withReviewContract} from './helpers/review-contract.mjs';
 const worker=withReviewContract(workerImpl);
 const input=JSON.parse(await readFile(new URL('./fixtures/homeschooling-c2.json',import.meta.url),'utf8'));
@@ -96,6 +96,29 @@ function wire(d) {
 }
 const completion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(wire(d))}}]}));
 const env={OPENAI_API_KEY:'mock-not-a-key'};
+await test('two substantial source passages constrain classification without topic rules',()=>{
+ const contract=sourceInput(payload.task);
+ assert.deepEqual(contract,{bodies:sourceBodies,explicit:false});
+ assert.deepEqual(taskReadingSchema(contract).properties.taskType.enum,['source_essay']);
+ assert.deepEqual(taskReadingSchema(contract).properties.instructionStatus.enum,['assumed']);
+ assert.deepEqual(validateTaskReading(plan,payload.task,contract),[]);
+ assert(validateTaskReading({taskType:'other',instructionStatus:'missing',summary:'Other.',sources:[]},payload.task,contract).length);
+ assert.deepEqual(sourceInput('Write about renewable energy.\n\nCompare the claims of two speakers.'),null);
+ assert.deepEqual(sourceInput('Write an informal email to a friend.\nDiscuss your weekend.'),null);
+});
+await test('separate C2 source fields bind verbatim text and distinguish absent instructions',async()=>{
+ const contract=sourceInput('',sourceBodies);
+ assert.deepEqual(contract,{bodies:sourceBodies,explicit:false});
+ assert.equal(sourceInput('Write an essay.',sourceBodies).explicit,true);
+ let calls=0;globalThis.fetch=async(_,o)=>{
+  calls++;const sent=JSON.parse(o.body);
+  if(calls===1){assert.deepEqual(sent.response_format.json_schema.schema.properties.taskType.enum,['source_essay']);
+   assert.deepEqual(sent.response_format.json_schema.schema.properties.instructionStatus.enum,['assumed']);return completion(plan);}
+  return completion(assessment());
+ };
+ const r=await worker.fetch(new Request('https://worker.test/api/correct',{method:'POST',body:JSON.stringify({...payload,task:'',sourceBodies})}),{OPENAI_API_KEY:'mock'});
+ const result=await r.json();assert.equal(r.status,200,JSON.stringify(result));assert.equal(calls,3);assert.equal(result.diagnostics.taskRechecks,0);
+});
 await test('C2 source reading precedes essay assessment and never sees the learner interpretation',async()=>{
  const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));return completion(bodies.length===1?plan:assessment());};
  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
@@ -219,13 +242,16 @@ console.log(`${checks} source-reference and coaching checks passed; model calls 
 
 const plainCompletion=d=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
 const wrongReading={taskType:'other',instructionStatus:'missing',summary:'No explicit writing instructions identified.',sources:[]};
+// Legacy classification disagreement remains testable on genuinely ambiguous
+// instruction-plus-source input; the clear two-block case is now constrained.
+const uncertainRequest=()=>new Request('https://worker.test/api/correct',{method:'POST',body:JSON.stringify({...payload,task:'Discuss these passages:\n\n'+payload.task})});
 await test('classification disagreement triggers an isolated task recheck and rebuilds the source schema',async()=>{
  const bodies=[];
  globalThis.fetch=async(_,o)=>{
   bodies.push(JSON.parse(o.body));
   return bodies.length===1?plainCompletion(wrongReading):bodies.length===2?plainCompletion(assessment()):completion(bodies.length===3?plan:assessment());
  };
- const response=await worker.fetch(request(),env),result=await response.json();
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();
  assert.equal(response.status,200,JSON.stringify(result));assert.equal(bodies.length,5);
  assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:2,review:1});assert.equal(result.diagnostics.taskRechecks,1);
  const recheck=bodies[2];assert.equal(recheck.response_format.json_schema.name,'essaycoach_task_reading');
@@ -238,12 +264,12 @@ await test('classification disagreement triggers an isolated task recheck and re
 });
 await test('a disagreement about assumed instructions also gets a source-only recheck',async()=>{
  let calls=0;globalThis.fetch=async()=>{calls++;return completion(calls===1?{...plan,instructionStatus:'explicit'}:calls===3?plan:assessment());};
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));
  assert.equal(calls,4);assert.equal(result.taskReview.basis,'assumed');assert.equal(result.diagnostics.reusedAssessments,1);
 });
 await test('permanent task disagreement is bounded and returns no provisional feedback',async()=>{
  let calls=0;globalThis.fetch=async()=>plainCompletion(++calls%2?wrongReading:assessment());
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,4);
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,4);
  assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:1});
  assert(result.diagnostics.issues[0].includes('disagreement'));assert(!result.nextDraft);assert(!result.learningPoints);
 });
@@ -252,7 +278,7 @@ await test('a recheck still rejects fabricated source bodies instead of acceptin
   calls++;const bad=structuredClone(plan);bad.sources[0].sourceQuote='A fabricated source body that is absent from the task.';
   return plainCompletion(calls===1?wrongReading:calls===2?assessment():bad);
  };
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,3);
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,502);assert.equal(calls,3);
  assert.equal(result.diagnostics.phase,'task');assert(!result.assessment);
 });
 await test('a review-stage disagreement reuses the candidate only when the literal source contract is unchanged',async()=>{
@@ -260,14 +286,14 @@ await test('a review-stage disagreement reuses the candidate only when the liter
   calls++;if(calls===3){const d=wire(assessment());d.taskReview.taskType='other';return plainCompletion(d);}
   return completion([1,4].includes(calls)?plan:assessment());
  };
- const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,5);assert.equal(result.diagnostics.reusedAssessments,1);
+ const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(calls,5);assert.equal(result.diagnostics.reusedAssessments,1);
  assert.deepEqual(result.diagnostics.phaseAttempts,{task:2,assessment:1,review:2});assert.equal(result.diagnostics.reviewCompleted,true);
 });
 await test('task reclassification does not reset the shared deadline',async()=>{
  const oldNow=Date.now;let elapsed=0,calls=0;Date.now=()=>elapsed;
  try {
   globalThis.fetch=async()=>{elapsed+=100000;return plainCompletion(++calls===1?wrongReading:assessment());};
-  const response=await worker.fetch(request(),env),result=await response.json();assert.equal(response.status,504);assert.equal(calls,2);
+  const response=await worker.fetch(uncertainRequest(),env),result=await response.json();assert.equal(response.status,504);assert.equal(calls,2);
   assert.equal(result.diagnostics.phase,'task');assert.equal(result.diagnostics.taskRechecks,1);
  } finally {Date.now=oldNow;}
 });
@@ -432,7 +458,10 @@ for(const failure of ['none','punctuation','source']) await test('unwrapped C2 r
  const bodies=[];globalThis.fetch=async(_,options)=>{
   bodies.push(JSON.parse(options.body));let d=bodies.length===1?structuredClone(plan):auditedWire();
   if(bodies.length===2)delete d.languageAudit;
-  if(bodies.length===3&&failure==='punctuation')d.languageAudit.corrections.find(p=>p.sentenceId===punctuation).category='grammar';
+  if(bodies.length===3&&failure==='punctuation'){
+   const span=d.languageAudit.corrections.find(p=>p.sentenceId===punctuation);
+   span.category='grammar';span.explanation='The phrase needs clearer syntax.';
+  }
   if(bodies.length===3&&failure==='source')d.learningPoints[0].sourcePointId='';
   return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(d)}}]}));
  };

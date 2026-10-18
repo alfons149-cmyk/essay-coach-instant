@@ -22,6 +22,8 @@
   // -----------------------------
   const el = {
     task:       $("#task"),
+    sourceOne:  $("#sourceOne"),
+    sourceTwo:  $("#sourceTwo"),
     essay:      $("#essay"),
     nextDraft:  $("#nextDraft"),
     feedback:   $("#feedback"),
@@ -685,6 +687,8 @@
       el.btnClear.addEventListener("click", () => {
         requestSequence++; resetResults();
         if (el.task)      el.task.value = "";
+        if (el.sourceOne) el.sourceOne.value = "";
+        if (el.sourceTwo) el.sourceTwo.value = "";
         if (el.essay)     el.essay.value = "";
         if (el.nextDraft) el.nextDraft.value = "";
         if (el.feedback)  el.feedback.textContent = "—";
@@ -713,6 +717,14 @@
           task:  el.task ? (el.task.value || "") : "",
           essay: el.essay ? (el.essay.value || "") : ""
         };
+        const sourceOne=el.sourceOne?.value.trim()||"",sourceTwo=el.sourceTwo?.value.trim()||"";
+        if (sourceOne || sourceTwo) {
+          if (level!=="C2" || !sourceOne || !sourceTwo) {
+            if (el.feedback) el.feedback.textContent = window.I18N?.t?.("errors.c2_sources") || "For C2, enter both complete source texts.";
+            return;
+          }
+          payload.sourceBodies=[sourceOne,sourceTwo];
+        }
 
         if (!payload.essay.trim()) {
           if (el.feedback) el.feedback.textContent = "Please write or paste your essay first.";

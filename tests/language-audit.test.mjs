@@ -146,7 +146,7 @@ await test('correction insight cannot teach a different replacement from its act
 // Reproduce the reported failure shapes; these are synthetic replies, not the unavailable live JSON.
 function brokenAudit(kind) {
  const d=sample(cases[3]);
- if(kind==='marker') d.languageAudit.corrections[3].category='grammar';
+ if(kind==='marker') {d.languageAudit.corrections[3].category='grammar';d.languageAudit.corrections[3].explanation='The phrase needs clearer syntax.';}
  if(kind==='overlap') {
   d.languageAudit.corrections.push({...d.languageAudit.corrections[3],originalQuote:'For example',replacementQuote:'For example;'});
   d.edits[2].replacement+=' Everyone benefits.';
@@ -159,6 +159,17 @@ await test('repair dossier locates P2 and cannot silently relabel its evidence',
  const s=ctx.sentences[0];assert.equal(s.sentenceId,'S3');assert.equal(s.original,'For example local groups can organise free classes.');
  assert.deepEqual(s.punctuationCandidates[0].matchingEvidenceIndexes,[]);assert.equal(s.punctuationCandidates[0].id,'P2');
  assert(ctx.issues.some(x=>x.includes('punctuationChecks.P2')));
+});
+await test('grammar-labelled evidence counts only for an explained comma inserted at the marker',()=>{
+ const ss=numberSentences(cases[3].essay),d=sample(cases[3]);
+ d.languageAudit.corrections[3].category='grammar';
+ assert.deepEqual(languageAuditIssues(d,ss),[]);
+ d.languageAudit.corrections[3].explanation='The phrase needs clearer syntax.';
+ assert(languageAuditIssues(d,ss).some(x=>x.includes('punctuationChecks.P2')));
+ d.languageAudit.corrections[3].explanation='A comma is needed after the marker.';
+ d.languageAudit.corrections[3].replacementQuote='For example; local';
+ d.edits[2].replacement='For example; local groups can organise free classes.';
+ assert(languageAuditIssues(d,ss).some(x=>x.includes('punctuationChecks.P2')));
 });
 await test('adjacent-word insertion reconstructs text but still needs the complete punctuation marker',()=>{
  const d=sample(cases[3]);d.languageAudit.corrections[3].originalQuote='local groups';d.languageAudit.corrections[3].replacementQuote=', local groups';

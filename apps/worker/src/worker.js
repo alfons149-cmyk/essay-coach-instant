@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.4 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.5 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-18-coaching-v5.6.4";
+const VERSION = "2026-10-18-coaching-v5.6.5";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -574,15 +574,37 @@ const score = {type:['integer','null'],enum:[0,1,2,3,4,5,null]};
 const kind = {type:'string',enum:['correction','suggestion']};
 const arr = (items,maxItems,minItems=0) => ({type:'array',items,...(maxItems===undefined?{}:{minItems,maxItems})});
 const choice = values => ({type:'string',enum:values});
-export function taskReadingSchema() {
-  return shape({taskType:choice(['source_essay','other','unclear']),instructionStatus:choice(['explicit','assumed','missing']),
-    summary:str,sources:arr(shape({label:str,sourceQuote:str,position:str,keyPoints:arr(shape({quote:str,meaning:str}),2,1)}),2)});
+// The source fields are an explicit contract. For legacy C2 prompts recognise only
+// two clearly separated heading + substantial prose blocks without instructions.
+// Ordinary prompts remain free for the task reader to classify.
+export function sourceInput(task,sourceBodies) {
+  if(Array.isArray(sourceBodies)) return {bodies:sourceBodies,explicit:Boolean(task.trim())};
+  const blocks=task.trim().split(/\n\s*\n/);
+  if(blocks.length!==2) return null;
+  const bodies=blocks.map(block=>{
+    const line=block.indexOf('\n');
+    if(line<0||line>130) return null;
+    const heading=block.slice(0,line).trim(),body=block.slice(line+1).trim();
+    if(!heading||/[.!?]$/.test(heading)||/^(write|summari[sz]e|compare|discuss|explain|evaluate|read)\b/i.test(heading)||
+      body.split(/\s+/).length<65||!/[.!?]/.test(body)) return null;
+    return body;
+  });
+  return bodies.every(Boolean)?{bodies,explicit:false}:null;
 }
-export function validateTaskReading(data,task) {
+export function taskReadingSchema(sourceContract=null) {
+  return shape({taskType:choice(sourceContract?['source_essay']:['source_essay','other','unclear']),
+    instructionStatus:choice(sourceContract?[sourceContract.explicit?'explicit':'assumed']:['explicit','assumed','missing']),
+    summary:str,sources:arr(shape({label:str,sourceQuote:sourceContract?choice(sourceContract.bodies):str,
+      position:str,keyPoints:arr(shape({quote:str,meaning:str}),2,1)}),2,sourceContract?2:0)});
+}
+export function validateTaskReading(data,task,sourceContract=null) {
   const issues=[];
   if(!obj(data)||!['source_essay','other','unclear'].includes(data.taskType)||!['explicit','assumed','missing'].includes(data.instructionStatus)||!text(data.summary)||!Array.isArray(data.sources))
     return ['Provide a complete source-only task reading.'];
   if(data.taskType==='source_essay' && data.sources.length!==2) issues.push('A two-source essay needs exactly two distinct source bodies.');
+  if(sourceContract&&(data.taskType!=='source_essay'||data.instructionStatus!==(sourceContract.explicit?'explicit':'assumed')||
+    !sourceContract.bodies.every((body,index)=>data.sources[index]?.sourceQuote===body)))
+    issues.push('sourceReading.sources: use both supplied source bodies verbatim and the supplied instruction status.');
   if(data.taskType!=='source_essay' && data.sources.length) issues.push('Other/unclear tasks must not invent source passages.');
   const spans=[];
   for(const source of data.sources) {
@@ -718,11 +740,11 @@ export function responseSchema(sentences,reading=null,language='en') {
     schema.properties={sourceReviewById,...rest,learningPoints};
     schema.required=Object.keys(schema.properties);
   }
-  // With two source bodies but no explicit instructions, the source-only pass
-  // fixes the provisional task basis. The assessor still judges every claim.
-  if(reading?.taskType==='source_essay'&&reading.instructionStatus==='assumed') {
+  // Once two literal source bodies are verified, the assessor evaluates their
+  // claims without relabelling the already checked task type or instruction basis.
+  if(reading?.taskType==='source_essay'&&['assumed','explicit'].includes(reading.instructionStatus)) {
     schema.properties.taskReview.properties.taskType=choice(['source_essay']);
-    schema.properties.taskReview.properties.basis=choice(['assumed']);
+    schema.properties.taskReview.properties.basis=choice([reading.instructionStatus]);
   }
   if(ambiguousMorningIds(sentences).length&&eligibleSentences(sentences).length===1)
     schema.properties.sampleSuitable={type:'boolean',enum:[true],description:'This is an understandable English practice sentence. Assess it with limitations; its short length is not grounds for rejection.'};
@@ -1078,7 +1100,8 @@ original offset (e.g. originalQuote "however effective", replacementQuote "howev
 The span must also ACTUALLY change that marker or its immediately following delimiter.
 Merely quoting "however" inside a grammar or punctuation fix elsewhere does not count.
 For a missing comma, replace "however effective" with "however, effective" and classify that
-local evidence as punctuation, even if a broader grammar span also includes the same comma.
+local evidence as punctuation. A broader grammar span counts only when it contains the whole
+marker, inserts the actual comma immediately after it, and explains the comma explicitly.
 Do not use only the adjacent word "effective" as evidence for the marker. Keep grammar evidence
 separate from punctuation evidence where possible. For example in "It is an useful
 service; moreover it helps.", use "an useful" -> "a useful" (grammar) and "moreover it" ->
@@ -1095,7 +1118,7 @@ export function reviewSchema(sentences,reading=null,language='en') {
   schema.properties.languageAudit=shape({
     checkedSentenceIds:arr(id,eligibleSentences(sentences).length,eligibleSentences(sentences).length),
     corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:{type:'string',description:'Unique verbatim substring of the ORIGINAL sentence. Unchanged context may overlap other quotes; actual changes must not conflict. Punctuation evidence must include the entire candidate marker AND actually change that marker or its immediately following delimiter; unchanged marker context alone is insufficient.'},replacementQuote:{type:'string',description:'Replacement for this span only. The server reconstructs one complete edit per sentenceId from compatible original-coordinate changes; do not output a separate edit.'},explanation}),MAX_EVIDENCE),
-    punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,{...shape({decision:choice(['correction','valid','context_needed']),explanation}),description:'Candidate '+c.id+' in '+c.sentenceId+': marker '+JSON.stringify(c.marker)+' at original offset '+c.offset+'. A correction requires a punctuation evidence span containing this entire marker AND an actual change at the marker or its immediately following delimiter, plus the exactly reconstructed edit. A change elsewhere in a broad quote is insufficient.'}])))
+    punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,{...shape({decision:choice(['correction','valid','context_needed']),explanation}),description:'Candidate '+c.id+' in '+c.sentenceId+': marker '+JSON.stringify(c.marker)+' at original offset '+c.offset+'. A correction requires an evidence span containing the entire marker and a real delimiter change there. A grammar span counts for an inserted comma only when its explanation explicitly discusses punctuation. A change elsewhere is insufficient.'}])))
   });
   // The reviewer supplies only evidence; the server derives complete sentence edits.
   // Legacy mock responses with explicit edits still receive full strict validation.
@@ -1207,11 +1230,17 @@ export function constructAuditedEdits(data,sentences) {
   return [];
 }
 function punctuationEvidence(span,candidate) {
-  if(span.category!=='punctuation'||span.start>candidate.offset||span.end<candidate.offset+candidate.marker.length) return false;
-  // Merely quoting a marker is insufficient: an actual change must touch it or
-  // its immediately following delimiter. Unrelated punctuation is not evidence.
+  if(span.start>candidate.offset||span.end<candidate.offset+candidate.marker.length) return false;
+  // A punctuation-labelled correction can replace the marker itself. A
+  // grammar-labelled span only counts when it inserts the actual comma there.
   const end=candidate.offset+candidate.marker.length;
-  return span.changes.some(p=>p.start<=end&&p.end>=candidate.offset);
+  return span.changes.some(p=>{
+    if(span.category==='punctuation') return p.start<=end&&p.end>=candidate.offset;
+    // An audited grammar span may contain the exact comma insertion. Its
+    // category is incidental; the changed characters and explanation are not.
+    return p.start===end&&p.end===end&&p.replacementQuote===','&&
+      /\bcomma\b|\bkomma\b|\bcoma\b|\bpunctuation\b|\binterpunctie\b|\bpuntuaci[oó]n\b/i.test(span.explanation);
+  });
 }
 export function languageAuditIssues(data,sentences) {
   const issues=[],audit=data?.languageAudit,byId=new Map(eligibleSentences(sentences).map(s=>[s.id,s]));
@@ -1349,9 +1378,16 @@ export default {
     if(!obj(body) || typeof body.essay!=='string' || !body.essay.trim() ||
        (body.task!==undefined && typeof body.task!=='string') || !['B2','C1','C2'].includes(body.level || 'C1'))
       return fail('INPUT','Supply an essay, a text task and level B2, C1 or C2.',400,origin);
+    if(body.sourceBodies!==undefined&&((body.level||'C1')!=='C2'||!Array.isArray(body.sourceBodies)||body.sourceBodies.length!==2||
+      body.sourceBodies.some(s=>typeof s!=='string'||s.trim().length<40||s.length>30000)||
+      body.sourceBodies[0].trim()===body.sourceBodies[1].trim()))
+      return fail('INPUT','For C2, supply two distinct complete source passages.',400,origin);
     const feedbackLanguage=Object.hasOwn(FEEDBACK_LANGUAGES,body.feedbackLanguage) ? body.feedbackLanguage : 'en';
-    const payload={essay:body.essay,task:body.task || '',level:body.level || 'C1',feedbackLanguage};
+    const prompt=body.task||'',sourceBodies=body.sourceBodies?.map(s=>s.trim());
+    const task=sourceBodies?[prompt.trim(),...sourceBodies.map((s,i)=>`Text ${i+1}\n${s}`)].filter(Boolean).join('\n\n'):prompt;
+    const payload={essay:body.essay,task,level:body.level || 'C1',feedbackLanguage};
     if(payload.essay.length>30000 || payload.task.length>30000) return fail('TOO_LONG','Maximum 30,000 characters per field.',413,origin);
+    const sourceContract=payload.level==='C2'?sourceInput(sourceBodies?prompt:payload.task,sourceBodies):null;
     const sentences=numberSentences(payload.essay);
     if(sentences.length>600) return fail('TOO_MANY_SENTENCES','Please submit a shorter essay (maximum 600 text segments).',413,origin);
     if(!eligibleSentences(sentences).length) return fail('TOO_SHORT','Please enter connected English writing to assess.',422,origin);
@@ -1389,6 +1425,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
       repairAttempts:Object.fromEntries(Object.entries(phaseAttempts).map(([p,n])=>[p,Math.max(0,n-1)])),
       history:history.map(({startedAt:at,finished,...r})=>({...r,durationMs:finished?r.durationMs:Math.max(0,Date.now()-at),checks:finished?r.checks:diagnosticChecks(validationIssues,r.phase)})),
       taskClassification:payload.sourceReading?{taskType:payload.sourceReading.taskType,basis:payload.sourceReading.instructionStatus}:null,
+      taskRecheck,
       reviewRequested:phaseAttempts.review>0,reviewCompleted:false,completions});
     const phases=[...(readTask?['task']:[]),'assessment','review'];
     for(let phaseIndex=0;phaseIndex<phases.length;phaseIndex++) {
@@ -1398,7 +1435,8 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
       validationIssues=[];
       for(let phaseAttempt=phaseAttempts[phase]+1;phaseAttempt<=maximum;phaseAttempt++) {
         const messages=phase==='task' ? [{role:'system',content:TASK_READING},
-          {role:'user',content:JSON.stringify({task:payload.task,level:payload.level,feedbackLanguage:payload.feedbackLanguage})}] : phase==='review'
+          {role:'user',content:JSON.stringify({task:payload.task,level:payload.level,feedbackLanguage:payload.feedbackLanguage,
+            sourceBodies:sourceContract?.bodies||null,instructionStatus:sourceContract?(sourceContract.explicit?'explicit':'assumed'):null})}] : phase==='review'
           ? [{role:'system',content:REVIEW_SYSTEM+'\n'+LANGUAGE_AUDIT},baseMessages[1]] : [...baseMessages];
         if(phase==='task'&&taskRecheck) messages.push({role:'system',content:
           'Re-read only the original task. Two passes disagreed about its classification: '+JSON.stringify(taskRecheck)+
@@ -1420,7 +1458,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
           const response=await fetch('https://api.openai.com/v1/chat/completions',{
             method:'POST',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},
             body:JSON.stringify({model,temperature:0.2,max_completion_tokens:maxCompletionTokens,
-              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema():phase==='review'?reviewSchema(sentences,payload.sourceReading,feedbackLanguage):responseSchema(sentences,payload.sourceReading,feedbackLanguage)}},messages}),
+              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema(sourceContract):phase==='review'?reviewSchema(sentences,payload.sourceReading,feedbackLanguage):responseSchema(sentences,payload.sourceReading,feedbackLanguage)}},messages}),
             signal:AbortSignal.timeout(timeout)
           });
           if(!response.ok) {
@@ -1454,7 +1492,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
             try {parsed=JSON.parse(raw);} catch {validationIssues=['Return valid JSON matching the schema.'];}
             if(parsed!==undefined) {
               if(phase==='task') {
-                validationIssues=validateTaskReading(parsed,payload.task);
+                validationIssues=validateTaskReading(parsed,payload.task,sourceContract);
                 record.validationMs=Math.max(0,Date.now()-validationStarted);
                 if(!validationIssues.length) {
                   payload.sourceReading=parsed;
@@ -1476,6 +1514,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                   if(phaseAttempts.task<2&&phaseAttempts.assessment<3&&phaseAttempts.review<2) {
                     taskRecheck={previous:{taskType:reading.taskType,basis:reading.instructionStatus},
                       alternative:{taskType:review.taskType,basis:review.basis}};
+                    record.classificationDifference=taskRecheck;
                     suspended={reading,raw,candidate:parsed};
                     taskRechecks++;latestRaw='';candidate=null;delete payload.sourceReading;
                     const input=JSON.parse(baseMessages[1].content);delete input.sourceReading;delete input.sourceCatalog;delete input.assessmentDefects;input.writingMetrics=writingMetrics(payload);
