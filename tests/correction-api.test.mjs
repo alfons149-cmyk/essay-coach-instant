@@ -17,6 +17,12 @@ await test('unknown codes fields and enums cannot smuggle provider or essay text
  const safe=api.safeFailure(502,{code:'SECRET',version:'SECRET',diagnostics:{phase:'SECRET',history:[{phase:'SECRET',outcome:'SECRET',checks:[{field:'learningPoints.SECRET',rule:'SECRET',message:'SECRET'}]}]}});
  assert(!JSON.stringify(safe).includes('SECRET'));assert.equal(safe.code,'HTTP_ERROR');
 });
+await test('safe learning-point paths remain recognisable without leaking arbitrary fields',()=>{
+ const fields=['learningPoints[1].practiceInstruction','learningPoints[1].issue','learningPoints[1].PRIVATE','learningPoints[1].issue PRIVATE'];
+ const safe=api.safeFailure(502,{code:'ASSESSMENT_INCOMPLETE',diagnostics:{history:[{phase:'assessment',checks:fields.map(field=>({field,rule:'EXISTING_SUPPORT',message:'SECRET'}))}]}});
+ assert.equal(safe.history[0].checks[0].field,fields[0]);assert.equal(safe.history[0].checks[1].field,fields[1]);
+ assert.equal(safe.history[0].checks[2].field,'unknown');assert.equal(safe.history[0].checks[3].field,'unknown');assert(!JSON.stringify(safe).includes('SECRET'));assert(!JSON.stringify(safe).includes('PRIVATE'));
+});
 for(const status of [429,503,504])await test('HTTP '+status+' remains a failure even with non-JSON provider text',async()=>{
  await assert.rejects(api.request('https://test',{}, {fetchImpl:async()=>new Response('PRIVATE raw provider text',{status})}),e=>e.safeReport.httpStatus===status&&!JSON.stringify(e).includes('PRIVATE'));
 });

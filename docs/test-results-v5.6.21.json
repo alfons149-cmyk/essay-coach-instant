@@ -1,0 +1,71 @@
+{
+  "kind": "local technical tests; synthetic provider responses, not AI performance",
+  "suites": [
+    {
+      "suite": "tests/audit-recovery-v5621.test.mjs",
+      "exitCode": 0,
+      "passed": 9,
+      "elapsedMs": 124
+    },
+    {
+      "suite": "tests/coaching.test.mjs",
+      "exitCode": 0,
+      "passed": 51,
+      "elapsedMs": 277
+    },
+    {
+      "suite": "tests/config-privacy.test.mjs",
+      "exitCode": 0,
+      "passed": 1,
+      "elapsedMs": 38
+    },
+    {
+      "suite": "tests/correction-api.test.mjs",
+      "exitCode": 0,
+      "passed": 11,
+      "elapsedMs": 79
+    },
+    {
+      "suite": "tests/frontend-c2-sources.test.mjs",
+      "exitCode": 0,
+      "passed": 4,
+      "elapsedMs": 45
+    },
+    {
+      "suite": "tests/language-audit.test.mjs",
+      "exitCode": 0,
+      "passed": 43,
+      "elapsedMs": 228
+    },
+    {
+      "suite": "tests/reliability-v5620.test.mjs",
+      "exitCode": 0,
+      "passed": 8,
+      "elapsedMs": 130
+    },
+    {
+      "suite": "tests/tense-feedback.test.mjs",
+      "exitCode": 0,
+      "passed": 6,
+      "elapsedMs": 68
+    },
+    {
+      "suite": "tests/v561-regression.test.mjs",
+      "exitCode": 0,
+      "passed": 16,
+      "elapsedMs": 158
+    },
+    {
+      "suite": "tests/worker.test.mjs",
+      "exitCode": 0,
+      "passed": 77,
+      "elapsedMs": 225
+    },
+    {
+      "suite": "tests/writing-coach.test.mjs",
+      "exitCode": 0,
+      "passed": 12,
+      "elapsedMs": 41
+    }
+  ]
+}

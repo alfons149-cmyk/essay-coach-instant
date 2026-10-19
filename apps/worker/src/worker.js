@@ -1,6 +1,6 @@
-// EssayCoach Worker v5.6.20 — standalone ES module, also usable in the Cloudflare editor.
+// EssayCoach Worker v5.6.21 — standalone ES module, also usable in the Cloudflare editor.
 // Keep OPENAI_API_KEY in Secrets. No external packages required.
-const VERSION = "2026-10-19-coaching-v5.6.20";
+const VERSION = "2026-10-19-coaching-v5.6.21";
 const FEEDBACK_LANGUAGES = {en:'English', es:'Spanish', nl:'Dutch'};
 const FOCUSED_HEADING={
   en:'Your main areas to work on are:',
@@ -1344,6 +1344,10 @@ but actual changes must be compatible. The server builds the ENTIRE edited sente
 from the explained changes; do not output a separate edit. For insertions include adjacent original words or
 punctuation in the quote. Never hide optional style, source interpretation or invented facts inside
 an edit. Preserve meaning. Source issues belong in sourceReview/taskReview and teaching exercises.
+Plan the correction set before writing evidence: at most SIX distinct original sentence IDs and
+at most EIGHTEEN local fragments in total. Splitting evidence does not create extra sentence slots.
+Keep every justified change within a selected sentence; reduce the number of selected whole
+sentences if needed, not the changes inside one sentence. Reconcile dependent lessons and insights.
 Use separate, local quotes for separate defects. A single quote may contain at most two distinct
 changes; split broader changes into independent evidence spans. Do not turn a correct semicolon
 into comma-and, or replace a correctly repeated noun with a pronoun, merely because you are
@@ -1382,7 +1386,7 @@ for the same original characters. Re-plan the sentence's changes together when n
 Check other punctuation too. Reconcile all feedback, score reasons, insights and teaching examples
 with the audited changes. Keep optional wording optional; do not invent grammatical rules.`;
 
-export function reviewSchema(sentences,reading=null,language='en') {
+export function reviewSchema(sentences,reading=null,language='en',repair=null) {
   const schema=responseSchema(sentences,reading,language),id={$ref:'#/$defs/sentenceId'};
   const explanation={type:'string',description:'Explain the original evidence in '+(FEEDBACK_LANGUAGES[language]||'English')+'.'};
   schema.properties.languageAudit=shape({
@@ -1390,6 +1394,16 @@ export function reviewSchema(sentences,reading=null,language='en') {
     corrections:arr(shape({sentenceId:id,category:choice(['grammar','punctuation','word_choice']),originalQuote:{type:'string',description:'Unique verbatim substring of the ORIGINAL sentence. Unchanged context may overlap other quotes; actual changes must not conflict. Punctuation evidence must include the entire candidate marker AND actually change that marker or its immediately following delimiter; unchanged marker context alone is insufficient.'},replacementQuote:{type:'string',description:'Replacement for this span only. The server reconstructs one complete edit per sentenceId from compatible original-coordinate changes; do not output a separate edit.'},explanation}),MAX_EVIDENCE),
     punctuationChecks:shape(Object.fromEntries(punctuationCandidates(eligibleSentences(sentences)).map(c=>[c.id,{...shape({decision:choice(['correction','valid','context_needed']),explanation}),description:'Candidate '+c.id+' in '+c.sentenceId+': marker '+JSON.stringify(c.marker)+' at original offset '+c.offset+'. A correction requires an evidence span containing the entire marker and a real delimiter change there. A grammar span counts for an inserted comma only when its explanation explicitly discusses punctuation. A change elsewhere is insufficient.'}])))
   });
+  if(repair?.recoveryCandidates?.length) {
+    // Recovery choices are entire sentences, each with all its original-coordinate
+    // changes. The reviewer must justify each change; no free-form broad quote can recur.
+    delete schema.properties.languageAudit.properties.corrections;
+    schema.properties.languageAudit.properties.sentenceRepairs=arr({anyOf:repair.recoveryCandidates.map(candidate=>shape({
+      sentenceId:choice([candidate.sentenceId]),
+      explanations:shape(Object.fromEntries(candidate.fragments.map(f=>[f.id,explanation])))
+    }))},MAX_EDITS);
+    schema.properties.languageAudit.required=Object.keys(schema.properties.languageAudit.properties);
+  }
   // The reviewer supplies only evidence; the server derives complete sentence edits.
   // Legacy mock responses with explicit edits still receive full strict validation.
   delete schema.properties.edits;
@@ -1582,11 +1596,66 @@ function quotedChange(sentence,change) {
   if(start===end) end=Math.min(sentence.length,end+1);
   while(start>0&&/[\p{L}\p{N}_]/u.test(sentence[start-1]))start--;
   while(end<sentence.length&&/[\p{L}\p{N}_]/u.test(sentence[end]))end++;
-  while(start>0&&sentence.indexOf(sentence.slice(start,end),start+1)>=0) start--;
-  while(end<sentence.length&&sentence.indexOf(sentence.slice(start,end),start+1)>=0) end++;
+  const ambiguous=()=>sentence.indexOf(sentence.slice(start,end))!==start||sentence.indexOf(sentence.slice(start,end),start+1)>=0;
+  while(start>0&&ambiguous()) start--;
+  while(end<sentence.length&&ambiguous()) end++;
   const originalQuote=sentence.slice(start,end);
-  return {originalOffset:change.start,originalEnd:change.end,originalQuote,
+  return {originalOffset:change.start,originalEnd:change.end,quoteOffset:start,quoteEnd:end,originalQuote,
     replacementQuote:sentence.slice(start,change.start)+change.replacementQuote+sentence.slice(change.end,end)};
+}
+export function sentenceRepairCandidates(data,sentences,issues) {
+  if(!Array.isArray(data?.languageAudit?.corrections)||!issues.length||!issues.every(s=>/split broad evidence|at most 6 distinct corrected sentences/.test(s)))return [];
+  const byId=new Map(eligibleSentences(sentences).map(s=>[s.id,s.text])),groups=new Map();
+  for(const [index,p] of (data?.languageAudit?.corrections||[]).entries()) {
+    const original=byId.get(p?.sentenceId),quote=p?.originalQuote;
+    if(!original||typeof quote!=='string'||!quote||typeof p.replacementQuote!=='string'||
+      !['grammar','punctuation','word_choice'].includes(p.category)||!text(p.explanation))return [];
+    const start=original.indexOf(quote);
+    if(start<0||original.indexOf(quote,start+1)>=0)return [];
+    const list=groups.get(p.sentenceId)||[];
+    list.push({...p,index,changes:evidenceChanges(quote,p.replacementQuote,start)});groups.set(p.sentenceId,list);
+  }
+  const result=[];let next=0;
+  for(const [sentenceId,spans] of groups) {
+    const original=byId.get(sentenceId),plan=combineEvidenceChanges(original,spans);
+    if(plan.conflicts.length||!plan.patches.length||plan.patches.length>MAX_EVIDENCE||plan.reconstructed===original)return [];
+    const fragments=plan.patches.map(change=>{
+      const hint=quotedChange(original,change),start=original.indexOf(hint.originalQuote);
+      if(start<0||original.indexOf(hint.originalQuote,start+1)>=0)return null;
+      const actual=evidenceChanges(hint.originalQuote,hint.replacementQuote,start);
+      if(actual.length!==1||actual[0].start!==change.start||actual[0].end!==change.end||actual[0].replacementQuote!==change.replacementQuote)return null;
+      const support=spans.filter(p=>p.changes.some(c=>c.start===change.start&&c.end===change.end&&c.replacementQuote===change.replacementQuote));
+      return {id:'F'+(++next),category:support.some(p=>p.category==='punctuation')?'punctuation':support[0].category,
+        ...hint,previousExplanations:support.map(p=>p.explanation)};
+    });
+    if(fragments.some(f=>!f))return [];
+    // Explicit round-trip check. Merely having a unique quote is not sufficient.
+    const rebuilt=combineEvidenceChanges(original,fragments.map((f,index)=>({index,changes:evidenceChanges(f.originalQuote,f.replacementQuote,original.indexOf(f.originalQuote))})));
+    if(rebuilt.conflicts.length||rebuilt.reconstructed!==plan.reconstructed)return [];
+    result.push({sentenceId,original,reconstructed:plan.reconstructed,fragmentCount:fragments.length,fragments});
+  }
+  return result;
+}
+export function resolveSentenceRepairs(data,repair) {
+  const audit=data?.languageAudit;
+  if(audit?.sentenceRepairs===undefined)return []; // ordinary/legacy evidence still receives strict validation
+  const candidates=repair?.recoveryCandidates||[],selected=audit.sentenceRepairs,issues=[],seen=new Set(),corrections=[];
+  if(!candidates.length||!Array.isArray(selected)||selected.length>MAX_EDITS||audit.corrections!==undefined)
+    return ['languageAudit.sentenceRepairs: use only the supplied recovery candidates, at most six whole sentences, without a separate corrections list.'];
+  for(const [index,selection] of selected.entries()) {
+    const candidate=candidates.find(c=>c.sentenceId===selection?.sentenceId),explanations=selection?.explanations;
+    if(!candidate||seen.has(selection.sentenceId)||Object.keys(selection).some(k=>!['sentenceId','explanations'].includes(k))||!obj(explanations)||
+       Object.keys(explanations).length!==candidate.fragments.length||candidate.fragments.some(f=>!text(explanations[f.id]))) {
+      issues.push('languageAudit.sentenceRepairs['+index+']: select a distinct candidate and explain EVERY supplied local change; partial sentences or invented fragment IDs are not allowed.');continue;
+    }
+    seen.add(selection.sentenceId);
+    for(const f of candidate.fragments)corrections.push({sentenceId:candidate.sentenceId,category:f.category,
+      originalQuote:f.originalQuote,replacementQuote:f.replacementQuote,explanation:explanations[f.id]});
+  }
+  if(corrections.length>MAX_EVIDENCE)issues.push('languageAudit.sentenceRepairs: selected sentences exceed the eighteen-fragment budget. Select fewer WHOLE sentences, not fewer changes inside a sentence.');
+  if(issues.length)return issues;
+  audit.corrections=corrections;delete audit.sentenceRepairs;
+  return [];
 }
 export function auditRepairContext(data,sentences,constructionIssues=null) {
   const issues=constructionIssues||languageAuditIssues(data,sentences);
@@ -1604,7 +1673,8 @@ export function auditRepairContext(data,sentences,constructionIssues=null) {
     else if(candidate) affected.add(candidates.find(c=>c.id===candidate[1])?.sentenceId);
     else for(const s of eligibleSentences(sentences)) affected.add(s.id);
   }
-  return {issues, instruction:'Rebuild ALL evidence spans for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. The server constructs complete edits from the evidence; do not output a separate full-sentence edit. localChangeHints, targetChanges and unaccountedChanges are DIFF HINTS, not proof of a necessary correction. For EACH proposed change decide whether the original is genuinely wrong; if not, remove it and dependent criticism. If justified, quote the ORIGINAL, not an intermediate draft; verify unique offsets, nonconflicting changes and exact whole-sentence reconstruction. When a span has more than two changes, split it using localChangeHints, each with its own justified explanation. Missing constructed edits are not a separate model omission when construction failed. Keep unrelated valid findings. Match every correction decision to punctuation evidence containing and changing the marker or its following delimiter. Reconcile dependent explanations and insights. Return the complete review schema; every final check still applies.',
+  const recoveryCandidates=sentenceRepairCandidates(data,sentences,issues);
+  return {issues,recoveryCandidates,limits:{sentences:MAX_EDITS,fragments:MAX_EVIDENCE}, recoveryInstruction:recoveryCandidates.length?'Use languageAudit.sentenceRepairs, not corrections. Select at most SIX distinct complete candidate sentences whose TOTAL fragmentCount is at most EIGHTEEN. For EACH fragment ID of EACH selected sentence provide a fresh, specific explanation grounded in its originalQuote; prior explanations are untrusted. Select a sentence only if EVERY change is a necessary language correction. If any change is optional, incorrect, unexplained or unsuitable, omit the WHOLE sentence and reconcile its lessons, insights and criticism. Do not combine fragments, change their replacements, or select only part of a sentence. Preserve the source/task findings separately. Reconcile punctuation decisions; all final validators still apply.':null, instruction:recoveryCandidates.length?'Follow recoveryInstruction and the sentenceRepairs schema. These candidates replace free-form splitting for this repair; preserve source/task findings separately.':'Rebuild ALL evidence spans for each affected sentence from its ORIGINAL text. Replace the old spans, do not append patches. The server constructs complete edits from the evidence; do not output a separate full-sentence edit. localChangeHints, targetChanges and unaccountedChanges are DIFF HINTS, not proof of a necessary correction. For EACH proposed change decide whether the original is genuinely wrong; if not, remove it and dependent criticism. If justified, quote the ORIGINAL, not an intermediate draft; verify unique offsets, nonconflicting changes and exact whole-sentence reconstruction. When a span has more than two changes, split it using localChangeHints, each with its own justified explanation. Missing constructed edits are not a separate model omission when construction failed. Keep unrelated valid findings. Match every correction decision to punctuation evidence containing and changing the marker or its following delimiter. Reconcile dependent explanations and insights. Return the complete review schema; every final check still applies.',
     sentences:eligibleSentences(sentences).filter(s=>affected.has(s.id)).map(s=>{
       const spans=corrections.flatMap((p,index)=>{
         if(p?.sentenceId!==s.id) return [];
@@ -1751,6 +1821,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
         if(phase==='review'&&auditRepair) messages.push({role:'user',content:JSON.stringify({auditRepair})});
         const instructions=[phase==='task'? 'Read the task without assuming a student interpretation. Return the source-only schema.' : phase==='review' ? REVIEW : 'Assess the original writing and return the complete assessment.'];
         if(validationIssues.length) instructions.push('Repair these defects and every dependent criticism, score reason and insight. Do not invent an error to satisfy validation: '+validationIssues.join(' '));
+        if(phase==='review'&&auditRepair?.recoveryCandidates?.length) instructions.push(auditRepair.recoveryInstruction);
         if(compact) instructions.push('The previous output was incomplete because it reached the token limit. Return compact JSON: one brief sentence per explanation, short reasons, no optional vocabulary or style edits. Preserve all required assessment fields and supported corrections; never continue a partial JSON fragment.');
         instructions.push(languageCheck+(phase==='task'?'':preservationRule));
         messages.push({role:'system',content:instructions.join('\n')});
@@ -1764,7 +1835,7 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
           const response=await fetch('https://api.openai.com/v1/chat/completions',{
             method:'POST',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},
             body:JSON.stringify({model,temperature:0.2,max_completion_tokens:maxCompletionTokens,
-              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema(sourceContract):phase==='review'?reviewSchema(sentences,payload.sourceReading,feedbackLanguage):responseSchema(sentences,payload.sourceReading,feedbackLanguage)}},messages}),
+              response_format:{type:'json_schema',json_schema:{name:phase==='task'?'essaycoach_task_reading':'essaycoach_assessment',strict:true,schema:phase==='task'?taskReadingSchema(sourceContract):phase==='review'?reviewSchema(sentences,payload.sourceReading,feedbackLanguage,auditRepair):responseSchema(sentences,payload.sourceReading,feedbackLanguage)}},messages}),
             signal:AbortSignal.timeout(timeout)
           });
           if(!response.ok) {
@@ -1838,8 +1909,9 @@ Use at most three evidenceIds per criterion. Correction insights must point to a
                   return fail('ASSESSMENT_INCOMPLETE','The AI could not consistently identify the writing task. Please include the complete instructions and sources.',502,origin,
                     {diagnostics:{...diagnostics(phase),issues:['Task classification disagreement remains; the source-reading or assessment/review retry budget is exhausted.']}});
                 }
+                const recoveryIssues=phase==='review'?resolveSentenceRepairs(parsed,auditRepair):[];
                 const constructing=phase==='review'&&parsed?.edits===undefined;
-                const constructionIssues=constructing?constructAuditedEdits(parsed,sentences):[];
+                const constructionIssues=recoveryIssues.length?recoveryIssues:constructing?constructAuditedEdits(parsed,sentences):[];
                 if(constructing&&!constructionIssues.length)
                   record.normalisations.push({field:'edits',from:'languageAudit.corrections',to:parsed.edits.length,
                     reason:'Server reconstructed whole sentences from exact original evidence.'});

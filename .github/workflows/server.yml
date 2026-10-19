@@ -10,6 +10,7 @@ on:
       - "tests/language-audit.test.mjs"
       - "tests/v561-regression.test.mjs"
       - "tests/reliability-v5620.test.mjs"
+      - "tests/audit-recovery-v5621.test.mjs"
       - "tests/helpers/**"
       - "tests/writing-coach.test.mjs"
       - "tests/fixtures/**"
@@ -42,6 +43,7 @@ jobs:
           node tests/language-audit.test.mjs
           node tests/v561-regression.test.mjs
           node tests/reliability-v5620.test.mjs
+          node tests/audit-recovery-v5621.test.mjs
           node tests/writing-coach.test.mjs
           node tests/tense-feedback.test.mjs
 
