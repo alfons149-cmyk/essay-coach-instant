@@ -11,7 +11,7 @@ function element(id='',value='') {
     getAttribute(name){return name==='data-level'?this.level:name==='data-lang'?this.language:null;},
     setAttribute(){},removeAttribute(){},closest(){return null;},replaceChildren(){this.textContent='';},appendChild(){}};
 }
-const ids=Object.fromEntries(['task','c2Sources','sourceOne','sourceTwo','essay','btnCorrect','btnClear','feedback','writingCoachCard','statusLine']
+const ids=Object.fromEntries(['task','c2Sources','sourceOne','sourceTwo','essay','btnCorrect','btnClear','feedback','writingCoachCard','statusLine','nextDraft','bandsCard','edits']
   .map(id=>[id,element(id)]));
 const levels=['B2','C1','C2'].map(level=>Object.assign(element(),{level}));
 const languages=['en','es','nl'].map(language=>Object.assign(element(),{language}));
@@ -25,15 +25,16 @@ const document={documentElement:{lang:'en'},title:'',
 const values=new Map([['ec.level','C1']]);
 const localStorage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value)};
 const context={document,localStorage,location:{search:''},URLSearchParams,console,
-  setTimeout:fn=>fn(),Event:class{},
+  setTimeout:(fn,ms)=>ms===190000?setTimeout(fn,ms):fn(),clearTimeout,AbortController,Event:class{},
   async fetch(_,options){
     requests.push(JSON.parse(options.body));
-    return {ok:true,async text(){return JSON.stringify({schemaVersion:2,feedback:'OK',nextDraft:ids.essay.value,edits:[]});}};
+    return {ok:true,async text(){return JSON.stringify({schemaVersion:2,diagnostics:{reviewCompleted:true},feedback:'OK',nextDraft:ids.essay.value,edits:[]});}};
   }};
 context.window=context;
 context.EC={DEV:false,API_BASE:'https://worker.test/api'};
 context.ECWritingCoach={render:(_,__,essay,task,language)=>renders.push({essay,task,language})};
 vm.runInNewContext(await readFile(new URL('../js/i18n.js',import.meta.url),'utf8'),context);
+vm.runInNewContext(await readFile(new URL('../js/correction-api.js',import.meta.url),'utf8'),context);
 vm.runInNewContext(await readFile(new URL('../js/app.js',import.meta.url),'utf8'),context);
 documentListeners.DOMContentLoaded();
 const click=button=>button.listeners.click({target:button});
@@ -88,3 +89,19 @@ assert.equal(requests.length,3);
 assert.equal('sourceBodies' in requests[2],false);
 assert.equal(renders.at(-1).task,ids.task.value);
 console.log('PASS C2 source payload, citation context after language switch, invalid input, level switch and clear');
+
+const beforeRenders=renders.length;ids.nextDraft.value='Stale draft';ids.bandsCard.hidden=false;
+context.fetch=async()=>({ok:false,status:502,text:async()=>JSON.stringify({code:'ASSESSMENT_INCOMPLETE',error:'SECRET provider content',diagnostics:{phase:'review',totalMs:85000,history:[{phase:'review',outcome:'validation_failed',checks:[{field:'edits[0].replacement',rule:'UNEXPLAINED_CHANGE',message:'PRIVATE essay'}]}]}})});
+await click(ids.btnCorrect);
+assert(ids.feedback.textContent.includes('ASSESSMENT_INCOMPLETE'));assert(ids.feedback.textContent.includes('review'));assert(ids.feedback.textContent.includes('502'));
+assert.equal(ids.nextDraft.value,'');assert.equal(ids.bandsCard.hidden,true);assert.equal(renders.length,beforeRenders);assert.equal(context.EC_LAST_RESPONSE,null);assert.equal(ids.writingCoachCard.hidden,true);assert.equal(ids.btnCorrect.disabled,false);
+assert(!JSON.stringify(context.EC_LAST_FAILURE).includes('PRIVATE'));assert(!JSON.stringify(context.EC_LAST_FAILURE).includes('SECRET'));
+console.log('PASS failed API response has safe code and phase, no successful or stale cards');
+context.fetch=async()=>({ok:true,status:200,text:async()=>'{"schemaVersion":2}'});
+await click(ids.btnCorrect);assert(ids.feedback.textContent.includes('INVALID_RESPONSE'));assert.equal(renders.length,beforeRenders);
+console.log('PASS incomplete HTTP 200 does not render empty success');
+let unblock,calls=0;
+context.fetch=async()=>{calls++;await new Promise(resolve=>unblock=resolve);return {ok:true,status:200,text:async()=>JSON.stringify({schemaVersion:2,feedback:'OK',nextDraft:ids.essay.value,edits:[],diagnostics:{reviewCompleted:true}})};};
+const running=click(ids.btnCorrect);await click(ids.btnCorrect);assert.equal(calls,1);unblock();await running;
+assert.equal(context.EC_LAST_FAILURE,null);assert.equal(renders.length,beforeRenders+1);
+console.log('PASS duplicate submit is suppressed and a valid success clears the failure');
