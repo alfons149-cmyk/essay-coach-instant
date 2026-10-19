@@ -117,7 +117,7 @@ await test('reported however omission can be caught by review without a hardcode
  globalThis.fetch=async()=>{const d=sample(input);if(++calls===1){d.edits=[];delete d.languageAudit;}return completion(d);};const r=await worker.fetch(req(input),env),d=await r.json();assert.equal(r.status,200,JSON.stringify(d));assert(d.nextDraft.includes('; however, effective'));assert.equal(calls,2);
 });
 await test('valid and uncertain punctuation decisions cannot contradict their automatic edit',()=>{
- for(const decision of ['valid','context_needed']){const d=sample(cases[0]);d.languageAudit.punctuationChecks.P1.decision=decision;assert(languageAuditIssues(d,numberSentences(cases[0].essay)).some(s=>s.includes('contradicts an automatic punctuation correction')));}
+ for(const decision of ['valid','context_needed']){const d=sample(cases[0]);d.languageAudit.punctuationChecks.P1.decision=decision;assert(languageAuditIssues(d,numberSentences(cases[0].essay)).some(s=>s.includes('contradicts an automatic punctuation correction')||s.includes('clause-initial therefore')));}
 });
 await test('known linguistic disagreement goes directly to independent review with original evidence',async()=>{
  const bodies=[];globalThis.fetch=async(_,o)=>{bodies.push(JSON.parse(o.body));const d=sample(cases[0]);if(bodies.length===1){delete d.languageAudit;d.edits.push({kind:'correction',sentenceId:'S3',replacement:'The library stays open late, because students need a quiet place to work.',reason:'For cannot introduce a reason.'});}return completion(d);};

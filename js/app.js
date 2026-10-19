@@ -158,18 +158,7 @@
       const url = `${API_BASE}/correct`;
 
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "omit"
-      });
-
-      const text = await res.text();
-
-
-      if (!res.ok) throw new Error(`API ${res.status}: ${text}`);
-      return JSON.parse(text);
+      return window.ECCorrectionAPI.request(url,payload,{signal:activeCorrection?.signal});
     }
 
     // DEV mock
@@ -262,6 +251,7 @@
   // Practice criteria are not Cambridge English Scale scores.
   let latestAssessment = null;
   let requestSequence = 0;
+  let activeCorrection=null;
   const COPY = {
     en: {
       noEdits: "No specific corrections or optional rewrites were returned for this text.",
@@ -338,6 +328,7 @@
   function resetResults() {
     latestAssessment = null;
     window.EC_LAST_RESPONSE = null;
+    window.EC_LAST_FAILURE = null;
     for (const id of ["bandsCard", "vocabCard", "sentenceInsightsCard", "sentencesCard", "sentenceCard", "debugCard", "tenseAnalysisCard", "nextDraftContext", "nextDraftTaskContext", "writingCoachCard"])
       if (document.getElementById(id)) document.getElementById(id).hidden = true;
     for (const id of ["key-area", "band-estimate"])
@@ -685,14 +676,14 @@
         const level = btn.getAttribute("data-level") || "C1";
         localStorage.setItem("ec.level", level);
         reflectLevelButtons(level);
-        requestSequence++; resetResults();
+        requestSequence++; activeCorrection?.abort(); resetResults();
       });
     });
 
     // Clear
     if (el.btnClear) {
       el.btnClear.addEventListener("click", () => {
-        requestSequence++; resetResults();
+        requestSequence++; activeCorrection?.abort(); resetResults();
         if (el.task)      el.task.value = "";
         if (el.sourceOne) el.sourceOne.value = "";
         if (el.sourceTwo) el.sourceTwo.value = "";
@@ -717,6 +708,7 @@
     // Correct
     if (el.btnCorrect) {
       el.btnCorrect.addEventListener("click", async (e) => {
+        if(e.target.disabled) return;
         const level = localStorage.getItem("ec.level") || "C1";
         const payload = {
           level,
@@ -745,6 +737,7 @@
         let res;
         const sequence = ++requestSequence;
         resetResults();
+        const controller=new AbortController();activeCorrection=controller;
 
         try {
           // Busy ON
@@ -797,9 +790,18 @@
             el.feedback.appendChild(warning);
           }
         } catch (err) {
-          console.error("[EC] UI or API error:", err);
-          if (sequence === requestSequence && el.feedback) el.feedback.textContent = "Correction could not be completed. Please try again.";
+          if(sequence!==requestSequence)return;
+          resetResults();
+          const report=err?.safeReport||window.ECCorrectionAPI.safeFailure(null,null,'UI_ERROR');
+          window.EC_LAST_FAILURE=report;
+          if(el.feedback) {
+            el.feedback.textContent=window.ECCorrectionAPI.message(report,detectUILang());
+            const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');
+            summary.textContent=({en:'Technical details (safe to share)',nl:'Technische details (veilig te delen)',es:'Detalles técnicos (se pueden compartir)'}[detectUILang()]||'Technical details');
+            pre.textContent=JSON.stringify(report,null,2);details.appendChild(summary);details.appendChild(pre);el.feedback.appendChild(details);
+          }
         } finally {
+          if(activeCorrection===controller)activeCorrection=null;
           // Busy OFF
           e.target.disabled = false;
           e.target.classList.remove("is-busy");
@@ -819,7 +821,7 @@
 
     // Word count while typing
     for (const input of [el.essay, el.task, el.sourceOne, el.sourceTwo]) if (input) input.addEventListener("input", () => {
-      requestSequence++; resetResults(); updateCounters();
+      requestSequence++; activeCorrection?.abort(); resetResults(); updateCounters();
     });
 
     resetResults();

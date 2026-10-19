@@ -29,7 +29,7 @@ function assessment(){return {
  learningPoints:[{category:'source_interpretation',kind:'correction',evidenceId:mistaken,sourceQuote:plan.sources[1].keyPoints[0].quote,issue:'A heading is mistaken for the author’s position.',explanation:'Read the body: it provides evidence against the heading’s claim.',improvedExample:'The second text challenges the idea that homeschooling is not an established form of education.',practiceInstruction:'Rewrite your summary of the second author’s position using evidence from the body.',checkQuestion:'Does the body support or refute the heading?'},
   {category:'task_response',kind:'development',evidenceId:closing,sourceQuote:plan.sources[0].keyPoints[0].quote,issue:'Your judgement needs a reason.',explanation:'Connect the available support with the costs parents may face.',improvedExample:'Support groups may reduce the organisational burden, but they do not necessarily replace lost income.',practiceInstruction:'Write two sentences weighing one benefit against one limitation.',checkQuestion:'Have you explained why one consideration matters rather than merely listing both?'}],
  edits:[{kind:'correction',sentenceId:punctuation,replacement:ss.find(s=>s.id===punctuation).text.replace('however effective','however, effective'),reason:'Add the comma after the linking adverb however.'},
-  {kind:'correction',sentenceId:although,replacement:'Homeschooling has existed for over a century and predates our current public education system.',reason:'These facts reinforce the same point; no concession is expressed.'}],sentenceInsights:[],vocabularySuggestions:[]
+  {kind:'correction',sentenceId:although,replacement:'Homeschooling has existed for over a century; what is more, homeschooling existed before our current public education system.',reason:'These facts reinforce the same point; no concession is expressed.'}],sentenceInsights:[],vocabularySuggestions:[]
 };}
 let checks=0;
 async function test(name,fn){await fn();checks++;console.log('PASS',name);}
@@ -86,7 +86,7 @@ function wire(d) {
  const catalog=sourceCatalog(plan);
  copy.sourceReviewById=Object.fromEntries(catalog.map(p=>{
   const review=copy.sourceReview.find(s=>s.sourceQuote===p.quote);
-  const {sourceQuote,...entry}=review;return [p.id,entry];
+  const {sourceQuote,essayEvidenceIds,...entry}=review;return [p.id,{...entry,evidenceItems:essayEvidenceIds.map(sentenceId=>({sentenceId,relation:entry.evidenceRelation==='contradicts'?'contradicts':'agrees'}))}];
  }));
  delete copy.sourceReview;
  for(const point of copy.learningPoints) {

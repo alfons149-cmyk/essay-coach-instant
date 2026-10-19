@@ -27,7 +27,10 @@ jobs:
           node-version: '20'
 
       - name: Check C2 source fields and frontend response
-        run: node tests/frontend-c2-sources.test.mjs
+        run: |
+          node tests/frontend-c2-sources.test.mjs
+          node tests/correction-api.test.mjs
+          node tests/config-privacy.test.mjs
 
       # Publish the repo root (must contain index.html, css/, js/, assets/, pdfjs/, book.html)
       - name: Upload artifact

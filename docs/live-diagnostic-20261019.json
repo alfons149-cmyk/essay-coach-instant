@@ -1,0 +1,138 @@
+{
+  "testedAt": "2026-10-19T14:58:37.740Z",
+  "scope": "New supplied 401-word text, not a reproduction of the unconfirmed 393-word input",
+  "feedbackLanguage": "nl",
+  "wallMs": 147331,
+  "httpStatus": 200,
+  "phase": "review",
+  "version": "2026-10-19-coaching-v5.6.19",
+  "totalMs": 147089,
+  "attempts": 4,
+  "phaseAttempts": {
+    "task": 1,
+    "assessment": 1,
+    "review": 2
+  },
+  "phaseMs": {
+    "task": 11638,
+    "assessment": 48267,
+    "review": 87184
+  },
+  "history": [
+    {
+      "phase": "task",
+      "attempt": 1,
+      "durationMs": 11638,
+      "providerMs": 11638,
+      "validationMs": 0,
+      "outcome": "valid",
+      "checks": []
+    },
+    {
+      "phase": "assessment",
+      "attempt": 1,
+      "durationMs": 48267,
+      "providerMs": 48267,
+      "validationMs": 0,
+      "outcome": "valid",
+      "checks": []
+    },
+    {
+      "phase": "review",
+      "attempt": 1,
+      "durationMs": 46015,
+      "providerMs": 46015,
+      "validationMs": 0,
+      "outcome": "validation_failed",
+      "checks": [
+        {
+          "field": "languageAudit.corrections[4]",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "learningPoints[2].improvedExample",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "sentenceInsights.betterVersion",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "languageAudit.corrections[0].sentenceId",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "languageAudit.corrections[1].sentenceId",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "languageAudit.corrections[2].sentenceId",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "languageAudit.corrections[3].sentenceId",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "languageAudit.corrections[4].sentenceId",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "languageAudit.corrections[4]",
+          "rule": "RESPONSE_CONSISTENCY"
+        },
+        {
+          "field": "languageAudit.corrections[5].sentenceId",
+          "rule": "RESPONSE_CONSISTENCY"
+        }
+      ]
+    },
+    {
+      "phase": "review",
+      "attempt": 2,
+      "durationMs": 41169,
+      "providerMs": 41169,
+      "validationMs": 0,
+      "outcome": "valid",
+      "checks": []
+    }
+  ],
+  "completions": [
+    {
+      "phase": "task",
+      "attempt": 1,
+      "finishReason": "stop",
+      "completionTokens": 414,
+      "maxCompletionTokens": 6000
+    },
+    {
+      "phase": "assessment",
+      "attempt": 1,
+      "finishReason": "stop",
+      "completionTokens": 2547,
+      "maxCompletionTokens": 6000
+    },
+    {
+      "phase": "review",
+      "attempt": 1,
+      "finishReason": "stop",
+      "completionTokens": 2739,
+      "maxCompletionTokens": 6000
+    },
+    {
+      "phase": "review",
+      "attempt": 2,
+      "finishReason": "stop",
+      "completionTokens": 2656,
+      "maxCompletionTokens": 6000
+    }
+  ],
+  "inputWords": 401,
+  "reviewCompleted": true,
+  "checks": {
+    "residualCommuteToTheWork": true,
+    "residualEasyForConnect": true,
+    "hasNextDraft": true,
+    "edits": 5
+  }
+}

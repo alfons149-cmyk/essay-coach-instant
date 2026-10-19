@@ -1,0 +1,62 @@
+[
+  {
+    "suite": "worker",
+    "exit": 0,
+    "checks": 77,
+    "seconds": 0.247
+  },
+  {
+    "suite": "coaching",
+    "exit": 0,
+    "checks": 51,
+    "seconds": 0.292
+  },
+  {
+    "suite": "language-audit",
+    "exit": 0,
+    "checks": 43,
+    "seconds": 0.219
+  },
+  {
+    "suite": "v561-regression",
+    "exit": 0,
+    "checks": 16,
+    "seconds": 0.192
+  },
+  {
+    "suite": "writing-coach",
+    "exit": 0,
+    "checks": 12,
+    "seconds": 0.102
+  },
+  {
+    "suite": "tense-feedback",
+    "exit": 0,
+    "checks": 6,
+    "seconds": 0.077
+  },
+  {
+    "suite": "frontend-c2-sources",
+    "exit": 0,
+    "checks": 4,
+    "seconds": 0.09
+  },
+  {
+    "suite": "correction-api",
+    "exit": 0,
+    "checks": 10,
+    "seconds": 0.089
+  },
+  {
+    "suite": "config-privacy",
+    "exit": 0,
+    "checks": 1,
+    "seconds": 0.045
+  },
+  {
+    "suite": "reliability-v5620",
+    "exit": 0,
+    "checks": 8,
+    "seconds": 0.104
+  }
+]
